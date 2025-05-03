@@ -16,7 +16,7 @@ struct SymbolPickerView: View {
         "creditcard.fill", "clock.fill", "calendar", "gamecontroller.fill",
         "headphones", "tv.fill", "music.note", "mic.fill", "camera.fill",
         "photo.fill", "scissors", "paintbrush.fill", "hammer.fill", "wrench.fill",
-        "link", "magnifyingglass", "location.fill", "map.fill", "car.fill", 
+        "link", "magnifyingglass", "location.fill", "map.fill", "car.fill",
         "bus.fill", "bicycle", "pawprint.fill", "leaf.fill", "flame.fill"
     ]
     

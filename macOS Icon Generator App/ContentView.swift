@@ -8,16 +8,21 @@ struct ContentView: View {
     @State private var exportPath: URL?
     
     // Available preset colors
-    let colorOptions: [(name: String, primary: Color, secondary: Color)] = [
-        ("Blue", .blue, .indigo),
-        ("Purple", .purple, .indigo),
-        ("Pink", .pink, .purple),
-        ("Red", .red, .orange),
-        ("Orange", .orange, .yellow),
-        ("Yellow", .yellow, .orange),
-        ("Green", .green, .mint),
-        ("Teal", .teal, .blue),
-        ("Gray", .gray, .secondary)
+    let colorOptions: [(name: String, color: Color)] = [
+        ("Black", .black),
+        ("Blue", .blue),
+        ("Brown", .brown),
+        ("Cyan", .cyan),
+        ("Gray", .gray),
+        ("Green", .green),
+        ("Indigo", .indigo),
+        ("Mint", .mint),
+        ("Orange", .orange),
+        ("Pink", .pink),
+        ("Purple", .purple),
+        ("Red", .red),
+        ("Teal", .teal),
+        ("Yellow", .yellow)
     ]
     
     // Predefined size options
@@ -45,6 +50,27 @@ struct ContentView: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
+                    
+                    Picker("Symbol Rendering Mode", selection: $iconSettings.symbolRenderingMode) {
+                        ForEach(SymbolRenderingMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    
+                    switch iconSettings.symbolRenderingMode {
+                    case .monochrome:
+                        ColorPicker("Symbol Color", selection: $iconSettings.symbolColor)
+                    case .hierarchical:
+                        ColorPicker("Base Color", selection: $iconSettings.hierarchicalSymbolColor)
+                    case .multicolor:
+                        Text("Uses system-defined colors")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    case .palette:
+                        ColorPicker("Primary Color", selection: $iconSettings.paletteSymbolPrimaryColor)
+                        ColorPicker("Secondary Color", selection: $iconSettings.paletteSymbolSecondaryColor)
+                        ColorPicker("Tertiary Color", selection: $iconSettings.paletteSymbolTertiaryColor)
+                    }
                 }
                 
                 Section(header: Text("Background Colors")) {
@@ -56,12 +82,11 @@ struct ContentView: View {
                     } else {
                         Picker("Color Preset", selection: Binding(
                             get: {
-                                colorOptions.firstIndex { $0.primary == iconSettings.primaryColor && $0.secondary == iconSettings.secondaryColor } ?? 0
+                                colorOptions.firstIndex { $0.color == iconSettings.baseColor } ?? 0
                             },
                             set: { newValue in
-                                let selectedColors = colorOptions[newValue]
-                                iconSettings.primaryColor = selectedColors.primary
-                                iconSettings.secondaryColor = selectedColors.secondary
+                                let selectedColor = colorOptions[newValue]
+                                iconSettings.baseColor = selectedColor.color
                             }
                         )) {
                             ForEach(0..<colorOptions.count, id: \.self) { index in
@@ -132,4 +157,9 @@ struct ContentView: View {
             }
         }
     }
-} 
+}
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}
