@@ -16,8 +16,9 @@ struct IconDocument: FileDocument {
         self.settings = IconSettings()
     }
     
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        let image = IconRenderer.renderIcon(settings: settings)
+    @MainActor func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        // Use the safe rendering method that works from any thread
+        let image = IconRenderer.renderIconSafely(settings: settings)
         
         guard let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),

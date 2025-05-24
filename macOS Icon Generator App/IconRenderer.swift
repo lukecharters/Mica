@@ -1,129 +1,142 @@
 // IconRenderer.swift - Handles rendering the icon for export
 import SwiftUI
 
+@MainActor
 struct IconRenderer {
     static func renderIcon(settings: IconSettings) -> NSImage {
-        let size = settings.finalExportSize
-        let hasAlpha = true
+        let size = CGSize(width: settings.finalExportSize, height: settings.finalExportSize)
         
-        let bytesPerRow = 4 * Int(size)
+        // Create a SwiftUI view for our icon
+        let iconView = IconView(settings: settings)
+            .frame(width: size.width, height: size.height)
         
-        let offscreenRep = NSBitmapImageRep(
-            bitmapDataPlanes: nil,
-            pixelsWide: Int(size),
-            pixelsHigh: Int(size),
-            bitsPerSample: 8,
-            samplesPerPixel: 4,
-            hasAlpha: hasAlpha,
-            isPlanar: false,
-            colorSpaceName: .deviceRGB,
-            bytesPerRow: bytesPerRow,
-            bitsPerPixel: 32
-        )
+        // Use ImageRenderer to render the SwiftUI view
+        let renderer = ImageRenderer(content: iconView)
+        renderer.scale = 1.0 // We already manage the size in finalExportSize
+        renderer.isOpaque = false
         
-        guard let context = NSGraphicsContext(bitmapImageRep: offscreenRep!) else {
-            return NSImage(size: NSSize(width: size, height: size))
+        // Convert to NSImage
+        if let nsImage = renderer.nsImage {
+            return nsImage
         }
         
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = context
+        // Fallback if rendering fails
+        return NSImage(size: size)
+    }
+    
+    // A new function that can be called from any thread and guarantees main thread execution
+    static func renderIconSafely(settings: IconSettings) -> NSImage {
+        // If we're already on the main thread, just call the function directly
+        if Thread.isMainThread {
+            return renderIcon(settings: settings)
+        }
         
-        // Create the icon in the context
-        let rect = NSRect(x: 0, y: 0, width: size, height: size)
+        // Otherwise, execute on main thread synchronously and wait for result
+        var resultImage: NSImage?
+        let group = DispatchGroup()
+        group.enter()
         
-        // Background with rounded corners - more squircle-like for macOS icons
-        let path = NSBezierPath(roundedRect: rect.insetBy(dx: size * 0.03, dy: size * 0.03),
-                               xRadius: size * 0.24,
-                               yRadius: size * 0.24)
+        DispatchQueue.main.async {
+            resultImage = renderIcon(settings: settings)
+            group.leave()
+        }
         
-        // Apply shadow
-        let shadow = NSShadow()
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.15)
-        shadow.shadowOffset = NSSize(width: 0, height: -size * 0.01)
-        shadow.shadowBlurRadius = size * 0.03
-        shadow.set()
-        
-        // Fill background with gradient
-        if settings.useCustomColors {
-            // Create custom gradient
-            let gradient = NSGradient(
-                colors: settings.gradientColors.map { NSColor($0) },
-                atLocations: [0.0, 1.0],
-                colorSpace: .deviceRGB
+        group.wait()
+        return resultImage ?? NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
+    }
+}
+
+// A SwiftUI view specifically for rendering the icon
+private struct IconView: View {
+    let settings: IconSettings
+    
+    // Calculate the appropriate inset based on export size
+    private var insetSize: CGFloat {
+        switch settings.finalExportSize {
+        case 1024:
+            return 100
+        case 512:
+            return 50
+        case 256:
+            return 25
+        case 128:
+            return 10
+        default:
+            // For any other size, maintain the same proportional inset (about 10%)
+            return settings.finalExportSize * 0.1
+        }
+    }
+    
+
+    var body: some View {
+        ZStack {
+            // Background with rounded corners - using the squircle shape similar to macOS icons
+            if settings.useCustomColors {
+                RoundedRectangle(cornerRadius: settings.finalExportSize * 0.24, style: .continuous)
+                    .inset(by: insetSize)  // Use our dynamic inset size
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: settings.gradientColors),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(
+                        color: .black.opacity(0.15),
+                        radius: settings.finalExportSize * 0.03,
+                        x: 0,
+                        y: settings.finalExportSize * 0.01
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: settings.finalExportSize * 0.24, style: .continuous)
+                    .inset(by: insetSize)  // Use our dynamic inset size
+                    .fill(settings.baseColor.gradient)
+                    .shadow(
+                        color: .black.opacity(0.15),
+                        radius: settings.finalExportSize * 0.03,
+                        x: 0,
+                        y: settings.finalExportSize * 0.01
+                    )
+            }
+
+            // Rest of your existing view code remains the same
+            Group {
+                switch settings.symbolRenderingMode {
+                case .monochrome:
+                    Image(systemName: settings.symbolName)
+                        .font(.system(size: settings.finalExportSize * 0.42, weight: .light))
+                        .foregroundColor(settings.symbolColor)
+                        .symbolRenderingMode(.monochrome)
+                
+                case .hierarchical:
+                    Image(systemName: settings.symbolName)
+                        .font(.system(size: settings.finalExportSize * 0.42, weight: .light))
+                        .foregroundStyle(settings.hierarchicalSymbolColor)
+                        .symbolRenderingMode(.hierarchical)
+                
+                case .multicolor:
+                    Image(systemName: settings.symbolName)
+                        .font(.system(size: settings.finalExportSize * 0.42, weight: .light))
+                        .symbolRenderingMode(.multicolor)
+                
+                case .palette:
+                    Image(systemName: settings.symbolName)
+                        .font(.system(size: settings.finalExportSize * 0.42, weight: .light))
+                        .foregroundStyle(
+                            settings.paletteSymbolPrimaryColor,
+                            settings.paletteSymbolSecondaryColor,
+                            settings.paletteSymbolTertiaryColor
+                        )
+                        .symbolRenderingMode(.palette)
+                }
+            }
+            .shadow(
+                color: .black.opacity(0.25),
+                radius: settings.finalExportSize * 0.005,
+                x: 0,
+                y: settings.finalExportSize * 0.005
             )
-            gradient?.draw(in: path, angle: 315)
-        } else {
-            // Use SwiftUI standard color gradient
-            let baseColor = NSColor(settings.baseColor)
-            // Create lighter and darker variants that aren't optionals
-            let lighterColor = baseColor.withAlphaComponent(1.0)
-            let darkerColor = NSColor(
-                hue: baseColor.hueComponent,
-                saturation: baseColor.saturationComponent,
-                brightness: max(0.1, baseColor.brightnessComponent * 0.7),
-                alpha: 1.0
-            )
-            
-            let gradient = NSGradient(
-                colors: [lighterColor, darkerColor],
-                atLocations: [0.0, 1.0],
-                colorSpace: .deviceRGB
-            )
-            gradient?.draw(in: path, angle: 315)
         }
-        
-        // Create symbol with appropriate configuration and rendering mode
-        var configuration: NSImage.SymbolConfiguration
-        
-        switch settings.symbolRenderingMode {
-        case .hierarchical:
-            configuration = NSImage.SymbolConfiguration(pointSize: size * 0.42, weight: .light)
-                .applying(NSImage.SymbolConfiguration(hierarchicalColor: NSColor(settings.hierarchicalSymbolColor)))
-        case .monochrome:
-            configuration = NSImage.SymbolConfiguration(pointSize: size * 0.42, weight: .light)
-                .applying(NSImage.SymbolConfiguration(paletteColors: [NSColor(settings.symbolColor)]))
-        case .multicolor:
-            configuration = NSImage.SymbolConfiguration(pointSize: size * 0.42, weight: .light)
-        case .palette:
-            configuration = NSImage.SymbolConfiguration(pointSize: size * 0.42, weight: .light)
-                .applying(NSImage.SymbolConfiguration(paletteColors: [
-                    NSColor(settings.paletteSymbolPrimaryColor),
-                    NSColor(settings.paletteSymbolSecondaryColor),
-                    NSColor(settings.paletteSymbolTertiaryColor)
-                ]))
-        }
-        
-        guard let symbolImage = NSImage(systemSymbolName: settings.symbolName, accessibilityDescription: nil)?
-            .withSymbolConfiguration(configuration) else {
-            NSGraphicsContext.restoreGraphicsState()
-            let image = NSImage(size: NSSize(width: size, height: size))
-            image.addRepresentation(offscreenRep!)
-            return image
-        }
-        
-        // Apply shadow to symbol
-        let symbolShadow = NSShadow()
-        symbolShadow.shadowColor = NSColor.black.withAlphaComponent(0.25)
-        symbolShadow.shadowOffset = NSSize(width: 0, height: -size * 0.005)
-        symbolShadow.shadowBlurRadius = size * 0.005
-        symbolShadow.set()
-        
-        // Draw symbol
-        let symbolRect = NSRect(
-            x: (size - symbolImage.size.width) / 2,
-            y: (size - symbolImage.size.height) / 2,
-            width: symbolImage.size.width,
-            height: symbolImage.size.height
-        )
-        
-        NSColor.white.set()
-        symbolImage.draw(in: symbolRect)
-        
-        NSGraphicsContext.restoreGraphicsState()
-        
-        let image = NSImage(size: NSSize(width: size, height: size))
-        image.addRepresentation(offscreenRep!)
-        
-        return image
+        .frame(width: settings.finalExportSize, height: settings.finalExportSize)
     }
 }
