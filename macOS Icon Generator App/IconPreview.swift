@@ -8,7 +8,8 @@ struct IconPreview: View {
         ZStack {
             // Background with rounded corners - using the squircle shape similar to macOS icons
             if settings.useCustomColors {
-                RoundedRectangle(cornerRadius: 60, style: .continuous)
+                RoundedRectangle(cornerRadius: 70, style: .continuous)
+                    .inset(by: 25)  // Add inset to match the export (256 size uses 25 inset)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
@@ -16,42 +17,45 @@ struct IconPreview: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 2)
+                    .shadow(radius: 2, y: 3)
             } else {
-                RoundedRectangle(cornerRadius: 60, style: .continuous)
+                RoundedRectangle(cornerRadius: 70, style: .continuous)
+                    .inset(by: 25)  // Add inset to match the export (256 size uses 25 inset)
                     .fill(settings.baseColor.gradient)
-                    .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 4)
+                    //.shadow(color: .black.opacity(0.30), radius: 2, x: 0, y: 3)
+                    .shadow(radius: 2, y: 3)
             }
             
             // SF Symbol icon with appropriate rendering mode and colors
             Group {
                 if settings.symbolRenderingMode == .monochrome {
                     Image(systemName: settings.symbolName)
-                        .font(.system(size: 175, weight: .light))
+                        .font(.system(size: 120, weight: .regular))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
                         .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 3)
+                        //.shadow(radius: 2, y: 2)
                 } else if settings.symbolRenderingMode == .hierarchical {
                     Image(systemName: settings.symbolName)
-                        .font(.system(size: 110, weight: .light))
+                        .font(.system(size: 120, weight: .regular))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
-                        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
+                        .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 3)
                 } else if settings.symbolRenderingMode == .multicolor {
                     Image(systemName: settings.symbolName)
-                        .font(.system(size: 110, weight: .light))
+                        .font(.system(size: 120, weight: .regular))
                         .symbolRenderingMode(.multicolor)
-                        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
+                        .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 3)
                 } else if settings.symbolRenderingMode == .palette {
                     Image(systemName: settings.symbolName)
-                        .font(.system(size: 110, weight: .light))
+                        .font(.system(size: 120, weight: .regular))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
                             settings.paletteSymbolSecondaryColor,
                             settings.paletteSymbolTertiaryColor
                         )
                         .symbolRenderingMode(.palette)
-                        .shadow(color: .black.opacity(0.25), radius: 1, x: 0, y: 1)
+                        .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 3)
                 }
             }
         }

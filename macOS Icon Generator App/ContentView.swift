@@ -112,6 +112,13 @@ struct ContentView: View {
                     
                     Toggle("2× Resolution for Retina", isOn: $iconSettings.exportRetinaSize)
                     
+                    Picker("Color Space", selection: $iconSettings.exportColorSpace) {
+                        ForEach(ExportColorSpace.allCases) { colorSpace in
+                            Text(colorSpace.rawValue).tag(colorSpace)
+                        }
+                    }
+                    .help("sRGB: Standard color space for web and most displays\nDisplay P3: Wider color gamut for modern Apple displays")
+                    
                     Button("Export Icon...") {
                         showExportDialog = true
                     }
@@ -129,7 +136,7 @@ struct ContentView: View {
                 IconPreview(settings: iconSettings)
                     .frame(width: 256, height: 256)
                     .padding()
-                    .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+                    //.shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 10)
                 
                 Text("Preview")
                     .font(.headline)

@@ -10,6 +10,7 @@ struct IconSettings: Equatable {
     var exportSize: CGFloat = 256
     var exportRetinaSize: Bool = true
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
+    var exportColorSpace: ExportColorSpace = .sRGB
     
     // Symbol colors
     var symbolColor: Color = .white
@@ -56,6 +57,22 @@ enum SymbolRenderingMode: String, CaseIterable, Identifiable {
             return .multicolor
         case .palette:
             return .palette
+        }
+    }
+}
+
+enum ExportColorSpace: String, CaseIterable, Identifiable {
+    case sRGB = "sRGB"
+    case displayP3 = "Display P3"
+    
+    var id: String { self.rawValue }
+    
+    var nsColorSpace: NSColorSpace {
+        switch self {
+        case .sRGB:
+            return NSColorSpace.sRGB
+        case .displayP3:
+            return NSColorSpace.displayP3
         }
     }
 }
