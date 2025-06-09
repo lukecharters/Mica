@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct IconSettings: Equatable {
-    var symbolName: String = "gearshape.fill"
+    var symbolName: String = "folder.fill.badge.plus"
     var baseColor: Color = .blue
     var useCustomColors: Bool = false
     var customPrimaryColor: Color = .blue
@@ -16,9 +16,8 @@ struct IconSettings: Equatable {
     var symbolColor: Color = .white
     var hierarchicalSymbolColor: Color = .white
     var paletteSymbolPrimaryColor: Color = .white
-    var paletteSymbolSecondaryColor: Color = .white.opacity(0.8)
-    var paletteSymbolTertiaryColor: Color = .white.opacity(0.6)
-    
+    var paletteSymbolSecondaryColor: Color = .white.opacity(0.5)
+    var paletteSymbolTertiaryColor: Color = .white.opacity(0.26)
     var gradientColors: [Color] {
         if useCustomColors {
             return [customPrimaryColor, customSecondaryColor]

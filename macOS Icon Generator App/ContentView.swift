@@ -22,15 +22,16 @@ struct ContentView: View {
         ("Purple", .purple),
         ("Red", .red),
         ("Teal", .teal),
+        ("White", .white),
         ("Yellow", .yellow)
     ]
     
     // Predefined size options
     let sizeOptions: [(label: String, size: CGFloat)] = [
-        ("Small (128px)", 128),
-        ("Medium (256px)", 256),
-        ("Large (512px)", 512),
-        ("Extra Large (1024px)", 1024)
+        ("128px", 128),
+        ("256px", 256),
+        ("512px", 512),
+        ("1024px", 1024)
     ]
     
     var body: some View {
