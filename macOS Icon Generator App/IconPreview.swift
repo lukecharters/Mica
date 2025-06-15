@@ -19,10 +19,10 @@ struct IconPreview: View {
                     )
                     .shadow(radius: 2, y: 3)
             } else {
-                RoundedRectangle(cornerRadius: 70, style: .continuous)
-                    .inset(by: 25)  // Add inset to match the export (256 size uses 25 inset)
-                    .fill(settings.baseColor.gradient)
-                    .shadow(color: .black.opacity(0.20), radius: 2, x: 0, y: 3)
+                    RoundedRectangle(cornerRadius: 70, style: .continuous)
+                        .inset(by: 25)  // Add inset to match the export (256 size uses 25 inset)
+                        .fill(settings.baseColor.gradient)
+                        .shadow(color: .black.opacity(0.20), radius: 2, x: 0, y: 3)
                     //.shadow(radius: 2, y: 3)
             }
             
@@ -34,6 +34,7 @@ struct IconPreview: View {
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
                         .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 3)
+                        .frame(width: 178, height: 178, alignment: .center)
                         //.shadow(radius: 2, y: 2)
                 } else if settings.symbolRenderingMode == .hierarchical {
                     Image(systemName: settings.symbolName)

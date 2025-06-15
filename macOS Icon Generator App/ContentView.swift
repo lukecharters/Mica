@@ -135,7 +135,7 @@ struct ContentView: View {
                 Spacer()
                 
                 IconPreview(settings: iconSettings)
-                    .frame(width: 256, height: 256)
+                    .frame(width: 256, height: 256, alignment: .center)
                     .padding()
                     //.shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 10)
                 

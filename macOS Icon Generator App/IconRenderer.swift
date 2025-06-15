@@ -128,8 +128,8 @@ private struct IconView: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
                     .shadow(

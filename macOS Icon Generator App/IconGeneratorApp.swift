@@ -15,9 +15,17 @@ struct IconGeneratorApp: App {
                     runExportTests()
                 }
                 .keyboardShortcut("T", modifiers: [.command, .shift])
+                Button("Run Shadow Variation Tests") {
+                    Task {
+                        do {
+                            try await IconShadowVariationTests.runShadowTestsWithSavePanel()
+                        } catch {
+                            print("Shadow test failed: \(error)")
+                        }
+                    }
+                }
             }
         }
     }
-    
-}
 
+}
