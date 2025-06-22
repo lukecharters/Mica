@@ -136,7 +136,7 @@ private struct IconView: View {
                         //color: .black.opacity(0.25),
                         radius: 2 * scaleFactor,
                         x: 0,
-                        y: 3 * scaleFactor
+                        y: 2.5 * scaleFactor
                     )
             } else {
                 RoundedRectangle(cornerRadius: 70 * scaleFactor, style: .continuous)
@@ -146,7 +146,7 @@ private struct IconView: View {
                         //color: .black.opacity(0.25),
                         radius: 2 * scaleFactor,
                         x: 0,
-                        y: 3 * scaleFactor
+                        y: 2.5 * scaleFactor
                     )
             }
 
@@ -155,41 +155,49 @@ private struct IconView: View {
                 switch settings.symbolRenderingMode {
                 case .monochrome:
                     Image(systemName: settings.symbolName)
+                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        }
                         .font(.system(size: 120 * scaleFactor, weight: .regular))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
                         .shadow(
-                            color: .black.opacity(0.25),
+                            //color: .black.opacity(0.25),
                             radius: 2 * scaleFactor,
                             x: 0,
-                            y: 3 * scaleFactor
+                            y: 2.5 * scaleFactor
                         )
                 
                 case .hierarchical:
                     Image(systemName: settings.symbolName)
+                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        }
                         .font(.system(size: 120 * scaleFactor, weight: .regular))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
                         .shadow(
-                            color: .black.opacity(0.25),
+                            //color: .black.opacity(0.25),
                             radius: 2 * scaleFactor,
                             x: 0,
-                            y: 3 * scaleFactor
+                            y: 2.5 * scaleFactor
                         )
                 
                 case .multicolor:
                     Image(systemName: settings.symbolName)
+                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        }
                         .font(.system(size: 120 * scaleFactor, weight: .regular))
                         .symbolRenderingMode(.multicolor)
                         .shadow(
-                            color: .black.opacity(0.25),
+                            //color: .black.opacity(0.25),
                             radius: 2 * scaleFactor,
                             x: 0,
-                            y: 3 * scaleFactor
+                            y: 2.5 * scaleFactor
                         )
                 
                 case .palette:
                     Image(systemName: settings.symbolName)
+                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        }
                         .font(.system(size: 120 * scaleFactor, weight: .regular))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
@@ -198,10 +206,10 @@ private struct IconView: View {
                         )
                         .symbolRenderingMode(.palette)
                         .shadow(
-                            color: .black.opacity(0.25),
+                            //color: .black.opacity(0.25),
                             radius: 2 * scaleFactor,
                             x: 0,
-                            y: 3 * scaleFactor
+                            y: 2.5 * scaleFactor
                         )
                 }
             }

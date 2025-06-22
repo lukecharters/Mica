@@ -14,7 +14,7 @@ struct ContentView: View {
                     .frame(width: 178, height: 178, alignment: .center)
                     .font(.system(size: 120, weight: .regular))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 3)
+                    .shadow(radius: 2, x: 0, y: 2.5)
             }
             ZStack(alignment: .center) {
                 RoundedRectangle(cornerRadius: 140, style: .continuous)
@@ -29,7 +29,7 @@ struct ContentView: View {
                     .font(.system(size: 240, weight: .regular))
                     .border(Color(.white))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 3)
+                    .shadow(radius: 4, x: 0, y: 5)
                     
             }
         }
