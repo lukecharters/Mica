@@ -4,12 +4,23 @@ import SwiftUI
 struct IconPreview: View {
     let settings: IconSettings
     
+    // Layout constants
+    private let iconSize: CGFloat = 256
+    private let cornerRadius: CGFloat = 70
+    private let backgroundInset: CGFloat = 25
+    private let symbolSize: CGFloat = 120
+    private let symbolFrameSize: CGFloat = 178
+    private let shadowRadius: CGFloat = 2
+    private let shadowOffset: CGFloat = 2.5
+    private let verticalAlignmentOffset: CGFloat = 5.5
+    private let symbolWeight: Font.Weight = .regular
+    
     var body: some View {
         ZStack {
             // Background with rounded corners - using the squircle shape similar to macOS icons
             if settings.useCustomColors {
-                RoundedRectangle(cornerRadius: 70, style: .continuous)
-                    .inset(by: 25)  // Add inset to match the export (256 size uses 25 inset)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .inset(by: backgroundInset)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
@@ -17,58 +28,58 @@ struct IconPreview: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(radius: 2, y: 2.5)
-                    .frame(width: 256, height: 256, alignment: .center)
+                    .shadow(radius: shadowRadius, y: shadowOffset)
+                    .frame(width: iconSize, height: iconSize, alignment: .center)
             } else {
-                    RoundedRectangle(cornerRadius: 70, style: .continuous)
-                        .inset(by: 25)  // Add inset to match the export (256 size uses 25 inset)
-                        .fill(settings.baseColor.gradient)
-                        .shadow(radius: 2, x: 0, y: 2.5)
-                        .frame(width: 256, height: 256, alignment: .center)
-                    //.shadow(radius: 2, y: 3)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .inset(by: backgroundInset)
+                    .fill(settings.baseColor.gradient)
+                    .shadow(radius: shadowRadius, x: 0, y: shadowOffset)
+                    .frame(width: iconSize, height: iconSize, alignment: .center)
             }
             
             // SF Symbol icon with appropriate rendering mode and colors
             Group {
                 if settings.symbolRenderingMode == .monochrome {
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + 6
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .font(.system(size: 120, weight: .regular))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
-                        .shadow(radius: 2, x: 0, y: 2.5)
-                        .frame(width: 178, height: 178, alignment: .center)
-                        //.shadow(radius: 2, y: 2)
+                        .shadow(radius: shadowRadius, x: 0, y: shadowOffset)
+                        .frame(width: symbolFrameSize, height: symbolFrameSize, alignment: .center)
                 } else if settings.symbolRenderingMode == .hierarchical {
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + 6
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .font(.system(size: 120, weight: .regular))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
-                        .shadow(radius: 2, x: 0, y: 2.5)
+                        .shadow(radius: shadowRadius, x: 0, y: shadowOffset)
                 } else if settings.symbolRenderingMode == .multicolor {
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + 6
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .frame(width: 178, height: 178, alignment: .center)
-                        .font(.system(size: 120, weight: .regular))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .symbolRenderingMode(.multicolor)
-                        .shadow(radius: 2, x: 0, y: 2.5)
+                        .shadow(radius: shadowRadius, x: 0, y: shadowOffset)
                 } else if settings.symbolRenderingMode == .palette {
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + 6
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .frame(width: 178, height: 178, alignment: .center)
-                        .font(.system(size: 120, weight: .regular))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
                             settings.paletteSymbolSecondaryColor,
                             settings.paletteSymbolTertiaryColor
                         )
                         .symbolRenderingMode(.palette)
-                        .shadow(radius: 2, x: 0, y: 2.5)
+                        .shadow(radius: shadowRadius, x: 0, y: shadowOffset)
                 }
             }
         }

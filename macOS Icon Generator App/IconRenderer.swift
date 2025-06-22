@@ -49,8 +49,8 @@ struct IconRenderer {
             data: nil,
             width: width,
             height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
+            bitsPerComponent: bitsPerComponent,
+            bytesPerRow: bytesPerRow,
             space: targetCGColorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else {
@@ -91,15 +91,30 @@ struct IconRenderer {
         group.wait()
         return resultImage ?? NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
     }
+    
+    // Core Graphics constants
+    private static let bitsPerComponent: Int = 8
+    private static let bytesPerRow: Int = 0
 }
 
 // A SwiftUI view specifically for rendering the icon
 private struct IconView: View {
     let settings: IconSettings
     
+    // Layout constants
+    private let previewSize: CGFloat = 256.0
+    private let cornerRadius: CGFloat = 70
+    private let symbolSize: CGFloat = 120
+    private let verticalAlignmentOffset: CGFloat = 5.5
+    private let shadowRadius: CGFloat = 2
+    private let shadowOffsetY: CGFloat = 2.5
+    private let shadowOffsetX: CGFloat = 0
+    private let symbolWeight: Font.Weight = .regular
+    
+    
     // Calculate scaling factor based on preview size (256) to export size
     private var scaleFactor: CGFloat {
-        settings.finalExportSize / 256.0
+        settings.finalExportSize / previewSize
     }
     
     // Calculate the appropriate inset based on export size
@@ -123,7 +138,7 @@ private struct IconView: View {
         ZStack {
             // Background with rounded corners - matching preview exactly
             if settings.useCustomColors {
-                RoundedRectangle(cornerRadius: 70 * scaleFactor, style: .continuous)
+                RoundedRectangle(cornerRadius: cornerRadius * scaleFactor, style: .continuous)
                     .inset(by: insetSize)  // Inset to give space for shadows
                     .fill(
                         LinearGradient(
@@ -134,19 +149,19 @@ private struct IconView: View {
                     )
                     .shadow(
                         //color: .black.opacity(0.25),
-                        radius: 2 * scaleFactor,
-                        x: 0,
-                        y: 2.5 * scaleFactor
+                        radius: shadowRadius * scaleFactor,
+                        x: shadowOffsetX,
+                        y: shadowOffsetY * scaleFactor
                     )
             } else {
-                RoundedRectangle(cornerRadius: 70 * scaleFactor, style: .continuous)
+                RoundedRectangle(cornerRadius: cornerRadius * scaleFactor, style: .continuous)
                     .inset(by: insetSize)  // Inset to give space for shadows
                     .fill(settings.baseColor.gradient)
                     .shadow(
                         //color: .black.opacity(0.25),
-                        radius: 2 * scaleFactor,
-                        x: 0,
-                        y: 2.5 * scaleFactor
+                        radius: shadowRadius * scaleFactor,
+                        x: shadowOffsetX,
+                        y: shadowOffsetY * scaleFactor
                     )
             }
 
@@ -155,50 +170,54 @@ private struct IconView: View {
                 switch settings.symbolRenderingMode {
                 case .monochrome:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
                         }
-                        .font(.system(size: 120 * scaleFactor, weight: .regular))
+                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
                         .shadow(
                             //color: .black.opacity(0.25),
-                            radius: 2 * scaleFactor,
-                            x: 0,
-                            y: 2.5 * scaleFactor
+                            radius: shadowRadius * scaleFactor,
+                            x: shadowOffsetX,
+                            y: shadowOffsetY * scaleFactor
                         )
                 
                 case .hierarchical:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
                         }
-                        .font(.system(size: 120 * scaleFactor, weight: .regular))
+                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
                         .shadow(
                             //color: .black.opacity(0.25),
-                            radius: 2 * scaleFactor,
-                            x: 0,
-                            y: 2.5 * scaleFactor
+                            radius: shadowRadius * scaleFactor,
+                            x: shadowOffsetX,
+                            y: shadowOffsetY * scaleFactor
                         )
                 
                 case .multicolor:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
                         }
-                        .font(.system(size: 120 * scaleFactor, weight: .regular))
+                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
                         .symbolRenderingMode(.multicolor)
                         .shadow(
                             //color: .black.opacity(0.25),
-                            radius: 2 * scaleFactor,
-                            x: 0,
-                            y: 2.5 * scaleFactor
+                            radius: shadowRadius * scaleFactor,
+                            x: shadowOffsetX,
+                            y: shadowOffsetY * scaleFactor
                         )
                 
                 case .palette:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + (5.5 * scaleFactor)
+                        .alignmentGuide(VerticalAlignment.center) { context in 
+                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
                         }
-                        .font(.system(size: 120 * scaleFactor, weight: .regular))
+                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
                             settings.paletteSymbolSecondaryColor,
@@ -207,9 +226,9 @@ private struct IconView: View {
                         .symbolRenderingMode(.palette)
                         .shadow(
                             //color: .black.opacity(0.25),
-                            radius: 2 * scaleFactor,
-                            x: 0,
-                            y: 2.5 * scaleFactor
+                            radius: shadowRadius * scaleFactor,
+                            x: shadowOffsetX,
+                            y: shadowOffsetY * scaleFactor
                         )
                 }
             }
