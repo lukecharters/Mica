@@ -36,6 +36,11 @@ struct ContentView: View {
         ("1024px", 1024)
     ]
     
+    // Calculate actual export size including retina multiplier
+    private var actualExportSize: CGFloat {
+        return iconSettings.exportRetinaSize ? iconSettings.exportSize * 2 : iconSettings.exportSize
+    }
+    
     var body: some View {
         NavigationView {
             // Left sidebar with controls
@@ -198,35 +203,47 @@ struct ContentView: View {
             .padding()
             .frame(minWidth: testingMode ? 400 : 300)
             
-            // Right side with the preview
-            VStack {
-                Spacer()
-                
-                if testingMode {
-                    ZoomableIconPreview(settings: iconSettings, layoutSettings: layoutSettings)
-                        .padding()
-                } else {
-                    IconPreview(settings: iconSettings)
-                        .frame(width: 256, height: 256, alignment: .center)
-                        .padding()
-                }
-                
-                Text("Preview")
-                    .font(.headline)
-                    .padding(.top)
-                
-                if testingMode {
-                    VStack(spacing: 4) {
-                        Text("Testing Mode Active")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                        Text("Drag to pan • Scroll to zoom • Double-click to reset")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+            // Right side with the preview - now scrollable for large icons
+            ScrollView([.horizontal, .vertical]) {
+                VStack {
+                    Spacer()
+                    
+                    if testingMode {
+                        ZoomableIconPreview(settings: iconSettings, layoutSettings: layoutSettings)
+                            .padding()
+                    } else {
+                        // Show actual export size with scroll capability for large icons
+                        ScaledIconPreview(settings: iconSettings, displaySize: actualExportSize)
+                            .padding()
                     }
+                    
+                    VStack(spacing: 4) {
+                        Text("Preview")
+                            .font(.headline)
+                        
+                        // Show the actual export dimensions
+                        Text("\(Int(actualExportSize))×\(Int(actualExportSize))px")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if testingMode {
+                            Text("Testing Mode Active")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                            Text("Drag to pan • Scroll to zoom • Double-click to reset")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        } else if actualExportSize > 400 {
+                            Text("Scroll to see full icon")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.top)
+                    
+                    Spacer()
                 }
-                
-                Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.windowBackgroundColor))
@@ -247,6 +264,21 @@ struct ContentView: View {
                 print("Failed to save icon: \(error.localizedDescription)")
             }
         }
+    }
+}
+
+// New preview component that scales based on export size
+struct ScaledIconPreview: View {
+    let settings: IconSettings
+    let displaySize: CGFloat
+    
+    var body: some View {
+        IconPreview(settings: settings)
+            .frame(width: displaySize, height: displaySize, alignment: .center)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+            )
     }
 }
 
