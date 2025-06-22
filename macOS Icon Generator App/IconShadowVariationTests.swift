@@ -1,4 +1,4 @@
-// IconShadowVariationTests.swift - Test shadow variations across different sizes
+// IconShadowVariationTests.swift - Test shadow variations at 1024px with fixed values
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -9,47 +9,39 @@ struct IconShadowVariationTests {
     static func generateShadowTestConfigurations() -> [(name: String, settings: IconSettings, shadowMods: ShadowModifications)] {
         var configs: [(String, IconSettings, ShadowModifications)] = []
         
-        // Define size options
-        let sizes: [(name: String, size: CGFloat, retina: Bool)] = [
-            ("256", 256, false),
-            ("1024", 1024, false)    // 512 with retina = 1024
+        // Fixed size: 1024px
+        let size: CGFloat = 512  // with retina = 1024
+        let retina = true
+        
+        // Define shadow variations with fixed values
+        let shadowVariations: [(name: String, radius: CGFloat, yOffset: CGFloat)] = [
+            ("r7_y8", 7.0, 10.0),          // Default values at 1024px
+            ("r6_y8", 6.0, 10.0),           // More subtle shadow
+            ("r8_y8", 8.0, 10.0),          // Stronger shadow
+            ("r12_y8", 12.0, 10.0),            // Softer/more diffuse shadow
+            ("r10_y8", 10.0, 10.0),            // Sharper shadow
         ]
         
-        // Define shadow variations
-        let shadowVariations: [(name: String, opacity: Double, radiusMultiplier: Double, yMultiplier: Double)] = [
-            ("default", 0.25, 1.0, 1.0),           // Default values
-            ("subtle", 0.15, 0.8, 0.8),            // More subtle shadow
-            ("strong", 0.35, 1.2, 1.2),            // Stronger shadow
-            ("soft", 0.20, 1.5, 1.0),              // Softer/more diffuse shadow
-            ("sharp", 0.30, 0.5, 1.0),             // Sharper shadow
-            ("lifted", 0.25, 1.0, 1.5),            // More Y offset (appears more lifted)
-            ("close", 0.25, 1.0, 0.5),             // Less Y offset (appears closer)
-            ("diffuse", 0.18, 2.0, 1.3),           // Very soft and spread out
-            ("minimal", 0.10, 0.3, 0.3),           // Barely visible
-            ("dramatic", 0.40, 1.5, 2.0),          // Very prominent shadow
-        ]
-        
-        // Generate combinations
-        for (sizeName, size, retina) in sizes {
-            for (shadowName, opacity, radiusMultiplier, yMultiplier) in shadowVariations {
-                var settings = IconSettings()
-                // Keep defaults for icon and background
-                settings.symbolName = "folder.fill.badge.plus"
-                settings.baseColor = .blue
-                settings.symbolRenderingMode = .monochrome
-                settings.symbolColor = .white
-                settings.exportSize = size
-                settings.exportRetinaSize = retina
-                
-                let shadowMods = ShadowModifications(
-                    opacity: opacity,
-                    radiusMultiplier: radiusMultiplier,
-                    yMultiplier: yMultiplier
-                )
-                
-                let name = "\(sizeName)px_shadow_\(shadowName)"
-                configs.append((name, settings, shadowMods))
-            }
+        // Generate configurations
+        for (shadowName, radius, yOffset) in shadowVariations {
+            var settings = IconSettings()
+            // Keep defaults for icon and background
+            settings.symbolName = "folder.fill.badge.plus"
+            settings.baseColor = .blue
+            settings.symbolRenderingMode = .monochrome
+            settings.symbolColor = .white
+            settings.exportSize = size
+            settings.exportRetinaSize = retina
+            
+            let shadowMods = ShadowModifications(
+                backgroundRadius: radius,
+                backgroundYOffset: yOffset,
+                symbolRadius: radius, //* 0.75,  // Symbol shadow slightly smaller
+                symbolYOffset: yOffset //* 0.75
+            )
+            
+            let name = "shadow_\(shadowName)"
+            configs.append((name, settings, shadowMods))
         }
         
         return configs
@@ -67,7 +59,7 @@ struct IconShadowVariationTests {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Icon Shadow Variation Test Results</title>
+            <title>Icon Shadow Variation Test - 1024px</title>
             <style>
                 body { 
                     font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
@@ -75,31 +67,29 @@ struct IconShadowVariationTests {
                     background: #f5f5f5; 
                 }
                 h1 { color: #333; margin-bottom: 10px; }
-                h2 { color: #555; margin-top: 40px; margin-bottom: 20px; }
                 p { color: #666; margin-bottom: 30px; }
-                .size-section { margin-bottom: 60px; }
                 .grid { 
                     display: grid; 
-                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
-                    gap: 15px; 
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+                    gap: 20px; 
                     margin-bottom: 40px;
                 }
                 .icon-card { 
                     background: white; 
                     border-radius: 12px; 
-                    padding: 15px; 
+                    padding: 20px; 
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
                     text-align: center;
                 }
                 .icon-preview { 
                     width: 100%; 
-                    height: 150px; 
+                    height: 240px; 
                     display: flex; 
                     align-items: center; 
                     justify-content: center; 
                     background: #fafafa; 
                     border-radius: 8px; 
-                    margin-bottom: 10px; 
+                    margin-bottom: 15px; 
                     position: relative;
                 }
                 .icon-preview img { 
@@ -108,20 +98,29 @@ struct IconShadowVariationTests {
                     image-rendering: -webkit-optimize-contrast;
                 }
                 .icon-info { 
-                    font-size: 12px; 
+                    font-size: 13px; 
                     color: #666; 
-                    line-height: 1.5;
+                    line-height: 1.6;
                 }
                 .icon-info strong { 
                     color: #333; 
                     display: block;
-                    margin-bottom: 2px;
+                    margin-bottom: 4px;
+                    font-size: 15px;
                 }
                 .shadow-params {
                     font-family: 'SF Mono', Monaco, monospace;
-                    font-size: 11px;
+                    font-size: 12px;
+                    color: #555;
+                    margin-top: 8px;
+                    background: #f5f5f5;
+                    padding: 8px;
+                    border-radius: 6px;
+                }
+                .param-label {
                     color: #888;
-                    margin-top: 5px;
+                    display: inline-block;
+                    width: 80px;
                 }
                 .comparison-note {
                     background: #e3f2fd;
@@ -133,96 +132,75 @@ struct IconShadowVariationTests {
             </style>
         </head>
         <body>
-            <h1>Icon Shadow Variation Test Results</h1>
+            <h1>Icon Shadow Variation Test - 1024×1024 pixels</h1>
             <p>Generated on \(Date().formatted())</p>
             
             <div class="comparison-note">
-                <strong>💡 Tip:</strong> Compare shadows across each row to see how the same effect scales at different sizes.
-                The first icon in each size group shows the default shadow settings.
+                <strong>💡 Fixed Values Test:</strong> All shadows use fixed pixel values at 1024px resolution.
+                This helps determine the exact shadow settings that look best at this specific size.
             </div>
+            
+            <div class="grid">
         """
         
-        print("Starting shadow variation export tests...")
+        print("Starting shadow variation export tests (1024px only)...")
         print("Exporting to: \(directory.path)")
+        print("Total variations: \(configs.count)")
         
-        // Group by size for better organization
-        let sizeGroups = Dictionary(grouping: configs) { config -> String in
-            let size = Int(config.1.finalExportSize)
-            return "\(size)"
-        }
-        
-        let sortedSizes = ["128", "256", "512", "1024"]
-        
-        for sizeStr in sortedSizes {
-            guard let sizeConfigs = sizeGroups[sizeStr] else { continue }
+        for (index, (name, settings, shadowMods)) in configs.enumerated() {
+            print("[\(index + 1)/\(configs.count)] Exporting: \(name)")
             
-            htmlContent += """
-            <div class="size-section">
-                <h2>\(sizeStr)×\(sizeStr) pixels</h2>
-                <div class="grid">
-            """
+            // Create a custom renderer that applies shadow modifications
+            let icon = renderIconWithShadowMods(settings: settings, shadowMods: shadowMods)
             
-            // Sort configs by shadow name for consistent ordering
-            let sortedConfigs = sizeConfigs.sorted { $0.0 < $1.0 }
+            // Create filename
+            let filename = "\(name)_1024px.png"
+            let fileURL = directory.appendingPathComponent(filename)
             
-            for (index, (name, settings, shadowMods)) in sortedConfigs.enumerated() {
-                print("[\(index + 1)/\(sizeConfigs.count)] Exporting: \(name)")
+            // Export as PNG
+            if let tiffData = icon.tiffRepresentation,
+               let bitmapRep = NSBitmapImageRep(data: tiffData),
+               let pngData = bitmapRep.representation(using: .png, properties: [:]) {
+                try pngData.write(to: fileURL)
                 
-                // Create a custom renderer that applies shadow modifications
-                let icon = renderIconWithShadowMods(settings: settings, shadowMods: shadowMods)
+                // Extract shadow variation name
+                let shadowType = name.replacingOccurrences(of: "shadow_", with: "")
                 
-                // Create filename
-                let filename = "\(name).png"
-                let fileURL = directory.appendingPathComponent(filename)
-                
-                // Export as PNG
-                if let tiffData = icon.tiffRepresentation,
-                   let bitmapRep = NSBitmapImageRep(data: tiffData),
-                   let pngData = bitmapRep.representation(using: .png, properties: [:]) {
-                    try pngData.write(to: fileURL)
-                    
-                    // Extract shadow variation name
-                    let shadowType = name.components(separatedBy: "_shadow_").last ?? "unknown"
-                    
-                    // Add to HTML
-                    htmlContent += """
-                    <div class="icon-card">
-                        <div class="icon-preview">
-                            <img src="\(filename)" alt="\(name)">
-                        </div>
-                        <div class="icon-info">
-                            <strong>\(shadowType)</strong>
-                            <div class="shadow-params">
-                                opacity: \(String(format: "%.2f", shadowMods.opacity))<br>
-                                radius: ×\(String(format: "%.1f", shadowMods.radiusMultiplier))<br>
-                                y-offset: ×\(String(format: "%.1f", shadowMods.yMultiplier))
-                            </div>
+                // Add to HTML
+                htmlContent += """
+                <div class="icon-card">
+                    <div class="icon-preview">
+                        <img src="\(filename)" alt="\(name)">
+                    </div>
+                    <div class="icon-info">
+                        <strong>\(shadowType)</strong>
+                        <div class="shadow-params">
+                            <div><span class="param-label">BG Radius:</span> \(String(format: "%.0f", shadowMods.backgroundRadius))px</div>
+                            <div><span class="param-label">BG Y-Offset:</span> \(String(format: "%.0f", shadowMods.backgroundYOffset))px</div>
+                            <div><span class="param-label">Icon Radius:</span> \(String(format: "%.0f", shadowMods.symbolRadius))px</div>
+                            <div><span class="param-label">Icon Y-Offset:</span> \(String(format: "%.0f", shadowMods.symbolYOffset))px</div>
                         </div>
                     </div>
-                    """
-                } else {
-                    print("  ⚠️  Failed to export: \(name)")
-                }
-            }
-            
-            htmlContent += """
                 </div>
-            </div>
-            """
+                """
+            } else {
+                print("  ⚠️  Failed to export: \(name)")
+            }
         }
         
         htmlContent += """
+            </div>
         </body>
         </html>
         """
         
         // Save HTML summary
-        let htmlURL = directory.appendingPathComponent("shadow_test_results.html")
+        let htmlURL = directory.appendingPathComponent("shadow_test_results_1024px.html")
         try htmlContent.write(to: htmlURL, atomically: true, encoding: .utf8)
         
         print("\n✅ Shadow variation export complete!")
         print("📁 Icons saved to: \(directory.path)")
-        print("🌐 Open shadow_test_results.html to view all shadow variations")
+        print("🌐 Open shadow_test_results_1024px.html to view all shadow variations")
         
         // Open the directory in Finder
         NSWorkspace.shared.selectFile(htmlURL.path, inFileViewerRootedAtPath: directory.path)
@@ -264,68 +242,55 @@ struct IconShadowVariationTests {
         let response = await savePanel.begin()
         
         if response == .OK, let url = savePanel.url {
-            let testDirectory = url.appendingPathComponent("IconShadowTests_\(Date().timeIntervalSince1970)")
+            let testDirectory = url.appendingPathComponent("IconShadowTests_1024px_\(Date().timeIntervalSince1970)")
             try await exportShadowTestIcons(to: testDirectory)
         }
     }
 }
 
-// Structure to hold shadow modifications
+// Structure to hold shadow modifications with fixed values
 struct ShadowModifications {
-    let opacity: Double
-    let radiusMultiplier: Double
-    let yMultiplier: Double
+    let backgroundRadius: CGFloat
+    let backgroundYOffset: CGFloat
+    let symbolRadius: CGFloat
+    let symbolYOffset: CGFloat
 }
 
-// Modified icon view that applies custom shadow parameters
+// Modified icon view that applies custom shadow parameters with fixed values
 struct ModifiedShadowIconView: View {
     let settings: IconSettings
     let shadowMods: ShadowModifications
     
-    // Calculate scaling factor based on preview size (256) to export size
-    private var scaleFactor: CGFloat {
-        settings.finalExportSize / 256.0
-    }
+    // Fixed inset for 1024px
+    private let insetSize: CGFloat = 100
     
-    // Calculate the appropriate inset based on export size
-    private var insetSize: CGFloat {
-        switch settings.finalExportSize {
-        case 1024:
-            return 100
-        case 512:
-            return 50
-        case 256:
-            return 25
-        case 128:
-            return 10
-        default:
-            return settings.finalExportSize * 0.1
-        }
-    }
+    // Fixed corner radius for 1024px
+    private let cornerRadius: CGFloat = 280
+    
+    // Fixed font size for 1024px
+    private let fontSize: CGFloat = 480
     
     var body: some View {
         ZStack {
-            // Background with modified shadow
-            RoundedRectangle(cornerRadius: 70 * scaleFactor, style: .continuous)
+            // Background with fixed shadow values
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .inset(by: insetSize)
                 .fill(settings.baseColor.gradient)
                 .shadow(
-                    color: .black.opacity(shadowMods.opacity),
-                    radius: 2 * scaleFactor * shadowMods.radiusMultiplier,
+                    radius: shadowMods.backgroundRadius,
                     x: 0,
-                    y: 3 * scaleFactor * shadowMods.yMultiplier
+                    y: shadowMods.backgroundYOffset
                 )
             
-            // Symbol with modified shadow
+            // Symbol with fixed shadow values
             Image(systemName: settings.symbolName)
-                .font(.system(size: 120 * scaleFactor, weight: .light))
+                .font(.system(size: fontSize, weight: .light))
                 .foregroundColor(settings.symbolColor)
                 .symbolRenderingMode(.monochrome)
                 .shadow(
-                    color: .black.opacity(shadowMods.opacity),
-                    radius: 2 * scaleFactor * shadowMods.radiusMultiplier,
+                    radius: shadowMods.symbolRadius,
                     x: 0,
-                    y: 3 * scaleFactor * shadowMods.yMultiplier
+                    y: shadowMods.symbolYOffset
                 )
         }
         .frame(width: settings.finalExportSize, height: settings.finalExportSize)
