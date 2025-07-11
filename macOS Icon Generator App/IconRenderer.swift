@@ -5,25 +5,58 @@ import CoreGraphics
 @MainActor
 struct IconRenderer {
     static func renderIcon(settings: IconSettings) -> NSImage {
-        let size = CGSize(width: settings.finalExportSize, height: settings.finalExportSize)
+        // Create the IconContentView at the actual export size for proper rendering
+        let exportSize = settings.finalExportSize
+        let iconView = IconContentView(settings: settings, displaySize: exportSize)
+            .frame(width: exportSize, height: exportSize)
         
-        // Create a SwiftUI view for our icon
-        let iconView = IconView(settings: settings)
-            .frame(width: size.width, height: size.height)
-        
-        // Use ImageRenderer to render the SwiftUI view
+        // Use ImageRenderer to render the SwiftUI view at actual size
         let renderer = ImageRenderer(content: iconView)
-        renderer.scale = 1.0 // We already manage the size in finalExportSize
+        renderer.scale = 1.0 // No scaling needed since we're already at target size
         renderer.isOpaque = false
         
         // Convert to NSImage
         if let nsImage = renderer.nsImage {
-            // Convert to the specified color space
-            return convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
+            // Convert to the specified color space and set proper DPI
+            let colorSpaceConverted = convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
+            return setImageDPI(image: colorSpaceConverted, settings: settings)
         }
         
         // Fallback if rendering fails
-        return NSImage(size: size)
+        return NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
+    }
+    
+    // Set the proper DPI for the image based on retina setting
+    static func setImageDPI(image: NSImage, settings: IconSettings) -> NSImage {
+        guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return image
+        }
+        
+        // For retina images, we need to adjust the size to maintain the same visual size
+        // but with higher pixel density
+        let logicalSize: CGSize
+        if settings.exportRetinaSize {
+            // For retina, the logical size should be half the pixel size
+            logicalSize = CGSize(width: settings.exportSize, height: settings.exportSize)
+        } else {
+            // For non-retina, logical size matches pixel size
+            logicalSize = CGSize(width: settings.exportSize, height: settings.exportSize)
+        }
+        
+        // Create new NSImage with proper size and DPI representation
+        let newImage = NSImage(size: logicalSize)
+        
+        // Create an image representation with the correct DPI
+        let bitmapRep = NSBitmapImageRep(cgImage: originalCGImage)
+        
+        // Set the logical size which effectively sets the DPI
+        // For retina: 512px image with 256pt logical size = 144 DPI
+        // For normal: 256px image with 256pt logical size = 72 DPI
+        bitmapRep.size = logicalSize
+        
+        newImage.addRepresentation(bitmapRep)
+        
+        return newImage
     }
     
     // Convert image to specified color space using Core Graphics
@@ -97,49 +130,48 @@ struct IconRenderer {
     private static let bytesPerRow: Int = 0
 }
 
-// A SwiftUI view specifically for rendering the icon
-private struct IconView: View {
+// Shared icon content view that both preview and export can use
+struct IconContentView: View {
     let settings: IconSettings
+    let displaySize: CGFloat
     
-    // Layout constants
-    private let previewSize: CGFloat = 256.0
-    private let cornerRadius: CGFloat = 70
-    private let symbolSize: CGFloat = 120
-    private let verticalAlignmentOffset: CGFloat = 5.5
-    private let shadowRadius: CGFloat = 2
-    private let shadowOffsetY: CGFloat = 2.5
-    private let shadowOffsetX: CGFloat = 0
+    // Initialize with a default size if not provided
+    init(settings: IconSettings, displaySize: CGFloat = 256) {
+        self.settings = settings
+        self.displaySize = displaySize
+    }
+    
+    // Base layout constants (optimized for 256pt base size)
+    private let baseSize: CGFloat = 256
+    private let baseCornerRadius: CGFloat = 70
+    private let baseBackgroundInset: CGFloat = 25
+    private let baseSymbolSize: CGFloat = 120
+    private let baseShadowRadius: CGFloat = 2
+    private let baseShadowOffset: CGFloat = 2.5
+    private let baseVerticalAlignmentOffset: CGFloat = 5.5
+    private let shadowOpacity: CGFloat = 0.31
     private let symbolWeight: Font.Weight = .regular
     
-    
-    // Calculate scaling factor based on preview size (256) to export size
+    // Calculate scaling factor based on display size
     private var scaleFactor: CGFloat {
-        settings.finalExportSize / previewSize
+        displaySize / baseSize
     }
     
-    // Calculate the appropriate inset based on export size
-    private var insetSize: CGFloat {
-        switch settings.finalExportSize {
-        case 1024:
-            return 100
-        case 512:
-            return 50
-        case 256:
-            return 25
-        case 128:
-            return 10
-        default:
-            // For any other size, maintain the same proportional inset (about 10%)
-            return settings.finalExportSize * 0.1
-        }
-    }
+    // Scaled layout constants
+    private var iconSize: CGFloat { displaySize }
+    private var cornerRadius: CGFloat { baseCornerRadius * scaleFactor }
+    private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
+    private var symbolSize: CGFloat { baseSymbolSize * scaleFactor }
+    private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
+    private var shadowOffset: CGFloat { baseShadowOffset * scaleFactor }
+    private var verticalAlignmentOffset: CGFloat { baseVerticalAlignmentOffset * scaleFactor }
     
     var body: some View {
         ZStack {
-            // Background with rounded corners - matching preview exactly
+            // Background with rounded corners - using the squircle shape similar to macOS icons
             if settings.useCustomColors {
-                RoundedRectangle(cornerRadius: cornerRadius * scaleFactor, style: .continuous)
-                    .inset(by: insetSize)  // Inset to give space for shadows
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .inset(by: backgroundInset)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
@@ -147,92 +179,63 @@ private struct IconView: View {
                             endPoint: .bottom
                         )
                     )
-                    .shadow(
-                        //color: .black.opacity(0.25),
-                        radius: shadowRadius * scaleFactor,
-                        x: shadowOffsetX,
-                        y: shadowOffsetY * scaleFactor
-                    )
+                    .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, y: shadowOffset)
+                    .frame(width: iconSize, height: iconSize, alignment: .center)
             } else {
-                RoundedRectangle(cornerRadius: cornerRadius * scaleFactor, style: .continuous)
-                    .inset(by: insetSize)  // Inset to give space for shadows
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .inset(by: backgroundInset)
                     .fill(settings.baseColor.gradient)
-                    .shadow(
-                        //color: .black.opacity(0.25),
-                        radius: shadowRadius * scaleFactor,
-                        x: shadowOffsetX,
-                        y: shadowOffsetY * scaleFactor
-                    )
+                    .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
+                    .frame(width: iconSize, height: iconSize, alignment: .center)
             }
-
-            // SF Symbol icon with appropriate rendering mode and colors - matching preview
+            
+            // SF Symbol icon with appropriate rendering mode and colors
             Group {
                 switch settings.symbolRenderingMode {
                 case .monochrome:
                     Image(systemName: settings.symbolName)
                         .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
-                        .shadow(
-                            //color: .black.opacity(0.25),
-                            radius: shadowRadius * scaleFactor,
-                            x: shadowOffsetX,
-                            y: shadowOffsetY * scaleFactor
-                        )
+                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
                 
                 case .hierarchical:
                     Image(systemName: settings.symbolName)
                         .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
-                        .shadow(
-                            //color: .black.opacity(0.25),
-                            radius: shadowRadius * scaleFactor,
-                            x: shadowOffsetX,
-                            y: shadowOffsetY * scaleFactor
-                        )
+                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
                 
                 case .multicolor:
                     Image(systemName: settings.symbolName)
                         .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .symbolRenderingMode(.multicolor)
-                        .shadow(
-                            //color: .black.opacity(0.25),
-                            radius: shadowRadius * scaleFactor,
-                            x: shadowOffsetX,
-                            y: shadowOffsetY * scaleFactor
-                        )
+                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
                 
                 case .palette:
                     Image(systemName: settings.symbolName)
                         .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + (verticalAlignmentOffset * scaleFactor)
+                            context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
-                        .font(.system(size: symbolSize * scaleFactor, weight: symbolWeight))
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
                             settings.paletteSymbolSecondaryColor,
                             settings.paletteSymbolTertiaryColor
                         )
                         .symbolRenderingMode(.palette)
-                        .shadow(
-                            //color: .black.opacity(0.25),
-                            radius: shadowRadius * scaleFactor,
-                            x: shadowOffsetX,
-                            y: shadowOffsetY * scaleFactor
-                        )
+                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
                 }
             }
         }
-        .frame(width: settings.finalExportSize, height: settings.finalExportSize)
     }
 }

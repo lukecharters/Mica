@@ -273,7 +273,7 @@ struct ScaledIconPreview: View {
     let displaySize: CGFloat
     
     var body: some View {
-        IconPreview(settings: settings)
+        IconContentView(settings: settings, displaySize: displaySize)
             .frame(width: displaySize, height: displaySize, alignment: .center)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
