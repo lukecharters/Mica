@@ -3,7 +3,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var iconSettings = IconSettings()
-    @State private var showSymbolPicker = false
     @State private var showExportDialog = false
     @State private var exportPath: URL?
     @State private var testingMode = false
@@ -50,21 +49,16 @@ struct ContentView: View {
                         .help("Enable to adjust layout constants in real-time")
                 }
                 
-                Section(header: Text("Icon Symbol")) {
-                    HStack {
-                        Button(action: { showSymbolPicker.toggle() }) {
-                            Label("Choose Symbol", systemImage: "square.grid.2x2")
-                        }
+                Section(header: Text("SF Symbol")) {
+                    VStack(alignment: .leading, spacing: 8) {
                         
-                        Spacer()
+                        TextField("Symbol name (e.g., gearshape.fill)", text: $iconSettings.symbolName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .help("Enter the name of any SF Symbol. Examples: gearshape.fill, wifi, airplane, bell.fill")
                         
-                        Text(iconSettings.symbolName)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
                     }
                     
-                    Picker("Symbol Rendering Mode", selection: $iconSettings.symbolRenderingMode) {
+                    Picker("Rendering Mode", selection: $iconSettings.symbolRenderingMode) {
                         ForEach(SymbolRenderingMode.allCases) { mode in
                             Text(mode.rawValue).tag(mode)
                         }
@@ -76,9 +70,7 @@ struct ContentView: View {
                     case .hierarchical:
                         ColorPicker("Base Color", selection: $iconSettings.hierarchicalSymbolColor)
                     case .multicolor:
-                        Text("Uses system-defined colors")
-                            .foregroundColor(.secondary)
-                            .font(.caption)
+                        ColorPicker("Base Color", selection: $iconSettings.symbolColor)
                     case .palette:
                         ColorPicker("Primary Color", selection: $iconSettings.paletteSymbolPrimaryColor)
                         ColorPicker("Secondary Color", selection: $iconSettings.paletteSymbolSecondaryColor)
@@ -247,9 +239,6 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.windowBackgroundColor))
-        }
-        .sheet(isPresented: $showSymbolPicker) {
-            SymbolPickerView(selectedSymbol: $iconSettings.symbolName)
         }
         .fileExporter(
             isPresented: $showExportDialog,

@@ -151,6 +151,9 @@ struct IconContentView: View {
     private let baseVerticalAlignmentOffset: CGFloat = 5.5
     private let shadowOpacity: CGFloat = 0.31
     private let symbolWeight: Font.Weight = .regular
+    private let baseSymbolShadowRadius: CGFloat = 2
+    private let baseSymbolShadowOffset: CGFloat = 2.5
+    private let symbolShadowOpacity: CGFloat = 0.23
     
     // Calculate scaling factor based on display size
     private var scaleFactor: CGFloat {
@@ -165,6 +168,8 @@ struct IconContentView: View {
     private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
     private var shadowOffset: CGFloat { baseShadowOffset * scaleFactor }
     private var verticalAlignmentOffset: CGFloat { baseVerticalAlignmentOffset * scaleFactor }
+    private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
+    private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
     
     var body: some View {
         ZStack {
@@ -200,7 +205,8 @@ struct IconContentView: View {
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
-                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
+                        .shadow(color: .black.opacity(symbolShadowOpacity), radius: symbolShadowRadius, x: 0, y: symbolShadowOffset)
+                        //.shadow(radius: symbolShadowRadius, x: 0, y: symbolShadowOffset)
                 
                 case .hierarchical:
                     Image(systemName: settings.symbolName)
@@ -218,6 +224,7 @@ struct IconContentView: View {
                             context[VerticalAlignment.center] + verticalAlignmentOffset
                         }
                         .font(.system(size: symbolSize, weight: symbolWeight))
+                        .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.multicolor)
                         .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
                 

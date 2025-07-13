@@ -13,17 +13,37 @@ struct IconShadowVariationTests {
         let size: CGFloat = 512  // with retina = 1024
         let retina = true
         
-        // Define shadow variations with fixed values
-        let shadowVariations: [(name: String, opacity: CGFloat, radius: CGFloat, yOffset: CGFloat)] = [
-            ("0.31",0.31, 8.0, 10.0),          // Default values at 1024px
-            ("0.32",0.32, 8.0, 10.0),           // More subtle shadow
-            ("0.33",0.33, 8.0, 10.0),          // Stronger shadow
-            ("0.34",0.34, 8.0, 10.0),            // Softer/more diffuse shadow
-//            ("0.4",0.4, 8.0, 10.0),            // Sharper shadow
+        // Define shadow variations with different focus areas
+        let shadowVariations: [(name: String, description: String, backgroundOpacity: CGFloat, backgroundRadius: CGFloat, backgroundYOffset: CGFloat, symbolOpacity: CGFloat, symbolRadius: CGFloat, symbolYOffset: CGFloat)] = [
+            // Background shadow variations (symbol shadow kept minimal)
+            ("bg_subtle", "Subtle Background Shadow", 0.15, 4.0, 5.0, 0.1, 2.0, 2.0),
+            ("bg_normal", "Normal Background Shadow", 0.31, 8.0, 10.0, 0.1, 2.0, 2.0),
+            ("bg_strong", "Strong Background Shadow", 0.4, 12.0, 15.0, 0.1, 2.0, 2.0),
+            ("bg_dramatic", "Dramatic Background Shadow", 0.6, 20.0, 25.0, 0.1, 2.0, 2.0),
+            
+            // Symbol shadow variations (background shadow kept moderate)
+            ("sym_none", "No Symbol Shadow", 0.31, 8.0, 10.0, 0.23, 8.0, 10.0),
+            ("sym_subtle", "Subtle Symbol Shadow", 0.31, 8.0, 10.0, 0.2, 8.0, 10.0),
+            ("sym_normal", "Normal Symbol Shadow", 0.31, 8.0, 10.0, 0.35, 8.0, 10.0),
+            ("sym_strong", "Strong Symbol Shadow", 0.31, 8.0, 10.0, 0.5, 8.0, 10.0),
+            ("sym_dramatic", "Dramatic Symbol Shadow", 0.31, 8.0, 10.0, 0.7, 8.0, 10.0),
+            
+            // Combined variations
+            ("both_subtle", "Both Subtle", 0.15, 4.0, 5.0, 0.2, 3.0, 3.0),
+            ("both_normal", "Both Normal", 0.31, 8.0, 10.0, 0.35, 6.0, 6.0),
+            ("both_strong", "Both Strong", 0.4, 12.0, 15.0, 0.5, 10.0, 10.0),
+            
+            // Offset variations (normal shadows with different offsets)
+            ("offset_close", "Close Shadow", 0.31, 8.0, 3.0, 0.35, 6.0, 2.0),
+            ("offset_far", "Far Shadow", 0.31, 8.0, 20.0, 0.35, 6.0, 15.0),
+            
+            // Radius variations (normal opacity with different blur)
+            ("blur_sharp", "Sharp Shadows", 0.31, 2.0, 10.0, 0.35, 1.0, 6.0),
+            ("blur_soft", "Soft Shadows", 0.31, 20.0, 10.0, 0.35, 15.0, 6.0)
         ]
         
         // Generate configurations
-        for (shadowName, opacity, radius, yOffset) in shadowVariations {
+        for (shadowName, description, bgOpacity, bgRadius, bgYOffset, symOpacity, symRadius, symYOffset) in shadowVariations {
             var settings = IconSettings()
             // Keep defaults for icon and background
             settings.symbolName = "folder.fill.badge.plus"
@@ -34,15 +54,16 @@ struct IconShadowVariationTests {
             settings.exportRetinaSize = retina
             
             let shadowMods = ShadowModifications(
-                opacity: opacity,
-                backgroundRadius: radius,
-                backgroundYOffset: yOffset,
-                symbolRadius: radius, //* 0.75,  // Symbol shadow slightly smaller
-                symbolYOffset: yOffset //* 0.75
+                description: description,
+                backgroundOpacity: bgOpacity,
+                backgroundRadius: bgRadius,
+                backgroundYOffset: bgYOffset,
+                symbolOpacity: symOpacity,
+                symbolRadius: symRadius,
+                symbolYOffset: symYOffset
             )
             
-            let name = "shadow_\(shadowName)"
-            configs.append((name, settings, shadowMods))
+            configs.append((shadowName, settings, shadowMods))
         }
         
         return configs
@@ -251,9 +272,11 @@ struct IconShadowVariationTests {
 
 // Structure to hold shadow modifications with fixed values
 struct ShadowModifications {
-    let opacity: CGFloat
+    let description: String
+    let backgroundOpacity: CGFloat
     let backgroundRadius: CGFloat
     let backgroundYOffset: CGFloat
+    let symbolOpacity: CGFloat
     let symbolRadius: CGFloat
     let symbolYOffset: CGFloat
 }
@@ -279,7 +302,7 @@ struct ModifiedShadowIconView: View {
                 .inset(by: insetSize)
                 .fill(settings.baseColor.gradient)
                 .shadow(
-                    color: .black.opacity(shadowMods.opacity),
+                    color: .black.opacity(shadowMods.backgroundOpacity),
                     radius: shadowMods.backgroundRadius,
                     x: 0,
                     y: shadowMods.backgroundYOffset
@@ -291,7 +314,7 @@ struct ModifiedShadowIconView: View {
                 .foregroundColor(settings.symbolColor)
                 .symbolRenderingMode(.monochrome)
                 .shadow(
-                    color: .black.opacity(shadowMods.opacity),
+                    color: .black.opacity(shadowMods.symbolOpacity),
                     radius: shadowMods.symbolRadius,
                     x: 0,
                     y: shadowMods.symbolYOffset
