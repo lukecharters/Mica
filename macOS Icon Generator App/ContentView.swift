@@ -416,8 +416,8 @@ struct TestableIconPreview: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
                     .shadow(
@@ -472,7 +472,7 @@ struct TestableIconPreview: View {
                 .foregroundStyle(settings.hierarchicalSymbolColor)
                 .symbolRenderingMode(.hierarchical)
                 .shadow(
-                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    color: settings.enableSymbolShadow ? .black.opacity(0.23) : .clear,
                     radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
                     x: 0,
                     y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
@@ -486,7 +486,7 @@ struct TestableIconPreview: View {
                 .font(.system(size: layoutSettings.symbolSize, weight: layoutSettings.symbolWeight))
                 .symbolRenderingMode(.multicolor)
                 .shadow(
-                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    color: settings.enableSymbolShadow ? .black.opacity(0.23) : .clear,
                     radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
                     x: 0,
                     y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
@@ -505,7 +505,7 @@ struct TestableIconPreview: View {
                 )
                 .symbolRenderingMode(.palette)
                 .shadow(
-                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    color: settings.enableSymbolShadow ? .black.opacity(0.23) : .clear,
                     radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
                     x: 0,
                     y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
