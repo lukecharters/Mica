@@ -101,6 +101,13 @@ struct ContentView: View {
                     }
                 }
                 
+                Section(header: Text("Shadow Settings")) {
+                    Toggle("Background Drop Shadow", isOn: $iconSettings.enableBackgroundShadow)
+                        .help("Toggle the drop shadow behind the background shape")
+                    Toggle("Symbol Drop Shadow", isOn: $iconSettings.enableSymbolShadow)
+                        .help("Toggle the drop shadow behind the SF Symbol")
+                }
+                
                 if testingMode {
                     Section(header: Text("Layout Settings")) {
                         VStack(alignment: .leading) {
@@ -413,13 +420,22 @@ struct TestableIconPreview: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(radius: layoutSettings.shadowRadius, y: layoutSettings.shadowOffset)
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? .black.opacity(0.31) : .clear,
+                        radius: settings.enableBackgroundShadow ? layoutSettings.shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? layoutSettings.shadowOffset : 0
+                    )
                     .frame(width: layoutSettings.iconSize, height: layoutSettings.iconSize, alignment: .center)
             } else {
                 RoundedRectangle(cornerRadius: layoutSettings.cornerRadius, style: .continuous)
                     .inset(by: layoutSettings.backgroundInset)
                     .fill(settings.baseColor.gradient)
-                    .shadow(radius: layoutSettings.shadowRadius, x: 0, y: layoutSettings.shadowOffset)
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? .black.opacity(0.31) : .clear,
+                        radius: settings.enableBackgroundShadow ? layoutSettings.shadowRadius : 0,
+                        x: 0,
+                        y: settings.enableBackgroundShadow ? layoutSettings.shadowOffset : 0
+                    )
                     .frame(width: layoutSettings.iconSize, height: layoutSettings.iconSize, alignment: .center)
             }
             
@@ -439,7 +455,12 @@ struct TestableIconPreview: View {
                 .font(.system(size: layoutSettings.symbolSize, weight: layoutSettings.symbolWeight))
                 .foregroundColor(settings.symbolColor)
                 .symbolRenderingMode(.monochrome)
-                .shadow(radius: layoutSettings.shadowRadius, x: 0, y: layoutSettings.shadowOffset)
+                .shadow(
+                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
+                    x: 0,
+                    y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
+                )
                 .frame(width: layoutSettings.symbolFrameSize, height: layoutSettings.symbolFrameSize, alignment: .center)
         
         case .hierarchical:
@@ -450,7 +471,12 @@ struct TestableIconPreview: View {
                 .font(.system(size: layoutSettings.symbolSize, weight: layoutSettings.symbolWeight))
                 .foregroundStyle(settings.hierarchicalSymbolColor)
                 .symbolRenderingMode(.hierarchical)
-                .shadow(radius: layoutSettings.shadowRadius, x: 0, y: layoutSettings.shadowOffset)
+                .shadow(
+                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
+                    x: 0,
+                    y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
+                )
         
         case .multicolor:
             Image(systemName: settings.symbolName)
@@ -459,7 +485,12 @@ struct TestableIconPreview: View {
                 }
                 .font(.system(size: layoutSettings.symbolSize, weight: layoutSettings.symbolWeight))
                 .symbolRenderingMode(.multicolor)
-                .shadow(radius: layoutSettings.shadowRadius, x: 0, y: layoutSettings.shadowOffset)
+                .shadow(
+                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
+                    x: 0,
+                    y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
+                )
         
         case .palette:
             Image(systemName: settings.symbolName)
@@ -473,7 +504,12 @@ struct TestableIconPreview: View {
                     settings.paletteSymbolTertiaryColor
                 )
                 .symbolRenderingMode(.palette)
-                .shadow(radius: layoutSettings.shadowRadius, x: 0, y: layoutSettings.shadowOffset)
+                .shadow(
+                    color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
+                    radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,
+                    x: 0,
+                    y: settings.enableSymbolShadow ? layoutSettings.shadowOffset : 0
+                )
         }
     }
 }

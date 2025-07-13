@@ -12,6 +12,10 @@ struct IconSettings: Equatable {
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
     var exportColorSpace: ExportColorSpace = .sRGB
     
+    // Shadow settings
+    var enableBackgroundShadow: Bool = true
+    var enableSymbolShadow: Bool = true
+    
     // Symbol colors
     var symbolColor: Color = .white
     var hierarchicalSymbolColor: Color = .white

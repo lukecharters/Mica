@@ -184,13 +184,21 @@ struct IconContentView: View {
                             endPoint: .bottom
                         )
                     )
-                    .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, y: shadowOffset)
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                    )
                     .frame(width: iconSize, height: iconSize, alignment: .center)
             } else {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .inset(by: backgroundInset)
                     .fill(settings.baseColor.gradient)
-                    .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                    )
                     .frame(width: iconSize, height: iconSize, alignment: .center)
             }
             
@@ -205,7 +213,11 @@ struct IconContentView: View {
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
-                        .shadow(color: .black.opacity(symbolShadowOpacity), radius: symbolShadowRadius, x: 0, y: symbolShadowOffset)
+                        .shadow(
+                            color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
+                            radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+                            y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+                        )
                         //.shadow(radius: symbolShadowRadius, x: 0, y: symbolShadowOffset)
                 
                 case .hierarchical:
@@ -216,7 +228,11 @@ struct IconContentView: View {
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
-                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
+                        .shadow(
+                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
+                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
+                            y: settings.enableSymbolShadow ? shadowOffset : 0
+                        )
                 
                 case .multicolor:
                     Image(systemName: settings.symbolName)
@@ -226,7 +242,11 @@ struct IconContentView: View {
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.multicolor)
-                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
+                        .shadow(
+                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
+                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
+                            y: settings.enableSymbolShadow ? shadowOffset : 0
+                        )
                 
                 case .palette:
                     Image(systemName: settings.symbolName)
@@ -240,7 +260,11 @@ struct IconContentView: View {
                             settings.paletteSymbolTertiaryColor
                         )
                         .symbolRenderingMode(.palette)
-                        .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowOffset)
+                        .shadow(
+                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
+                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
+                            y: settings.enableSymbolShadow ? shadowOffset : 0
+                        )
                 }
             }
         }
