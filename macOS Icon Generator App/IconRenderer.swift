@@ -155,6 +155,11 @@ struct IconContentView: View {
     private let baseSymbolShadowOffset: CGFloat = 2.5
     private let symbolShadowOpacity: CGFloat = 0.23
     
+    // Badge layout constants
+    private let baseBadgeSize: CGFloat = 80
+    private let baseBadgeOffset: CGFloat = 4
+    private let baseBadgeSymbolSize: CGFloat = 45
+    
     // Calculate scaling factor based on display size
     private var scaleFactor: CGFloat {
         displaySize / baseSize
@@ -170,6 +175,11 @@ struct IconContentView: View {
     private var verticalAlignmentOffset: CGFloat { baseVerticalAlignmentOffset * scaleFactor }
     private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
+    
+    // Badge scaled constants
+    private var badgeSize: CGFloat { baseBadgeSize * scaleFactor }
+    private var badgeOffset: CGFloat { baseBadgeOffset * scaleFactor }
+    private var badgeSymbolSize: CGFloat { baseBadgeSymbolSize * scaleFactor }
     
     var body: some View {
         ZStack {
@@ -267,6 +277,107 @@ struct IconContentView: View {
                         )
                 }
             }
+            
+            // Badge overlay
+            if settings.showBadge {
+                BadgeView(settings: settings, badgeSize: badgeSize, badgeSymbolSize: badgeSymbolSize)
+                    .offset(badgeOffset(for: settings.badgePosition))
+            }
         }
+    }
+    
+    // Calculate badge position offset
+    private func badgeOffset(for position: BadgePosition) -> CGSize {
+        let iconRadius = iconSize / 2
+        let badgeRadius = badgeSize / 2
+        let offsetDistance = iconRadius - badgeRadius - badgeOffset
+        
+        switch position {
+        case .topRight:
+            return CGSize(width: offsetDistance, height: -offsetDistance)
+        case .topLeft:
+            return CGSize(width: -offsetDistance, height: -offsetDistance)
+        case .bottomRight:
+            return CGSize(width: offsetDistance, height: offsetDistance)
+        case .bottomLeft:
+            return CGSize(width: -offsetDistance, height: offsetDistance)
+        }
+    }
+}
+
+// Separate badge view component
+struct BadgeView: View {
+    let settings: IconSettings
+    let badgeSize: CGFloat
+    let badgeSymbolSize: CGFloat
+    
+    private let shadowOpacity: CGFloat = 0.31
+    private let symbolShadowOpacity: CGFloat = 0.15
+    
+    var body: some View {
+        ZStack {
+            // Badge background
+            if settings.badgeUseCustomColors {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: settings.badgeGradientColors),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                            )
+                    .shadow(
+                        color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                    )
+            } else {
+                Circle()
+                .fill(settings.badgeBaseColor.gradient)
+                .shadow(
+                    color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                    radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                    y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
+                    )
+            }
+            // Badge symbol
+            Group {
+                switch settings.badgeSymbolRenderingMode {
+                case .monochrome:
+                    Image(systemName: settings.badgeSymbolName)
+                        .font(.system(size: badgeSymbolSize, weight: .regular))
+                        .foregroundColor(settings.badgeSymbolColor)
+                        .symbolRenderingMode(.monochrome)
+                
+                case .hierarchical:
+                    Image(systemName: settings.badgeSymbolName)
+                        .font(.system(size: badgeSymbolSize, weight: .regular))
+                        .foregroundStyle(settings.badgeHierarchicalSymbolColor)
+                        .symbolRenderingMode(.hierarchical)
+                
+                case .multicolor:
+                    Image(systemName: settings.badgeSymbolName)
+                        .font(.system(size: badgeSymbolSize, weight: .regular))
+                        .foregroundColor(settings.badgeSymbolColor)
+                        .symbolRenderingMode(.multicolor)
+                
+                case .palette:
+                    Image(systemName: settings.badgeSymbolName)
+                        .font(.system(size: badgeSymbolSize, weight: .regular))
+                        .foregroundStyle(
+                            settings.badgePaletteSymbolPrimaryColor,
+                            settings.badgePaletteSymbolSecondaryColor,
+                            settings.badgePaletteSymbolTertiaryColor
+                        )
+                        .symbolRenderingMode(.palette)
+                }
+            }
+            .shadow(
+                color: settings.badgeEnableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
+                radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
+                y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
+            )
+        }
+        .frame(width: badgeSize, height: badgeSize)
     }
 }

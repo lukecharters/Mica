@@ -8,7 +8,7 @@ struct IconSettings: Equatable {
     var customPrimaryColor: Color = .blue
     var customSecondaryColor: Color = .purple
     var exportSize: CGFloat = 256
-    var exportRetinaSize: Bool = true
+    var exportRetinaSize: Bool = false
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
     var exportColorSpace: ExportColorSpace = .sRGB
     
@@ -22,6 +22,24 @@ struct IconSettings: Equatable {
     var paletteSymbolPrimaryColor: Color = .white
     var paletteSymbolSecondaryColor: Color = .white.opacity(0.5)
     var paletteSymbolTertiaryColor: Color = .white.opacity(0.26)
+    
+    // Badge settings
+    var showBadge: Bool = false
+    var badgePosition: BadgePosition = .bottomRight
+    var badgeSymbolName: String = "gearshape.fill"
+    var badgeUseCustomColors: Bool = false
+    var badgeBaseColor: Color = .gray
+    var badgeCustomPrimaryColor: Color = .white
+    var badgeCustomSecondaryColor: Color = .indigo
+    var badgeSymbolColor: Color = .white
+    var badgeSymbolRenderingMode: SymbolRenderingMode = .monochrome
+    var badgeHierarchicalSymbolColor: Color = .white
+    var badgePaletteSymbolPrimaryColor: Color = .white
+    var badgePaletteSymbolSecondaryColor: Color = .white.opacity(0.5)
+    var badgePaletteSymbolTertiaryColor: Color = .white.opacity(0.26)
+    var badgeEnableBackgroundShadow: Bool = true
+    var badgeEnableSymbolShadow: Bool = true
+    
     var gradientColors: [Color] {
         if useCustomColors {
             return [customPrimaryColor, customSecondaryColor]
@@ -34,6 +52,19 @@ struct IconSettings: Equatable {
                                      brightness: baseColorNS.brightnessComponent * 0.7,
                                      alpha: baseColorNS.alphaComponent)
             return [baseColor, Color(darkerColor)]
+        }
+    }
+    
+    var badgeGradientColors: [Color] {
+        if badgeUseCustomColors {
+            return [badgeCustomPrimaryColor, badgeCustomSecondaryColor]
+        } else {
+            let baseColorNS = NSColor(badgeBaseColor)
+            let darkerColor = NSColor(hue: baseColorNS.hueComponent,
+                                     saturation: baseColorNS.saturationComponent,
+                                     brightness: baseColorNS.brightnessComponent * 0.7,
+                                     alpha: baseColorNS.alphaComponent)
+            return [badgeBaseColor, Color(darkerColor)]
         }
     }
     
@@ -78,4 +109,13 @@ enum ExportColorSpace: String, CaseIterable, Identifiable {
             return NSColorSpace.displayP3
         }
     }
+}
+
+enum BadgePosition: String, CaseIterable, Identifiable {
+    case topLeft = "Top Left"
+    case topRight = "Top Right"
+    case bottomLeft = "Bottom Left"
+    case bottomRight = "Bottom Right"
+    
+    var id: String { rawValue }
 }
