@@ -143,7 +143,7 @@ struct IconContentView: View {
     
     // Base layout constants (optimized for 256pt base size)
     private let baseSize: CGFloat = 256
-    private let baseCornerRadius: CGFloat = 70
+    private let baseCornerRadius: CGFloat = 46
     private let baseBackgroundInset: CGFloat = 25
     private let baseSymbolSize: CGFloat = 120
     private let baseShadowRadius: CGFloat = 2
@@ -186,7 +186,7 @@ struct IconContentView: View {
             // Background with rounded corners - using the squircle shape similar to macOS icons
             if settings.useCustomColors {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .inset(by: backgroundInset)
+//                    .inset(by: backgroundInset)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
@@ -194,6 +194,7 @@ struct IconContentView: View {
                             endPoint: .bottom
                         )
                     )
+                    .padding(backgroundInset)
                     .shadow(
                         color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
                         radius: settings.enableBackgroundShadow ? shadowRadius : 0,
@@ -202,8 +203,9 @@ struct IconContentView: View {
                     .frame(width: iconSize, height: iconSize, alignment: .center)
             } else {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .inset(by: backgroundInset)
+//                    .inset(by: backgroundInset)
                     .fill(settings.baseColor.gradient)
+                    .padding(backgroundInset)
                     .shadow(
                         color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
                         radius: settings.enableBackgroundShadow ? shadowRadius : 0,
@@ -217,12 +219,13 @@ struct IconContentView: View {
                 switch settings.symbolRenderingMode {
                 case .monochrome:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + verticalAlignmentOffset
-                        }
+//                        .alignmentGuide(VerticalAlignment.center) { context in 
+//                            context[VerticalAlignment.center] + verticalAlignmentOffset
+//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
+                        .offset(x: 0, y: -verticalAlignmentOffset)
                         .shadow(
                             color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
                             radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
@@ -232,12 +235,13 @@ struct IconContentView: View {
                 
                 case .hierarchical:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + verticalAlignmentOffset
-                        }
+//                        .alignmentGuide(VerticalAlignment.center) { context in 
+//                            context[VerticalAlignment.center] + verticalAlignmentOffset
+//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
+                        .offset(x: 0, y: -verticalAlignmentOffset)
                         .shadow(
                             color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
                             radius: settings.enableSymbolShadow ? shadowRadius : 0,
@@ -246,12 +250,13 @@ struct IconContentView: View {
                 
                 case .multicolor:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + verticalAlignmentOffset
-                        }
+//                        .alignmentGuide(VerticalAlignment.center) { context in 
+//                            context[VerticalAlignment.center] + verticalAlignmentOffset
+//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.multicolor)
+                        .offset(x: 0, y: -verticalAlignmentOffset)
                         .shadow(
                             color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
                             radius: settings.enableSymbolShadow ? shadowRadius : 0,
@@ -260,9 +265,9 @@ struct IconContentView: View {
                 
                 case .palette:
                     Image(systemName: settings.symbolName)
-                        .alignmentGuide(VerticalAlignment.center) { context in 
-                            context[VerticalAlignment.center] + verticalAlignmentOffset
-                        }
+//                        .alignmentGuide(VerticalAlignment.center) { context in 
+//                            context[VerticalAlignment.center] + verticalAlignmentOffset
+//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
@@ -270,6 +275,7 @@ struct IconContentView: View {
                             settings.paletteSymbolTertiaryColor
                         )
                         .symbolRenderingMode(.palette)
+                        .offset(x: 0, y: -verticalAlignmentOffset)
                         .shadow(
                             color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
                             radius: settings.enableSymbolShadow ? shadowRadius : 0,

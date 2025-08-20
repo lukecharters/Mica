@@ -476,7 +476,7 @@ struct TestableIconPreview: View {
             // Background with rounded corners - using the squircle shape similar to macOS icons
             if settings.useCustomColors {
                 RoundedRectangle(cornerRadius: layoutSettings.cornerRadius, style: .continuous)
-                    .inset(by: layoutSettings.backgroundInset)
+                    //.inset(by: layoutSettings.backgroundInset)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
@@ -492,7 +492,7 @@ struct TestableIconPreview: View {
                     .frame(width: layoutSettings.iconSize, height: layoutSettings.iconSize, alignment: .center)
             } else {
                 RoundedRectangle(cornerRadius: layoutSettings.cornerRadius, style: .continuous)
-                    .inset(by: layoutSettings.backgroundInset)
+                    //.inset(by: layoutSettings.backgroundInset)
                     .fill(settings.baseColor.gradient)
                     .shadow(
                         color: settings.enableBackgroundShadow ? .black.opacity(0.31) : .clear,
