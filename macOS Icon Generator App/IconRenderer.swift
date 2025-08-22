@@ -2,146 +2,86 @@
 import SwiftUI
 import CoreGraphics
 
-@MainActor
 struct IconRenderer {
+    // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
+    @MainActor
     static func renderIcon(settings: IconSettings) -> NSImage {
-        // Create the IconContentView at the actual export size for proper rendering
         let exportSize = settings.finalExportSize
         let iconView = IconContentView(settings: settings, displaySize: exportSize)
             .frame(width: exportSize, height: exportSize)
-        
-        // Use ImageRenderer to render the SwiftUI view at actual size
+
         let renderer = ImageRenderer(content: iconView)
-        renderer.scale = 1.0 // No scaling needed since we're already at target size
+        renderer.scale = 1.0
         renderer.isOpaque = false
-        
-        // Convert to NSImage
+
         if let nsImage = renderer.nsImage {
-            // Convert to the specified color space and set proper DPI
             let colorSpaceConverted = convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
             return setImageDPI(image: colorSpaceConverted, settings: settings)
         }
-        
-        // Fallback if rendering fails
-        return NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
+        return NSImage(size: CGSize(width: exportSize, height: exportSize))
     }
-    
-    // Set the proper DPI for the image based on retina setting
+
+    // Thread-safe wrapper that hops to the main queue when needed
+    static func renderIconSafely(settings: IconSettings) -> NSImage {
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated { renderIcon(settings: settings) }
+        }
+        var output = NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
+        DispatchQueue.main.sync {
+            output = MainActor.assumeIsolated { renderIcon(settings: settings) }
+        }
+        return output
+    }
+
+    // MARK: - Color space and DPI helpers
     static func setImageDPI(image: NSImage, settings: IconSettings) -> NSImage {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
-        
-        // For retina images, we need to adjust the size to maintain the same visual size
-        // but with higher pixel density
-        let logicalSize: CGSize
-        if settings.exportRetinaSize {
-            // For retina, the logical size should be half the pixel size
-            logicalSize = CGSize(width: settings.exportSize, height: settings.exportSize)
-        } else {
-            // For non-retina, logical size matches pixel size
-            logicalSize = CGSize(width: settings.exportSize, height: settings.exportSize)
-        }
-        
-        // Create new NSImage with proper size and DPI representation
+        let logicalSize = CGSize(width: settings.exportSize, height: settings.exportSize)
         let newImage = NSImage(size: logicalSize)
-        
-        // Create an image representation with the correct DPI
         let bitmapRep = NSBitmapImageRep(cgImage: originalCGImage)
-        
-        // Set the logical size which effectively sets the DPI
-        // For retina: 512px image with 256pt logical size = 144 DPI
-        // For normal: 256px image with 256pt logical size = 72 DPI
         bitmapRep.size = logicalSize
-        
         newImage.addRepresentation(bitmapRep)
-        
         return newImage
     }
-    
-    // Convert image to specified color space using Core Graphics
+
     static func convertToColorSpace(image: NSImage, colorSpace: ExportColorSpace) -> NSImage {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
-        
         let width = Int(image.size.width)
         let height = Int(image.size.height)
-        
-        // Get the CGColorSpace from our enum
-        let targetCGColorSpace: CGColorSpace
-        switch colorSpace {
-        case .sRGB:
-            targetCGColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
-        case .displayP3:
-            targetCGColorSpace = CGColorSpace(name: CGColorSpace.displayP3)!
-        }
-        
-        // Create a bitmap context with the target color space
+
+        let targetCGColorSpace: CGColorSpace = {
+            switch colorSpace {
+            case .sRGB: return CGColorSpace(name: CGColorSpace.sRGB)!
+            case .displayP3: return CGColorSpace(name: CGColorSpace.displayP3)!
+            }
+        }()
+
         guard let context = CGContext(
             data: nil,
             width: width,
             height: height,
-            bitsPerComponent: bitsPerComponent,
-            bytesPerRow: bytesPerRow,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
             space: targetCGColorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
-            return image
-        }
-        
-        // Draw the image into the new context
+        ) else { return image }
+
         context.draw(originalCGImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        
-        // Get the new image from the context
-        guard let newCGImage = context.makeImage() else {
-            return image
-        }
-        
-        // Create NSImage from the new CGImage
-        let newImage = NSImage(cgImage: newCGImage, size: image.size)
-        
-        return newImage
+        guard let newCGImage = context.makeImage() else { return image }
+        return NSImage(cgImage: newCGImage, size: image.size)
     }
-    
-    // A new function that can be called from any thread and guarantees main thread execution
-    static func renderIconSafely(settings: IconSettings) -> NSImage {
-        // If we're already on the main thread, just call the function directly
-        if Thread.isMainThread {
-            return renderIcon(settings: settings)
-        }
-        
-        // Otherwise, execute on main thread synchronously and wait for result
-        var resultImage: NSImage?
-        let group = DispatchGroup()
-        group.enter()
-        
-        DispatchQueue.main.async {
-            resultImage = renderIcon(settings: settings)
-            group.leave()
-        }
-        
-        group.wait()
-        return resultImage ?? NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
-    }
-    
-    // Core Graphics constants
-    private static let bitsPerComponent: Int = 8
-    private static let bytesPerRow: Int = 0
 }
 
-// Shared icon content view that both preview and export can use
+// MARK: - Icon View used for rendering and previews
 struct IconContentView: View {
     let settings: IconSettings
     let displaySize: CGFloat
-    
-    // Initialize with a default size if not provided
-    init(settings: IconSettings, displaySize: CGFloat = 256) {
-        self.settings = settings
-        self.displaySize = displaySize
-    }
-    
-    // Base layout constants (optimized for 256pt base size)
+
+    // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
     private let baseCornerRadius: CGFloat = 46
     private let baseBackgroundInset: CGFloat = 25
@@ -154,17 +94,14 @@ struct IconContentView: View {
     private let baseSymbolShadowRadius: CGFloat = 2
     private let baseSymbolShadowOffset: CGFloat = 2.5
     private let symbolShadowOpacity: CGFloat = 0.23
-    
+
     // Badge layout constants
     private let baseBadgeSize: CGFloat = 80
     private let baseBadgeOffset: CGFloat = 4
     private let baseBadgeSymbolSize: CGFloat = 45
-    
-    // Calculate scaling factor based on display size
-    private var scaleFactor: CGFloat {
-        displaySize / baseSize
-    }
-    
+
+    private var scaleFactor: CGFloat { displaySize / baseSize }
+
     // Scaled layout constants
     private var iconSize: CGFloat { displaySize }
     private var cornerRadius: CGFloat { baseCornerRadius * scaleFactor }
@@ -175,18 +112,17 @@ struct IconContentView: View {
     private var verticalAlignmentOffset: CGFloat { baseVerticalAlignmentOffset * scaleFactor }
     private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
-    
+
     // Badge scaled constants
     private var badgeSize: CGFloat { baseBadgeSize * scaleFactor }
     private var badgeOffset: CGFloat { baseBadgeOffset * scaleFactor }
     private var badgeSymbolSize: CGFloat { baseBadgeSymbolSize * scaleFactor }
-    
+
     var body: some View {
         ZStack {
-            // Background with rounded corners - using the squircle shape similar to macOS icons
+            // Background
             if settings.useCustomColors {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-//                    .inset(by: backgroundInset)
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: settings.gradientColors),
@@ -200,10 +136,9 @@ struct IconContentView: View {
                         radius: settings.enableBackgroundShadow ? shadowRadius : 0,
                         y: settings.enableBackgroundShadow ? shadowOffset : 0
                     )
-                    .frame(width: iconSize, height: iconSize, alignment: .center)
+                    .frame(width: iconSize, height: iconSize)
             } else {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-//                    .inset(by: backgroundInset)
                     .fill(settings.baseColor.gradient)
                     .padding(backgroundInset)
                     .shadow(
@@ -211,17 +146,14 @@ struct IconContentView: View {
                         radius: settings.enableBackgroundShadow ? shadowRadius : 0,
                         y: settings.enableBackgroundShadow ? shadowOffset : 0
                     )
-                    .frame(width: iconSize, height: iconSize, alignment: .center)
+                    .frame(width: iconSize, height: iconSize)
             }
-            
-            // SF Symbol icon with appropriate rendering mode and colors
+
+            // SF Symbol
             Group {
                 switch settings.symbolRenderingMode {
                 case .monochrome:
                     Image(systemName: settings.symbolName)
-//                        .alignmentGuide(VerticalAlignment.center) { context in 
-//                            context[VerticalAlignment.center] + verticalAlignmentOffset
-//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
@@ -231,13 +163,8 @@ struct IconContentView: View {
                             radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
                             y: settings.enableSymbolShadow ? symbolShadowOffset : 0
                         )
-                        //.shadow(radius: symbolShadowRadius, x: 0, y: symbolShadowOffset)
-                
                 case .hierarchical:
                     Image(systemName: settings.symbolName)
-//                        .alignmentGuide(VerticalAlignment.center) { context in 
-//                            context[VerticalAlignment.center] + verticalAlignmentOffset
-//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(settings.hierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
@@ -247,12 +174,8 @@ struct IconContentView: View {
                             radius: settings.enableSymbolShadow ? shadowRadius : 0,
                             y: settings.enableSymbolShadow ? shadowOffset : 0
                         )
-                
                 case .multicolor:
                     Image(systemName: settings.symbolName)
-//                        .alignmentGuide(VerticalAlignment.center) { context in 
-//                            context[VerticalAlignment.center] + verticalAlignmentOffset
-//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.multicolor)
@@ -262,12 +185,8 @@ struct IconContentView: View {
                             radius: settings.enableSymbolShadow ? shadowRadius : 0,
                             y: settings.enableSymbolShadow ? shadowOffset : 0
                         )
-                
                 case .palette:
                     Image(systemName: settings.symbolName)
-//                        .alignmentGuide(VerticalAlignment.center) { context in 
-//                            context[VerticalAlignment.center] + verticalAlignmentOffset
-//                        }
                         .font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundStyle(
                             settings.paletteSymbolPrimaryColor,
@@ -283,21 +202,19 @@ struct IconContentView: View {
                         )
                 }
             }
-            
-            // Badge overlay
+
+            // Badge
             if settings.showBadge {
                 BadgeView(settings: settings, badgeSize: badgeSize, badgeSymbolSize: badgeSymbolSize)
                     .offset(badgeOffset(for: settings.badgePosition))
             }
         }
     }
-    
-    // Calculate badge position offset
+
     private func badgeOffset(for position: BadgePosition) -> CGSize {
         let iconRadius = iconSize / 2
         let badgeRadius = badgeSize / 2
         let offsetDistance = iconRadius - badgeRadius - badgeOffset
-        
         switch position {
         case .topRight:
             return CGSize(width: offsetDistance, height: -offsetDistance)
@@ -311,18 +228,16 @@ struct IconContentView: View {
     }
 }
 
-// Separate badge view component
 struct BadgeView: View {
     let settings: IconSettings
     let badgeSize: CGFloat
     let badgeSymbolSize: CGFloat
-    
+
     private let shadowOpacity: CGFloat = 0.31
     private let symbolShadowOpacity: CGFloat = 0.15
-    
+
     var body: some View {
         ZStack {
-            // Badge background
             if settings.badgeUseCustomColors {
                 Circle()
                     .fill(
@@ -331,7 +246,7 @@ struct BadgeView: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                            )
+                    )
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
@@ -339,14 +254,14 @@ struct BadgeView: View {
                     )
             } else {
                 Circle()
-                .fill(settings.badgeBaseColor.gradient)
-                .shadow(
-                    color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
-                    radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                    y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
+                    .fill(settings.badgeBaseColor.gradient)
+                    .shadow(
+                        color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
                     )
             }
-            // Badge symbol
+
             Group {
                 switch settings.badgeSymbolRenderingMode {
                 case .monochrome:
@@ -354,19 +269,16 @@ struct BadgeView: View {
                         .font(.system(size: badgeSymbolSize, weight: .regular))
                         .foregroundColor(settings.badgeSymbolColor)
                         .symbolRenderingMode(.monochrome)
-                
                 case .hierarchical:
                     Image(systemName: settings.badgeSymbolName)
                         .font(.system(size: badgeSymbolSize, weight: .regular))
                         .foregroundStyle(settings.badgeHierarchicalSymbolColor)
                         .symbolRenderingMode(.hierarchical)
-                
                 case .multicolor:
                     Image(systemName: settings.badgeSymbolName)
                         .font(.system(size: badgeSymbolSize, weight: .regular))
                         .foregroundColor(settings.badgeSymbolColor)
                         .symbolRenderingMode(.multicolor)
-                
                 case .palette:
                     Image(systemName: settings.badgeSymbolName)
                         .font(.system(size: badgeSymbolSize, weight: .regular))
