@@ -16,7 +16,7 @@ struct IconDocument: FileDocument {
         self.settings = IconSettings()
     }
     
-    @MainActor func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         // Use the safe rendering method that works from any thread
         let image = IconRenderer.renderIconSafely(settings: settings)
         
