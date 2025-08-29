@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
+		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
+		8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C3148D22E61E3F400C7A0A9 /* ArgumentParser */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		8C71CCAB2DBDDDD3006FB320 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -23,15 +29,49 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		8C3148C72E61E39F00C7A0A9 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		8C3148B62E61E07300C7A0A9 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		8C3148C92E61E39F00C7A0A9 /* sfIconGen-CLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "sfIconGen-CLI"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C71CC992DBDDDD2006FB320 /* macOS Icon Generator App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "macOS Icon Generator App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C71CCAA2DBDDDD3006FB320 /* macOS Icon Generator AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "macOS Icon Generator AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C71CCB42DBDDDD3006FB320 /* macOS Icon Generator AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "macOS Icon Generator AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8C3148DC2E61E4B600C7A0A9 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/IconSettings.swift,
+				Services/IconRenderer.swift,
+			);
+			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		8C3148CA2E61E39F00C7A0A9 /* sfIconGen-CLI */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "sfIconGen-CLI";
+			sourceTree = "<group>";
+		};
 		8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8C3148DC2E61E4B600C7A0A9 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */,
+			);
 			path = "macOS Icon Generator App";
 			sourceTree = "<group>";
 		};
@@ -48,6 +88,16 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8C3148C62E61E39F00C7A0A9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */,
+				8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */,
+				8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8C71CC962DBDDDD2006FB320 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -72,12 +122,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8C3148B32E61E06C00C7A0A9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8C3148B62E61E07300C7A0A9 /* AppKit.framework */,
+				8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		8C71CC902DBDDDD2006FB320 = {
 			isa = PBXGroup;
 			children = (
 				8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */,
 				8C71CCAD2DBDDDD3006FB320 /* macOS Icon Generator AppTests */,
 				8C71CCB72DBDDDD3006FB320 /* macOS Icon Generator AppUITests */,
+				8C3148CA2E61E39F00C7A0A9 /* sfIconGen-CLI */,
+				8C3148B32E61E06C00C7A0A9 /* Frameworks */,
 				8C71CC9A2DBDDDD2006FB320 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +149,7 @@
 				8C71CC992DBDDDD2006FB320 /* macOS Icon Generator App.app */,
 				8C71CCAA2DBDDDD3006FB320 /* macOS Icon Generator AppTests.xctest */,
 				8C71CCB42DBDDDD3006FB320 /* macOS Icon Generator AppUITests.xctest */,
+				8C3148C92E61E39F00C7A0A9 /* sfIconGen-CLI */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +157,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8C3148CD2E61E39F00C7A0A9 /* Build configuration list for PBXNativeTarget "sfIconGen-CLI" */;
+			buildPhases = (
+				8C3148C52E61E39F00C7A0A9 /* Sources */,
+				8C3148C62E61E39F00C7A0A9 /* Frameworks */,
+				8C3148C72E61E39F00C7A0A9 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8C3148CA2E61E39F00C7A0A9 /* sfIconGen-CLI */,
+			);
+			name = "sfIconGen-CLI";
+			packageProductDependencies = (
+				8C3148D22E61E3F400C7A0A9 /* ArgumentParser */,
+			);
+			productName = "sfIconGen-CLI";
+			productReference = 8C3148C92E61E39F00C7A0A9 /* sfIconGen-CLI */;
+			productType = "com.apple.product-type.tool";
+		};
 		8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8C71CCBE2DBDDDD3006FB320 /* Build configuration list for PBXNativeTarget "macOS Icon Generator App" */;
@@ -170,9 +255,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					8C3148C82E61E39F00C7A0A9 = {
+						CreatedOnToolsVersion = 26.0;
+						LastSwiftMigration = 2600;
+					};
 					8C71CC982DBDDDD2006FB320 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -195,6 +284,9 @@
 			);
 			mainGroup = 8C71CC902DBDDDD2006FB320;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8C71CC9A2DBDDDD2006FB320 /* Products */;
 			projectDirPath = "";
@@ -203,6 +295,7 @@
 				8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */,
 				8C71CCA92DBDDDD3006FB320 /* macOS Icon Generator AppTests */,
 				8C71CCB32DBDDDD3006FB320 /* macOS Icon Generator AppUITests */,
+				8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */,
 			);
 		};
 /* End PBXProject section */
@@ -232,6 +325,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8C3148C52E61E39F00C7A0A9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8C71CC952DBDDDD2006FB320 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -269,6 +369,37 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		8C3148CE2E61E39F00C7A0A9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		8C3148CF2E61E39F00C7A0A9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		8C71CCBC2DBDDDD3006FB320 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -528,6 +659,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8C3148CD2E61E39F00C7A0A9 /* Build configuration list for PBXNativeTarget "sfIconGen-CLI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8C3148CE2E61E39F00C7A0A9 /* Debug */,
+				8C3148CF2E61E39F00C7A0A9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		8C71CC942DBDDDD2006FB320 /* Build configuration list for PBXProject "macOS Icon Generator App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -565,6 +705,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8C3148D22E61E3F400C7A0A9 /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8C71CC912DBDDDD2006FB320 /* Project object */;
 }
