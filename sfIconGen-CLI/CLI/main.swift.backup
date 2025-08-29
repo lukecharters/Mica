@@ -1,0 +1,9 @@
+import Foundation
+import ArgumentParser
+
+@main
+struct SFIconGenCLI {
+    static func main() async {
+        await IconGeneratorCommand.main()
+    }
+}

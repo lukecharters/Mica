@@ -1,4 +1,0 @@
-import ArgumentParser
-
-// Entry point - ArgumentParser handles @main internally
-IconGeneratorCommand.main()
