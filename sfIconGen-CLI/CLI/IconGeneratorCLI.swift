@@ -452,6 +452,18 @@ class IconGeneratorCLI {
     private func handleUnexpectedError(_ error: Error, phase: GenerationPhase) {
         print("❌ Unexpected error during \(phase): \(error.localizedDescription)")
     }
+    
+    // MARK: - Testing Support Methods
+    
+    /// Expose buildIconSettings for testing
+    func buildTestSettings(from command: IconGeneratorCommand) throws -> IconSettings {
+        return try buildIconSettings(from: command)
+    }
+    
+    /// Expose resolveOutputPath for testing
+    func testResolveOutputPath(symbolName: String, userPath: String?) throws -> URL {
+        return try resolveOutputPath(symbolName: symbolName, userPath: userPath)
+    }
 }
 
 // MARK: - Enhanced Error Types
