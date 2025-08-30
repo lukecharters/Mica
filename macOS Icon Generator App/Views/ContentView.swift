@@ -396,14 +396,14 @@ struct ContentView_Previews: PreviewProvider {
 
     @MainActor private static var retinaLargeVM: IconViewModel {
         let vm = IconViewModel()
-        vm.iconSettings.symbolName = "square.and.arrow.down.on.square.fill"
+        vm.iconSettings.symbolName = "square"
         vm.iconSettings.useCustomColors = false
         vm.iconSettings.baseColor = .orange
         vm.iconSettings.symbolRenderingMode = .monochrome
         vm.iconSettings.symbolColor = .white
         // Configure for 1024px display in preview (512pt @2x)
-        vm.iconSettings.exportSize = 512
-        vm.iconSettings.exportRetinaSize = true
+        vm.iconSettings.exportSize = 256
+        vm.iconSettings.exportRetinaSize = false
         return vm
     }
 }
