@@ -59,6 +59,13 @@
 			);
 			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
 		};
+		8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Playgrounds/liquid-glass.swift",
+			);
+			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -70,6 +77,7 @@
 		8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */,
 				8C3148DC2E61E4B600C7A0A9 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */,
 			);
 			path = "macOS Icon Generator App";
