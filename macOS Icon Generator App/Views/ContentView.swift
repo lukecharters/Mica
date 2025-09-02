@@ -291,12 +291,13 @@ struct TestableIconPreview: View {
         switch settings.symbolRenderingMode {
         case .monochrome:
             Image(systemName: settings.symbolName)
-                .alignmentGuide(VerticalAlignment.center) { context in
-                    context[VerticalAlignment.center] + layoutSettings.verticalAlignmentOffset
-                }
+//                .alignmentGuide(VerticalAlignment.center) { context in
+//                    context[VerticalAlignment.center] + layoutSettings.verticalAlignmentOffset
+//                }
                 .font(.system(size: layoutSettings.symbolSize, weight: layoutSettings.symbolWeight))
                 .foregroundColor(settings.symbolColor)
                 .symbolRenderingMode(.monochrome)
+                //.offset(x: 0, y: -layoutSettings.verticalAlignmentOffset)
                 .shadow(
                     color: settings.enableSymbolShadow ? .black.opacity(0.35) : .clear,
                     radius: settings.enableSymbolShadow ? layoutSettings.shadowRadius : 0,

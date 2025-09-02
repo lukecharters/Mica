@@ -5,14 +5,17 @@ struct ContentView: View {
     var body: some View {
         VStack {
             ZStack {
-                RoundedRectangle(cornerRadius: 70, style: .continuous)
-                    .inset(by: 25)
+                RoundedRectangle(cornerRadius: 46, style: .continuous)
                     .fill(.blue.gradient)
                     .shadow(radius: 2, x: 0, y: 2.5)
-                    .frame(width: 256, height: 256, alignment: .center)
+                    .frame(width: 206, height: 206)
                 Image(systemName: "folder.fill.badge.plus")
-                    .frame(width: 178, height: 178, alignment: .center)
                     .font(.system(size: 120, weight: .regular))
+//                    .resizable()
+//                    .aspectRatio(contentMode: .fit)
+                    //.alignmentGuide(VerticalAlignment.center) { context in context[VerticalAlignment.center] + 6
+                    //}
+                    .frame(width: 165, height: 165, alignment: .center)
                     .foregroundColor(.white)
                     .shadow(radius: 2, x: 0, y: 2.5)
             }
@@ -39,4 +42,3 @@ struct ContentView: View {
 let view = ContentView()
 
 PlaygroundPage.current.setLiveView(view)
-

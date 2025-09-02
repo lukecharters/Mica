@@ -154,10 +154,14 @@ struct IconContentView: View {
                 switch settings.symbolRenderingMode {
                 case .monochrome:
                     Image(systemName: settings.symbolName)
-                        .font(.system(size: symbolSize, weight: symbolWeight))
+                        .resizable()
+                        .scaledToFit()
+                        .scaleEffect(x: 0.75, y: 0.75, anchor: .center)
+                        .frame(width: 206, height: 206, alignment: .center)
+                        //.font(.system(size: symbolSize, weight: symbolWeight))
                         .foregroundColor(settings.symbolColor)
                         .symbolRenderingMode(.monochrome)
-                        .offset(x: 0, y: -verticalAlignmentOffset)
+                        //.offset(x: 0, y: -verticalAlignmentOffset)
                         .shadow(
                             color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
                             radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,

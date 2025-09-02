@@ -59,21 +59,11 @@
 			);
 			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
 		};
-		8C3149232E629F2E00C7A0A9 /* Exceptions for "sfIconGen-CLI" folder in "sfIconGen-CLI" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				CLI/main.swift.backup,
-			);
-			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8C3148CA2E61E39F00C7A0A9 /* sfIconGen-CLI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				8C3149232E629F2E00C7A0A9 /* Exceptions for "sfIconGen-CLI" folder in "sfIconGen-CLI" target */,
-			);
 			path = "sfIconGen-CLI";
 			sourceTree = "<group>";
 		};
