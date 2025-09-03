@@ -70,17 +70,23 @@ struct Solution1_BasicResizable: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(.blue.gradient)
-                .shadow(radius: 1, x: 0, y: 1.25)
-                .frame(width: 103, height: 103)
+//            RoundedRectangle(cornerRadius: 23, style: .continuous)
+//                .fill(.blue.gradient)
+//                .shadow(radius: 1, x: 0, y: 1.25)
+//                .frame(width: 103, height: 103)
             
             Image(systemName: symbolName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
+                .font(.system(size: 60, weight: .regular))
+                //.resizable()
                 .frame(width: 82.5, height: 82.5) // 80% of 103
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
+                .aspectRatio(contentMode: .fit)
+                .border(.red, width: 1)
+                .background(RoundedRectangle(cornerRadius: 23, style: .continuous)
+                    .fill(.blue.gradient)
+                    .shadow(radius: 1, x: 0, y: 1.25)
+                    .frame(width: 103, height: 103))
         }
     }
 }
@@ -112,6 +118,7 @@ struct Solution2_FontBased: View {
                 .font(.system(size: 60 * fontSizeMultiplier, weight: .regular))
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
+                .border(.red, width: 1)
         }
     }
 }
@@ -134,6 +141,7 @@ struct Solution3_ColorClearOverlay: View {
                         .aspectRatio(contentMode: .fit)
                         .foregroundColor(.white)
                         .shadow(radius: 1, x: 0, y: 1.25)
+                        .border(.red, width: 1)
                 )
         }
     }
@@ -158,6 +166,7 @@ struct Solution4_WithOffset: View {
                         .foregroundColor(.white)
                         .shadow(radius: 1, x: 0, y: 1.25)
                         .offset(x: 2)
+                        .border(.red, width: 1)
                 )
         }
     }
@@ -179,6 +188,7 @@ struct Solution5_MinimumScaleFactor: View {
                 .frame(width: 82.5, height: 82.5)
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
+                .border(.red, width: 1)
         }
     }
 }
@@ -199,18 +209,21 @@ struct Solution6_ViewThatFits: View {
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
                     .shadow(radius: 1, x: 0, y: 1.25)
+                    .border(.red, width: 1)
                 
                 Image(systemName: symbolName)
                     .font(.system(size: 60, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
                     .shadow(radius: 1, x: 0, y: 1.25)
+                    .border(.red, width: 1)
                 
                 Image(systemName: symbolName)
                     .font(.system(size: 50, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
                     .shadow(radius: 1, x: 0, y: 1.25)
+                    .border(.red, width: 1)
             }
         }
     }
@@ -238,6 +251,7 @@ struct Solution7_PreferenceKey: View {
                             .preference(key: SizePreferenceKey.self, value: geometry.size)
                     }
                 )
+                .border(.red, width: 1)
                 .onPreferenceChange(SizePreferenceKey.self) { size in
                     if size.width > 82.5 || size.height > 82.5 {
                         let scaleFactor = min(82.5 / size.width, 82.5 / size.height)
@@ -289,6 +303,7 @@ struct Solution8_TwoPassRendering: View {
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 82.5, height: 82.5)
+                .border(.red, width: 1)
         }
     }
 }
@@ -307,6 +322,7 @@ struct Solution9_CustomModifier: View {
                 .modifier(AdaptiveSymbolSize(targetSize: 67.5, maxFrame: 82.5))
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
+                .border(.red, width: 1)
         }
     }
 }

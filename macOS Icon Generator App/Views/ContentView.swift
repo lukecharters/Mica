@@ -31,6 +31,8 @@ struct ContentView: View {
                         .help("Enable to adjust layout constants in real-time")
                 }
 
+                
+
                 SFSymbolSection(iconSettings: $viewModel.iconSettings)
 
                 BackgroundColorsSection(iconSettings: $viewModel.iconSettings,
