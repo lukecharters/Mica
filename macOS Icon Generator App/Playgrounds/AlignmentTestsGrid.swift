@@ -5,7 +5,6 @@
 //  Created by Luke Charters on 2/9/2025.
 //
 
-
 import SwiftUI
 
 // MARK: - PreferenceKey for Solution
@@ -52,9 +51,9 @@ struct AdaptiveFontSize: ViewModifier {
             .background(
                 GeometryReader { geometry in
                     Color.clear
-                        .onChange(of: geometry.size) { newSize in
-                            if !hasAdjusted && (newSize.width > maxWidth || newSize.height > maxHeight) {
-                                let scaleFactor = min(maxWidth / newSize.width, maxHeight / newSize.height)
+                        .onChange(of: geometry.size) { oldValue, newValue in
+                            if !hasAdjusted && (newValue.width > maxWidth || newValue.height > maxHeight) {
+                                let scaleFactor = min(maxWidth / newValue.width, maxHeight / newValue.height)
                                 fontSize *= scaleFactor * 0.95
                                 hasAdjusted = true
                             }
@@ -64,35 +63,56 @@ struct AdaptiveFontSize: ViewModifier {
     }
 }
 
+// Conditional debug border modifier
+struct ConditionalDebugBorder1: ViewModifier {
+    let showBorder: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .border(showBorder ? .red : .clear, width: 1)
+    }
+}
+
 // MARK: - Individual Solution Views
 struct Solution1_BasicResizable: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var body: some View {
         ZStack {
-//            RoundedRectangle(cornerRadius: 23, style: .continuous)
-//                .fill(.blue.gradient)
-//                .shadow(radius: 1, x: 0, y: 1.25)
-//                .frame(width: 103, height: 103)
+            RoundedRectangle(cornerRadius: 23, style: .continuous)
+                .fill(.blue.gradient)
+                .shadow(radius: 1, x: 0, y: 1.25)
+                .frame(width: 103, height: 103)
+            
+
             
             Image(systemName: symbolName)
                 .font(.system(size: 60, weight: .regular))
-                //.resizable()
                 .frame(width: 82.5, height: 82.5) // 80% of 103
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .aspectRatio(contentMode: .fit)
-                .border(.red, width: 1)
-                .background(RoundedRectangle(cornerRadius: 23, style: .continuous)
-                    .fill(.blue.gradient)
-                    .shadow(radius: 1, x: 0, y: 1.25)
-                    .frame(width: 103, height: 103))
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
 
 struct Solution2_FontBased: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var fontSizeMultiplier: CGFloat {
         switch symbolName {
@@ -114,17 +134,30 @@ struct Solution2_FontBased: View {
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
             
+            
             Image(systemName: symbolName)
                 .font(.system(size: 60 * fontSizeMultiplier, weight: .regular))
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
-                .border(.red, width: 1)
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
 
 struct Solution3_ColorClearOverlay: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var body: some View {
         ZStack {
@@ -132,6 +165,8 @@ struct Solution3_ColorClearOverlay: View {
                 .fill(.blue.gradient)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
+            
+
             
             Color.clear
                 .frame(width: 82.5, height: 82.5)
@@ -141,14 +176,25 @@ struct Solution3_ColorClearOverlay: View {
                         .aspectRatio(contentMode: .fit)
                         .foregroundColor(.white)
                         .shadow(radius: 1, x: 0, y: 1.25)
-                        .border(.red, width: 1)
+                        .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 )
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
 
 struct Solution4_WithOffset: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var body: some View {
         ZStack {
@@ -156,6 +202,8 @@ struct Solution4_WithOffset: View {
                 .fill(.blue.gradient)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
+            
+            
             
             Color.clear
                 .frame(width: 82.5, height: 82.5)
@@ -166,14 +214,25 @@ struct Solution4_WithOffset: View {
                         .foregroundColor(.white)
                         .shadow(radius: 1, x: 0, y: 1.25)
                         .offset(x: 2)
-                        .border(.red, width: 1)
+                        .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 )
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
 
 struct Solution5_MinimumScaleFactor: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var body: some View {
         ZStack {
@@ -188,13 +247,26 @@ struct Solution5_MinimumScaleFactor: View {
                 .frame(width: 82.5, height: 82.5)
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
-                .border(.red, width: 1)
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
+        
     }
 }
 
 struct Solution6_ViewThatFits: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var body: some View {
         ZStack {
@@ -203,27 +275,38 @@ struct Solution6_ViewThatFits: View {
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
             
+
+            
             ViewThatFits {
                 Image(systemName: symbolName)
                     .font(.system(size: 67.5, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
                     .shadow(radius: 1, x: 0, y: 1.25)
-                    .border(.red, width: 1)
+                    .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 
                 Image(systemName: symbolName)
                     .font(.system(size: 60, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
                     .shadow(radius: 1, x: 0, y: 1.25)
-                    .border(.red, width: 1)
+                    .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 
                 Image(systemName: symbolName)
                     .font(.system(size: 50, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
                     .shadow(radius: 1, x: 0, y: 1.25)
-                    .border(.red, width: 1)
+                    .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            }
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
             }
         }
     }
@@ -231,6 +314,8 @@ struct Solution6_ViewThatFits: View {
 
 struct Solution7_PreferenceKey: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     @State private var symbolSize: CGSize = .zero
     @State private var fontSize: CGFloat = 67.5
     
@@ -240,6 +325,8 @@ struct Solution7_PreferenceKey: View {
                 .fill(.blue.gradient)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
+            
+
             
             Image(systemName: symbolName)
                 .font(.system(size: fontSize, weight: .regular))
@@ -251,7 +338,7 @@ struct Solution7_PreferenceKey: View {
                             .preference(key: SizePreferenceKey.self, value: geometry.size)
                     }
                 )
-                .border(.red, width: 1)
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 .onPreferenceChange(SizePreferenceKey.self) { size in
                     if size.width > 82.5 || size.height > 82.5 {
                         let scaleFactor = min(82.5 / size.width, 82.5 / size.height)
@@ -259,12 +346,24 @@ struct Solution7_PreferenceKey: View {
                     }
                 }
                 .frame(maxWidth: 82.5, maxHeight: 82.5)
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
 
 struct Solution8_TwoPassRendering: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     @State private var idealFontSize: CGFloat = 67.5
     @State private var measuredSize: CGSize = .zero
     
@@ -283,6 +382,8 @@ struct Solution8_TwoPassRendering: View {
                 .fill(.blue.gradient)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
+            
+
             
             // Invisible measuring pass
             Image(systemName: symbolName)
@@ -303,13 +404,25 @@ struct Solution8_TwoPassRendering: View {
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 82.5, height: 82.5)
-                .border(.red, width: 1)
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
 
 struct Solution9_CustomModifier: View {
     let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
     
     var body: some View {
         ZStack {
@@ -319,10 +432,20 @@ struct Solution9_CustomModifier: View {
                 .frame(width: 103, height: 103)
             
             Image(systemName: symbolName)
-                .modifier(AdaptiveSymbolSize(targetSize: 67.5, maxFrame: 82.5))
+                .modifier(AdaptiveSymbolSize(targetSize: 63, maxFrame: 80))
                 .foregroundColor(.white)
                 .shadow(radius: 1, x: 0, y: 1.25)
-                .border(.red, width: 1)
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
@@ -331,13 +454,15 @@ struct Solution9_CustomModifier: View {
 struct AllSolutionsGrid: View {
     let testSymbols = ["folder.fill.badge.plus", "square", "gearshape", "star.fill"]
     @State private var selectedSymbol = "folder.fill.badge.plus"
+    @State private var showGridOverlay: Bool = true
+    @State private var showDebugBorders: Bool = false
     
     let columns = [
         GridItem(.adaptive(minimum: 150), spacing: 20)
     ]
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 10) {
             // Header
             VStack(spacing: 10) {
                 Text("SF Symbol Sizing Solutions")
@@ -345,22 +470,36 @@ struct AllSolutionsGrid: View {
                     .fontWeight(.bold)
                 
                 // Symbol Picker
-                Picker("Test Symbol", selection: $selectedSymbol) {
+                Picker("", selection: $selectedSymbol) {
                     ForEach(testSymbols, id: \.self) { symbol in
                         Text(symbol).tag(symbol)
+                        .scaledToFit()
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(maxWidth: 600)
+                
+                // Controls
+                HStack(spacing: 16) {
+                    Toggle(isOn: $showGridOverlay) {
+                        Text("Grid Overlay")
+                    }
+                    .toggleStyle(.switch)
+                    
+                    Toggle(isOn: $showDebugBorders) {
+                        Text("Debug Borders")
+                    }
+                    .toggleStyle(.switch)
+                }
             }
             .padding()
             
             // Scrollable Grid
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 30) {
+                LazyVGrid(columns: columns, spacing: 15) {
                     // Solution 1
                     VStack(spacing: 8) {
-                        Solution1_BasicResizable(symbolName: selectedSymbol)
+                        Solution1_BasicResizable(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("Basic Resizable")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -371,7 +510,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 2
                     VStack(spacing: 8) {
-                        Solution2_FontBased(symbolName: selectedSymbol)
+                        Solution2_FontBased(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("Font with Multiplier")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -382,7 +521,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 3
                     VStack(spacing: 8) {
-                        Solution3_ColorClearOverlay(symbolName: selectedSymbol)
+                        Solution3_ColorClearOverlay(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("Clear Overlay")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -393,7 +532,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 4
                     VStack(spacing: 8) {
-                        Solution4_WithOffset(symbolName: selectedSymbol)
+                        Solution4_WithOffset(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("With Offset")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -404,7 +543,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 5
                     VStack(spacing: 8) {
-                        Solution5_MinimumScaleFactor(symbolName: selectedSymbol)
+                        Solution5_MinimumScaleFactor(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("Min Scale Factor")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -415,7 +554,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 6
                     VStack(spacing: 8) {
-                        Solution6_ViewThatFits(symbolName: selectedSymbol)
+                        Solution6_ViewThatFits(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("ViewThatFits")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -426,7 +565,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 7
                     VStack(spacing: 8) {
-                        Solution7_PreferenceKey(symbolName: selectedSymbol)
+                        Solution7_PreferenceKey(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("PreferenceKey")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -437,7 +576,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 8
                     VStack(spacing: 8) {
-                        Solution8_TwoPassRendering(symbolName: selectedSymbol)
+                        Solution8_TwoPassRendering(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("Two-Pass Render")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -448,7 +587,7 @@ struct AllSolutionsGrid: View {
                     
                     // Solution 9
                     VStack(spacing: 8) {
-                        Solution9_CustomModifier(symbolName: selectedSymbol)
+                        Solution9_CustomModifier(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
                         Text("Custom Modifier")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -469,7 +608,7 @@ struct AllSolutionsGrid: View {
 struct GridView: View {
     var body: some View {
         AllSolutionsGrid()
-            .frame(minWidth: 600, minHeight: 800)
+            .frame(minWidth: 400, minHeight: 700)
     }
 }
 
