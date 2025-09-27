@@ -74,6 +74,35 @@ struct ConditionalDebugBorder1: ViewModifier {
 }
 
 // MARK: - Individual Solution Views
+struct CFBundleIcon_Original: View {
+    let symbolName: String
+    let showGridOverlay: Bool
+    let showDebugBorders: Bool
+    
+    var body: some View {
+        ZStack {
+            
+            Image("CFBundle-\(symbolName)")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 128, height: 128)
+                .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+            
+            // SVG Grid Overlay from Asset Catalog
+            if showGridOverlay {
+                Image("App Icon Template SVG")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .opacity(0.3)
+                    .frame(width: 103, height: 103)
+                    .allowsHitTesting(false)
+            }
+            
+
+        }
+    }
+}
+
 struct Solution1_BasicResizable: View {
     let symbolName: String
     let showGridOverlay: Bool
@@ -86,13 +115,11 @@ struct Solution1_BasicResizable: View {
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
             
-
-            
             Image(systemName: symbolName)
                 .font(.system(size: 60, weight: .regular))
                 .frame(width: 82.5, height: 82.5) // 80% of 103
                 .foregroundColor(.white)
-                .shadow(radius: 1, x: 0, y: 1.25)
+                //.shadow(radius: 1, x: 0, y: 1.25)
                 .aspectRatio(contentMode: .fit)
                 .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
             
@@ -114,31 +141,33 @@ struct Solution2_FontBased: View {
     let showGridOverlay: Bool
     let showDebugBorders: Bool
     
-    var fontSizeMultiplier: CGFloat {
-        switch symbolName {
-        case let name where name.contains("square"),
-             let name where name.contains("circle"),
-             let name where name.contains("gearshape"):
-            return 1.3
-        case let name where name.contains("folder"):
-            return 1.0
-        default:
-            return 1.15
-        }
-    }
+    var Solution2_iconSize: CGFloat = 103
+    
+//    var fontSizeMultiplier: CGFloat {
+//        switch symbolName {
+//        case let name where name.contains("square"),
+//             let name where name.contains("circle"),
+//             let name where name.contains("gearshape"):
+//            return 1.3
+//        case let name where name.contains("folder"):
+//            return 1.0
+//        default:
+//            return 1.15
+//        }
+//    }
     
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 23, style: .continuous)
                 .fill(.blue.gradient)
                 .shadow(radius: 1, x: 0, y: 1.25)
-                .frame(width: 103, height: 103)
+                .frame(width: Solution2_iconSize, height: Solution2_iconSize)
             
             
             Image(systemName: symbolName)
-                .font(.system(size: 60 * fontSizeMultiplier, weight: .regular))
+                .font(.system(size: Solution2_iconSize * 0.55, weight: .regular))
                 .foregroundColor(.white)
-                .shadow(radius: 1, x: 0, y: 1.25)
+                //.shadow(radius: 1, x: 0, y: 1.25)
                 .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
             
             // SVG Grid Overlay from Asset Catalog
@@ -175,7 +204,8 @@ struct Solution3_ColorClearOverlay: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .foregroundColor(.white)
-                        .shadow(radius: 1, x: 0, y: 1.25)
+                        //.imageScale(.small)
+                        //.shadow(radius: 1, x: 0, y: 1.25)
                         .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 )
             // SVG Grid Overlay from Asset Catalog
@@ -191,43 +221,43 @@ struct Solution3_ColorClearOverlay: View {
     }
 }
 
-struct Solution4_WithOffset: View {
-    let symbolName: String
-    let showGridOverlay: Bool
-    let showDebugBorders: Bool
-    
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(.blue.gradient)
-                .shadow(radius: 1, x: 0, y: 1.25)
-                .frame(width: 103, height: 103)
-            
-            
-            
-            Color.clear
-                .frame(width: 82.5, height: 82.5)
-                .overlay(
-                    Image(systemName: symbolName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .foregroundColor(.white)
-                        .shadow(radius: 1, x: 0, y: 1.25)
-                        .offset(x: 2)
-                        .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
-                )
-            // SVG Grid Overlay from Asset Catalog
-            if showGridOverlay {
-                Image("App Icon Template SVG")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .opacity(0.3)
-                    .frame(width: 103, height: 103)
-                    .allowsHitTesting(false)
-            }
-        }
-    }
-}
+//struct Solution4_WithOffset: View {
+//    let symbolName: String
+//    let showGridOverlay: Bool
+//    let showDebugBorders: Bool
+//    
+//    var body: some View {
+//        ZStack {
+//            RoundedRectangle(cornerRadius: 23, style: .continuous)
+//                .fill(.blue.gradient)
+//                .shadow(radius: 1, x: 0, y: 1.25)
+//                .frame(width: 103, height: 103)
+//            
+//            
+//            
+//            Color.clear
+//                .frame(width: 82.5, height: 82.5)
+//                .overlay(
+//                    Image(systemName: symbolName)
+//                        .resizable()
+//                        .aspectRatio(contentMode: .fit)
+//                        .foregroundColor(.white)
+//                        .shadow(radius: 1, x: 0, y: 1.25)
+//                        .offset(x: 2)
+//                        .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
+//                )
+//            // SVG Grid Overlay from Asset Catalog
+//            if showGridOverlay {
+//                Image("App Icon Template SVG")
+//                    .resizable()
+//                    .aspectRatio(contentMode: .fit)
+//                    .opacity(0.3)
+//                    .frame(width: 103, height: 103)
+//                    .allowsHitTesting(false)
+//            }
+//        }
+//    }
+//}
 
 struct Solution5_MinimumScaleFactor: View {
     let symbolName: String
@@ -246,7 +276,7 @@ struct Solution5_MinimumScaleFactor: View {
                 .minimumScaleFactor(0.5)
                 .frame(width: 82.5, height: 82.5)
                 .foregroundColor(.white)
-                .shadow(radius: 1, x: 0, y: 1.25)
+                //.shadow(radius: 1, x: 0, y: 1.25)
                 .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
             
             // SVG Grid Overlay from Asset Catalog
@@ -282,21 +312,21 @@ struct Solution6_ViewThatFits: View {
                     .font(.system(size: 67.5, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
-                    .shadow(radius: 1, x: 0, y: 1.25)
+                    //.shadow(radius: 1, x: 0, y: 1.25)
                     .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 
                 Image(systemName: symbolName)
                     .font(.system(size: 60, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
-                    .shadow(radius: 1, x: 0, y: 1.25)
+                    //.shadow(radius: 1, x: 0, y: 1.25)
                     .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
                 
                 Image(systemName: symbolName)
                     .font(.system(size: 50, weight: .regular))
                     .frame(maxWidth: 82.5, maxHeight: 82.5)
                     .foregroundColor(.white)
-                    .shadow(radius: 1, x: 0, y: 1.25)
+                    //.shadow(radius: 1, x: 0, y: 1.25)
                     .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
             }
             // SVG Grid Overlay from Asset Catalog
@@ -331,7 +361,7 @@ struct Solution7_PreferenceKey: View {
             Image(systemName: symbolName)
                 .font(.system(size: fontSize, weight: .regular))
                 .foregroundColor(.white)
-                .shadow(radius: 1, x: 0, y: 1.25)
+                //.shadow(radius: 1, x: 0, y: 1.25)
                 .background(
                     GeometryReader { geometry in
                         Color.clear
@@ -402,7 +432,7 @@ struct Solution8_TwoPassRendering: View {
             Image(systemName: symbolName)
                 .font(.system(size: calculatedFontSize, weight: .regular))
                 .foregroundColor(.white)
-                .shadow(radius: 1, x: 0, y: 1.25)
+                //.shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 82.5, height: 82.5)
                 .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
             
@@ -432,9 +462,9 @@ struct Solution9_CustomModifier: View {
                 .frame(width: 103, height: 103)
             
             Image(systemName: symbolName)
-                .modifier(AdaptiveSymbolSize(targetSize: 63, maxFrame: 80))
+                .modifier(AdaptiveSymbolSize(targetSize: 63, maxFrame: 78))
                 .foregroundColor(.white)
-                .shadow(radius: 1, x: 0, y: 1.25)
+                //.shadow(radius: 1, x: 0, y: 1.25)
                 .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
             
             // SVG Grid Overlay from Asset Catalog
@@ -452,7 +482,7 @@ struct Solution9_CustomModifier: View {
 
 // MARK: - Main Grid View
 struct AllSolutionsGrid: View {
-    let testSymbols = ["folder.fill.badge.plus", "square", "gearshape", "star.fill"]
+    let testSymbols = ["folder.fill.badge.plus", "square.fill", "gearshape.fill", "person.crop.circle.badge.plus", "bell.and.waves.left.and.right.fill"]
     @State private var selectedSymbol = "folder.fill.badge.plus"
     @State private var showGridOverlay: Bool = true
     @State private var showDebugBorders: Bool = false
@@ -476,7 +506,7 @@ struct AllSolutionsGrid: View {
                         .scaledToFit()
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
+                .pickerStyle(MenuPickerStyle())
                 .frame(maxWidth: 600)
                 
                 // Controls
@@ -497,6 +527,19 @@ struct AllSolutionsGrid: View {
             // Scrollable Grid
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 15) {
+                    
+                    
+                    VStack(spacing: 8) {
+                    CFBundleIcon_Original(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
+                        Text("Original Appex Icon")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        Text("CFBundleIcon")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    
                     // Solution 1
                     VStack(spacing: 8) {
                         Solution1_BasicResizable(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
@@ -531,15 +574,15 @@ struct AllSolutionsGrid: View {
                     }
                     
                     // Solution 4
-                    VStack(spacing: 8) {
-                        Solution4_WithOffset(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
-                        Text("With Offset")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                        Text("Manual x: 2 offset")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
+//                    VStack(spacing: 8) {
+//                        Solution4_WithOffset(symbolName: selectedSymbol, showGridOverlay: showGridOverlay, showDebugBorders: showDebugBorders)
+//                        Text("With Offset")
+//                            .font(.caption)
+//                            .fontWeight(.medium)
+//                        Text("Manual x: 2 offset")
+//                            .font(.caption2)
+//                            .foregroundColor(.secondary)
+//                    }
                     
                     // Solution 5
                     VStack(spacing: 8) {
