@@ -64,3 +64,7 @@ fastlane/test_output
 
 *.DS_Store
 
+# Github Copilot
+.github/
+.vscode/
+.specify/
