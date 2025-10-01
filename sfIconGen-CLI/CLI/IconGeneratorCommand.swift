@@ -18,8 +18,13 @@ struct IconGeneratorCommand: AsyncParsableCommand {
               sfIconGen-CLI star.fill
               sfIconGen-CLI folder.fill -o ~/Desktop/folder-icon.png
             
-            Custom colors and rendering:
+            Custom sizes (16-1024 pixels):
+              sfIconGen-CLI heart.fill --size 450
+              sfIconGen-CLI app.fill --size 16   # Minimum size
+              sfIconGen-CLI app.fill --size 1024 # Maximum size
               sfIconGen-CLI heart.fill --base-color pink --size 512
+              
+            Custom colors and rendering:
               sfIconGen-CLI shield.fill --rendering-mode hierarchical --hierarchical-color white
               
             Advanced palette mode:
@@ -61,18 +66,24 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     @Option(
         name: [.customLong("size"), .customShort("s")], 
         help: ArgumentHelp(
-            "Export size in pixels",
-            discussion: "Standard icon sizes: 128, 256, 512, 1024",
+            "Export size in pixels (16-1024)",
+            discussion: "Specify any integer size between 16 and 1024 pixels. Common sizes: 128, 256, 512, 1024.",
             valueName: "pixels"
         ),
         transform: { size in
             guard let intSize = Int(size) else {
-                throw ValidationError("Size must be a number")
+                throw ValidationError("Size must be a whole number (no decimals).")
             }
-            let validSizes = [128, 256, 512, 1024]
-            guard validSizes.contains(intSize) else {
-                throw ValidationError("Size must be one of: \(validSizes.map(String.init).joined(separator: ", "))")
+            
+            let minSize = Int(IconSettings.minExportSize)
+            let maxSize = Int(IconSettings.maxExportSize)
+            
+            guard (minSize...maxSize).contains(intSize) else {
+                throw ValidationError(
+                    "Size must be between \(minSize) and \(maxSize) pixels. You provided: \(intSize)"
+                )
             }
+            
             return intSize
         }
     )

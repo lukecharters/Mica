@@ -119,3 +119,13 @@ enum BadgePosition: String, CaseIterable, Identifiable {
     
     var id: String { rawValue }
 }
+
+extension IconSettings {
+    static let minExportSize: CGFloat = 16
+    static let maxExportSize: CGFloat = 1024
+    static let defaultExportSize: CGFloat = 256
+    
+    var isExportSizeValid: Bool {
+        (Self.minExportSize...Self.maxExportSize).contains(exportSize)
+    }
+}

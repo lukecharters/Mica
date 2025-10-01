@@ -41,6 +41,13 @@
 			remoteGlobalIDString = 8C71CC982DBDDDD2006FB320;
 			remoteInfo = "macOS Icon Generator App";
 		};
+		8C75F5852E8D5AC4008FB893 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8C71CC982DBDDDD2006FB320;
+			remoteInfo = "macOS Icon Generator App";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -65,6 +72,7 @@
 		8C71CC992DBDDDD2006FB320 /* macOS Icon Generator App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "macOS Icon Generator App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C71CCAA2DBDDDD3006FB320 /* macOS Icon Generator AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "macOS Icon Generator AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C71CCB42DBDDDD3006FB320 /* macOS Icon Generator AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "macOS Icon Generator AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C75F5812E8D5AC4008FB893 /* sfIconGen-CLI Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "sfIconGen-CLI Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -86,7 +94,15 @@
 		8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Playgrounds/AlignmentTestsGrid.swift,
+				Playgrounds/AlignmentTestsGrid2.swift,
+				"Playgrounds/icon-size-alignment-tests 2.swift",
+				"Playgrounds/icon-size-alignment-tests.swift",
 				"Playgrounds/liquid-glass.swift",
+				Playgrounds/LiquidGlassTestGrid.swift,
+				Playgrounds/Solution1View.swift,
+				Playgrounds/SymbolCheatsheetView.swift,
+				Playgrounds/SymbolGalleryView.swift,
 			);
 			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
 		};
@@ -131,6 +147,11 @@
 		8C71CCB72DBDDDD3006FB320 /* macOS Icon Generator AppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "macOS Icon Generator AppUITests";
+			sourceTree = "<group>";
+		};
+		8C75F5822E8D5AC4008FB893 /* sfIconGen-CLI Tests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "sfIconGen-CLI Tests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -188,6 +209,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8C75F57E2E8D5AC4008FB893 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -210,6 +238,7 @@
 				8C50A4BD2E75A891000ED391 /* IconMakerApp */,
 				8C50A4CB2E75A893000ED391 /* IconMakerAppTests */,
 				8C50A4D52E75A893000ED391 /* IconMakerAppUITests */,
+				8C75F5822E8D5AC4008FB893 /* sfIconGen-CLI Tests */,
 				8C3148B32E61E06C00C7A0A9 /* Frameworks */,
 				8C71CC9A2DBDDDD2006FB320 /* Products */,
 			);
@@ -225,6 +254,7 @@
 				8C50A4BC2E75A891000ED391 /* IconMakerApp.app */,
 				8C50A4C82E75A893000ED391 /* IconMakerAppTests.xctest */,
 				8C50A4D22E75A893000ED391 /* IconMakerAppUITests.xctest */,
+				8C75F5812E8D5AC4008FB893 /* sfIconGen-CLI Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -391,6 +421,29 @@
 			productReference = 8C71CCB42DBDDDD3006FB320 /* macOS Icon Generator AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		8C75F5802E8D5AC4008FB893 /* sfIconGen-CLI Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8C75F5872E8D5AC4008FB893 /* Build configuration list for PBXNativeTarget "sfIconGen-CLI Tests" */;
+			buildPhases = (
+				8C75F57D2E8D5AC4008FB893 /* Sources */,
+				8C75F57E2E8D5AC4008FB893 /* Frameworks */,
+				8C75F57F2E8D5AC4008FB893 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8C75F5862E8D5AC4008FB893 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				8C75F5822E8D5AC4008FB893 /* sfIconGen-CLI Tests */,
+			);
+			name = "sfIconGen-CLI Tests";
+			packageProductDependencies = (
+			);
+			productName = "sfIconGen-CLI Tests";
+			productReference = 8C75F5812E8D5AC4008FB893 /* sfIconGen-CLI Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -399,7 +452,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					8C3148C82E61E39F00C7A0A9 = {
 						CreatedOnToolsVersion = 26.0;
@@ -425,6 +478,10 @@
 					};
 					8C71CCB32DBDDDD3006FB320 = {
 						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 8C71CC982DBDDDD2006FB320;
+					};
+					8C75F5802E8D5AC4008FB893 = {
+						CreatedOnToolsVersion = 26.0.1;
 						TestTargetID = 8C71CC982DBDDDD2006FB320;
 					};
 				};
@@ -453,6 +510,7 @@
 				8C50A4BB2E75A891000ED391 /* IconMakerApp */,
 				8C50A4C72E75A893000ED391 /* IconMakerAppTests */,
 				8C50A4D12E75A893000ED391 /* IconMakerAppUITests */,
+				8C75F5802E8D5AC4008FB893 /* sfIconGen-CLI Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -494,6 +552,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		8C71CCB22DBDDDD3006FB320 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C75F57F2E8D5AC4008FB893 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -552,6 +617,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8C75F57D2E8D5AC4008FB893 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -575,6 +647,11 @@
 			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
 			targetProxy = 8C71CCB52DBDDDD3006FB320 /* PBXContainerItemProxy */;
 		};
+		8C75F5862E8D5AC4008FB893 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
+			targetProxy = 8C75F5852E8D5AC4008FB893 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -584,7 +661,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.sficongen-cli";
@@ -602,7 +679,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.sficongen-cli";
@@ -621,7 +698,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -657,7 +733,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -692,7 +767,6 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
@@ -715,7 +789,6 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
@@ -738,7 +811,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
@@ -760,7 +832,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
@@ -812,7 +883,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -836,6 +909,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -875,7 +949,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = SFUTCBA5VH;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -892,6 +968,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -907,10 +984,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"macOS Icon Generator App/Preview Content\"";
 				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "macOS-Icon-Generator-App-Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -918,7 +999,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -939,10 +1020,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"macOS Icon Generator App/Preview Content\"";
 				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "macOS-Icon-Generator-App-Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -950,7 +1035,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -967,9 +1052,9 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-AppTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -986,9 +1071,9 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-AppTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1004,9 +1089,9 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-AppUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1022,15 +1107,57 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-AppUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TEST_TARGET_NAME = "macOS Icon Generator App";
+			};
+			name = Release;
+		};
+		8C75F5882E8D5AC4008FB893 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.sfIconGen-CLI-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/macOS Icon Generator App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/macOS Icon Generator App";
+			};
+			name = Debug;
+		};
+		8C75F5892E8D5AC4008FB893 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SFUTCBA5VH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.sfIconGen-CLI-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/macOS Icon Generator App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/macOS Icon Generator App";
 			};
 			name = Release;
 		};
@@ -1105,6 +1232,15 @@
 			buildConfigurations = (
 				8C71CCC52DBDDDD3006FB320 /* Debug */,
 				8C71CCC62DBDDDD3006FB320 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8C75F5872E8D5AC4008FB893 /* Build configuration list for PBXNativeTarget "sfIconGen-CLI Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8C75F5882E8D5AC4008FB893 /* Debug */,
+				8C75F5892E8D5AC4008FB893 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

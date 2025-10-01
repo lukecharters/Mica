@@ -16,9 +16,6 @@ struct ContentView: View {
     // Available preset colors (centralized)
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
     
-    // Predefined size options (centralized)
-    let sizeOptions: [(label: String, size: CGFloat)] = OptionsCatalog.sizeOptions
-    
     // Calculate actual export size including retina multiplier
     private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
     
@@ -50,8 +47,7 @@ struct ContentView: View {
                 }
 
                 ExportOptionsSection(iconSettings: $viewModel.iconSettings,
-                                     showExportDialog: $viewModel.showExportDialog,
-                                     sizeOptions: sizeOptions)
+                                     showExportDialog: $viewModel.showExportDialog)
             }
             .formStyle(GroupedFormStyle())
             .padding()

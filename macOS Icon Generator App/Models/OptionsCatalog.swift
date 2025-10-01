@@ -21,10 +21,5 @@ struct OptionsCatalog {
         ("Yellow", .yellow)
     ]
 
-    static let sizeOptions: [(label: String, size: CGFloat)] = [
-        ("128px", 128),
-        ("256px", 256),
-        ("512px", 512),
-        ("1024px", 1024)
-    ]
+    // [REMOVED] - Size now controlled by slider, no presets needed
 }
