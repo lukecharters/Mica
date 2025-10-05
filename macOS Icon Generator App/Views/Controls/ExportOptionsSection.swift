@@ -5,44 +5,19 @@ struct ExportOptionsSection: View {
     @Binding var iconSettings: IconSettings
     @Binding var showExportDialog: Bool
     
+    // MARK: - State Properties
+    
     @State private var sliderValue: Double = 256.0
     @State private var textFieldValue: String = "256"
     @State private var showValidationError: Bool = false
     @State private var validationMessage: String = ""
-
+    
+    // MARK: - Body
+    
     var body: some View {
         Section(header: Text("Export Options")) {
-            // Size Slider Control
+            // Size Control (Slider + Text Field)
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Size")
-                        .font(.headline)
-                    Spacer()
-                    Text("\(Int(sliderValue))px")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Slider(
-                    value: $sliderValue,
-                    in: Double(IconSettings.minExportSize)...Double(IconSettings.maxExportSize),
-                    step: 1.0
-                ) {
-                    Text("Size")
-                } minimumValueLabel: {
-                    Text("\(Int(IconSettings.minExportSize))")
-                } maximumValueLabel: {
-                    Text("\(Int(IconSettings.maxExportSize))")
-                }
-                .onChange(of: sliderValue) { _, newValue in
-                    iconSettings.exportSize = CGFloat(newValue)
-                    textFieldValue = "\(Int(newValue))"
-                }
-                .onAppear {
-                    sliderValue = Double(iconSettings.exportSize)
-                    textFieldValue = "\(Int(iconSettings.exportSize))"
-                }
-                
                 // Text Field for precise input
                 HStack {
                     TextField("Size", text: $textFieldValue)
@@ -52,12 +27,11 @@ struct ExportOptionsSection: View {
                             validateAndApplyTextInput()
                         }
                     
-                    Text("pixels")
-                        .font(.caption)
+                    Text("px")
                         .foregroundColor(.secondary)
                 }
                 
-                // Validation message
+                // Validation message (auto-dismisses after 3 seconds)
                 if showValidationError {
                     Text(validationMessage)
                         .font(.caption)
@@ -70,23 +44,44 @@ struct ExportOptionsSection: View {
                             }
                         }
                 }
+                
+                // Slider for continuous size selection (16-1024 px)
+                Slider(
+                    value: $sliderValue,
+                    in: Double(IconSettings.minExportSize)...Double(IconSettings.maxExportSize)
+                )
+                .onChange(of: sliderValue) { _, newValue in
+                    iconSettings.exportSize = CGFloat(newValue)
+                    textFieldValue = "\(Int(newValue))"
+                }
+                .onAppear {
+                    sliderValue = Double(iconSettings.exportSize)
+                    textFieldValue = "\(Int(iconSettings.exportSize))"
+                }
             }
-
+            
             Toggle("2× Resolution for Retina", isOn: $iconSettings.exportRetinaSize)
-
+            
             Picker("Color Space", selection: $iconSettings.exportColorSpace) {
                 ForEach(ExportColorSpace.allCases) { colorSpace in
                     Text(colorSpace.rawValue).tag(colorSpace)
                 }
             }
             .help("sRGB: Standard color space for web and most displays\nDisplay P3: Wider color gamut for modern Apple displays")
-
+            
             Button("Export Icon...") { showExportDialog = true }
                 .padding(.top, 5)
         }
     }
     
-    // Validation function for text field input
+    // MARK: - Private Methods
+    
+    /// Validates and applies text field input, handling decimals, out-of-range values, and non-numeric input.
+    ///
+    /// - Floors decimal values to integers
+    /// - Clamps values to the valid range (16-1024)
+    /// - Reverts non-numeric input to current slider value
+    /// - Displays validation messages that auto-dismiss after 3 seconds
     private func validateAndApplyTextInput() {
         guard let doubleValue = Double(textFieldValue) else {
             // Non-numeric input
@@ -121,3 +116,4 @@ struct ExportOptionsSection: View {
         }
     }
 }
+

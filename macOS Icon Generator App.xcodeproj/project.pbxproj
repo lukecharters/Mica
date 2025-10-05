@@ -91,6 +91,15 @@
 			);
 			target = 8C50A4BB2E75A891000ED391 /* IconMakerApp */;
 		};
+		8C75F5DB2E8FB899008FB893 /* Exceptions for "sfIconGen-CLI Tests" folder in "sfIconGen-CLI Tests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CLIArgumentParsingTests.swift,
+				CLIIntegrationTests.swift,
+				sfIconGen_CLI_Tests.swift,
+			);
+			target = 8C75F5802E8D5AC4008FB893 /* sfIconGen-CLI Tests */;
+		};
 		8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -151,6 +160,9 @@
 		};
 		8C75F5822E8D5AC4008FB893 /* sfIconGen-CLI Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8C75F5DB2E8FB899008FB893 /* Exceptions for "sfIconGen-CLI Tests" folder in "sfIconGen-CLI Tests" target */,
+			);
 			path = "sfIconGen-CLI Tests";
 			sourceTree = "<group>";
 		};
@@ -231,6 +243,7 @@
 		8C71CC902DBDDDD2006FB320 = {
 			isa = PBXGroup;
 			children = (
+				8C75F6482E921B52008FB893 /* Products */,
 				8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */,
 				8C71CCAD2DBDDDD3006FB320 /* macOS Icon Generator AppTests */,
 				8C71CCB72DBDDDD3006FB320 /* macOS Icon Generator AppUITests */,
@@ -255,6 +268,13 @@
 				8C50A4C82E75A893000ED391 /* IconMakerAppTests.xctest */,
 				8C50A4D22E75A893000ED391 /* IconMakerAppUITests.xctest */,
 				8C75F5812E8D5AC4008FB893 /* sfIconGen-CLI Tests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8C75F6482E921B52008FB893 /* Products */ = {
+			isa = PBXGroup;
+			children = (
 			);
 			name = Products;
 			sourceTree = "<group>";
