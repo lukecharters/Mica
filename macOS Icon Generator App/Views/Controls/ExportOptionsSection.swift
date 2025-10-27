@@ -22,7 +22,7 @@ struct ExportOptionsSection: View {
                 HStack {
                     TextField("Size", text: $textFieldValue)
                         .textFieldStyle(.roundedBorder)
-                        .frame(width: 80)
+
                         .onSubmit {
                             validateAndApplyTextInput()
                         }

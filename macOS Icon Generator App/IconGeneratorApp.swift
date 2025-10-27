@@ -7,8 +7,8 @@ struct IconGeneratorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(appViewModel)
                 .frame(minWidth: 800, minHeight: 600)
+                .environmentObject(appViewModel)
         }
         .windowStyle(HiddenTitleBarWindowStyle())
         .commands {

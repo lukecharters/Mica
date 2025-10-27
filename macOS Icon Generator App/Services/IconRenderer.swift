@@ -120,7 +120,8 @@ struct IconContentView: View {
 
     var body: some View {
         ZStack {
-            // Background
+            // Had to have a second copy of the entire view for Liquid Glass and new SF Symbols effects
+
             if settings.useCustomColors {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(
@@ -130,6 +131,7 @@ struct IconContentView: View {
                             endPoint: .bottom
                         )
                     )
+                    .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
                     .padding(backgroundInset)
                     .shadow(
                         color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
@@ -140,6 +142,7 @@ struct IconContentView: View {
             } else {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(settings.baseColor.gradient)
+                    .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
                     .padding(backgroundInset)
                     .shadow(
                         color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
@@ -150,63 +153,85 @@ struct IconContentView: View {
             }
 
             // SF Symbol
-            Group {
-                switch settings.symbolRenderingMode {
-                case .monochrome:
-                    Image(systemName: settings.symbolName)
-                        //.resizable()
-                        //.scaledToFit()
-                        //.scaleEffect(x: 0.75, y: 0.75, anchor: .center)
-                        .frame(width: 206, height: 206, alignment: .center)
-                        .font(.system(size: symbolSize, weight: symbolWeight))
-                        .foregroundColor(settings.symbolColor)
-                        .symbolRenderingMode(.monochrome)
-                        .offset(x: 0, y: -verticalAlignmentOffset)
-                        .shadow(
-                            color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
-                            radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-                            y: settings.enableSymbolShadow ? symbolShadowOffset : 0
-                        )
-                case .hierarchical:
-                    Image(systemName: settings.symbolName)
-                        .font(.system(size: symbolSize, weight: symbolWeight))
-                        .foregroundStyle(settings.hierarchicalSymbolColor)
-                        .symbolRenderingMode(.hierarchical)
-                        .offset(x: 0, y: -verticalAlignmentOffset)
-                        .shadow(
-                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
-                            y: settings.enableSymbolShadow ? shadowOffset : 0
-                        )
-                case .multicolor:
-                    Image(systemName: settings.symbolName)
-                        .font(.system(size: symbolSize, weight: symbolWeight))
-                        .foregroundColor(settings.symbolColor)
-                        .symbolRenderingMode(.multicolor)
-                        .offset(x: 0, y: -verticalAlignmentOffset)
-                        .shadow(
-                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
-                            y: settings.enableSymbolShadow ? shadowOffset : 0
-                        )
-                case .palette:
-                    Image(systemName: settings.symbolName)
-                        .font(.system(size: symbolSize, weight: symbolWeight))
-                        .foregroundStyle(
-                            settings.paletteSymbolPrimaryColor,
-                            settings.paletteSymbolSecondaryColor,
-                            settings.paletteSymbolTertiaryColor
-                        )
-                        .symbolRenderingMode(.palette)
-                        .offset(x: 0, y: -verticalAlignmentOffset)
-                        .shadow(
-                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
-                            y: settings.enableSymbolShadow ? shadowOffset : 0
-                        )
-                }
-            }
+//            Group {
+//                switch settings.symbolRenderingMode {
+//                case .monochrome:
+//                    Image(systemName: settings.symbolName)
+//                        //.resizable()
+//                        //.scaledToFit()
+//                        //.scaleEffect(x: 0.75, y: 0.75, anchor: .center)
+//                        //.frame(width: 206, height: 206, alignment: .center)
+//                        .font(.system(size: symbolSize, weight: symbolWeight))
+//                        .foregroundColor(settings.symbolColor)
+//                        .changeSymbolRenderingMode(settings: settings)
+//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
+//                        .offset(x: 0, y: -verticalAlignmentOffset)
+//                        .shadow(
+//                            color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
+//                            radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+//                            y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+//                        )
+//                case .hierarchical:
+//                    Image(systemName: settings.symbolName)
+//                        .font(.system(size: symbolSize, weight: symbolWeight))
+//                        .foregroundStyle(settings.hierarchicalSymbolColor)
+//                        .symbolRenderingMode(.hierarchical)
+//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
+//                        .offset(x: 0, y: -verticalAlignmentOffset)
+//                        .shadow(
+//                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
+//                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
+//                            y: settings.enableSymbolShadow ? shadowOffset : 0
+//                        )
+//                case .multicolor:
+//                    Image(systemName: settings.symbolName)
+//                        .font(.system(size: symbolSize, weight: symbolWeight))
+//                        .foregroundColor(settings.symbolColor)
+//                        .symbolRenderingMode(.multicolor)
+//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
+//                        .offset(x: 0, y: -verticalAlignmentOffset)
+//                        .shadow(
+//                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
+//                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
+//                            y: settings.enableSymbolShadow ? shadowOffset : 0
+//                        )
+//                case .palette:
+//                    Image(systemName: settings.symbolName)
+//                        .font(.system(size: symbolSize, weight: symbolWeight))
+//                        .foregroundStyle(
+//                            settings.paletteSymbolPrimaryColor,
+//                            settings.paletteSymbolSecondaryColor,
+//                            settings.paletteSymbolTertiaryColor
+//                        )
+//                        .symbolRenderingMode(.palette)
+//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
+//                        .offset(x: 0, y: -verticalAlignmentOffset)
+//                        .shadow(
+//                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
+//                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
+//                            y: settings.enableSymbolShadow ? shadowOffset : 0
+//                        )
+//                }
+//            }
 
+            Image(systemName: settings.symbolName)
+                //.resizable()
+                //.scaledToFit()
+                //.scaleEffect(x: 0.75, y: 0.75, anchor: .center)
+                //.frame(width: 206, height: 206, alignment: .center)
+                .font(.system(size: symbolSize, weight: symbolWeight))
+                .foregroundColor(settings.symbolColor)
+                .changeSymbolRenderingMode(settings: settings)
+                .ifAvailableSymbolColorRenderingMode(settings: settings)
+                .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
+                .frame(width: iconSize, height: iconSize)
+                .offset(x: 0, y: -verticalAlignmentOffset)
+                .shadow(
+                    color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
+                    radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+                    y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+                )
+            
             // Badge
             if settings.showBadge {
                 BadgeView(settings: settings, badgeSize: badgeSize, badgeSymbolSize: badgeSymbolSize)
@@ -301,5 +326,36 @@ struct BadgeView: View {
             )
         }
         .frame(width: badgeSize, height: badgeSize)
+    }
+}
+
+
+extension View {
+    @ViewBuilder
+    func changeSymbolRenderingMode(settings: IconSettings) -> some View {
+        self.symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
+    }
+}
+
+// MARK: - View extension for conditional symbolColorRenderingMode modifier
+extension View {
+    @ViewBuilder
+    func ifAvailableSymbolColorRenderingMode(settings: IconSettings) -> some View {
+        if #available(macOS 26.0, *) {
+            self.symbolColorRenderingMode(settings.symbolColorRenderingMode.symbolColorRenderingMode)
+        } else {
+            self
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func ifAvailableGlassEffect<S: Shape>(settings: IconSettings, shape: S) -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffect(settings.glassEffect.glassEffect, in: shape)
+        } else {
+            self
+        }
     }
 }

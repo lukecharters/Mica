@@ -22,6 +22,16 @@ struct BackgroundColorsSection: View {
                     }
                 }
             }
+            if #available(macOS 26.0, *) {
+                Picker("Liquid Glass", selection: $iconSettings.glassEffect) {
+                    ForEach(GlassEffect.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
         }
+
+                
+            }
     }
 }

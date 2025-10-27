@@ -17,6 +17,7 @@ struct SFSymbolSection: View {
                     Text(mode.rawValue).tag(mode)
                 }
             }
+            .pickerStyle(.radioGroup)
 
             switch iconSettings.symbolRenderingMode {
             case .monochrome:
@@ -30,6 +31,17 @@ struct SFSymbolSection: View {
                 ColorPicker("Secondary Color", selection: $iconSettings.paletteSymbolSecondaryColor)
                 ColorPicker("Tertiary Color", selection: $iconSettings.paletteSymbolTertiaryColor)
             }
+            
+            if #available(macOS 26.0, *) {
+                Picker("Color Rendering Mode", selection: $iconSettings.symbolColorRenderingMode) {
+                    ForEach(SymbolColorRenderingMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                    
+                }
+            }
         }
     }
-}
+

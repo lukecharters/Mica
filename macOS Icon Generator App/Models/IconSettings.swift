@@ -10,6 +10,8 @@ struct IconSettings: Equatable {
     var exportSize: CGFloat = 256
     var exportRetinaSize: Bool = false
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
+    var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
+    var glassEffect: GlassEffect = .identity
     var exportColorSpace: ExportColorSpace = .sRGB
     
     // Shadow settings
@@ -74,10 +76,10 @@ struct IconSettings: Equatable {
 }
 
 enum SymbolRenderingMode: String, CaseIterable, Identifiable {
-    case hierarchical = "Hierarchical"
     case monochrome = "Monochrome"
-    case multicolor = "Multicolor"
+    case hierarchical = "Hierarchical"
     case palette = "Palette"
+    case multicolor = "Multicolor"
     
     var id: String { self.rawValue }
     
@@ -91,6 +93,44 @@ enum SymbolRenderingMode: String, CaseIterable, Identifiable {
             return .multicolor
         case .palette:
             return .palette
+        }
+    }
+}
+
+
+enum GlassEffect: String, CaseIterable, Identifiable {
+    case identity = "None"
+    case regular = "Regular"
+    case clear = "Clear"
+    
+    var id: String { self.rawValue }
+    @available(macOS 26.0, *)
+    var glassEffect: SwiftUI.Glass {
+        switch self {
+        case .identity:
+            return .identity
+        case .regular:
+            return .regular
+        case .clear:
+            return .clear
+        }
+    }
+}
+
+
+
+enum SymbolColorRenderingMode: String, CaseIterable, Identifiable {
+    case flat = "Flat"
+    case gradient = "Gradient"
+    
+    var id: String { self.rawValue }
+    @available(macOS 26.0, *)
+    var symbolColorRenderingMode: SwiftUI.SymbolColorRenderingMode {
+        switch self {
+        case .flat:
+            return .flat
+        case .gradient:
+            return .gradient
         }
     }
 }
