@@ -103,12 +103,10 @@
 		8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Playgrounds/AlignmentTestsGrid.swift,
 				Playgrounds/AlignmentTestsGrid2.swift,
 				"Playgrounds/icon-size-alignment-tests 2.swift",
 				"Playgrounds/icon-size-alignment-tests.swift",
 				"Playgrounds/liquid-glass.swift",
-				Playgrounds/LiquidGlassTestGrid.swift,
 				Playgrounds/Solution1View.swift,
 				Playgrounds/SymbolCheatsheetView.swift,
 				Playgrounds/SymbolGalleryView.swift,
@@ -1019,7 +1017,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1055,7 +1053,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.macOS-Icon-Generator-App";
 				PRODUCT_NAME = "$(TARGET_NAME)";

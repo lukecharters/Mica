@@ -220,12 +220,14 @@ struct IconContentView: View {
                 //.scaleEffect(x: 0.75, y: 0.75, anchor: .center)
                 //.frame(width: 206, height: 206, alignment: .center)
                 .font(.system(size: symbolSize, weight: symbolWeight))
+                .frame(width: iconSize, height: iconSize)
+                .padding(-backgroundInset)
                 .foregroundColor(settings.symbolColor)
                 .changeSymbolRenderingMode(settings: settings)
                 .ifAvailableSymbolColorRenderingMode(settings: settings)
                 .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
-                .frame(width: iconSize, height: iconSize)
-                .offset(x: 0, y: -verticalAlignmentOffset)
+
+
                 .shadow(
                     color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
                     radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,

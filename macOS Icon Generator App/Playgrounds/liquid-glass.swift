@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreGraphics
 
+
 struct LiquidGlassTests {
     static func renderIcon(settings: IconSettings) -> NSImage {
         // Create the IconContentView at the actual export size for proper rendering
@@ -255,11 +256,11 @@ struct LiquidGlassView: View {
                 // Badge overlay
                 if settings.showBadge {
                     BadgeView(settings: settings, badgeSize: badgeSize, badgeSymbolSize: badgeSymbolSize)
-                        .offset(badgeOffset(for: settings.badgePosition))
+                        .offset(macOS_Icon_Generator_App.badgeOffset(for: settings.badgePosition))
                 }
             }
         }
-    }
+    
     // Calculate badge position offset
     private func badgeOffset(for position: BadgePosition) -> CGSize {
         let iconRadius = iconSize / 2
