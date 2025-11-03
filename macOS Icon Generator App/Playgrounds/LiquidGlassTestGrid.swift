@@ -191,7 +191,7 @@ struct Icon5View: View {
                         .font(.system(size: displaySize * 0.18, weight: .regular))
                         .foregroundColor(.white)
                 )
-                .glassEffect(.regular.tint(.black.opacity(0.30)), in: Circle())
+                .glassEffect(.regular.tint(.blue), in: Circle())
                 .offset(x: displaySize * 0.3, y: displaySize * 0.3)
         }
         .frame(width: displaySize, height: displaySize)

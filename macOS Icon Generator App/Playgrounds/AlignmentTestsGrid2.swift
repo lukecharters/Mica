@@ -51,7 +51,7 @@ struct IconSolutionView: View {
     var body: some View {
         ZStack(alignment: .center) {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.blue.gradient)
+                .fill(.blue.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 1, x: 1, y: 1)))
                 //.shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
             
@@ -448,8 +448,8 @@ struct PreferenceKeyIcon: View {
                             }
                         )
                         .onPreferenceChange(SizePreferenceKey2.self) { size in
-                            if size.width > 83 || size.height > 83 {
-                                let scaleFactor = min(83 / size.width, 83 / size.height)
+                            if size.width > 82 || size.height > 82 {
+                                let scaleFactor = min(82 / size.width, 82 / size.height)
                                 fontSize = fontSize * scaleFactor
                             }
                         }
@@ -458,7 +458,7 @@ struct PreferenceKeyIcon: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 128, height: 128)
-                                .opacity(0.3)
+                                .opacity(0.01)
                         )
                         .frame(maxWidth: 86, maxHeight: 86, alignment: .center)
 
@@ -489,9 +489,9 @@ struct TwoPassRenderingIcon: View {
     }
     
     var calculatedFontSize: CGFloat {
-        if measuredSize.width > 82 || measuredSize.height > 82 {
-            let scaleFactor = min(82 / max(measuredSize.width, 1),
-                                 82 / max(measuredSize.height, 1))
+        if measuredSize.width > 83 || measuredSize.height > 83 {
+            let scaleFactor = min(83 / max(measuredSize.width, 1),
+                                 83 / max(measuredSize.height, 1))
             return idealFontSize * scaleFactor * 0.95
         }
         return idealFontSize
@@ -567,7 +567,7 @@ struct CustomModifierIcon: View {
             } else {
                 ZStack(alignment: .bottomTrailing) {
                     Image(systemName: symbolName)
-                        .modifier(AdaptiveSymbolSize2(targetSize: 55, maxFrame: 82))
+                        .modifier(AdaptiveSymbolSize2(targetSize: 62, maxFrame: 64))
                         .foregroundColor(.white)
                         //.shadow(radius: 1, x: 0, y: 1.25)
 

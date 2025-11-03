@@ -84,6 +84,7 @@ struct IconContentView: View {
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
     private let baseCornerRadius: CGFloat = 46
+    private let baseCornerRadiusLG: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
     private let baseSymbolSize: CGFloat = 120
     private let baseShadowRadius: CGFloat = 2
@@ -104,7 +105,7 @@ struct IconContentView: View {
 
     // Scaled layout constants
     private var iconSize: CGFloat { displaySize }
-    private var cornerRadius: CGFloat { baseCornerRadius * scaleFactor }
+    private var cornerRadius: CGFloat { baseCornerRadiusLG * scaleFactor }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
     private var symbolSize: CGFloat { baseSymbolSize * scaleFactor }
     private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
@@ -141,7 +142,7 @@ struct IconContentView: View {
                     .frame(width: iconSize, height: iconSize)
             } else {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(settings.baseColor.gradient)
+                    .fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
                     .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
                     .padding(backgroundInset)
                     .shadow(

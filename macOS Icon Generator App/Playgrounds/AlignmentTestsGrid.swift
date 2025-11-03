@@ -111,7 +111,7 @@ struct Solution1_BasicResizable: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(.blue.gradient)
+                .fill(.blue.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 1, x: 1, y: 1)))
                 .shadow(radius: 1, x: 0, y: 1.25)
                 .frame(width: 103, height: 103)
             

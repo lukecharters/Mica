@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8C06A07C2EB8265100EC5CE9 /* LiquidGlassText in Frameworks */ = {isa = PBXBuildFile; productRef = 8C06A07B2EB8265100EC5CE9 /* LiquidGlassText */; };
 		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
 		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
 		8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C3148D22E61E3F400C7A0A9 /* ArgumentParser */; };
@@ -76,40 +77,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8C3148DC2E61E4B600C7A0A9 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */ = {
+		8C069FB32EB617B400EC5CE9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Models/IconSettings.swift,
-				Services/IconRenderer.swift,
-			);
-			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
-		};
-		8C50A5532E766F81000ED391 /* Exceptions for "macOS Icon Generator App" folder in "IconMakerApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Playgrounds/SymbolCheatsheetView.swift,
-			);
-			target = 8C50A4BB2E75A891000ED391 /* IconMakerApp */;
-		};
-		8C75F5DB2E8FB899008FB893 /* Exceptions for "sfIconGen-CLI Tests" folder in "sfIconGen-CLI Tests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				CLIArgumentParsingTests.swift,
-				CLIIntegrationTests.swift,
-				sfIconGen_CLI_Tests.swift,
-			);
-			target = 8C75F5802E8D5AC4008FB893 /* sfIconGen-CLI Tests */;
-		};
-		8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Playgrounds/AlignmentTestsGrid2.swift,
-				"Playgrounds/icon-size-alignment-tests 2.swift",
-				"Playgrounds/icon-size-alignment-tests.swift",
 				"Playgrounds/liquid-glass.swift",
-				Playgrounds/Solution1View.swift,
-				Playgrounds/SymbolCheatsheetView.swift,
-				Playgrounds/SymbolGalleryView.swift,
 			);
 			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
 		};
@@ -139,9 +110,7 @@
 		8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				8C945D3C2E666ED1006BA3A9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */,
-				8C3148DC2E61E4B600C7A0A9 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */,
-				8C50A5532E766F81000ED391 /* Exceptions for "macOS Icon Generator App" folder in "IconMakerApp" target */,
+				8C069FB32EB617B400EC5CE9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */,
 			);
 			path = "macOS Icon Generator App";
 			sourceTree = "<group>";
@@ -158,9 +127,6 @@
 		};
 		8C75F5822E8D5AC4008FB893 /* sfIconGen-CLI Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				8C75F5DB2E8FB899008FB893 /* Exceptions for "sfIconGen-CLI Tests" folder in "sfIconGen-CLI Tests" target */,
-			);
 			path = "sfIconGen-CLI Tests";
 			sourceTree = "<group>";
 		};
@@ -202,6 +168,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C06A07C2EB8265100EC5CE9 /* LiquidGlassText in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,6 +355,7 @@
 			);
 			name = "macOS Icon Generator App";
 			packageProductDependencies = (
+				8C06A07B2EB8265100EC5CE9 /* LiquidGlassText */,
 			);
 			productName = "macOS Icon Generator App";
 			productReference = 8C71CC992DBDDDD2006FB320 /* macOS Icon Generator App.app */;
@@ -515,6 +483,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				8C06A07A2EB8265100EC5CE9 /* XCRemoteSwiftPackageReference "LiquidGlassText" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8C71CC9A2DBDDDD2006FB320 /* Products */;
@@ -1266,6 +1235,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		8C06A07A2EB8265100EC5CE9 /* XCRemoteSwiftPackageReference "LiquidGlassText" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/DanielCrompton123/LiquidGlassText";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
@@ -1277,6 +1254,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		8C06A07B2EB8265100EC5CE9 /* LiquidGlassText */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C06A07A2EB8265100EC5CE9 /* XCRemoteSwiftPackageReference "LiquidGlassText" */;
+			productName = LiquidGlassText;
+		};
 		8C3148D22E61E3F400C7A0A9 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
