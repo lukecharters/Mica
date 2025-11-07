@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "App Icon Template 1024.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -9,7 +10,6 @@
       "scale" : "2x"
     },
     {
-      "filename" : "App Icon Template.svg",
       "idiom" : "universal",
       "scale" : "3x"
     }

@@ -29,9 +29,42 @@ struct BackgroundColorsSection: View {
                     }
                 }
                 .pickerStyle(.segmented)
-        }
 
-                
+                if iconSettings.glassEffect.supportsTintColorSelection {
+                    let binding = Binding(
+                        get: {
+                            colorOptions.firstIndex { $0.color == iconSettings.glassTintColor } ?? 0
+                        },
+                        set: { newValue in
+                            guard colorOptions.indices.contains(newValue) else { return }
+                            iconSettings.glassTintColor = colorOptions[newValue].color
+                        }
+                    )
+
+                    let selectedOption = colorOptions.first { $0.color == iconSettings.glassTintColor }
+
+                    Picker(
+                        selection: binding,
+                        label: HStack(spacing: 8) {
+                            Circle()
+                                .fill(selectedOption?.color ?? Color.blue)
+                                .frame(width: 12, height: 12)
+                            Text("Glass Tint Color")
+                        }
+                    ) {
+                        ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(option.color)
+                                    .frame(width: 12, height: 12)
+                                Text(option.name)
+                            }
+                            .tag(index)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
             }
+    }
     }
 }

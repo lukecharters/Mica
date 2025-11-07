@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - PreferenceKey for Solution
-struct SizePreferenceKey: PreferenceKey {
+struct SizePreferenceKeyTest: PreferenceKey {
     static var defaultValue: CGSize = .zero
     static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
         value = nextValue()
@@ -365,11 +365,11 @@ struct Solution7_PreferenceKey: View {
                 .background(
                     GeometryReader { geometry in
                         Color.clear
-                            .preference(key: SizePreferenceKey.self, value: geometry.size)
+                            .preference(key: SizePreferenceKeyTest.self, value: geometry.size)
                     }
                 )
                 .modifier(ConditionalDebugBorder1(showBorder: showDebugBorders))
-                .onPreferenceChange(SizePreferenceKey.self) { size in
+                .onPreferenceChange(SizePreferenceKeyTest.self) { size in
                     if size.width > 82.5 || size.height > 82.5 {
                         let scaleFactor = min(82.5 / size.width, 82.5 / size.height)
                         fontSize = fontSize * scaleFactor

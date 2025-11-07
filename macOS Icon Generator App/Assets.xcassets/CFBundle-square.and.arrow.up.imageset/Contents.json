@@ -1,11 +1,11 @@
 {
   "images" : [
     {
-      "filename" : "CFBundle-square.and.arrow.up.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "CFBundle-square.and.arrow.up.png",
       "idiom" : "universal",
       "scale" : "2x"
     },

@@ -77,10 +77,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8C069FB32EB617B400EC5CE9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
+		8C886B362EBDFFFD00753351 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Playgrounds/liquid-glass.swift",
+				Playgrounds/LiquidGlassTestGrid.swift,
 			);
 			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
 		};
@@ -110,7 +111,7 @@
 		8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				8C069FB32EB617B400EC5CE9 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */,
+				8C886B362EBDFFFD00753351 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */,
 			);
 			path = "macOS Icon Generator App";
 			sourceTree = "<group>";

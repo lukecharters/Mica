@@ -12,7 +12,10 @@ struct IconSettings: Equatable {
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
     var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
     var glassEffect: GlassEffect = .identity
+    var glassTintColor: Color = .blue
     var exportColorSpace: ExportColorSpace = .sRGB
+    var useAutomaticSymbolSizing: Bool = true
+    var manualSymbolScale: Double = 1.0
     
     // Shadow settings
     var enableBackgroundShadow: Bool = true
@@ -102,10 +105,22 @@ enum GlassEffect: String, CaseIterable, Identifiable {
     case identity = "None"
     case regular = "Regular"
     case clear = "Clear"
+    case tinted = "Tinted"
     
     var id: String { self.rawValue }
+    var requiresClearBackground: Bool {
+        switch self {
+        case .identity:
+            return false
+        case .regular, .clear, .tinted:
+            return true
+        }
+    }
+
+    var supportsTintColorSelection: Bool { self == .tinted }
+
     @available(macOS 26.0, *)
-    var glassEffect: SwiftUI.Glass {
+    func resolvedGlass(tintColor: Color) -> SwiftUI.Glass {
         switch self {
         case .identity:
             return .identity
@@ -113,6 +128,8 @@ enum GlassEffect: String, CaseIterable, Identifiable {
             return .regular
         case .clear:
             return .clear
+        case .tinted:
+            return .regular.tint(tintColor)
         }
     }
 }
@@ -164,6 +181,7 @@ extension IconSettings {
     static let minExportSize: CGFloat = 16
     static let maxExportSize: CGFloat = 1024
     static let defaultExportSize: CGFloat = 256
+    static let manualSymbolScaleRange: ClosedRange<Double> = 0.6...1.4
     
     var isExportSizeValid: Bool {
         (Self.minExportSize...Self.maxExportSize).contains(exportSize)

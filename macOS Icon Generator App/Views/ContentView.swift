@@ -129,8 +129,8 @@ struct ContentView_Previews: PreviewProvider {
         // Preconfigure a representative setup
         vm.iconSettings.symbolName = "gearshape.fill"
         vm.iconSettings.useCustomColors = true
-        vm.iconSettings.customPrimaryColor = .indigo
-        vm.iconSettings.customSecondaryColor = .purple
+        vm.iconSettings.customPrimaryColor = .blue
+        vm.iconSettings.customSecondaryColor = .indigo
         vm.iconSettings.symbolRenderingMode = .palette
         vm.iconSettings.paletteSymbolPrimaryColor = .white
         vm.iconSettings.paletteSymbolSecondaryColor = .cyan
@@ -182,12 +182,12 @@ struct ContentView_GridPreviews: PreviewProvider {
 
     @MainActor private static var monoVM: IconViewModel {
         let vm = IconViewModel()
-        vm.iconSettings.symbolName = "bolt.fill"
+        vm.iconSettings.symbolName = "app"
         vm.iconSettings.useCustomColors = false
         vm.iconSettings.baseColor = .blue
         vm.iconSettings.symbolRenderingMode = .monochrome
         vm.iconSettings.symbolColor = .white
-        vm.iconSettings.exportSize = 256
+        vm.iconSettings.exportSize = 512
         vm.iconSettings.exportRetinaSize = false
         return vm
     }
@@ -224,8 +224,8 @@ struct ContentView_GridPreviews: PreviewProvider {
         vm.iconSettings.customSecondaryColor = .purple
         vm.iconSettings.symbolRenderingMode = .palette
         vm.iconSettings.paletteSymbolPrimaryColor = .white
-        vm.iconSettings.paletteSymbolSecondaryColor = .yellow
-        vm.iconSettings.paletteSymbolTertiaryColor = .orange
+        vm.iconSettings.paletteSymbolSecondaryColor = .blue
+        vm.iconSettings.paletteSymbolTertiaryColor = .red
         vm.iconSettings.showBadge = true
         vm.iconSettings.badgeSymbolName = "star.fill"
         vm.iconSettings.badgeSymbolRenderingMode = .monochrome
