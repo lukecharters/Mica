@@ -319,12 +319,12 @@ struct IconContentView: View {
 //                .foregroundColor(.white)
 //                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
 //                .padding(4)
-            Image("App Icon Template 1024")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .opacity(0.3)
-                .frame(width: (iconSize - backgroundInset*2), height: (iconSize - backgroundInset*2))
-                .allowsHitTesting(false)
+//            Image("App Icon Template 1024")
+//                .resizable()
+//                .aspectRatio(contentMode: .fit)
+//                .opacity(0.3)
+//                .frame(width: (iconSize - backgroundInset*2), height: (iconSize - backgroundInset*2))
+//                .allowsHitTesting(false)
         
             
             // Badge
