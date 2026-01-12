@@ -2,13 +2,14 @@
 import SwiftUI
 import CoreGraphics
 
-private struct SizePreferenceKey: PreferenceKey {
-    static var defaultValue: CGSize = .zero
-
-    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
-        value = nextValue()
-    }
-}
+// Preference key resize struct
+//private struct SizePreferenceKey: PreferenceKey {
+//    static var defaultValue: CGSize = .zero
+//
+//    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+//        value = nextValue()
+//    }
+//}
 
 struct IconRenderer {
     // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
@@ -88,7 +89,8 @@ struct IconRenderer {
 struct IconContentView: View {
     let settings: IconSettings
     let displaySize: CGFloat
-    @State private var adaptiveSymbolFontSize: CGFloat? = nil
+// Preference key resize variable
+//    @State private var adaptiveSymbolFontSize: CGFloat? = nil
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
@@ -113,23 +115,27 @@ struct IconContentView: View {
     private let baseBadgeOffset: CGFloat = 4
     private let baseBadgeSymbolSize: CGFloat = 45
 
-    private var baseBackgroundSize: CGFloat { baseSize * 0.8}
+//    Preference key resize
+//    private var baseBackgroundSize: CGFloat { baseSize * 0.8}
     
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
     // Scaled layout constants
-    private var backgroundSize: CGFloat { baseBackgroundSize * scaleFactor }
+//    Preference key resize
+//    private var backgroundSize: CGFloat { baseBackgroundSize * scaleFactor }
     private var iconSize: CGFloat { displaySize }
     private var cornerRadius: CGFloat { baseCornerRadiusLG * scaleFactor }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
-    //private var baseSymbolFontSize: CGFloat { (baseBackgroundSize * 0.6) * scaleFactor}
-    private var baseSymbolFontSize: CGFloat { baseSymbolSize * scaleFactor }
-    //private var baseSymbolFontSize: CGFloat { ((iconSize - (backgroundInset * 2)) * 0.6) * scaleFactor }
-    private var manualScaleFactor: CGFloat { settings.useAutomaticSymbolSizing ? 1 : CGFloat(settings.manualSymbolScale) }
-    private var initialSymbolFontSize: CGFloat { baseSymbolFontSize * manualScaleFactor }
-    private var resolvedSymbolFontSize: CGFloat { adaptiveSymbolFontSize ?? initialSymbolFontSize }
-    private var symbolContentBounds: CGFloat { max(iconSize - (backgroundInset * 2), 1) }
-    //private var symbolContentBounds: CGFloat { max(backgroundSize, 1) }
+    private var symbolSize: CGFloat { baseSymbolSize * scaleFactor }
+//    Preference key resize
+//    //private var baseSymbolFontSize: CGFloat { (baseBackgroundSize * 0.6) * scaleFactor}
+//    private var baseSymbolFontSize: CGFloat { baseSymbolSize * scaleFactor }
+//    //private var baseSymbolFontSize: CGFloat { ((iconSize - (backgroundInset * 2)) * 0.6) * scaleFactor }
+//    private var manualScaleFactor: CGFloat { settings.useAutomaticSymbolSizing ? 1 : CGFloat(settings.manualSymbolScale) }
+//    private var initialSymbolFontSize: CGFloat { baseSymbolFontSize * manualScaleFactor }
+//    private var resolvedSymbolFontSize: CGFloat { adaptiveSymbolFontSize ?? initialSymbolFontSize }
+//    private var symbolContentBounds: CGFloat { max(iconSize - (backgroundInset * 2), 1) }
+//    //private var symbolContentBounds: CGFloat { max(backgroundSize, 1) }
     private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
     private var shadowOffset: CGFloat { baseShadowOffset * scaleFactor }
     private var verticalAlignmentOffset: CGFloat { baseVerticalAlignmentOffset * scaleFactor }
@@ -294,21 +300,24 @@ struct IconContentView: View {
                             //.offset(x: 16, y: 0)
 //            Label("Icon", systemImage: settings.symbolName)
 //                .labelStyle(.iconOnly)
-                            .font(.system(size: resolvedSymbolFontSize, weight: symbolWeight))
+//                        Preference key resize
+//                            .font(.system(size: resolvedSymbolFontSize, weight: symbolWeight))
+                            .font(.system(size: symbolSize, weight: symbolWeight))
                     )
                     //.frame(width: (iconSize - (backgroundInset * 3) ), height: (iconSize - (backgroundInset * 3) ), alignment: .center)
                     .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
                 )
                 //.imageScale(.small)
-                .background(
-                    GeometryReader { geometry in
-                        Color.clear
-                            .preference(key: SizePreferenceKey.self, value: geometry.size)
-                    }
-                )
-                .onPreferenceChange(SizePreferenceKey.self) { size in
-                    updateSymbolFontSizeIfNeeded(measured: size)
-                }
+//                Preference key resize
+//                .background(
+//                    GeometryReader { geometry in
+//                        Color.clear
+//                            .preference(key: SizePreferenceKey.self, value: geometry.size)
+//                    }
+//                )
+//                .onPreferenceChange(SizePreferenceKey.self) { size in
+//                    updateSymbolFontSizeIfNeeded(measured: size)
+//                }
                 .frame(width: iconSize, height: iconSize)
                 .padding(-backgroundInset),
                 shape: .rect(cornerRadius: cornerRadius)
@@ -347,21 +356,22 @@ struct IconContentView: View {
                     .offset(badgeOffset(for: settings.badgePosition))
             }
         }
-        .onAppear {
-            resetAdaptiveSymbolFontSize()
-        }
-        .onChange(of: settings.symbolName) { _, _ in
-            resetAdaptiveSymbolFontSize()
-        }
-        .onChange(of: displaySize) { _, _ in
-            resetAdaptiveSymbolFontSize()
-        }
-        .onChange(of: settings.useAutomaticSymbolSizing) { _, _ in
-            resetAdaptiveSymbolFontSize()
-        }
-        .onChange(of: settings.manualSymbolScale) { _, _ in
-            resetAdaptiveSymbolFontSize()
-        }
+//        Preference Key Resize
+//        .onAppear {
+//            resetAdaptiveSymbolFontSize()
+//        }
+//        .onChange(of: settings.symbolName) { _, _ in
+//            resetAdaptiveSymbolFontSize()
+//        }
+//        .onChange(of: displaySize) { _, _ in
+//            resetAdaptiveSymbolFontSize()
+//        }
+//        .onChange(of: settings.useAutomaticSymbolSizing) { _, _ in
+//            resetAdaptiveSymbolFontSize()
+//        }
+//        .onChange(of: settings.manualSymbolScale) { _, _ in
+//            resetAdaptiveSymbolFontSize()
+//        }
     }
 
     @ViewBuilder
@@ -397,34 +407,34 @@ struct IconContentView: View {
             view
         }
     }
-
-    private func updateSymbolFontSizeIfNeeded(measured size: CGSize) {
-        guard size.width > 0, size.height > 0 else { return }
-        let maxDimension = symbolContentBounds
-        guard maxDimension > 0 else { return }
-
-        if size.width <= maxDimension && size.height <= maxDimension {
-            if adaptiveSymbolFontSize == nil {
-                adaptiveSymbolFontSize = initialSymbolFontSize
-            }
-            return
-        }
-
-        let currentSize = adaptiveSymbolFontSize ?? initialSymbolFontSize
-        let scale = min(maxDimension / size.width, maxDimension / size.height) * 0.95
-        let adjustedSize = max(currentSize * scale, 1)
-
-        if adaptiveSymbolFontSize == nil || abs(adjustedSize - currentSize) > 0.5 {
-            adaptiveSymbolFontSize = adjustedSize
-        }
-    }
-
-    private func resetAdaptiveSymbolFontSize() {
-        let targetSize = initialSymbolFontSize
-        if adaptiveSymbolFontSize != targetSize {
-            adaptiveSymbolFontSize = targetSize
-        }
-    }
+//Preference Key Resize
+//    private func updateSymbolFontSizeIfNeeded(measured size: CGSize) {
+//        guard size.width > 0, size.height > 0 else { return }
+//        let maxDimension = symbolContentBounds
+//        guard maxDimension > 0 else { return }
+//
+//        if size.width <= maxDimension && size.height <= maxDimension {
+//            if adaptiveSymbolFontSize == nil {
+//                adaptiveSymbolFontSize = initialSymbolFontSize
+//            }
+//            return
+//        }
+//
+//        let currentSize = adaptiveSymbolFontSize ?? initialSymbolFontSize
+//        let scale = min(maxDimension / size.width, maxDimension / size.height) * 0.95
+//        let adjustedSize = max(currentSize * scale, 1)
+//
+//        if adaptiveSymbolFontSize == nil || abs(adjustedSize - currentSize) > 0.5 {
+//            adaptiveSymbolFontSize = adjustedSize
+//        }
+//    }
+//
+//    private func resetAdaptiveSymbolFontSize() {
+//        let targetSize = initialSymbolFontSize
+//        if adaptiveSymbolFontSize != targetSize {
+//            adaptiveSymbolFontSize = targetSize
+//        }
+//    }
 
     private func badgeOffset(for position: BadgePosition) -> CGSize {
         let iconRadius = iconSize / 2

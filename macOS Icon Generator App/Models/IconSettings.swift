@@ -14,8 +14,10 @@ struct IconSettings: Equatable {
     var glassEffect: GlassEffect = .identity
     var glassTintColor: Color = .blue
     var exportColorSpace: ExportColorSpace = .sRGB
-    var useAutomaticSymbolSizing: Bool = true
-    var manualSymbolScale: Double = 1.0
+    
+//    Preference Key Resize
+//    var useAutomaticSymbolSizing: Bool = true
+//    var manualSymbolScale: Double = 1.0
     
     // Shadow settings
     var enableBackgroundShadow: Bool = true
@@ -181,7 +183,8 @@ extension IconSettings {
     static let minExportSize: CGFloat = 16
     static let maxExportSize: CGFloat = 1024
     static let defaultExportSize: CGFloat = 256
-    static let manualSymbolScaleRange: ClosedRange<Double> = 0.6...1.4
+//    Preference key resize
+//    static let manualSymbolScaleRange: ClosedRange<Double> = 0.6...1.4
     
     var isExportSizeValid: Bool {
         (Self.minExportSize...Self.maxExportSize).contains(exportSize)

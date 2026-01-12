@@ -130,50 +130,50 @@ struct SFSymbolSection: View {
                     }
                 }
             }
-
-            HStack(spacing: 6) {
-                Toggle("Auto scale symbol to fit", isOn: $iconSettings.useAutomaticSymbolSizing)
-                    .toggleStyle(.switch)
-                Button(action: { showAutoScaleHelp.toggle() }) {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                .popover(isPresented: $showAutoScaleHelp) {
-                    Text("Toggle whether the symbol automatically scales to fit its container or use a manual scale.")
-                        .padding()
-                        .frame(maxWidth: 240)
-                }
-            }
-
-            if !iconSettings.useAutomaticSymbolSizing {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Slider(value: $iconSettings.manualSymbolScale,
-                               in: IconSettings.manualSymbolScaleRange,
-                               step: 0.01)
-                        Button(action: { showManualScaleHelp.toggle() }) {
-                            Image(systemName: "info.circle")
-                        }
-                        .buttonStyle(BorderlessButtonStyle())
-                        .popover(isPresented: $showManualScaleHelp) {
-                            Text("Manually adjust the symbol's scale percentage when automatic scaling is off.")
-                                .padding()
-                                .frame(maxWidth: 240)
-                        }
-                    }
-                    HStack {
-                        Text("Smaller")
-                        Spacer()
-                        Text("\(Int(iconSettings.manualSymbolScale * 100))%")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("Larger")
-                    }
-                    .font(.caption)
-                }
-                .padding(.top, 4)
-            }
+//Preference Key Resize
+//            HStack(spacing: 6) {
+//                Toggle("Auto scale symbol to fit", isOn: $iconSettings.useAutomaticSymbolSizing)
+//                    .toggleStyle(.switch)
+//                Button(action: { showAutoScaleHelp.toggle() }) {
+//                    Image(systemName: "info.circle")
+//                }
+//                .buttonStyle(BorderlessButtonStyle())
+//                .popover(isPresented: $showAutoScaleHelp) {
+//                    Text("Toggle whether the symbol automatically scales to fit its container or use a manual scale.")
+//                        .padding()
+//                        .frame(maxWidth: 240)
+//                }
+//            }
+//
+//            if !iconSettings.useAutomaticSymbolSizing {
+//                VStack(alignment: .leading, spacing: 6) {
+//                    HStack(spacing: 6) {
+//                        Slider(value: $iconSettings.manualSymbolScale,
+//                               in: IconSettings.manualSymbolScaleRange,
+//                               step: 0.01)
+//                        Button(action: { showManualScaleHelp.toggle() }) {
+//                            Image(systemName: "info.circle")
+//                        }
+//                        .buttonStyle(BorderlessButtonStyle())
+//                        .popover(isPresented: $showManualScaleHelp) {
+//                            Text("Manually adjust the symbol's scale percentage when automatic scaling is off.")
+//                                .padding()
+//                                .frame(maxWidth: 240)
+//                        }
+//                    }
+//                    HStack {
+//                        Text("Smaller")
+//                        Spacer()
+//                        Text("\(Int(iconSettings.manualSymbolScale * 100))%")
+//                            .font(.caption)
+//                            .foregroundColor(.secondary)
+//                        Spacer()
+//                        Text("Larger")
+//                    }
+//                    .font(.caption)
+//                }
+//                .padding(.top, 4)
+//            }
         }
     }
 }
