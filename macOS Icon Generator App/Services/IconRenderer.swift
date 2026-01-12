@@ -96,10 +96,13 @@ struct IconContentView: View {
     private let baseCornerRadiusLG: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
     private let baseSymbolSize: CGFloat = 125
-    private let baseShadowRadius: CGFloat = 2
+    private let baseShadowRadius: CGFloat = 4
     private let baseShadowOffset: CGFloat = 2.5
+    private let shadowOpacity: CGFloat = 0.35
+    private let baseShadowRadiusSequoia: CGFloat = 2
+    private let baseShadowOffsetSequoia: CGFloat = 2.5
+    private let shadowOpacitySequoia: CGFloat = 0.31
     private let baseVerticalAlignmentOffset: CGFloat = 5.5
-    private let shadowOpacity: CGFloat = 0.31
     private let symbolWeight: Font.Weight = .regular
     private let baseSymbolShadowRadius: CGFloat = 2
     private let baseSymbolShadowOffset: CGFloat = 2.5
@@ -150,63 +153,71 @@ struct IconContentView: View {
 
             if settings.useCustomColors {
                 if shouldUseClearBackgroundFill {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.clear)
-                        .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
-                        .padding(backgroundInset)
-                        .shadow(
-                            color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                            y: settings.enableBackgroundShadow ? shadowOffset : 0
-                        )
-                        .frame(width: iconSize, height: iconSize)
+                    applyGlassEffectIfAvailable(
+                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color.clear),
+                        shape: RoundedRectangle(cornerRadius: cornerRadius)
+                    )
+                    .padding(backgroundInset)
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                    )
+                    .frame(width: iconSize, height: iconSize)
                 } else {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: settings.gradientColors),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
-                        .padding(backgroundInset)
-                        .shadow(
-                            color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                            y: settings.enableBackgroundShadow ? shadowOffset : 0
-                        )
-                        .frame(width: iconSize, height: iconSize)
+                    applyGlassEffectIfAvailable(
+                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: settings.gradientColors),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            ),
+                        shape: RoundedRectangle(cornerRadius: cornerRadius)
+                    )
+                    .padding(backgroundInset)
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                    )
+                    .frame(width: iconSize, height: iconSize)
                 }
             } else {
                 if shouldUseClearBackgroundFill {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Color.clear)
-                        //.fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
-                        .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
-                        
-                        .shadow(
-                            color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                            y: settings.enableBackgroundShadow ? shadowOffset : 0
-                        )
-                        .padding(backgroundInset)
-                        .frame(width: iconSize, height: iconSize)
-                        //.frame(width: backgroundSize, height: backgroundSize)
+                    applyGlassEffectIfAvailable(
+                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color.clear),
+                        shape: RoundedRectangle(cornerRadius: cornerRadius)
+                    )
+                    //.fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
+
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                    )
+                    .padding(backgroundInset)
+                    .frame(width: iconSize, height: iconSize)
+                    //.frame(width: backgroundSize, height: backgroundSize)
                 } else {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(settings.baseColor.gradient)
-                        //.fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
-                        .ifAvailableGlassEffect(settings: settings, shape: RoundedRectangle(cornerRadius: cornerRadius))
-                        
-                        .shadow(
-                            color: settings.enableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
-                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                            y: settings.enableBackgroundShadow ? shadowOffset : 0
-                        )
-                        .padding(backgroundInset)
-                        .frame(width: iconSize, height: iconSize)
-                        //.frame(width: backgroundSize, height: backgroundSize)
+                    applyGlassEffectIfAvailable(
+                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(settings.baseColor.gradient),
+                        shape: RoundedRectangle(cornerRadius: cornerRadius)
+                    )
+                    //.fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
+
+                    .shadow(
+                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                    )
+                    .padding(backgroundInset)
+                    .frame(width: iconSize, height: iconSize)
+                    //.frame(width: backgroundSize, height: backgroundSize)
                 }
             }
 
@@ -273,19 +284,21 @@ struct IconContentView: View {
 //            }
 
 
-            Image(systemName: settings.symbolName)
-                //.resizable()
-                //.scaledToFit()
-                //.border(.red, width: 1)
-                //.offset(x: 16, y: 0)
+            applyGlassEffectIfAvailable(
+                to: applySymbolColorRenderingMode(
+                    to: applySymbolColor(
+                        to: Image(systemName: settings.symbolName)
+                            //.resizable()
+                            //.scaledToFit()
+                            //.border(.red, width: 1)
+                            //.offset(x: 16, y: 0)
 //            Label("Icon", systemImage: settings.symbolName)
 //                .labelStyle(.iconOnly)
-            
-                .font(.system(size: resolvedSymbolFontSize, weight: symbolWeight))
-                .foregroundColor(settings.symbolColor)
-                //.frame(width: (iconSize - (backgroundInset * 3) ), height: (iconSize - (backgroundInset * 3) ), alignment: .center)
-                .changeSymbolRenderingMode(settings: settings)
-                .ifAvailableSymbolColorRenderingMode(settings: settings)
+                            .font(.system(size: resolvedSymbolFontSize, weight: symbolWeight))
+                    )
+                    //.frame(width: (iconSize - (backgroundInset * 3) ), height: (iconSize - (backgroundInset * 3) ), alignment: .center)
+                    .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
+                )
                 //.imageScale(.small)
                 .background(
                     GeometryReader { geometry in
@@ -297,13 +310,14 @@ struct IconContentView: View {
                     updateSymbolFontSizeIfNeeded(measured: size)
                 }
                 .frame(width: iconSize, height: iconSize)
-                .padding(-backgroundInset)
-                .ifAvailableGlassEffect(settings: settings, shape: .rect(cornerRadius: cornerRadius))
-                .shadow(
-                    color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
-                    radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-                    y: settings.enableSymbolShadow ? symbolShadowOffset : 0
-                )
+                .padding(-backgroundInset),
+                shape: .rect(cornerRadius: cornerRadius)
+            )
+            .shadow(
+                color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+                y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+            )
 //                .overlay(
 //                    Image("CFBundle-folder.fill.badge.plus")
 //                        .resizable()
@@ -347,6 +361,40 @@ struct IconContentView: View {
         }
         .onChange(of: settings.manualSymbolScale) { _, _ in
             resetAdaptiveSymbolFontSize()
+        }
+    }
+
+    @ViewBuilder
+    private func applySymbolColor<Content: View>(to view: Content) -> some View {
+        switch settings.symbolRenderingMode {
+        case .monochrome, .multicolor:
+            view.foregroundColor(settings.symbolColor)
+        case .hierarchical:
+            view.foregroundStyle(settings.hierarchicalSymbolColor)
+        case .palette:
+            view.foregroundStyle(
+                settings.paletteSymbolPrimaryColor,
+                settings.paletteSymbolSecondaryColor,
+                settings.paletteSymbolTertiaryColor
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func applySymbolColorRenderingMode<Content: View>(to view: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            view.symbolColorRenderingMode(settings.symbolColorRenderingMode.symbolColorRenderingMode)
+        } else {
+            view
+        }
+    }
+
+    @ViewBuilder
+    private func applyGlassEffectIfAvailable<Content: View, S: Shape>(to view: Content, shape: S) -> some View {
+        if #available(macOS 26.0, *) {
+            view.glassEffect(settings.glassEffect.resolvedGlass(tintColor: settings.glassTintColor), in: shape)
+        } else {
+            view
         }
     }
 
@@ -415,7 +463,7 @@ struct BadgeView: View {
                         )
                     )
                     .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                         y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
                     )
@@ -423,7 +471,7 @@ struct BadgeView: View {
                 Circle()
                     .fill(settings.badgeBaseColor.gradient)
                     .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? .black.opacity(shadowOpacity) : .clear,
+                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                         y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
                     )
@@ -458,7 +506,7 @@ struct BadgeView: View {
                 }
             }
             .shadow(
-                color: settings.badgeEnableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
+                color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
                 radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
                 y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
             )
@@ -468,33 +516,4 @@ struct BadgeView: View {
 }
 
 
-extension View {
-    @ViewBuilder
-    func changeSymbolRenderingMode(settings: IconSettings) -> some View {
-        self.symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
-    }
-}
-
-// MARK: - View extension for conditional symbolColorRenderingMode modifier
-extension View {
-    @ViewBuilder
-    func ifAvailableSymbolColorRenderingMode(settings: IconSettings) -> some View {
-        if #available(macOS 26.0, *) {
-            self.symbolColorRenderingMode(settings.symbolColorRenderingMode.symbolColorRenderingMode)
-        } else {
-            self
-        }
-    }
-}
-
-extension View {
-    @ViewBuilder
-    func ifAvailableGlassEffect<S: Shape>(settings: IconSettings, shape: S) -> some View {
-        if #available(macOS 26.0, *) {
-            self.glassEffect(settings.glassEffect.resolvedGlass(tintColor: settings.glassTintColor), in: shape)
-        } else {
-            self
-        }
-    }
-}
 
