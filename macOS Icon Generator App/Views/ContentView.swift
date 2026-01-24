@@ -2,62 +2,49 @@
 import SwiftUI
 
 struct ContentView: View {
-    // MVVM: centralize state in a ViewModel (types preserved)
     @StateObject private var viewModel = IconViewModel()
 
-    // Default init keeps local @StateObject creation
     init() {}
 
-    // Convenience initializer to inject a preconfigured view model (for previews/tests)
     init(viewModel: IconViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
-    
-    // Available preset colors (centralized)
+
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
-    
-    // Calculate actual export size including retina multiplier
+
     private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
-    
+
+    @State private var selectedTab: Int = 0
+
     var body: some View {
-        NavigationView {
-            // Left sidebar with controls
-            Form {
-                SFSymbolSection(iconSettings: $viewModel.iconSettings)
-
-                BackgroundColorsSection(iconSettings: $viewModel.iconSettings,
-                                        colorOptions: colorOptions)
-
-                ShadowSettingsSection(iconSettings: $viewModel.iconSettings)
-
-                BadgeSettingsSection(iconSettings: $viewModel.iconSettings,
-                                      colorOptions: colorOptions)
-
-                ExportOptionsSection(iconSettings: $viewModel.iconSettings,
-                                     showExportDialog: $viewModel.showExportDialog)
+        HSplitView {
+            // Left: TabView with settings
+            TabView(selection: $selectedTab) {
+                IconTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
+                    .tabItem { Label("Icon", systemImage: "app") }
+                    .tag(0)
+                BadgeTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
+                    .tabItem { Label("Badge", systemImage: "seal") }
+                    .tag(1)
             }
-            .formStyle(GroupedFormStyle())
-            .padding()
-            .frame(minWidth: 400, minHeight: 650)
-            
-            // Right side with the preview - now scrollable for large icons
+            .frame(minWidth: 340, maxWidth: 400)
+
+            // Right: Preview pane
             ScrollView([.horizontal, .vertical]) {
                 VStack {
                     Spacer()
-                    
-                        // Show actual export size with scroll capability for large icons
-                        ScaledIconPreview(settings: viewModel.iconSettings, displaySize: actualExportSize)
-                            .padding()
-                    
+
+                    ScaledIconPreview(settings: viewModel.iconSettings, displaySize: actualExportSize)
+                        .padding()
+
                     VStack(spacing: 4) {
                         Text("Preview")
                             .font(.headline)
-                        
-                        // Show the actual export dimensions
-                        Text("\(Int(actualExportSize))×\(Int(actualExportSize))px")
+
+                        Text("\(Int(actualExportSize))x\(Int(actualExportSize))px")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        
+
                         if actualExportSize > 400 {
                             Text("Scroll to see full icon")
                                 .font(.caption2)
@@ -65,13 +52,21 @@ struct ContentView: View {
                         }
                     }
                     .padding(.top)
-                    
+
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.windowBackgroundColor))
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                ExportToolbarContent(
+                    iconSettings: $viewModel.iconSettings,
+                    showExportDialog: $viewModel.showExportDialog
+                )
+            }
         }
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
@@ -89,11 +84,11 @@ struct ContentView: View {
     }
 }
 
-// New preview component that scales based on export size
+// Preview component that scales based on export size
 struct ScaledIconPreview: View {
     let settings: IconSettings
     let displaySize: CGFloat
-    
+
     var body: some View {
         IconContentView(settings: settings, displaySize: displaySize)
             .frame(width: displaySize, height: displaySize, alignment: .center)
@@ -103,9 +98,6 @@ struct ScaledIconPreview: View {
             )
     }
 }
-
-// LayoutSettings moved to Models/LayoutSettings.swift (type unchanged)
-
 
 struct ContentView_Previews: PreviewProvider {
     @MainActor static var previews: some View {
@@ -126,7 +118,6 @@ struct ContentView_Previews: PreviewProvider {
 
     @MainActor private static var customVM: IconViewModel {
         let vm = IconViewModel()
-        // Preconfigure a representative setup
         vm.iconSettings.symbolName = "gearshape.fill"
         vm.iconSettings.useCustomColors = true
         vm.iconSettings.customPrimaryColor = .blue
@@ -152,14 +143,12 @@ struct ContentView_Previews: PreviewProvider {
         vm.iconSettings.baseColor = .orange
         vm.iconSettings.symbolRenderingMode = .monochrome
         vm.iconSettings.symbolColor = .white
-        // Configure for 1024px display in preview (512pt @2x)
         vm.iconSettings.exportSize = 256
         vm.iconSettings.exportRetinaSize = false
         return vm
     }
 }
 
-// Side-by-side preview grid to compare rendering modes quickly
 struct ContentView_GridPreviews: PreviewProvider {
     @MainActor static var previews: some View {
         VStack(spacing: 20) {
@@ -235,4 +224,3 @@ struct ContentView_GridPreviews: PreviewProvider {
         return vm
     }
 }
-

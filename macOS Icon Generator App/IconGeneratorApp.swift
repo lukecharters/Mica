@@ -4,13 +4,14 @@ import SwiftUI
 @main
 struct IconGeneratorApp: App {
     @StateObject private var appViewModel = AppViewModel()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 800, minHeight: 600)
+                .frame(minWidth: 750, minHeight: 550)
                 .environmentObject(appViewModel)
         }
-        .windowStyle(HiddenTitleBarWindowStyle())
+        .windowStyle(.titleBar)
         .commands {
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
@@ -29,5 +30,4 @@ struct IconGeneratorApp: App {
             }
         }
     }
-
 }
