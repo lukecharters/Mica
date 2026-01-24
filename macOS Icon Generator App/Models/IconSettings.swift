@@ -46,7 +46,14 @@ struct IconSettings: Equatable {
     var badgePaletteSymbolTertiaryColor: Color = .white.opacity(0.26)
     var badgeEnableBackgroundShadow: Bool = true
     var badgeEnableSymbolShadow: Bool = true
-    
+
+    // Badge Symbol Color Rendering Mode (macOS 26+)
+    var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
+
+    // Badge Liquid Glass Effects (macOS 26+)
+    var badgeGlassEffect: GlassEffect = .identity
+    var badgeGlassTintColor: Color = .blue
+
     var gradientColors: [Color] {
         if useCustomColors {
             return [customPrimaryColor, customSecondaryColor]

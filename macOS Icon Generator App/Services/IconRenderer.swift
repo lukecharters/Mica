@@ -461,60 +461,98 @@ struct BadgeView: View {
     private let shadowOpacity: CGFloat = 0.31
     private let symbolShadowOpacity: CGFloat = 0.15
 
+    private var badgeShouldUseClearBackgroundFill: Bool {
+        if #available(macOS 26.0, *) {
+            return settings.badgeGlassEffect.requiresClearBackground
+        } else {
+            return false
+        }
+    }
+
     var body: some View {
         ZStack {
             if settings.badgeUseCustomColors {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: settings.badgeGradientColors),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                if badgeShouldUseClearBackgroundFill {
+                    applyBadgeGlassEffectIfAvailable(
+                        to: Circle()
+                            .fill(Color.clear)
                     )
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                         y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
                     )
+                } else {
+                    applyBadgeGlassEffectIfAvailable(
+                        to: Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: settings.badgeGradientColors),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .shadow(
+                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                    )
+                }
             } else {
-                Circle()
-                    .fill(settings.badgeBaseColor.gradient)
+                if badgeShouldUseClearBackgroundFill {
+                    applyBadgeGlassEffectIfAvailable(
+                        to: Circle()
+                            .fill(Color.clear)
+                    )
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                         y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
                     )
-            }
-
-            Group {
-                switch settings.badgeSymbolRenderingMode {
-                case .monochrome:
-                    Image(systemName: settings.badgeSymbolName)
-                        .font(.system(size: badgeSymbolSize, weight: .regular))
-                        .foregroundColor(settings.badgeSymbolColor)
-                        .symbolRenderingMode(.monochrome)
-                case .hierarchical:
-                    Image(systemName: settings.badgeSymbolName)
-                        .font(.system(size: badgeSymbolSize, weight: .regular))
-                        .foregroundStyle(settings.badgeHierarchicalSymbolColor)
-                        .symbolRenderingMode(.hierarchical)
-                case .multicolor:
-                    Image(systemName: settings.badgeSymbolName)
-                        .font(.system(size: badgeSymbolSize, weight: .regular))
-                        .foregroundColor(settings.badgeSymbolColor)
-                        .symbolRenderingMode(.multicolor)
-                case .palette:
-                    Image(systemName: settings.badgeSymbolName)
-                        .font(.system(size: badgeSymbolSize, weight: .regular))
-                        .foregroundStyle(
-                            settings.badgePaletteSymbolPrimaryColor,
-                            settings.badgePaletteSymbolSecondaryColor,
-                            settings.badgePaletteSymbolTertiaryColor
-                        )
-                        .symbolRenderingMode(.palette)
+                } else {
+                    applyBadgeGlassEffectIfAvailable(
+                        to: Circle()
+                            .fill(settings.badgeBaseColor.gradient)
+                    )
+                    .shadow(
+                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
+                    )
                 }
             }
+
+            applyBadgeSymbolColorRenderingMode(
+                to: Group {
+                    switch settings.badgeSymbolRenderingMode {
+                    case .monochrome:
+                        Image(systemName: settings.badgeSymbolName)
+                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .foregroundColor(settings.badgeSymbolColor)
+                            .symbolRenderingMode(.monochrome)
+                    case .hierarchical:
+                        Image(systemName: settings.badgeSymbolName)
+                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .foregroundStyle(settings.badgeHierarchicalSymbolColor)
+                            .symbolRenderingMode(.hierarchical)
+                    case .multicolor:
+                        Image(systemName: settings.badgeSymbolName)
+                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .foregroundColor(settings.badgeSymbolColor)
+                            .symbolRenderingMode(.multicolor)
+                    case .palette:
+                        Image(systemName: settings.badgeSymbolName)
+                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .foregroundStyle(
+                                settings.badgePaletteSymbolPrimaryColor,
+                                settings.badgePaletteSymbolSecondaryColor,
+                                settings.badgePaletteSymbolTertiaryColor
+                            )
+                            .symbolRenderingMode(.palette)
+                    }
+                }
+            )
             .shadow(
                 color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
                 radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
@@ -522,6 +560,24 @@ struct BadgeView: View {
             )
         }
         .frame(width: badgeSize, height: badgeSize)
+    }
+
+    @ViewBuilder
+    private func applyBadgeGlassEffectIfAvailable<Content: View>(to view: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            view.glassEffect(settings.badgeGlassEffect.resolvedGlass(tintColor: settings.badgeGlassTintColor), in: Circle())
+        } else {
+            view
+        }
+    }
+
+    @ViewBuilder
+    private func applyBadgeSymbolColorRenderingMode<Content: View>(to view: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            view.symbolColorRenderingMode(settings.badgeSymbolColorRenderingMode.symbolColorRenderingMode)
+        } else {
+            view
+        }
     }
 }
 
