@@ -7,6 +7,13 @@ struct BackgroundColorsSection: View {
 
     var body: some View {
         Section(header: Text("Background Colors")) {
+            Picker("Corner Radius", selection: $iconSettings.cornerRadiusStyle) {
+                ForEach(IconCornerRadiusStyle.allCases) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+
             Toggle("Use Custom Colors", isOn: $iconSettings.useCustomColors)
 
             if iconSettings.useCustomColors {

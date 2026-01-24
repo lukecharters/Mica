@@ -13,6 +13,7 @@ struct IconSettings: Equatable {
     var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
     var glassEffect: GlassEffect = .identity
     var glassTintColor: Color = .blue
+    var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var exportColorSpace: ExportColorSpace = .sRGB
     
 //    Preference Key Resize
@@ -182,7 +183,14 @@ enum BadgePosition: String, CaseIterable, Identifiable {
     case topRight = "Top Right"
     case bottomLeft = "Bottom Left"
     case bottomRight = "Bottom Right"
-    
+
+    var id: String { rawValue }
+}
+
+enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
+    case macOS11 = "macOS 11-15"
+    case macOS26 = "macOS 26"
+
     var id: String { rawValue }
 }
 

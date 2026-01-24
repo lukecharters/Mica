@@ -124,7 +124,10 @@ struct IconContentView: View {
 //    Preference key resize
 //    private var backgroundSize: CGFloat { baseBackgroundSize * scaleFactor }
     private var iconSize: CGFloat { displaySize }
-    private var cornerRadius: CGFloat { baseCornerRadiusLG * scaleFactor }
+    private var cornerRadius: CGFloat {
+        let baseRadius = settings.cornerRadiusStyle == .macOS26 ? baseCornerRadiusLG : baseCornerRadius
+        return baseRadius * scaleFactor
+    }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
     private var symbolSize: CGFloat { baseSymbolSize * scaleFactor }
 //    Preference key resize
