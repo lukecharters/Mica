@@ -15,6 +15,8 @@ struct ContentView: View {
     private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
 
     @State private var selectedTab: Int = 0
+    @State private var zoomLevel: Double = 1.0
+    @State private var showInspector: Bool = true
 
     var body: some View {
         HSplitView {
@@ -27,45 +29,30 @@ struct ContentView: View {
                     .tabItem { Label("Badge", systemImage: "seal") }
                     .tag(1)
             }
-            .frame(minWidth: 340, maxWidth: 400)
+            .tabViewStyle(GroupedTabViewStyle())
+            .frame(minWidth: 350, maxWidth: 600)
 
-            // Right: Preview pane
-            ScrollView([.horizontal, .vertical]) {
-                VStack {
-                    Spacer()
+            // Center: Preview pane with overlay controls
+            previewPane
 
-                    ScaledIconPreview(settings: viewModel.iconSettings, displaySize: actualExportSize)
-                        .padding()
-
-                    VStack(spacing: 4) {
-                        Text("Preview")
-                            .font(.headline)
-
-                        Text("\(Int(actualExportSize))x\(Int(actualExportSize))px")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-
-                        if actualExportSize > 400 {
-                            Text("Scroll to see full icon")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.top)
-
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.windowBackgroundColor))
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                ExportToolbarContent(
+            // Right: Export settings sidebar (inspector)
+            if showInspector {
+                ExportSettingsSidebar(
                     iconSettings: $viewModel.iconSettings,
                     showExportDialog: $viewModel.showExportDialog
                 )
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    withAnimation {
+                        showInspector.toggle()
+                    }
+                } label: {
+                    Image(systemName: "sidebar.right")
+                }
+                .help("Toggle Inspector")
             }
         }
         .fileExporter(
@@ -81,6 +68,46 @@ struct ContentView: View {
                 print("Failed to save icon: \(error.localizedDescription)")
             }
         }
+    }
+
+    // MARK: - Preview Pane
+
+    private var previewPane: some View {
+        ZStack(alignment: .topTrailing) {
+            // Scrollable preview area
+            ScrollView([.horizontal, .vertical]) {
+                VStack {
+                    Spacer(minLength: 60) // Space for controls overlay
+
+                    ScaledIconPreview(
+                        settings: viewModel.iconSettings,
+                        displaySize: previewDisplaySize
+                    )
+                    .padding()
+
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.windowBackgroundColor))
+
+            // Overlay controls (top-right)
+            PreviewControls(
+                iconSettings: $viewModel.iconSettings,
+                zoomLevel: $zoomLevel
+            )
+            .padding(12)
+        }
+    }
+
+    /// Calculates the preview display size based on zoom level
+    private var previewDisplaySize: CGFloat {
+        if zoomLevel == 0 {
+            // "Fit" mode - use a reasonable fixed size
+            return 256
+        }
+        return actualExportSize * zoomLevel
     }
 }
 

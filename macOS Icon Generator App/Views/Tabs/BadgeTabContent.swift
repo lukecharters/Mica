@@ -12,25 +12,25 @@ struct BadgeTabContent: View {
     var body: some View {
         Form {
             Section(header: Text("Badge Settings")) {
-                Toggle("Show Badge", isOn: $iconSettings.showBadge.animation())
+                Toggle("Show Badge", systemImage: "app.badge", isOn: $iconSettings.showBadge.animation())
                     .help("Add a circular badge to the icon")
             }
 
             if iconSettings.showBadge {
                 // MARK: - Badge Symbol Section
                 Section(header: Text("Badge Symbol")) {
-                    Picker("Badge Position", selection: $iconSettings.badgePosition) {
+                    Picker("Position", systemImage: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left", selection: $iconSettings.badgePosition) {
                         ForEach(BadgePosition.allCases) { position in
                             Text(position.rawValue).tag(position)
                         }
                     }
 
-                    TextField("Badge Symbol", text: $iconSettings.badgeSymbolName)
+                    TextField("Symbol Name", text: $iconSettings.badgeSymbolName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
 
                     HStack(spacing: 6) {
-                        Picker("Rendering Mode", selection: $iconSettings.badgeSymbolRenderingMode) {
+                        Picker("Rendering Mode", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
                             ForEach(SymbolRenderingMode.allCases) { mode in
                                 Text(mode.rawValue).tag(mode)
                             }
@@ -115,10 +115,10 @@ struct BadgeTabContent: View {
 
                 // MARK: - Badge Shadow Section
                 Section(header: Text("Badge Shadows")) {
-                    Toggle("Badge Background Shadow", isOn: $iconSettings.badgeEnableBackgroundShadow)
-                        .help("Toggle the drop shadow behind the badge background")
                     Toggle("Badge Symbol Shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
                         .help("Toggle the drop shadow behind the badge symbol")
+                    Toggle("Badge Background Shadow", isOn: $iconSettings.badgeEnableBackgroundShadow)
+                        .help("Toggle the drop shadow behind the badge background")
                 }
             }
         }
@@ -181,3 +181,4 @@ struct BadgeTabContent: View {
         .pickerStyle(.menu)
     }
 }
+

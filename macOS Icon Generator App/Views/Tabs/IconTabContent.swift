@@ -31,21 +31,12 @@ struct IconTabContent: View {
                 }
 
                 HStack(spacing: 6) {
-                    Picker("Rendering Mode", selection: $iconSettings.symbolRenderingMode) {
+                    Picker("Rendering Mode", systemImage: "paintpalette", selection: $iconSettings.symbolRenderingMode) {
                         ForEach(SymbolRenderingMode.allCases) { mode in
                             Text(mode.rawValue).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
-                    Button(action: { showRenderingModeHelp.toggle() }) {
-                        Image(systemName: "info.circle")
-                    }
-                    .buttonStyle(BorderlessButtonStyle())
-                    .popover(isPresented: $showRenderingModeHelp) {
-                        Text("Choose how the symbol should be rendered:\n Monochrome, Hierarchical, Multicolor, or Palette.")
-                            .padding()
-                            .multilineTextAlignment(.center)
-                    }
                 }
 
                 symbolColorControls
@@ -65,39 +56,55 @@ struct IconTabContent: View {
                         .popover(isPresented: $showColorRenderingModeHelp) {
                             Text("Choose how symbol colors are rendered, affecting appearance and blending.")
                                 .padding()
-                                .frame(maxWidth: 240)
+                                .multilineTextAlignment(.leading)
                         }
                     }
                 }
             }
 
             // MARK: - Background Section
-            Section(header: Text("Background Colors")) {
-                Picker("Corner Radius", selection: $iconSettings.cornerRadiusStyle) {
+            Section(header: Text("Background")) {
+                Picker("Corner Radius", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
                     ForEach(IconCornerRadiusStyle.allCases) { style in
                         Text(style.rawValue).tag(style)
                     }
                 }
                 .pickerStyle(.segmented)
 
-                Toggle("Use Custom Colors", isOn: $iconSettings.useCustomColors)
+                Toggle("Custom Gradient", isOn: $iconSettings.useCustomColors)
 
                 if iconSettings.useCustomColors {
                     ColorPicker("Primary Color", selection: $iconSettings.customPrimaryColor)
                     ColorPicker("Secondary Color", selection: $iconSettings.customSecondaryColor)
                 } else {
-                    Picker("Color Preset", selection: Binding(
-                        get: { colorOptions.firstIndex { $0.color == iconSettings.baseColor } ?? 0 },
-                        set: { newValue in iconSettings.baseColor = colorOptions[newValue].color }
-                    )) {
-                        ForEach(0..<colorOptions.count, id: \.self) { index in
-                            Text(colorOptions[index].name)
+                    let selectedColorOption = colorOptions.first { $0.color == iconSettings.baseColor }
+                    Picker(
+                        selection: Binding(
+                            get: { colorOptions.firstIndex { $0.color == iconSettings.baseColor } ?? 0 },
+                            set: { newValue in iconSettings.baseColor = colorOptions[newValue].color }
+                        ),
+                        label: HStack(spacing: 8) {
+                            Circle()
+                                .fill(selectedColorOption?.color ?? Color.blue)
+                                .frame(width: 12, height: 12)
+                            Text("Color Preset")
+                        }
+                    ) {
+                        ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(option.color)
+                                    .frame(width: 12, height: 12)
+                                Text(option.name)
+                            }
+                            .tag(index)
                         }
                     }
+                    .pickerStyle(.menu)
                 }
 
                 if #available(macOS 26.0, *) {
-                    Picker("Liquid Glass", selection: $iconSettings.glassEffect) {
+                    Picker("Liquid Glass", systemImage: "app.specular", selection: $iconSettings.glassEffect) {
                         ForEach(GlassEffect.allCases) { mode in
                             Text(mode.rawValue).tag(mode)
                         }
@@ -112,10 +119,10 @@ struct IconTabContent: View {
 
             // MARK: - Shadow Section
             Section(header: Text("Shadow Settings")) {
-                Toggle("Background Drop Shadow", isOn: $iconSettings.enableBackgroundShadow)
-                    .help("Toggle the drop shadow behind the background shape")
-                Toggle("Symbol Drop Shadow", isOn: $iconSettings.enableSymbolShadow)
+                Toggle("Symbol Drop Shadow", systemImage: "shadow", isOn: $iconSettings.enableSymbolShadow)
                     .help("Toggle the drop shadow behind the SF Symbol")
+                Toggle("Background Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
+                    .help("Toggle the drop shadow behind the background shape")
             }
         }
         .formStyle(GroupedFormStyle())
@@ -136,7 +143,6 @@ struct IconTabContent: View {
                 .popover(isPresented: $showSymbolColorHelp) {
                     Text("Pick a single color for the symbol.")
                         .padding()
-                        .frame(maxWidth: 240)
                 }
             }
         case .hierarchical:
@@ -149,7 +155,6 @@ struct IconTabContent: View {
                 .popover(isPresented: $showSymbolColorHelp) {
                     Text("Pick a base color for the hierarchical symbol.")
                         .padding()
-                        .frame(maxWidth: 240)
                 }
             }
         case .multicolor:
@@ -162,7 +167,6 @@ struct IconTabContent: View {
                 .popover(isPresented: $showSymbolColorHelp) {
                     Text("Pick a base color for the multicolor symbol.")
                         .padding()
-                        .frame(maxWidth: 240)
                 }
             }
         case .palette:
@@ -176,7 +180,6 @@ struct IconTabContent: View {
                     .popover(isPresented: $showSymbolColorHelp) {
                         Text("Pick up to three colors for palette symbols.")
                             .padding()
-                            .frame(maxWidth: 240)
                     }
                 }
                 ColorPicker("Secondary Color", selection: $iconSettings.paletteSymbolSecondaryColor)
