@@ -3,7 +3,8 @@ import SwiftUI
 
 struct IconSettings: Equatable {
     var symbolName: String = "folder.fill.badge.plus"
-    var baseColor: Color = .blue
+    var baseColor: Color = OptionsCatalog.color(named: "Blue")
+    var enableBackgroundGradient: Bool = true
     var useCustomColors: Bool = false
     var customPrimaryColor: Color = .blue
     var customSecondaryColor: Color = .purple
@@ -12,7 +13,7 @@ struct IconSettings: Equatable {
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
     var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
     var glassEffect: GlassEffect = .identity
-    var glassTintColor: Color = .blue
+    var glassTintColor: Color = OptionsCatalog.color(named: "Blue")
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var exportColorSpace: ExportColorSpace = .sRGB
     
@@ -29,14 +30,14 @@ struct IconSettings: Equatable {
     var hierarchicalSymbolColor: Color = .white
     var paletteSymbolPrimaryColor: Color = .white
     var paletteSymbolSecondaryColor: Color = .white.opacity(0.5)
-    var paletteSymbolTertiaryColor: Color = .white.opacity(0.26)
+    var paletteSymbolTertiaryColor: Color = .white.opacity(0.18)
     
     // Badge settings
     var showBadge: Bool = false
     var badgePosition: BadgePosition = .bottomRight
     var badgeSymbolName: String = "gearshape.fill"
     var badgeUseCustomColors: Bool = false
-    var badgeBaseColor: Color = .gray
+    var badgeBaseColor: Color = OptionsCatalog.color(named: "Gray")
     var badgeCustomPrimaryColor: Color = .white
     var badgeCustomSecondaryColor: Color = .indigo
     var badgeSymbolColor: Color = .white
@@ -44,7 +45,7 @@ struct IconSettings: Equatable {
     var badgeHierarchicalSymbolColor: Color = .white
     var badgePaletteSymbolPrimaryColor: Color = .white
     var badgePaletteSymbolSecondaryColor: Color = .white.opacity(0.5)
-    var badgePaletteSymbolTertiaryColor: Color = .white.opacity(0.26)
+    var badgePaletteSymbolTertiaryColor: Color = .white.opacity(0.18)
     var badgeEnableBackgroundShadow: Bool = true
     var badgeEnableSymbolShadow: Bool = true
 
@@ -53,7 +54,7 @@ struct IconSettings: Equatable {
 
     // Badge Liquid Glass Effects (macOS 26+)
     var badgeGlassEffect: GlassEffect = .identity
-    var badgeGlassTintColor: Color = .blue
+    var badgeGlassTintColor: Color = OptionsCatalog.color(named: "Blue")
 
     var gradientColors: [Color] {
         if useCustomColors {
@@ -64,7 +65,7 @@ struct IconSettings: Equatable {
             let baseColorNS = NSColor(baseColor)
             let darkerColor = NSColor(hue: baseColorNS.hueComponent,
                                      saturation: baseColorNS.saturationComponent,
-                                     brightness: baseColorNS.brightnessComponent * 0.7,
+                                     brightness: baseColorNS.brightnessComponent * 0.2,
                                      alpha: baseColorNS.alphaComponent)
             return [baseColor, Color(darkerColor)]
         }
@@ -77,7 +78,7 @@ struct IconSettings: Equatable {
             let baseColorNS = NSColor(badgeBaseColor)
             let darkerColor = NSColor(hue: baseColorNS.hueComponent,
                                      saturation: baseColorNS.saturationComponent,
-                                     brightness: baseColorNS.brightnessComponent * 0.7,
+                                     brightness: baseColorNS.brightnessComponent * 0.2,
                                      alpha: baseColorNS.alphaComponent)
             return [badgeBaseColor, Color(darkerColor)]
         }

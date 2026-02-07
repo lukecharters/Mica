@@ -178,11 +178,13 @@ struct IconContentView: View {
                     applyGlassEffectIfAvailable(
                         to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: settings.gradientColors),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
+                                settings.enableBackgroundGradient
+                                    ? AnyShapeStyle(LinearGradient(
+                                        gradient: Gradient(colors: settings.gradientColors),
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ))
+                                    : AnyShapeStyle(settings.customPrimaryColor)
                             ),
                         shape: RoundedRectangle(cornerRadius: cornerRadius)
                     )
@@ -214,11 +216,9 @@ struct IconContentView: View {
                 } else {
                     applyGlassEffectIfAvailable(
                         to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(settings.baseColor.gradient),
+                            .fill(settings.enableBackgroundGradient ? AnyShapeStyle(settings.baseColor.gradient) : AnyShapeStyle(settings.baseColor)),
                         shape: RoundedRectangle(cornerRadius: cornerRadius)
                     )
-                    //.fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
-
                     .shadow(
                         color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.enableBackgroundShadow ? shadowRadius : 0,
@@ -226,7 +226,6 @@ struct IconContentView: View {
                     )
                     .padding(backgroundInset)
                     .frame(width: iconSize, height: iconSize)
-                    //.frame(width: backgroundSize, height: backgroundSize)
                 }
             }
 

@@ -50,22 +50,17 @@ struct BadgeTabContent: View {
                     badgeSymbolColorControls
 
                     if #available(macOS 26.0, *) {
-                        HStack(spacing: 6) {
-                            Picker("Color Rendering Mode", selection: $iconSettings.badgeSymbolColorRenderingMode) {
-                                ForEach(SymbolColorRenderingMode.allCases) { mode in
-                                    Text(mode.rawValue).tag(mode)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            Button(action: { showColorRenderingModeHelp.toggle() }) {
-                                Image(systemName: "info.circle")
-                            }
-                            .buttonStyle(BorderlessButtonStyle())
-                            .popover(isPresented: $showColorRenderingModeHelp) {
-                                Text("Choose how badge symbol colors are rendered, affecting appearance and blending.")
-                                    .padding()
-                                    .frame(maxWidth: 240)
-                            }
+                        Toggle(isOn: Binding(
+                            get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
+                            set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
+                        ))
+                        {
+                            HStack(spacing: 12) {
+                            Circle()
+                                    .fill(.blue.gradient)
+                                .frame(width: 12, height: 12)
+                            Text("Gradient")
+                        }
                         }
                     }
                 }

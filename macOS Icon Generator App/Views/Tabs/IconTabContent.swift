@@ -9,6 +9,12 @@ struct IconTabContent: View {
     @State private var showRenderingModeHelp = false
     @State private var showSymbolColorHelp = false
     @State private var showColorRenderingModeHelp = false
+    @State private var useCustomBackgroundColor = false
+    @State private var useCustomSymbolColor = false
+    @State private var useCustomHierarchicalColor = false
+    @State private var useCustomPalettePrimaryColor = false
+    @State private var useCustomPaletteSecondaryColor = false
+    @State private var useCustomPaletteTertiaryColor = false
 
     var body: some View {
         Form {
@@ -42,66 +48,71 @@ struct IconTabContent: View {
                 symbolColorControls
 
                 if #available(macOS 26.0, *) {
-                    HStack(spacing: 6) {
-                        Picker("Color Rendering Mode", selection: $iconSettings.symbolColorRenderingMode) {
-                            ForEach(SymbolColorRenderingMode.allCases) { mode in
-                                Text(mode.rawValue).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        Button(action: { showColorRenderingModeHelp.toggle() }) {
-                            Image(systemName: "info.circle")
-                        }
-                        .buttonStyle(BorderlessButtonStyle())
-                        .popover(isPresented: $showColorRenderingModeHelp) {
-                            Text("Choose how symbol colors are rendered, affecting appearance and blending.")
-                                .padding()
-                                .multilineTextAlignment(.leading)
-                        }
-                    }
+                    Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
+                        get: { iconSettings.symbolColorRenderingMode == .gradient },
+                        set: { iconSettings.symbolColorRenderingMode = $0 ? .gradient : .flat }
+                    ))
                 }
+                Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableSymbolShadow)
+                    .help("Toggle the drop shadow behind the SF Symbol")
             }
 
             // MARK: - Background Section
             Section(header: Text("Background")) {
-                Picker("Corner Radius", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
-                    ForEach(IconCornerRadiusStyle.allCases) { style in
-                        Text(style.rawValue).tag(style)
-                    }
-                }
-                .pickerStyle(.segmented)
-
                 Toggle("Custom Gradient", isOn: $iconSettings.useCustomColors)
 
                 if iconSettings.useCustomColors {
                     ColorPicker("Primary Color", selection: $iconSettings.customPrimaryColor)
                     ColorPicker("Secondary Color", selection: $iconSettings.customSecondaryColor)
                 } else {
-                    let selectedColorOption = colorOptions.first { $0.color == iconSettings.baseColor }
-                    Picker(
-                        selection: Binding(
-                            get: { colorOptions.firstIndex { $0.color == iconSettings.baseColor } ?? 0 },
-                            set: { newValue in iconSettings.baseColor = colorOptions[newValue].color }
-                        ),
-                        label: HStack(spacing: 8) {
-                            Circle()
-                                .fill(selectedColorOption?.color ?? Color.blue)
-                                .frame(width: 12, height: 12)
-                            Text("Color Preset")
-                        }
-                    ) {
-                        ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
-                            HStack(spacing: 8) {
+                    if useCustomBackgroundColor {
+                        ColorPicker(selection: $iconSettings.baseColor) {
+                            HStack(spacing: 12) {
                                 Circle()
-                                    .fill(option.color)
+                                    .fill(iconSettings.baseColor)
                                     .frame(width: 12, height: 12)
-                                Text(option.name)
+                                Text("Color")
                             }
-                            .tag(index)
                         }
+                        Button("Use Preset", systemImage: "arrow.clockwise") {
+                            useCustomBackgroundColor = false
+                        }
+                        .buttonStyle(.link)
+                    } else {
+                        let selectedColorOption = colorOptions.first { $0.color == iconSettings.baseColor }
+                        Picker(
+                            selection: Binding<Int?>(
+                                get: { colorOptions.firstIndex { $0.color == iconSettings.baseColor } },
+                                set: { newValue in
+                                    if let index = newValue, index >= 0 {
+                                        iconSettings.baseColor = colorOptions[index].color
+                                    } else if newValue == -1 {
+                                        useCustomBackgroundColor = true
+                                    }
+                                }
+                            ),
+                            label: HStack(spacing: 12) {
+                                Circle()
+                                    .fill(selectedColorOption?.color ?? Color.blue)
+                                    .frame(width: 12, height: 12)
+                                Text("Color")
+                            }
+                        )
+                        {
+                            ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
+                                HStack(spacing: 12) {
+                                    Text(option.name)
+                                }
+                                .tag(Optional(index))
+                            }
+                            Divider()
+                            Text("Custom…").tag(Optional(-1))
+                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
                 }
+
+                Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
 
                 if #available(macOS 26.0, *) {
                     Picker("Liquid Glass", systemImage: "app.specular", selection: $iconSettings.glassEffect) {
@@ -115,14 +126,15 @@ struct IconTabContent: View {
                         glassTintColorPicker
                     }
                 }
-            }
-
-            // MARK: - Shadow Section
-            Section(header: Text("Shadow Settings")) {
-                Toggle("Symbol Drop Shadow", systemImage: "shadow", isOn: $iconSettings.enableSymbolShadow)
-                    .help("Toggle the drop shadow behind the SF Symbol")
-                Toggle("Background Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
+                Picker("Corner Radius", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
+                    ForEach(IconCornerRadiusStyle.allCases) { style in
+                        Text(style.rawValue).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
                     .help("Toggle the drop shadow behind the background shape")
+                
             }
         }
         .formStyle(GroupedFormStyle())
@@ -133,58 +145,79 @@ struct IconTabContent: View {
     @ViewBuilder
     private var symbolColorControls: some View {
         switch iconSettings.symbolRenderingMode {
-        case .monochrome:
-            HStack(spacing: 6) {
-                ColorPicker("Symbol Color", selection: $iconSettings.symbolColor)
-                Button(action: { showSymbolColorHelp.toggle() }) {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                .popover(isPresented: $showSymbolColorHelp) {
-                    Text("Pick a single color for the symbol.")
-                        .padding()
-                }
-            }
+        case .monochrome, .multicolor:
+            colorPickerWithDropdown(
+                label: iconSettings.symbolRenderingMode == .monochrome ? "Symbol Color" : "Base Color",
+                color: $iconSettings.symbolColor,
+                useCustom: $useCustomSymbolColor
+            )
         case .hierarchical:
-            HStack(spacing: 6) {
-                ColorPicker("Base Color", selection: $iconSettings.hierarchicalSymbolColor)
-                Button(action: { showSymbolColorHelp.toggle() }) {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                .popover(isPresented: $showSymbolColorHelp) {
-                    Text("Pick a base color for the hierarchical symbol.")
-                        .padding()
-                }
-            }
-        case .multicolor:
-            HStack(spacing: 6) {
-                ColorPicker("Base Color", selection: $iconSettings.symbolColor)
-                Button(action: { showSymbolColorHelp.toggle() }) {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                .popover(isPresented: $showSymbolColorHelp) {
-                    Text("Pick a base color for the multicolor symbol.")
-                        .padding()
-                }
-            }
+            colorPickerWithDropdown(
+                label: "Base Color",
+                color: $iconSettings.hierarchicalSymbolColor,
+                useCustom: $useCustomHierarchicalColor
+            )
         case .palette:
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    ColorPicker("Primary Color", selection: $iconSettings.paletteSymbolPrimaryColor)
-                    Button(action: { showSymbolColorHelp.toggle() }) {
-                        Image(systemName: "info.circle")
-                    }
-                    .buttonStyle(BorderlessButtonStyle())
-                    .popover(isPresented: $showSymbolColorHelp) {
-                        Text("Pick up to three colors for palette symbols.")
-                            .padding()
-                    }
+            colorPickerWithDropdown(
+                label: "Primary Color",
+                color: $iconSettings.paletteSymbolPrimaryColor,
+                useCustom: $useCustomPalettePrimaryColor
+            )
+            colorPickerWithDropdown(
+                label: "Secondary Color",
+                color: $iconSettings.paletteSymbolSecondaryColor,
+                useCustom: $useCustomPaletteSecondaryColor
+            )
+            colorPickerWithDropdown(
+                label: "Tertiary Color",
+                color: $iconSettings.paletteSymbolTertiaryColor,
+                useCustom: $useCustomPaletteTertiaryColor
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func colorPickerWithDropdown(label: String, color: Binding<Color>, useCustom: Binding<Bool>) -> some View {
+        if useCustom.wrappedValue {
+            ColorPicker(selection: color) {
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(color.wrappedValue)
+                        .frame(width: 12, height: 12)
+                    Text(label)
                 }
-                ColorPicker("Secondary Color", selection: $iconSettings.paletteSymbolSecondaryColor)
-                ColorPicker("Tertiary Color", selection: $iconSettings.paletteSymbolTertiaryColor)
             }
+            Button("Use Preset", systemImage: "arrow.clockwise") {
+                useCustom.wrappedValue = false
+            }
+            .buttonStyle(.link)
+        } else {
+            let selectedColorOption = colorOptions.first { $0.color == color.wrappedValue }
+            Picker(
+                selection: Binding<Int?>(
+                    get: { colorOptions.firstIndex { $0.color == color.wrappedValue } },
+                    set: { newValue in
+                        if let index = newValue, index >= 0 {
+                            color.wrappedValue = colorOptions[index].color
+                        } else if newValue == -1 {
+                            useCustom.wrappedValue = true
+                        }
+                    }
+                ),
+                label: HStack(spacing: 12) {
+                    Circle()
+                        .fill(selectedColorOption?.color ?? color.wrappedValue)
+                        .frame(width: 12, height: 12)
+                    Text(label)
+                }
+            ) {
+                ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
+                    Text(option.name).tag(Optional(index))
+                }
+                Divider()
+                Text("Custom…").tag(Optional(-1))
+            }
+            .pickerStyle(.menu)
         }
     }
 
@@ -226,3 +259,4 @@ struct IconTabContent: View {
         .pickerStyle(.menu)
     }
 }
+
