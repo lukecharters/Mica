@@ -149,24 +149,15 @@ struct IconContentView: View {
     private var badgeSize: CGFloat { baseBadgeSize * scaleFactor }
     private var badgeOffset: CGFloat { baseBadgeOffset * scaleFactor }
     private var badgeSymbolSize: CGFloat { baseBadgeSymbolSize * scaleFactor }
-    private var shouldUseClearBackgroundFill: Bool {
-        if #available(macOS 26.0, *) {
-            return settings.glassEffect.requiresClearBackground
-        } else {
-            return false
-        }
-    }
-
     var body: some View {
         ZStack {
 
-            if settings.useCustomColors {
-                if shouldUseClearBackgroundFill {
-                    applyGlassEffectIfAvailable(
-                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(Color.clear),
-                        shape: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
+            switch settings.backgroundMode {
+            case .preRendered:
+                Image(settings.preRenderedAssetName)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
                     .padding(backgroundInset)
                     .shadow(
                         color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
@@ -174,58 +165,36 @@ struct IconContentView: View {
                         y: settings.enableBackgroundShadow ? shadowOffset : 0
                     )
                     .frame(width: iconSize, height: iconSize)
-                } else {
-                    applyGlassEffectIfAvailable(
-                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                settings.enableBackgroundGradient
-                                    ? AnyShapeStyle(LinearGradient(
-                                        gradient: Gradient(colors: settings.gradientColors),
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ))
-                                    : AnyShapeStyle(settings.customPrimaryColor)
-                            ),
-                        shape: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
-                    .padding(backgroundInset)
-                    .shadow(
-                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                        y: settings.enableBackgroundShadow ? shadowOffset : 0
-                    )
-                    .frame(width: iconSize, height: iconSize)
-                }
-            } else {
-                if shouldUseClearBackgroundFill {
-                    applyGlassEffectIfAvailable(
-                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(Color.clear),
-                        shape: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
-                    //.fill(settings.baseColor.gradient.shadow(.inner(color: .white.opacity(0.8), radius: 5, x: 2, y: 2)))
 
-                    .shadow(
-                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                        y: settings.enableBackgroundShadow ? shadowOffset : 0
-                    )
-                    .padding(backgroundInset)
-                    .frame(width: iconSize, height: iconSize)
-                    //.frame(width: backgroundSize, height: backgroundSize)
+            case .custom:
+                if settings.useCustomColors {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(
+                            settings.enableBackgroundGradient
+                                ? AnyShapeStyle(LinearGradient(
+                                    gradient: Gradient(colors: settings.gradientColors),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ))
+                                : AnyShapeStyle(settings.customPrimaryColor)
+                        )
+                        .padding(backgroundInset)
+                        .shadow(
+                            color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                            y: settings.enableBackgroundShadow ? shadowOffset : 0
+                        )
+                        .frame(width: iconSize, height: iconSize)
                 } else {
-                    applyGlassEffectIfAvailable(
-                        to: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(settings.enableBackgroundGradient ? AnyShapeStyle(settings.baseColor.gradient) : AnyShapeStyle(settings.baseColor)),
-                        shape: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
-                    .shadow(
-                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                        y: settings.enableBackgroundShadow ? shadowOffset : 0
-                    )
-                    .padding(backgroundInset)
-                    .frame(width: iconSize, height: iconSize)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(settings.enableBackgroundGradient ? AnyShapeStyle(settings.baseColor.gradient) : AnyShapeStyle(settings.baseColor))
+                        .shadow(
+                            color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
+                            y: settings.enableBackgroundShadow ? shadowOffset : 0
+                        )
+                        .padding(backgroundInset)
+                        .frame(width: iconSize, height: iconSize)
                 }
             }
 
@@ -292,38 +261,15 @@ struct IconContentView: View {
 //            }
 
 
-            applyGlassEffectIfAvailable(
-                to: applySymbolColorRenderingMode(
-                    to: applySymbolColor(
-                        to: Image(systemName: settings.symbolName)
-                            //.resizable()
-                            //.scaledToFit()
-                            //.border(.red, width: 1)
-                            //.offset(x: 16, y: 0)
-//            Label("Icon", systemImage: settings.symbolName)
-//                .labelStyle(.iconOnly)
-//                        Preference key resize
-//                            .font(.system(size: resolvedSymbolFontSize, weight: symbolWeight))
-                            .font(.system(size: symbolSize, weight: symbolWeight))
-                    )
-                    //.frame(width: (iconSize - (backgroundInset * 3) ), height: (iconSize - (backgroundInset * 3) ), alignment: .center)
-                    .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
+            applySymbolColorRenderingMode(
+                to: applySymbolColor(
+                    to: Image(systemName: settings.symbolName)
+                        .font(.system(size: symbolSize, weight: symbolWeight))
                 )
-                //.imageScale(.small)
-//                Preference key resize
-//                .background(
-//                    GeometryReader { geometry in
-//                        Color.clear
-//                            .preference(key: SizePreferenceKey.self, value: geometry.size)
-//                    }
-//                )
-//                .onPreferenceChange(SizePreferenceKey.self) { size in
-//                    updateSymbolFontSizeIfNeeded(measured: size)
-//                }
-                .frame(width: iconSize, height: iconSize)
-                .padding(-backgroundInset),
-                shape: .rect(cornerRadius: cornerRadius)
+                .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
             )
+            .frame(width: iconSize, height: iconSize)
+            .padding(-backgroundInset)
             .shadow(
                 color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
                 radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
@@ -401,14 +347,7 @@ struct IconContentView: View {
         }
     }
 
-    @ViewBuilder
-    private func applyGlassEffectIfAvailable<Content: View, S: Shape>(to view: Content, shape: S) -> some View {
-        if #available(macOS 26.0, *) {
-            view.glassEffect(settings.glassEffect.resolvedGlass(tintColor: settings.glassTintColor), in: shape)
-        } else {
-            view
-        }
-    }
+
 //Preference Key Resize
 //    private func updateSymbolFontSizeIfNeeded(measured size: CGSize) {
 //        guard size.width > 0, size.height > 0 else { return }
@@ -463,66 +402,30 @@ struct BadgeView: View {
     private let shadowOpacity: CGFloat = 0.31
     private let symbolShadowOpacity: CGFloat = 0.15
 
-    private var badgeShouldUseClearBackgroundFill: Bool {
-        if #available(macOS 26.0, *) {
-            return settings.badgeGlassEffect.requiresClearBackground
-        } else {
-            return false
-        }
-    }
-
     var body: some View {
         ZStack {
             if settings.badgeUseCustomColors {
-                if badgeShouldUseClearBackgroundFill {
-                    applyBadgeGlassEffectIfAvailable(
-                        to: Circle()
-                            .fill(Color.clear)
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: settings.badgeGradientColors),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                         y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
                     )
-                } else {
-                    applyBadgeGlassEffectIfAvailable(
-                        to: Circle()
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: settings.badgeGradientColors),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                    )
-                    .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
-                    )
-                }
             } else {
-                if badgeShouldUseClearBackgroundFill {
-                    applyBadgeGlassEffectIfAvailable(
-                        to: Circle()
-                            .fill(Color.clear)
-                    )
+                Circle()
+                    .fill(settings.badgeBaseColor.gradient)
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                         y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
                     )
-                } else {
-                    applyBadgeGlassEffectIfAvailable(
-                        to: Circle()
-                            .fill(settings.badgeBaseColor.gradient)
-                    )
-                    .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
-                    )
-                }
             }
 
             applyBadgeSymbolColorRenderingMode(
@@ -562,15 +465,6 @@ struct BadgeView: View {
             )
         }
         .frame(width: badgeSize, height: badgeSize)
-    }
-
-    @ViewBuilder
-    private func applyBadgeGlassEffectIfAvailable<Content: View>(to view: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            view.glassEffect(settings.badgeGlassEffect.resolvedGlass(tintColor: settings.badgeGlassTintColor), in: Circle())
-        } else {
-            view
-        }
     }
 
     @ViewBuilder

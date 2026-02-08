@@ -12,8 +12,8 @@ struct IconSettings: Equatable {
     var exportRetinaSize: Bool = false
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
     var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
-    var glassEffect: GlassEffect = .identity
-    var glassTintColor: Color = OptionsCatalog.color(named: "Blue")
+    var backgroundMode: BackgroundMode = .custom
+    var preRenderedColorName: String = "Blue"
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var exportColorSpace: ExportColorSpace = .sRGB
     
@@ -52,10 +52,6 @@ struct IconSettings: Equatable {
     // Badge Symbol Color Rendering Mode (macOS 26+)
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
 
-    // Badge Liquid Glass Effects (macOS 26+)
-    var badgeGlassEffect: GlassEffect = .identity
-    var badgeGlassTintColor: Color = OptionsCatalog.color(named: "Blue")
-
     var gradientColors: [Color] {
         if useCustomColors {
             return [customPrimaryColor, customSecondaryColor]
@@ -84,6 +80,10 @@ struct IconSettings: Equatable {
         }
     }
     
+    var preRenderedAssetName: String {
+        "background-\(preRenderedColorName.lowercased())-\(enableBackgroundGradient ? "gradient" : "solid")"
+    }
+
     var finalExportSize: CGFloat {
         return exportRetinaSize ? exportSize * 2 : exportSize
     }
@@ -112,40 +112,11 @@ enum SymbolRenderingMode: String, CaseIterable, Identifiable {
 }
 
 
-enum GlassEffect: String, CaseIterable, Identifiable {
-    case identity = "None"
-    case regular = "Regular"
-    case clear = "Clear"
-    case tinted = "Tinted"
-    
-    var id: String { self.rawValue }
-    var requiresClearBackground: Bool {
-        switch self {
-        case .identity:
-            return false
-        case .regular, .clear, .tinted:
-            return true
-        }
-    }
-
-    var supportsTintColorSelection: Bool { self == .tinted }
-
-    @available(macOS 26.0, *)
-    func resolvedGlass(tintColor: Color) -> SwiftUI.Glass {
-        switch self {
-        case .identity:
-            return .identity
-        case .regular:
-            return .regular
-        case .clear:
-            return .clear
-        case .tinted:
-            return .regular.tint(tintColor)
-        }
-    }
+enum BackgroundMode: String, CaseIterable, Identifiable {
+    case custom = "Custom"
+    case preRendered = "Pre-rendered"
+    var id: String { rawValue }
 }
-
-
 
 enum SymbolColorRenderingMode: String, CaseIterable, Identifiable {
     case flat = "Flat"

@@ -174,6 +174,7 @@ class IconGeneratorCLI {
     
     private func buildIconSettings(from command: IconGeneratorCommand) throws -> IconSettings {
         var settings = IconSettings()
+        settings.backgroundMode = .custom
         
         do {
             // Basic properties with validation

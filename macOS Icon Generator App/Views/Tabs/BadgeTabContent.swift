@@ -7,7 +7,6 @@ struct BadgeTabContent: View {
 
     @State private var showRenderingModeHelp = false
     @State private var showColorRenderingModeHelp = false
-    @State private var showGlassEffectHelp = false
 
     var body: some View {
         Form {
@@ -83,29 +82,6 @@ struct BadgeTabContent: View {
                         }
                     }
 
-                    if #available(macOS 26.0, *) {
-                        HStack(spacing: 6) {
-                            Picker("Liquid Glass", selection: $iconSettings.badgeGlassEffect) {
-                                ForEach(GlassEffect.allCases) { mode in
-                                    Text(mode.rawValue).tag(mode)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            Button(action: { showGlassEffectHelp.toggle() }) {
-                                Image(systemName: "info.circle")
-                            }
-                            .buttonStyle(BorderlessButtonStyle())
-                            .popover(isPresented: $showGlassEffectHelp) {
-                                Text("Apply a Liquid Glass effect to the badge background.")
-                                    .padding()
-                                    .frame(maxWidth: 240)
-                            }
-                        }
-
-                        if iconSettings.badgeGlassEffect.supportsTintColorSelection {
-                            badgeGlassTintColorPicker
-                        }
-                    }
                 }
 
                 // MARK: - Badge Shadow Section
@@ -138,42 +114,5 @@ struct BadgeTabContent: View {
         }
     }
 
-    // MARK: - Badge Glass Tint Color Picker
-
-    @available(macOS 26.0, *)
-    private var badgeGlassTintColorPicker: some View {
-        let binding = Binding(
-            get: {
-                colorOptions.firstIndex { $0.color == iconSettings.badgeGlassTintColor } ?? 0
-            },
-            set: { newValue in
-                guard colorOptions.indices.contains(newValue) else { return }
-                iconSettings.badgeGlassTintColor = colorOptions[newValue].color
-            }
-        )
-
-        let selectedOption = colorOptions.first { $0.color == iconSettings.badgeGlassTintColor }
-
-        return Picker(
-            selection: binding,
-            label: HStack(spacing: 8) {
-                Circle()
-                    .fill(selectedOption?.color ?? Color.blue)
-                    .frame(width: 12, height: 12)
-                Text("Badge Glass Tint Color")
-            }
-        ) {
-            ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(option.color)
-                        .frame(width: 12, height: 12)
-                    Text(option.name)
-                }
-                .tag(index)
-            }
-        }
-        .pickerStyle(.menu)
-    }
 }
 

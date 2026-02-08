@@ -59,82 +59,99 @@ struct IconTabContent: View {
 
             // MARK: - Background Section
             Section(header: Text("Background")) {
-                Toggle("Custom Gradient", isOn: $iconSettings.useCustomColors)
-
-                if iconSettings.useCustomColors {
-                    ColorPicker("Primary Color", selection: $iconSettings.customPrimaryColor)
-                    ColorPicker("Secondary Color", selection: $iconSettings.customSecondaryColor)
-                } else {
-                    if useCustomBackgroundColor {
-                        ColorPicker(selection: $iconSettings.baseColor) {
-                            HStack(spacing: 12) {
-                                Circle()
-                                    .fill(iconSettings.baseColor)
-                                    .frame(width: 12, height: 12)
-                                Text("Color")
-                            }
-                        }
-                        Button("Use Preset", systemImage: "arrow.clockwise") {
-                            useCustomBackgroundColor = false
-                        }
-                        .buttonStyle(.link)
-                    } else {
-                        let selectedColorOption = colorOptions.first { $0.color == iconSettings.baseColor }
-                        Picker(
-                            selection: Binding<Int?>(
-                                get: { colorOptions.firstIndex { $0.color == iconSettings.baseColor } },
-                                set: { newValue in
-                                    if let index = newValue, index >= 0 {
-                                        iconSettings.baseColor = colorOptions[index].color
-                                    } else if newValue == -1 {
-                                        useCustomBackgroundColor = true
-                                    }
-                                }
-                            ),
-                            label: HStack(spacing: 12) {
-                                Circle()
-                                    .fill(selectedColorOption?.color ?? Color.blue)
-                                    .frame(width: 12, height: 12)
-                                Text("Color")
-                            }
-                        )
-                        {
-                            ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
-                                HStack(spacing: 12) {
-                                    Text(option.name)
-                                }
-                                .tag(Optional(index))
-                            }
-                            Divider()
-                            Text("Custom…").tag(Optional(-1))
-                        }
-                        .pickerStyle(.menu)
-                    }
-                }
-
-                Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
-
-                if #available(macOS 26.0, *) {
-                    Picker("Liquid Glass", systemImage: "app.specular", selection: $iconSettings.glassEffect) {
-                        ForEach(GlassEffect.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    if iconSettings.glassEffect.supportsTintColorSelection {
-                        glassTintColorPicker
-                    }
-                }
-                Picker("Corner Radius", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
-                    ForEach(IconCornerRadiusStyle.allCases) { style in
-                        Text(style.rawValue).tag(style)
+                Picker("Background Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
+                    ForEach(BackgroundMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
-                Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
-                    .help("Toggle the drop shadow behind the background shape")
-                
+
+                switch iconSettings.backgroundMode {
+                case .preRendered:
+                    Picker(
+                        selection: $iconSettings.preRenderedColorName,
+                        label: HStack(spacing: 12) {
+                            Circle()
+                                .fill(OptionsCatalog.color(named: iconSettings.preRenderedColorName))
+                                .frame(width: 12, height: 12)
+                            Text("Color")
+                        }
+                    ) {
+                        ForEach(colorOptions, id: \.name) { option in
+                            Text(option.name).tag(option.name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
+                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
+                        .help("Toggle the drop shadow behind the background shape")
+
+                case .custom:
+                    Toggle("Custom Gradient", isOn: $iconSettings.useCustomColors)
+
+                    if iconSettings.useCustomColors {
+                        ColorPicker("Primary Color", selection: $iconSettings.customPrimaryColor)
+                        ColorPicker("Secondary Color", selection: $iconSettings.customSecondaryColor)
+                    } else {
+                        if useCustomBackgroundColor {
+                            ColorPicker(selection: $iconSettings.baseColor) {
+                                HStack(spacing: 12) {
+                                    Circle()
+                                        .fill(iconSettings.baseColor)
+                                        .frame(width: 12, height: 12)
+                                    Text("Color")
+                                }
+                            }
+                            Button("Use Preset", systemImage: "arrow.clockwise") {
+                                useCustomBackgroundColor = false
+                            }
+                            .buttonStyle(.link)
+                        } else {
+                            let selectedColorOption = colorOptions.first { $0.color == iconSettings.baseColor }
+                            Picker(
+                                selection: Binding<Int?>(
+                                    get: { colorOptions.firstIndex { $0.color == iconSettings.baseColor } },
+                                    set: { newValue in
+                                        if let index = newValue, index >= 0 {
+                                            iconSettings.baseColor = colorOptions[index].color
+                                        } else if newValue == -1 {
+                                            useCustomBackgroundColor = true
+                                        }
+                                    }
+                                ),
+                                label: HStack(spacing: 12) {
+                                    Circle()
+                                        .fill(selectedColorOption?.color ?? Color.blue)
+                                        .frame(width: 12, height: 12)
+                                    Text("Color")
+                                }
+                            )
+                            {
+                                ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
+                                    HStack(spacing: 12) {
+                                        Text(option.name)
+                                    }
+                                    .tag(Optional(index))
+                                }
+                                Divider()
+                                Text("Custom…").tag(Optional(-1))
+                            }
+                            .pickerStyle(.menu)
+                        }
+                    }
+
+                    Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
+
+                    Picker("Corner Radius", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
+                        ForEach(IconCornerRadiusStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
+                        .help("Toggle the drop shadow behind the background shape")
+                }
             }
         }
         .formStyle(GroupedFormStyle())
@@ -221,42 +238,5 @@ struct IconTabContent: View {
         }
     }
 
-    // MARK: - Glass Tint Color Picker
-
-    @available(macOS 26.0, *)
-    private var glassTintColorPicker: some View {
-        let binding = Binding(
-            get: {
-                colorOptions.firstIndex { $0.color == iconSettings.glassTintColor } ?? 0
-            },
-            set: { newValue in
-                guard colorOptions.indices.contains(newValue) else { return }
-                iconSettings.glassTintColor = colorOptions[newValue].color
-            }
-        )
-
-        let selectedOption = colorOptions.first { $0.color == iconSettings.glassTintColor }
-
-        return Picker(
-            selection: binding,
-            label: HStack(spacing: 8) {
-                Circle()
-                    .fill(selectedOption?.color ?? Color.blue)
-                    .frame(width: 12, height: 12)
-                Text("Glass Tint Color")
-            }
-        ) {
-            ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(option.color)
-                        .frame(width: 12, height: 12)
-                    Text(option.name)
-                }
-                .tag(index)
-            }
-        }
-        .pickerStyle(.menu)
-    }
 }
 

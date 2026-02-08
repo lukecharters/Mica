@@ -37,5 +37,8 @@ struct OptionsCatalog {
         colorOptions.first { $0.name == name }?.color ?? .blue
     }
 
-    // [REMOVED] - Size now controlled by slider, no presets needed
+    /// Reverse lookup: find the catalog name for a given color.
+    static func colorName(for color: Color) -> String? {
+        colorOptions.first { $0.color == color }?.name
+    }
 }

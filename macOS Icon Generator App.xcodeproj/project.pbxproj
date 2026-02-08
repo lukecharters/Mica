@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8C06A07C2EB8265100EC5CE9 /* LiquidGlassText in Frameworks */ = {isa = PBXBuildFile; productRef = 8C06A07B2EB8265100EC5CE9 /* LiquidGlassText */; };
 		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
 		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
 		8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C3148D22E61E3F400C7A0A9 /* ArgumentParser */; };
@@ -169,7 +168,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C06A07C2EB8265100EC5CE9 /* LiquidGlassText in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,7 +354,6 @@
 			);
 			name = "macOS Icon Generator App";
 			packageProductDependencies = (
-				8C06A07B2EB8265100EC5CE9 /* LiquidGlassText */,
 			);
 			productName = "macOS Icon Generator App";
 			productReference = 8C71CC992DBDDDD2006FB320 /* macOS Icon Generator App.app */;
@@ -484,7 +481,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
-				8C06A07A2EB8265100EC5CE9 /* XCRemoteSwiftPackageReference "LiquidGlassText" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8C71CC9A2DBDDDD2006FB320 /* Products */;
@@ -1248,14 +1244,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		8C06A07A2EB8265100EC5CE9 /* XCRemoteSwiftPackageReference "LiquidGlassText" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/DanielCrompton123/LiquidGlassText";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
@@ -1267,11 +1255,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		8C06A07B2EB8265100EC5CE9 /* LiquidGlassText */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 8C06A07A2EB8265100EC5CE9 /* XCRemoteSwiftPackageReference "LiquidGlassText" */;
-			productName = LiquidGlassText;
-		};
 		8C3148D22E61E3F400C7A0A9 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;

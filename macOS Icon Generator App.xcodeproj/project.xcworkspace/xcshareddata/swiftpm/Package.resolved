@@ -1,15 +1,6 @@
 {
-  "originHash" : "69a5c9a7500567f4bfe8023d5ef7f67e2313b4d301c4c186f4bb9a1e46de6354",
+  "originHash" : "59ba1edda695b389d6c9ac1809891cd779e4024f505b0ce1a9d5202b6762e38a",
   "pins" : [
-    {
-      "identity" : "liquidglasstext",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/DanielCrompton123/LiquidGlassText",
-      "state" : {
-        "branch" : "main",
-        "revision" : "d5e8f4207a3f7b1b088ae1a14e8a73196d828352"
-      }
-    },
     {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
