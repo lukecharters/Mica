@@ -407,11 +407,13 @@ struct BadgeView: View {
             if settings.badgeUseCustomColors {
                 Circle()
                     .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: settings.badgeGradientColors),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                        settings.badgeEnableBackgroundGradient
+                            ? AnyShapeStyle(LinearGradient(
+                                gradient: Gradient(colors: settings.badgeGradientColors),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ))
+                            : AnyShapeStyle(settings.badgeCustomPrimaryColor)
                     )
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
@@ -420,7 +422,7 @@ struct BadgeView: View {
                     )
             } else {
                 Circle()
-                    .fill(settings.badgeBaseColor.gradient)
+                    .fill(settings.badgeEnableBackgroundGradient ? AnyShapeStyle(settings.badgeBaseColor.gradient) : AnyShapeStyle(settings.badgeBaseColor))
                     .shadow(
                         color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                         radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,

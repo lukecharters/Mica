@@ -88,7 +88,15 @@ struct IconTabContent: View {
                         .help("Toggle the drop shadow behind the background shape")
 
                 case .custom:
-                    Toggle("Custom Gradient", isOn: $iconSettings.useCustomColors)
+                    Toggle("Custom Gradient", isOn: Binding(
+                        get: { iconSettings.useCustomColors },
+                        set: { newValue in
+                            iconSettings.useCustomColors = newValue
+                            if newValue {
+                                iconSettings.enableBackgroundGradient = true
+                            }
+                        }
+                    ))
 
                     if iconSettings.useCustomColors {
                         ColorPicker("Primary Color", selection: $iconSettings.customPrimaryColor)
@@ -141,7 +149,9 @@ struct IconTabContent: View {
                         }
                     }
 
-                    Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
+                    if !iconSettings.useCustomColors {
+                        Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
+                    }
 
                     Picker("Corner Radius", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
                         ForEach(IconCornerRadiusStyle.allCases) { style in
