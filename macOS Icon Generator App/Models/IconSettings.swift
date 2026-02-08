@@ -3,11 +3,11 @@ import SwiftUI
 
 struct IconSettings: Equatable {
     var symbolName: String = "folder.fill.badge.plus"
-    var baseColor: Color = OptionsCatalog.color(named: "Blue")
+    var baseColor: Color = .blue
     var enableBackgroundGradient: Bool = true
     var useCustomColors: Bool = false
-    var customPrimaryColor: Color = OptionsCatalog.color(named: "Blue")
-    var customSecondaryColor: Color = OptionsCatalog.color(named: "Purple")
+    var customPrimaryColor: Color = .blue
+    var customSecondaryColor: Color = .purple
     var exportSize: CGFloat = 256
     var exportRetinaSize: Bool = false
     var symbolRenderingMode: SymbolRenderingMode = .monochrome
@@ -26,26 +26,26 @@ struct IconSettings: Equatable {
     var enableSymbolShadow: Bool = true
     
     // Symbol colors
-    var symbolColor: Color = OptionsCatalog.color(named: "White")
-    var hierarchicalSymbolColor: Color = OptionsCatalog.color(named: "White")
-    var paletteSymbolPrimaryColor: Color = OptionsCatalog.color(named: "White")
-    var paletteSymbolSecondaryColor: Color = OptionsCatalog.color(named: "White").opacity(0.5)
-    var paletteSymbolTertiaryColor: Color = OptionsCatalog.color(named: "White").opacity(0.18)
+    var symbolColor: Color = .white
+    var hierarchicalSymbolColor: Color = .white
+    var paletteSymbolPrimaryColor: Color = .white
+    var paletteSymbolSecondaryColor: Color = .white.opacity(0.5)
+    var paletteSymbolTertiaryColor: Color = .white.opacity(0.18)
     
     // Badge settings
     var showBadge: Bool = false
     var badgePosition: BadgePosition = .bottomRight
     var badgeSymbolName: String = "gearshape.fill"
     var badgeUseCustomColors: Bool = false
-    var badgeBaseColor: Color = OptionsCatalog.color(named: "Gray")
-    var badgeCustomPrimaryColor: Color = OptionsCatalog.color(named: "White")
-    var badgeCustomSecondaryColor: Color = OptionsCatalog.color(named: "Indigo")
-    var badgeSymbolColor: Color = OptionsCatalog.color(named: "White")
+    var badgeBaseColor: Color = .gray
+    var badgeCustomPrimaryColor: Color = .white
+    var badgeCustomSecondaryColor: Color = .indigo
+    var badgeSymbolColor: Color = .white
     var badgeSymbolRenderingMode: SymbolRenderingMode = .monochrome
-    var badgeHierarchicalSymbolColor: Color = OptionsCatalog.color(named: "White")
-    var badgePaletteSymbolPrimaryColor: Color = OptionsCatalog.color(named: "White")
-    var badgePaletteSymbolSecondaryColor: Color = OptionsCatalog.color(named: "White").opacity(0.5)
-    var badgePaletteSymbolTertiaryColor: Color = OptionsCatalog.color(named: "White").opacity(0.18)
+    var badgeHierarchicalSymbolColor: Color = .white
+    var badgePaletteSymbolPrimaryColor: Color = .white
+    var badgePaletteSymbolSecondaryColor: Color = .white.opacity(0.5)
+    var badgePaletteSymbolTertiaryColor: Color = .white.opacity(0.18)
     var badgeEnableBackgroundGradient: Bool = true
     var badgeEnableBackgroundShadow: Bool = true
     var badgeEnableSymbolShadow: Bool = true
