@@ -54,31 +54,11 @@ struct IconSettings: Equatable {
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
 
     var gradientColors: [Color] {
-        if useCustomColors {
-            return [customPrimaryColor, customSecondaryColor]
-        } else {
-            // We'll create a linear array of colors from the gradient
-            // This is just for the renderer that needs explicit colors
-            let baseColorNS = NSColor(baseColor)
-            let darkerColor = NSColor(hue: baseColorNS.hueComponent,
-                                     saturation: baseColorNS.saturationComponent,
-                                     brightness: baseColorNS.brightnessComponent * 0.2,
-                                     alpha: baseColorNS.alphaComponent)
-            return [baseColor, Color(darkerColor)]
-        }
+        [customPrimaryColor, customSecondaryColor]
     }
     
     var badgeGradientColors: [Color] {
-        if badgeUseCustomColors {
-            return [badgeCustomPrimaryColor, badgeCustomSecondaryColor]
-        } else {
-            let baseColorNS = NSColor(badgeBaseColor)
-            let darkerColor = NSColor(hue: baseColorNS.hueComponent,
-                                     saturation: baseColorNS.saturationComponent,
-                                     brightness: baseColorNS.brightnessComponent * 0.2,
-                                     alpha: baseColorNS.alphaComponent)
-            return [badgeBaseColor, Color(darkerColor)]
-        }
+        [badgeCustomPrimaryColor, badgeCustomSecondaryColor]
     }
     
     var preRenderedAssetName: String {
