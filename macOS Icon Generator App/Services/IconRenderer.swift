@@ -2,15 +2,6 @@
 import SwiftUI
 import CoreGraphics
 
-// Preference key resize struct
-//private struct SizePreferenceKey: PreferenceKey {
-//    static var defaultValue: CGSize = .zero
-//
-//    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
-//        value = nextValue()
-//    }
-//}
-
 struct IconRenderer {
     // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
     @MainActor
@@ -89,23 +80,18 @@ struct IconRenderer {
 struct IconContentView: View {
     let settings: IconSettings
     let displaySize: CGFloat
-// Preference key resize variable
-//    @State private var adaptiveSymbolFontSize: CGFloat? = nil
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
     private let baseCornerRadius: CGFloat = 46
     private let baseCornerRadiusLG: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
-    private let baseSymbolSize: CGFloat = 125
     private let baseShadowRadius: CGFloat = 4
     private let baseShadowOffset: CGFloat = 2.5
     private let shadowOpacity: CGFloat = 0.35
     private let baseShadowRadiusSequoia: CGFloat = 2
     private let baseShadowOffsetSequoia: CGFloat = 2.5
     private let shadowOpacitySequoia: CGFloat = 0.31
-    private let baseVerticalAlignmentOffset: CGFloat = 5.5
-    private let symbolWeight: Font.Weight = .regular
     private let baseSymbolShadowRadius: CGFloat = 2
     private let baseSymbolShadowOffset: CGFloat = 2.5
     private let symbolShadowOpacity: CGFloat = 0.23
@@ -115,33 +101,58 @@ struct IconContentView: View {
     private let baseBadgeOffset: CGFloat = 4
     private let baseBadgeSymbolSize: CGFloat = 45
 
-//    Preference key resize
-//    private var baseBackgroundSize: CGFloat { baseSize * 0.8}
-    
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
     // Scaled layout constants
-//    Preference key resize
-//    private var backgroundSize: CGFloat { baseBackgroundSize * scaleFactor }
     private var iconSize: CGFloat { displaySize }
     private var cornerRadius: CGFloat {
         let baseRadius = settings.cornerRadiusStyle == .macOS26 ? baseCornerRadiusLG : baseCornerRadius
         return baseRadius * scaleFactor
     }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
-    private var symbolSize: CGFloat { baseSymbolSize * scaleFactor }
-//    Preference key resize
-//    //private var baseSymbolFontSize: CGFloat { (baseBackgroundSize * 0.6) * scaleFactor}
-//    private var baseSymbolFontSize: CGFloat { baseSymbolSize * scaleFactor }
-//    //private var baseSymbolFontSize: CGFloat { ((iconSize - (backgroundInset * 2)) * 0.6) * scaleFactor }
-//    private var manualScaleFactor: CGFloat { settings.useAutomaticSymbolSizing ? 1 : CGFloat(settings.manualSymbolScale) }
-//    private var initialSymbolFontSize: CGFloat { baseSymbolFontSize * manualScaleFactor }
-//    private var resolvedSymbolFontSize: CGFloat { adaptiveSymbolFontSize ?? initialSymbolFontSize }
-//    private var symbolContentBounds: CGFloat { max(iconSize - (backgroundInset * 2), 1) }
-//    //private var symbolContentBounds: CGFloat { max(backgroundSize, 1) }
+
+    /// The chiclet dimension (background rect size, excluding outer padding)
+    private var enclosureSize: CGFloat {
+        iconSize - (2 * backgroundInset)
+    }
+
+    /// Per-symbol recipe from container_recipes.plist, or nil
+    private var symbolRecipe: SymbolRecipe? {
+        guard settings.useAutoSymbolSizing else { return nil }
+        return SymbolRecipeService.recipe(for: settings.symbolName)
+    }
+
+    /// Correction factor: plist multipliers are calibrated for macOS System Settings'
+    /// private rendering pipeline (IconRendering/Metal). SwiftUI renders glyphs ~2.5x
+    /// larger at the same font size, so we scale down to match the intended proportions.
+    private let recipeScaleFactor: CGFloat = 0.39
+
+    private var symbolSize: CGFloat {
+        if let recipe = symbolRecipe {
+            return enclosureSize * recipe.pointsizeToShapeMul * recipeScaleFactor
+        }
+        // Manual mode or no recipe: preserve original sizing (125pt at 206pt enclosure)
+        let defaultMul = 0.607
+        let scale = settings.useAutoSymbolSizing ? 1.0 : settings.manualSymbolScale
+        return enclosureSize * defaultMul * scale
+    }
+
+    private var symbolFontWeight: Font.Weight {
+        symbolRecipe?.symbolWeight ?? .regular
+    }
+
+    private var symbolXOffset: CGFloat {
+        guard let recipe = symbolRecipe else { return 0 }
+        return enclosureSize * recipe.xOffset
+    }
+
+    private var symbolYOffset: CGFloat {
+        guard let recipe = symbolRecipe else { return 0 }
+        return enclosureSize * recipe.yOffset
+    }
+
     private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
     private var shadowOffset: CGFloat { baseShadowOffset * scaleFactor }
-    private var verticalAlignmentOffset: CGFloat { baseVerticalAlignmentOffset * scaleFactor }
     private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
 
@@ -199,75 +210,14 @@ struct IconContentView: View {
             }
 
             // SF Symbol
-//            Group {
-//                switch settings.symbolRenderingMode {
-//                case .monochrome:
-//                    Image(systemName: settings.symbolName)
-//                        //.resizable()
-//                        //.scaledToFit()
-//                        //.scaleEffect(x: 0.75, y: 0.75, anchor: .center)
-//                        //.frame(width: 206, height: 206, alignment: .center)
-//                        .font(.system(size: symbolSize, weight: symbolWeight))
-//                        .foregroundColor(settings.symbolColor)
-//                        .changeSymbolRenderingMode(settings: settings)
-//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
-//                        .offset(x: 0, y: -verticalAlignmentOffset)
-//                        .shadow(
-//                            color: settings.enableSymbolShadow ? .black.opacity(symbolShadowOpacity) : .clear,
-//                            radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-//                            y: settings.enableSymbolShadow ? symbolShadowOffset : 0
-//                        )
-//                case .hierarchical:
-//                    Image(systemName: settings.symbolName)
-//                        .font(.system(size: symbolSize, weight: symbolWeight))
-//                        .foregroundStyle(settings.hierarchicalSymbolColor)
-//                        .symbolRenderingMode(.hierarchical)
-//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
-//                        .offset(x: 0, y: -verticalAlignmentOffset)
-//                        .shadow(
-//                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
-//                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
-//                            y: settings.enableSymbolShadow ? shadowOffset : 0
-//                        )
-//                case .multicolor:
-//                    Image(systemName: settings.symbolName)
-//                        .font(.system(size: symbolSize, weight: symbolWeight))
-//                        .foregroundColor(settings.symbolColor)
-//                        .symbolRenderingMode(.multicolor)
-//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
-//                        .offset(x: 0, y: -verticalAlignmentOffset)
-//                        .shadow(
-//                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
-//                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
-//                            y: settings.enableSymbolShadow ? shadowOffset : 0
-//                        )
-//                case .palette:
-//                    Image(systemName: settings.symbolName)
-//                        .font(.system(size: symbolSize, weight: symbolWeight))
-//                        .foregroundStyle(
-//                            settings.paletteSymbolPrimaryColor,
-//                            settings.paletteSymbolSecondaryColor,
-//                            settings.paletteSymbolTertiaryColor
-//                        )
-//                        .symbolRenderingMode(.palette)
-//                        .ifAvailableSymbolColorRenderingMode(settings: settings)
-//                        .offset(x: 0, y: -verticalAlignmentOffset)
-//                        .shadow(
-//                            color: settings.enableSymbolShadow ? .black.opacity(shadowOpacity) : .clear,
-//                            radius: settings.enableSymbolShadow ? shadowRadius : 0,
-//                            y: settings.enableSymbolShadow ? shadowOffset : 0
-//                        )
-//                }
-//            }
-
-
             applySymbolColorRenderingMode(
                 to: applySymbolColor(
                     to: Image(systemName: settings.symbolName)
-                        .font(.system(size: symbolSize, weight: symbolWeight))
+                        .font(.system(size: symbolSize, weight: symbolFontWeight))
                 )
                 .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
             )
+            .offset(x: symbolXOffset, y: symbolYOffset)
             .frame(width: iconSize, height: iconSize)
             .padding(-backgroundInset)
             .shadow(
@@ -275,27 +225,6 @@ struct IconContentView: View {
                 radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
                 y: settings.enableSymbolShadow ? symbolShadowOffset : 0
             )
-//                .overlay(
-//                    Image("CFBundle-folder.fill.badge.plus")
-//                        .resizable()
-//                        .aspectRatio(contentMode: .fit)
-//                        .frame(width: (iconSize), height: (iconSize))
-//                        .opacity(0.61)
-//                )
-
-//            Text(String(format: "resolvedSymbolFontSize: %.1f", resolvedSymbolFontSize))
-//                .font(.system(size: 9, weight: .medium, design: .monospaced))
-//                .padding(3)
-//                .background(Color.black.opacity(0.35))
-//                .foregroundColor(.white)
-//                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-//                .padding(4)
-//            Image("App Icon Template 1024")
-//                .resizable()
-//                .aspectRatio(contentMode: .fit)
-//                .opacity(0.3)
-//                .frame(width: (iconSize - backgroundInset*2), height: (iconSize - backgroundInset*2))
-//                .allowsHitTesting(false)
         
             
             // Badge
@@ -304,22 +233,6 @@ struct IconContentView: View {
                     .offset(badgeOffset(for: settings.badgePosition))
             }
         }
-//        Preference Key Resize
-//        .onAppear {
-//            resetAdaptiveSymbolFontSize()
-//        }
-//        .onChange(of: settings.symbolName) { _, _ in
-//            resetAdaptiveSymbolFontSize()
-//        }
-//        .onChange(of: displaySize) { _, _ in
-//            resetAdaptiveSymbolFontSize()
-//        }
-//        .onChange(of: settings.useAutomaticSymbolSizing) { _, _ in
-//            resetAdaptiveSymbolFontSize()
-//        }
-//        .onChange(of: settings.manualSymbolScale) { _, _ in
-//            resetAdaptiveSymbolFontSize()
-//        }
     }
 
     @ViewBuilder
@@ -346,36 +259,6 @@ struct IconContentView: View {
             view
         }
     }
-
-
-//Preference Key Resize
-//    private func updateSymbolFontSizeIfNeeded(measured size: CGSize) {
-//        guard size.width > 0, size.height > 0 else { return }
-//        let maxDimension = symbolContentBounds
-//        guard maxDimension > 0 else { return }
-//
-//        if size.width <= maxDimension && size.height <= maxDimension {
-//            if adaptiveSymbolFontSize == nil {
-//                adaptiveSymbolFontSize = initialSymbolFontSize
-//            }
-//            return
-//        }
-//
-//        let currentSize = adaptiveSymbolFontSize ?? initialSymbolFontSize
-//        let scale = min(maxDimension / size.width, maxDimension / size.height) * 0.95
-//        let adjustedSize = max(currentSize * scale, 1)
-//
-//        if adaptiveSymbolFontSize == nil || abs(adjustedSize - currentSize) > 0.5 {
-//            adaptiveSymbolFontSize = adjustedSize
-//        }
-//    }
-//
-//    private func resetAdaptiveSymbolFontSize() {
-//        let targetSize = initialSymbolFontSize
-//        if adaptiveSymbolFontSize != targetSize {
-//            adaptiveSymbolFontSize = targetSize
-//        }
-//    }
 
     private func badgeOffset(for position: BadgePosition) -> CGSize {
         let iconRadius = iconSize / 2
