@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct IconGeneratorApp: App {
     @StateObject private var appViewModel = AppViewModel()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         WindowGroup {
@@ -13,6 +14,12 @@ struct IconGeneratorApp: App {
         }
         .windowStyle(.titleBar)
         .commands {
+            CommandGroup(after: .newItem) {
+                Button("Calibration Playground") {
+                    openWindow(id: "calibration")
+                }
+                .keyboardShortcut("K", modifiers: [.command, .shift])
+            }
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
                     runExportTests()
@@ -29,5 +36,10 @@ struct IconGeneratorApp: App {
                 }
             }
         }
+
+        Window("Calibration Playground", id: "calibration") {
+            AppleReferenceCalibrationPlayground()
+        }
+        .defaultSize(width: 1200, height: 800)
     }
 }
