@@ -2,6 +2,12 @@
     "folders": [
         {
             "path": "."
+        },
+        {
+            "path": "../../../../.claude"
+        },
+        {
+            "path": "../../../../Library/Containers/test.macOS-Icon-Generator-App/Data/Library/Application Support/Icon Generator"
         }
     ],
     "settings": {

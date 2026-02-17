@@ -19,6 +19,21 @@ struct IconGeneratorApp: App {
                     openWindow(id: "calibration")
                 }
                 .keyboardShortcut("K", modifiers: [.command, .shift])
+
+                Button("Generate Symbol Metrics") {
+                    openWindow(id: "metrics-generator")
+                }
+                .keyboardShortcut("M", modifiers: [.command, .shift])
+
+                Button("Metrics Sizing Playground") {
+                    openWindow(id: "metrics-sizing")
+                }
+                .keyboardShortcut("J", modifiers: [.command, .shift])
+
+                Button("AR Calibration Playground") {
+                    openWindow(id: "ar-calibration")
+                }
+                .keyboardShortcut("L", modifiers: [.command, .shift])
             }
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
@@ -39,6 +54,21 @@ struct IconGeneratorApp: App {
 
         Window("Calibration Playground", id: "calibration") {
             AppleReferenceCalibrationPlayground()
+        }
+        .defaultSize(width: 1200, height: 800)
+
+        Window("Symbol Metrics Generator", id: "metrics-generator") {
+            SymbolMetricsGeneratorView()
+        }
+        .defaultSize(width: 420, height: 220)
+
+        Window("Metrics Sizing Playground", id: "metrics-sizing") {
+            MetricsSizingPlayground()
+        }
+        .defaultSize(width: 1200, height: 800)
+
+        Window("AR Calibration Playground", id: "ar-calibration") {
+            AspectRatioCalibrationPlayground()
         }
         .defaultSize(width: 1200, height: 800)
     }
