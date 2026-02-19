@@ -30,8 +30,8 @@ struct IconGeneratorApp: App {
                 }
                 .keyboardShortcut("J", modifiers: [.command, .shift])
 
-                Button("AR Calibration Playground") {
-                    openWindow(id: "ar-calibration")
+                Button("Dimension Calibration Playground") {
+                    openWindow(id: "dim-calibration")
                 }
                 .keyboardShortcut("L", modifiers: [.command, .shift])
             }
@@ -67,8 +67,8 @@ struct IconGeneratorApp: App {
         }
         .defaultSize(width: 1200, height: 800)
 
-        Window("AR Calibration Playground", id: "ar-calibration") {
-            AspectRatioCalibrationPlayground()
+        Window("Dimension Calibration Playground", id: "dim-calibration") {
+            DimensionCalibrationPlayground()
         }
         .defaultSize(width: 1200, height: 800)
     }

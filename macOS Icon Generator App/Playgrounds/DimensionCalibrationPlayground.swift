@@ -1,30 +1,35 @@
-// AspectRatioCalibrationPlayground.swift
+// DimensionCalibrationPlayground.swift
 //
-// Calibration tool that groups SF Symbols by aspect ratio (4 decimal places).
-// Instead of calibrating ~4,431 individual symbols, calibrate ~1,612 aspect
-// ratio groups — the same multiplier/offsets apply to all symbols sharing
-// the same intrinsic proportions.
+// Calibration tool that groups SF Symbols by image dimensions (width × height,
+// 4 decimal places). Symbols with identical intrinsic dimensions at 100pt
+// reference size share the same multiplier/offsets — ~1,754 dimension groups
+// covering all ~7,006 symbols.
 //
-// Saves to ~/Library/Application Support/Icon Generator/ar-calibration.json
-// with per-aspect-ratio entries that map to all member symbols.
+// Saves to ~/Library/Application Support/Icon Generator/dim-calibration.json
+// with per-dimension entries that map to all member symbols.
 
 import SwiftUI
 
-// MARK: - Aspect Ratio Group
+// MARK: - Dimension Group
 
-struct AspectRatioGroup: Identifiable {
-    let id: String // aspect ratio as 4dp string key, e.g. "1.0263"
-    let aspectRatio: Double
+struct DimensionGroup: Identifiable {
+    let id: String // dimension key, e.g. "120.5234_100.0000"
+    let width: Double
+    let height: Double
     let symbols: [String]
 
     var count: Int { symbols.count }
     /// First symbol used as the visual representative
     var representative: String { symbols[0] }
+    /// Formatted display label
+    var dimensionLabel: String {
+        String(format: "%.1f × %.1f", width, height)
+    }
 }
 
-// MARK: - AR Calibration Entry
+// MARK: - Dim Calibration Entry
 
-struct ARCalibrationEntry: Codable, Equatable {
+struct DimCalibrationEntry: Codable, Equatable {
     var multiplier: Double
     var xOffset: Double
     var yOffset: Double
@@ -32,39 +37,39 @@ struct ARCalibrationEntry: Codable, Equatable {
     var status: String   // "calibrated", "skipped", "needs-review"
 }
 
-struct ARCalibrationFile: Codable {
+struct DimCalibrationFile: Codable {
     var version: Int = 1
-    /// Keyed by aspect ratio string (4dp), e.g. "1.0263"
-    var calibrations: [String: ARCalibrationEntry] = [:]
-    /// Symbol names that have been pulled out of their AR groups for individual calibration
+    /// Keyed by dimension string (4dp), e.g. "120.5234_100.0000"
+    var calibrations: [String: DimCalibrationEntry] = [:]
+    /// Symbol names that have been pulled out of their dimension groups for individual calibration
     var excludedSymbols: [String] = []
     /// Per-symbol calibration overrides for excluded symbols
-    var overrides: [String: ARCalibrationEntry] = [:]
+    var overrides: [String: DimCalibrationEntry] = [:]
 }
 
-// MARK: - AR Calibration Store
+// MARK: - Dim Calibration Store
 
 @Observable
-class ARCalibrationStore {
-    var entries: [String: ARCalibrationEntry] = [:]
+class DimCalibrationStore {
+    var entries: [String: DimCalibrationEntry] = [:]
     var excludedSymbols: Set<String> = []
-    var overrides: [String: ARCalibrationEntry] = [:]
+    var overrides: [String: DimCalibrationEntry] = [:]
     private let fileURL: URL
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("ar-calibration.json")
+        self.fileURL = dir.appendingPathComponent("dim-calibration.json")
         load()
     }
 
-    func entry(for arKey: String) -> ARCalibrationEntry? {
-        entries[arKey]
+    func entry(for key: String) -> DimCalibrationEntry? {
+        entries[key]
     }
 
-    func setEntry(_ entry: ARCalibrationEntry, for arKey: String) {
-        entries[arKey] = entry
+    func setEntry(_ entry: DimCalibrationEntry, for key: String) {
+        entries[key] = entry
         save()
     }
 
@@ -85,17 +90,17 @@ class ARCalibrationStore {
         save()
     }
 
-    func override(for symbol: String) -> ARCalibrationEntry? {
+    func override(for symbol: String) -> DimCalibrationEntry? {
         overrides[symbol]
     }
 
-    func setOverride(_ entry: ARCalibrationEntry, for symbol: String) {
+    func setOverride(_ entry: DimCalibrationEntry, for symbol: String) {
         overrides[symbol] = entry
         save()
     }
 
     func save() {
-        let file = ARCalibrationFile(
+        let file = DimCalibrationFile(
             version: 1,
             calibrations: entries,
             excludedSymbols: excludedSymbols.sorted(),
@@ -107,7 +112,7 @@ class ARCalibrationStore {
             let data = try encoder.encode(file)
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("ARCalibrationStore: failed to save — \(error)")
+            print("DimCalibrationStore: failed to save — \(error)")
         }
     }
 
@@ -115,12 +120,12 @@ class ARCalibrationStore {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         do {
             let data = try Data(contentsOf: fileURL)
-            let file = try JSONDecoder().decode(ARCalibrationFile.self, from: data)
+            let file = try JSONDecoder().decode(DimCalibrationFile.self, from: data)
             entries = file.calibrations
             excludedSymbols = Set(file.excludedSymbols)
             overrides = file.overrides
         } catch {
-            print("ARCalibrationStore: failed to load — \(error)")
+            print("DimCalibrationStore: failed to load — \(error)")
         }
     }
 
@@ -137,10 +142,10 @@ class ARCalibrationStore {
     }
 }
 
-// MARK: - AR Icon View
+// MARK: - Dim Icon View
 
 /// Renders an icon using calibration parameters (same formula as CalibratingIconView).
-private struct ARIconView: View {
+private struct DimIconView: View {
     let symbolName: String
     let displaySize: CGFloat
     let multiplier: CGFloat
@@ -181,15 +186,16 @@ private struct ARIconView: View {
 
 // MARK: - Comparison Mode
 
-private enum ARComparisonMode: String, CaseIterable {
+private enum DimComparisonMode: String, CaseIterable {
     case overlay = "Overlay"
     case tintedOverlay = "Tinted Overlay"
     case sideBySide = "Side by Side"
     case difference = "Difference"
     case gallery = "Gallery"
+    case allIcons = "All Icons"
 }
 
-private enum ARFilterMode: String, CaseIterable {
+private enum DimFilterMode: String, CaseIterable {
     case all = "All"
     case uncalibrated = "Uncalibrated"
     case calibrated = "Calibrated"
@@ -197,9 +203,10 @@ private enum ARFilterMode: String, CaseIterable {
     case overrides = "Overrides"
 }
 
-private enum ARSortMode: String, CaseIterable {
+private enum DimSortMode: String, CaseIterable {
     case groupSize = "Group Size"
-    case aspectRatio = "Aspect Ratio"
+    case width = "Width"
+    case height = "Height"
 }
 
 // MARK: - Symbol Baseline Data
@@ -231,14 +238,6 @@ struct SymbolBaselineData {
     }
 
     /// Compute the Y offset correction for a symbol based on its baseline.
-    /// The glyph sits between baseline and capline within the em square.
-    /// This returns a fractional offset (relative to enclosure size) that
-    /// vertically centers the glyph within the icon.
-    ///
-    /// Formula:
-    ///   glyphCenter = (baseline + capline) / 2
-    ///   emCenter = referencePointSize / 2
-    ///   offset = (emCenter - glyphCenter) * multiplier / referencePointSize
     func yOffsetCorrection(for symbol: String, multiplier: Double) -> Double? {
         guard let baseline = baselines[symbol] else { return nil }
         let glyphCenter = (baseline + capline) / 2
@@ -250,11 +249,11 @@ struct SymbolBaselineData {
 
 // MARK: - Main Playground
 
-struct AspectRatioCalibrationPlayground: View {
-    @State private var store = ARCalibrationStore()
+struct DimensionCalibrationPlayground: View {
+    @State private var store = DimCalibrationStore()
     @State private var service = AppexReferenceService()
 
-    @State private var groups: [AspectRatioGroup] = []
+    @State private var groups: [DimensionGroup] = []
     @State private var selectedIndex = 0
     @State private var memberIndex = 0 // which member of the group to show as reference
 
@@ -262,26 +261,30 @@ struct AspectRatioCalibrationPlayground: View {
     @State private var xOffset = 0.0
     @State private var yOffset = 0.0
     @State private var weight: Font.Weight = .regular
-    @State private var comparisonMode: ARComparisonMode = .overlay
+    @State private var comparisonMode: DimComparisonMode = .overlay
     @State private var overlayOpacity = 0.5
     @State private var searchText = ""
-    @State private var filterMode: ARFilterMode = .all
-    @State private var sortMode: ARSortMode = .groupSize
+    @State private var filterMode: DimFilterMode = .all
+    @State private var sortMode: DimSortMode = .groupSize
     @State private var referenceImage: NSImage?
     @State private var isLoadingReference = false
     @State private var errorMessage: String?
     @State private var baselineData: SymbolBaselineData?
     @State private var useBaselineYOffset = false
 
+    /// Lookup: symbol name → dimension group key (for All Icons navigation)
+    @State private var symbolToGroupKey: [String: String] = [:]
+
     private let displaySize: CGFloat = 512
 
     init() {
-        let groups = Self.buildGroups()
+        let (groups, lookup) = Self.buildGroups()
         _groups = State(initialValue: groups)
+        _symbolToGroupKey = State(initialValue: lookup)
     }
 
-    /// Load metrics and build aspect ratio groups.
-    private static func buildGroups() -> [AspectRatioGroup] {
+    /// Load metrics and build dimension groups.
+    private static func buildGroups() -> ([DimensionGroup], [String: String]) {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let url = appSupport
             .appendingPathComponent("Icon Generator", isDirectory: true)
@@ -289,7 +292,7 @@ struct AspectRatioCalibrationPlayground: View {
 
         guard let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolMetricsFile.self, from: data)
-        else { return [] }
+        else { return ([], [:]) }
 
         // Preserve symbol ordering from sf_symbols.txt
         let orderedSymbols: [String]
@@ -300,35 +303,46 @@ struct AspectRatioCalibrationPlayground: View {
             orderedSymbols = Array(file.symbols.keys).sorted()
         }
 
-        // Group by 4dp aspect ratio
+        // Group by 4dp dimensions (width_height)
         var groupMap: [String: [String]] = [:]
-        var arValues: [String: Double] = [:]
+        var widthValues: [String: Double] = [:]
+        var heightValues: [String: Double] = [:]
+        var symbolLookup: [String: String] = [:]
 
         for symbol in orderedSymbols {
             guard let metrics = file.symbols[symbol] else { continue }
-            let arKey = String(format: "%.4f", metrics.aspectRatio)
-            groupMap[arKey, default: []].append(symbol)
-            arValues[arKey] = metrics.aspectRatio
+            let dimKey = String(format: "%.4f_%.4f", metrics.width, metrics.height)
+            groupMap[dimKey, default: []].append(symbol)
+            widthValues[dimKey] = metrics.width
+            heightValues[dimKey] = metrics.height
+            symbolLookup[symbol] = dimKey
         }
 
-        return groupMap.map { key, symbols in
-            AspectRatioGroup(id: key, aspectRatio: arValues[key] ?? 0, symbols: symbols)
+        let groups = groupMap.map { key, symbols in
+            DimensionGroup(
+                id: key,
+                width: widthValues[key] ?? 0,
+                height: heightValues[key] ?? 0,
+                symbols: symbols
+            )
         }
         .sorted { $0.count > $1.count } // default sort: largest groups first
+
+        return (groups, symbolLookup)
     }
 
     // MARK: - Filtered & Sorted Groups
 
     /// Whether a group ID represents an excluded singleton (prefixed with "!")
-    private func isExcludedGroup(_ group: AspectRatioGroup) -> Bool {
+    private func isExcludedGroup(_ group: DimensionGroup) -> Bool {
         group.id.hasPrefix("!")
     }
 
-    private var filteredGroups: [AspectRatioGroup] {
+    private var filteredGroups: [DimensionGroup] {
         // When showing overrides, only show excluded singletons
         if filterMode == .overrides {
             var singletons = store.excludedSymbols.map { symbol in
-                AspectRatioGroup(id: "!\(symbol)", aspectRatio: 0, symbols: [symbol])
+                DimensionGroup(id: "!\(symbol)", width: 0, height: 0, symbols: [symbol])
             }
             if !searchText.isEmpty {
                 singletons = singletons.filter { group in
@@ -340,15 +354,15 @@ struct AspectRatioCalibrationPlayground: View {
         }
 
         // Filter excluded symbols out of their parent groups
-        var list = groups.compactMap { group -> AspectRatioGroup? in
+        var list = groups.compactMap { group -> DimensionGroup? in
             let remaining = group.symbols.filter { !store.isExcluded($0) }
             guard !remaining.isEmpty else { return nil }
-            return AspectRatioGroup(id: group.id, aspectRatio: group.aspectRatio, symbols: remaining)
+            return DimensionGroup(id: group.id, width: group.width, height: group.height, symbols: remaining)
         }
 
         // Append excluded symbols as singleton groups
         let singletons = store.excludedSymbols.map { symbol in
-            AspectRatioGroup(id: "!\(symbol)", aspectRatio: 0, symbols: [symbol])
+            DimensionGroup(id: "!\(symbol)", width: 0, height: 0, symbols: [symbol])
         }
         list.append(contentsOf: singletons)
 
@@ -390,14 +404,16 @@ struct AspectRatioCalibrationPlayground: View {
         switch sortMode {
         case .groupSize:
             list.sort { $0.count > $1.count }
-        case .aspectRatio:
-            list.sort { $0.aspectRatio < $1.aspectRatio }
+        case .width:
+            list.sort { $0.width < $1.width }
+        case .height:
+            list.sort { $0.height < $1.height }
         }
 
         return list
     }
 
-    private var currentGroup: AspectRatioGroup? {
+    private var currentGroup: DimensionGroup? {
         let list = filteredGroups
         guard list.indices.contains(selectedIndex) else { return nil }
         return list[selectedIndex]
@@ -498,8 +514,10 @@ struct AspectRatioCalibrationPlayground: View {
                 searchAndFilter
                 Divider()
                 groupInfo
-                Divider()
-                parameterSliders
+                if comparisonMode != .allIcons {
+                    Divider()
+                    parameterSliders
+                }
                 Divider()
                 progressInfo
                 Divider()
@@ -514,7 +532,7 @@ struct AspectRatioCalibrationPlayground: View {
             Text("Search")
                 .font(.headline)
 
-            TextField("Filter by symbol name or AR...", text: $searchText)
+            TextField("Filter by symbol name or dimensions...", text: $searchText)
                 .textFieldStyle(.roundedBorder)
                 .onChange(of: searchText) { _, _ in
                     selectedIndex = 0
@@ -524,7 +542,7 @@ struct AspectRatioCalibrationPlayground: View {
 
             HStack(spacing: 12) {
                 Picker("Filter", selection: $filterMode) {
-                    ForEach(ARFilterMode.allCases, id: \.self) { mode in
+                    ForEach(DimFilterMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
@@ -541,15 +559,15 @@ struct AspectRatioCalibrationPlayground: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Picker("Sort", selection: $sortMode) {
-                    ForEach(ARSortMode.allCases, id: \.self) { mode in
+                    ForEach(DimSortMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 220)
+                .frame(width: 260)
             }
 
-            Text("\(filteredGroups.count) aspect ratio groups")
+            Text("\(filteredGroups.count) dimension groups")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -562,7 +580,7 @@ struct AspectRatioCalibrationPlayground: View {
 
             if let group = currentGroup {
                 HStack {
-                    Text("AR \(group.id)")
+                    Text(group.dimensionLabel)
                         .font(.title3.bold().monospacedDigit())
                     Spacer()
                     Text("\(group.count) symbols")
@@ -754,7 +772,7 @@ struct AspectRatioCalibrationPlayground: View {
             }
 
             if let symbol = currentSymbol {
-                let view = ARIconView(
+                let view = DimIconView(
                     symbolName: symbol, displaySize: displaySize,
                     multiplier: multiplier, xOffset: xOffset, yOffset: effectiveYOffset,
                     weight: weight, symbolOnly: false
@@ -862,7 +880,10 @@ struct AspectRatioCalibrationPlayground: View {
 
     private var comparisonArea: some View {
         VStack(spacing: 0) {
-            if let group = currentGroup, let symbol = currentSymbol {
+            if comparisonMode == .allIcons {
+                allIconsView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let group = currentGroup, let symbol = currentSymbol {
                 VStack(spacing: 12) {
                     HStack {
                         if isExcludedGroup(group) {
@@ -874,7 +895,7 @@ struct AspectRatioCalibrationPlayground: View {
                                 .font(.caption)
                                 .foregroundStyle(.purple)
                         } else {
-                            Text("AR \(group.id)")
+                            Text(group.dimensionLabel)
                                 .font(.title3.bold().monospacedDigit())
                             Text("—")
                                 .foregroundStyle(.secondary)
@@ -886,25 +907,6 @@ struct AspectRatioCalibrationPlayground: View {
                     comparisonContent(for: symbol)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    Picker("Mode", selection: $comparisonMode) {
-                        ForEach(ARComparisonMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 400)
-
-                    if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
-                        HStack {
-                            Text("Opacity")
-                            Slider(value: $overlayOpacity, in: 0...1)
-                            Text(String(format: "%.0f%%", overlayOpacity * 100))
-                                .font(.caption.monospacedDigit())
-                                .frame(width: 36, alignment: .trailing)
-                        }
-                        .frame(maxWidth: 400)
-                    }
-
                     if let error = errorMessage {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
@@ -914,29 +916,52 @@ struct AspectRatioCalibrationPlayground: View {
                 .padding()
             } else {
                 ContentUnavailableView("No Groups", systemImage: "magnifyingglass",
-                    description: Text("No aspect ratio groups match the current filter"))
+                    description: Text("No dimension groups match the current filter"))
             }
 
             Divider()
 
-            // Navigation bar
-            HStack {
-                Button(action: navigatePrevious) {
-                    Image(systemName: "chevron.left")
+            // Mode picker + navigation bar
+            VStack(spacing: 8) {
+                Picker("Mode", selection: $comparisonMode) {
+                    ForEach(DimComparisonMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
                 }
-                .disabled(selectedIndex <= 0)
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 520)
 
-                Spacer()
-
-                Text("\(selectedIndex + 1) / \(filteredGroups.count)")
-                    .font(.caption.monospacedDigit())
-
-                Spacer()
-
-                Button(action: navigateNext) {
-                    Image(systemName: "chevron.right")
+                if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
+                    HStack {
+                        Text("Opacity")
+                        Slider(value: $overlayOpacity, in: 0...1)
+                        Text(String(format: "%.0f%%", overlayOpacity * 100))
+                            .font(.caption.monospacedDigit())
+                            .frame(width: 36, alignment: .trailing)
+                    }
+                    .frame(maxWidth: 400)
                 }
-                .disabled(selectedIndex >= filteredGroups.count - 1)
+
+                if comparisonMode != .allIcons {
+                    HStack {
+                        Button(action: navigatePrevious) {
+                            Image(systemName: "chevron.left")
+                        }
+                        .disabled(selectedIndex <= 0)
+
+                        Spacer()
+
+                        Text("\(selectedIndex + 1) / \(filteredGroups.count)")
+                            .font(.caption.monospacedDigit())
+
+                        Spacer()
+
+                        Button(action: navigateNext) {
+                            Image(systemName: "chevron.right")
+                        }
+                        .disabled(selectedIndex >= filteredGroups.count - 1)
+                    }
+                }
             }
             .padding(12)
         }
@@ -957,6 +982,8 @@ struct AspectRatioCalibrationPlayground: View {
             if let group = currentGroup {
                 galleryView(for: group)
             }
+        case .allIcons:
+            EmptyView() // handled separately in comparisonArea
         }
     }
 
@@ -1002,7 +1029,7 @@ struct AspectRatioCalibrationPlayground: View {
         .shadow(radius: 4, y: 2)
     }
 
-    private func galleryView(for group: AspectRatioGroup) -> some View {
+    private func galleryView(for group: DimensionGroup) -> some View {
         let thumbSize: CGFloat = 96
         let columns = [GridItem(.adaptive(minimum: thumbSize + 8), spacing: 8)]
 
@@ -1032,6 +1059,139 @@ struct AspectRatioCalibrationPlayground: View {
         }
     }
 
+    // MARK: - All Icons View
+
+    private var allIconsView: some View {
+        let thumbSize: CGFloat = 56
+        let columns = [GridItem(.adaptive(minimum: thumbSize + 4), spacing: 4)]
+
+        // Flatten all symbols from all groups (respecting current filter/sort)
+        let allSymbols: [(symbol: String, groupKey: String, status: String)] = {
+            var result: [(String, String, String)] = []
+            for group in filteredGroups {
+                let isOverride = isExcludedGroup(group)
+                let status: String = {
+                    if isOverride {
+                        return store.override(for: group.symbols[0])?.status ?? "uncalibrated"
+                    }
+                    return store.entry(for: group.id)?.status ?? "uncalibrated"
+                }()
+                for symbol in group.symbols {
+                    result.append((symbol, group.id, status))
+                }
+            }
+            return result
+        }()
+
+        return VStack(spacing: 4) {
+            HStack {
+                Text("All Icons")
+                    .font(.headline)
+                Spacer()
+                legendView
+                Spacer()
+                Text("\(allSymbols.count) symbols")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 4) {
+                    ForEach(Array(allSymbols.enumerated()), id: \.offset) { _, item in
+                        allIconsThumb(symbol: item.symbol, groupKey: item.groupKey, status: item.status, size: thumbSize)
+                            .onTapGesture {
+                                navigateToSymbol(item.symbol)
+                            }
+                    }
+                }
+                .padding(8)
+            }
+        }
+    }
+
+    private func allIconsThumb(symbol: String, groupKey: String, status: String, size: CGFloat) -> some View {
+        let cal: DimCalibrationEntry? = {
+            if groupKey.hasPrefix("!") {
+                return store.override(for: symbol)
+            }
+            return store.entry(for: groupKey)
+        }()
+        let mul = cal?.multiplier ?? 0.55
+        let xOff = cal?.xOffset ?? 0.0
+        let yOff: CGFloat = {
+            var off = cal?.yOffset ?? 0.0
+            if useBaselineYOffset, let data = baselineData {
+                off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
+            }
+            return off
+        }()
+        let w: Font.Weight = cal?.weight == "medium" ? .medium : .regular
+
+        return DimIconView(
+            symbolName: symbol,
+            displaySize: size,
+            multiplier: mul,
+            xOffset: xOff,
+            yOffset: yOff,
+            weight: w,
+            symbolOnly: false
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .overlay {
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(borderColor(for: status), lineWidth: status == "uncalibrated" ? 0 : 1.5)
+        }
+        .help(symbol)
+    }
+
+    private var legendView: some View {
+        HStack(spacing: 12) {
+            legendDot(color: .green, label: "Calibrated")
+            legendDot(color: .orange, label: "Skipped")
+            legendDot(color: .secondary.opacity(0.3), label: "Uncalibrated")
+        }
+        .font(.caption2)
+    }
+
+    private func legendDot(color: Color, label: String) -> some View {
+        HStack(spacing: 3) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            Text(label)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func borderColor(for status: String) -> Color {
+        switch status {
+        case "calibrated": .green
+        case "skipped": .orange
+        case "needs-review": .blue
+        default: .clear
+        }
+    }
+
+    /// Navigate from All Icons view to a symbol's group in the normal calibration view.
+    private func navigateToSymbol(_ symbol: String) {
+        guard let groupKey = symbolToGroupKey[symbol] else { return }
+
+        // Switch to overlay mode for detailed calibration
+        comparisonMode = .overlay
+
+        // Find the group index in the current filtered list
+        let list = filteredGroups
+        if let idx = list.firstIndex(where: { $0.id == groupKey }) {
+            selectedIndex = idx
+            // Find the member index within the group
+            if let memberIdx = list[idx].symbols.firstIndex(of: symbol) {
+                memberIndex = memberIdx
+            }
+        }
+    }
+
     private func galleryIcon(for symbol: String, size: CGFloat) -> some View {
         let yOff: CGFloat = {
             var offset = yOffset
@@ -1041,7 +1201,7 @@ struct AspectRatioCalibrationPlayground: View {
             return offset
         }()
 
-        return ARIconView(
+        return DimIconView(
             symbolName: symbol,
             displaySize: size,
             multiplier: multiplier,
@@ -1075,7 +1235,7 @@ struct AspectRatioCalibrationPlayground: View {
     }
 
     private func ourIconView(for symbol: String, symbolOnly: Bool) -> some View {
-        ARIconView(
+        DimIconView(
             symbolName: symbol,
             displaySize: displaySize,
             multiplier: multiplier,
@@ -1113,7 +1273,7 @@ struct AspectRatioCalibrationPlayground: View {
 
     private func markCalibratedAndAdvance() {
         guard let group = currentGroup else { return }
-        let entry = ARCalibrationEntry(
+        let entry = DimCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "calibrated"
@@ -1131,7 +1291,7 @@ struct AspectRatioCalibrationPlayground: View {
 
     private func markSkippedAndAdvance() {
         guard let group = currentGroup else { return }
-        let entry = ARCalibrationEntry(
+        let entry = DimCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "skipped"
@@ -1150,7 +1310,7 @@ struct AspectRatioCalibrationPlayground: View {
     private func copyPreviousAndAdvance() {
         guard selectedIndex > 0, let group = currentGroup else { return }
         let previousGroup = filteredGroups[selectedIndex - 1]
-        let previous: ARCalibrationEntry? = {
+        let previous: DimCalibrationEntry? = {
             if isExcludedGroup(previousGroup) {
                 return store.override(for: previousGroup.symbols[0])
             }
@@ -1162,7 +1322,7 @@ struct AspectRatioCalibrationPlayground: View {
             yOffset = previous.yOffset
             weight = previous.weight == "medium" ? .medium : .regular
         }
-        let entry = ARCalibrationEntry(
+        let entry = DimCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "calibrated"
@@ -1187,7 +1347,7 @@ struct AspectRatioCalibrationPlayground: View {
         }
 
         // Load saved values or defaults — check overrides for excluded singletons
-        let existing: ARCalibrationEntry? = {
+        let existing: DimCalibrationEntry? = {
             if isExcludedGroup(group) {
                 return store.override(for: group.symbols[0])
             }
@@ -1241,7 +1401,7 @@ struct AspectRatioCalibrationPlayground: View {
         guard let group = currentGroup else { return }
         if isExcludedGroup(group) {
             let existingStatus = store.override(for: group.symbols[0])?.status ?? "needs-review"
-            let entry = ARCalibrationEntry(
+            let entry = DimCalibrationEntry(
                 multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
                 weight: weight == .medium ? "medium" : "regular",
                 status: existingStatus
@@ -1249,7 +1409,7 @@ struct AspectRatioCalibrationPlayground: View {
             store.setOverride(entry, for: group.symbols[0])
         } else {
             let existingStatus = store.entry(for: group.id)?.status ?? "needs-review"
-            let entry = ARCalibrationEntry(
+            let entry = DimCalibrationEntry(
                 multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
                 weight: weight == .medium ? "medium" : "regular",
                 status: existingStatus
@@ -1323,6 +1483,6 @@ struct AspectRatioCalibrationPlayground: View {
 // MARK: - Preview
 
 #Preview {
-    AspectRatioCalibrationPlayground()
+    DimensionCalibrationPlayground()
         .frame(width: 1200, height: 800)
 }
