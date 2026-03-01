@@ -64,6 +64,9 @@ fastlane/test_output
 
 *.DS_Store
 
+# Claude Code local overrides
+.claude.local.md
+
 # Github Copilot
 .github/
 .vscode/

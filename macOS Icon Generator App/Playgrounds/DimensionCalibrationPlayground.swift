@@ -137,6 +137,12 @@ class DimCalibrationStore {
         entries.values.filter { $0.status == "skipped" }.count
     }
 
+    var needsReviewCount: Int {
+        let groupCount = entries.values.filter { $0.status == "needs-review" }.count
+        let overrideCount = overrides.values.filter { $0.status == "needs-review" }.count
+        return groupCount + overrideCount
+    }
+
     var overrideCount: Int {
         overrides.count
     }
@@ -198,6 +204,7 @@ private enum DimComparisonMode: String, CaseIterable {
 private enum DimFilterMode: String, CaseIterable {
     case all = "All"
     case uncalibrated = "Uncalibrated"
+    case needsReview = "Needs Review"
     case calibrated = "Calibrated"
     case skipped = "Skipped"
     case overrides = "Overrides"
@@ -274,17 +281,20 @@ struct DimensionCalibrationPlayground: View {
 
     /// Lookup: symbol name → dimension group key (for All Icons navigation)
     @State private var symbolToGroupKey: [String: String] = [:]
+    /// Symbol metrics loaded from symbol_metrics.json (width × height at 100pt)
+    @State private var symbolMetrics: [String: SymbolMetrics] = [:]
 
     private let displaySize: CGFloat = 512
 
     init() {
-        let (groups, lookup) = Self.buildGroups()
+        let (groups, lookup, metrics) = Self.buildGroups()
         _groups = State(initialValue: groups)
         _symbolToGroupKey = State(initialValue: lookup)
+        _symbolMetrics = State(initialValue: metrics)
     }
 
     /// Load metrics and build dimension groups.
-    private static func buildGroups() -> ([DimensionGroup], [String: String]) {
+    private static func buildGroups() -> ([DimensionGroup], [String: String], [String: SymbolMetrics]) {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let url = appSupport
             .appendingPathComponent("Icon Generator", isDirectory: true)
@@ -292,7 +302,7 @@ struct DimensionCalibrationPlayground: View {
 
         guard let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolMetricsFile.self, from: data)
-        else { return ([], [:]) }
+        else { return ([], [:], [:]) }
 
         // Preserve symbol ordering from sf_symbols.txt
         let orderedSymbols: [String]
@@ -328,7 +338,7 @@ struct DimensionCalibrationPlayground: View {
         }
         .sorted { $0.count > $1.count } // default sort: largest groups first
 
-        return (groups, symbolLookup)
+        return (groups, symbolLookup, file.symbols)
     }
 
     // MARK: - Filtered & Sorted Groups
@@ -381,7 +391,14 @@ struct DimensionCalibrationPlayground: View {
                     return store.override(for: group.symbols[0]) == nil
                 }
                 let s = store.entry(for: group.id)?.status
-                return s != "calibrated" && s != "skipped"
+                return s == nil
+            }
+        case .needsReview:
+            list = list.filter { group in
+                if isExcludedGroup(group) {
+                    return store.override(for: group.symbols[0])?.status == "needs-review"
+                }
+                return store.entry(for: group.id)?.status == "needs-review"
             }
         case .calibrated:
             list = list.filter { group in
@@ -496,7 +513,7 @@ struct DimensionCalibrationPlayground: View {
     private var mainContent: some View {
         HStack(spacing: 0) {
             controlsSidebar
-                .frame(width: 500)
+                .frame(width: 550)
 
             Divider()
 
@@ -784,15 +801,39 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
+    @State private var showBatchConfirm = false
+
     private var progressInfo: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Progress")
-                .font(.headline)
+            HStack {
+                Text("Progress")
+                    .font(.headline)
+                Spacer()
+                Button("Batch Auto-Calculate") {
+                    showBatchConfirm = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .tint(.blue)
+                .confirmationDialog(
+                    "Auto-calculate multipliers for all uncalibrated groups?",
+                    isPresented: $showBatchConfirm,
+                    titleVisibility: .visible
+                ) {
+                    Button("Auto-Calculate \(uncalibratedGroupCount) Groups") {
+                        batchAutoCalculate()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Computes multiplier = 0.55 × 100 / max(width, height) for each group using symbol_metrics.json. Results are marked 'Needs Review' for spot-checking.")
+                }
+            }
 
             let total = groups.count
             let calibrated = store.calibratedCount
+            let needsReview = store.needsReviewCount
             let skipped = store.skippedCount
-            let remaining = total - calibrated - skipped
+            let remaining = total - calibrated - needsReview - skipped
 
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                 GridRow {
@@ -809,6 +850,13 @@ struct DimensionCalibrationPlayground: View {
                         .foregroundStyle(.green)
                 }
                 GridRow {
+                    Text("Needs review:")
+                        .foregroundStyle(.secondary)
+                    Text("\(needsReview)")
+                        .monospacedDigit()
+                        .foregroundStyle(.blue)
+                }
+                GridRow {
                     Text("Skipped:")
                         .foregroundStyle(.secondary)
                     Text("\(skipped)")
@@ -816,7 +864,7 @@ struct DimensionCalibrationPlayground: View {
                         .foregroundStyle(.orange)
                 }
                 GridRow {
-                    Text("Remaining:")
+                    Text("Uncalibrated:")
                         .foregroundStyle(.secondary)
                     Text("\(remaining)")
                         .monospacedDigit()
@@ -833,8 +881,8 @@ struct DimensionCalibrationPlayground: View {
 
             if total > 0 {
                 VStack(alignment: .leading, spacing: 2) {
-                    ProgressView(value: Double(calibrated + skipped), total: Double(total))
-                    Text("\(calibrated + skipped) / \(total) groups")
+                    ProgressView(value: Double(calibrated + needsReview + skipped), total: Double(total))
+                    Text("\(calibrated + needsReview + skipped) / \(total) groups")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -842,7 +890,7 @@ struct DimensionCalibrationPlayground: View {
                 // Symbol coverage
                 let coveredSymbols = groups.filter {
                     let s = store.entry(for: $0.id)?.status
-                    return s == "calibrated" || s == "skipped"
+                    return s == "calibrated" || s == "needs-review" || s == "skipped"
                 }.reduce(0) { $0 + $1.count }
                 let totalSymbols = groups.reduce(0) { $0 + $1.count }
 
@@ -929,7 +977,7 @@ struct DimensionCalibrationPlayground: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 520)
+                .frame(maxWidth: 500)
 
                 if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
                     HStack {
@@ -1141,7 +1189,7 @@ struct DimensionCalibrationPlayground: View {
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .overlay {
             RoundedRectangle(cornerRadius: 4)
-                .strokeBorder(borderColor(for: status), lineWidth: status == "uncalibrated" ? 0 : 1.5)
+                .strokeBorder(borderColor(for: status), lineWidth: status == "uncalibrated" || status == "needs-review" ? 0 : 1.5)
         }
         .help(symbol)
     }
@@ -1150,7 +1198,7 @@ struct DimensionCalibrationPlayground: View {
         HStack(spacing: 12) {
             legendDot(color: .green, label: "Calibrated")
             legendDot(color: .orange, label: "Skipped")
-            legendDot(color: .secondary.opacity(0.3), label: "Uncalibrated")
+            legendDot(color: .secondary.opacity(0.3), label: "Uncalibrated / Needs Review")
         }
         .font(.caption2)
     }
@@ -1400,7 +1448,8 @@ struct DimensionCalibrationPlayground: View {
     private func saveCurrentValues() {
         guard let group = currentGroup else { return }
         if isExcludedGroup(group) {
-            let existingStatus = store.override(for: group.symbols[0])?.status ?? "needs-review"
+            // Only update entries that already exist — don't create new ones from slider adjustments
+            guard let existingStatus = store.override(for: group.symbols[0])?.status else { return }
             let entry = DimCalibrationEntry(
                 multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
                 weight: weight == .medium ? "medium" : "regular",
@@ -1408,7 +1457,7 @@ struct DimensionCalibrationPlayground: View {
             )
             store.setOverride(entry, for: group.symbols[0])
         } else {
-            let existingStatus = store.entry(for: group.id)?.status ?? "needs-review"
+            guard let existingStatus = store.entry(for: group.id)?.status else { return }
             let entry = DimCalibrationEntry(
                 multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
                 weight: weight == .medium ? "medium" : "regular",
@@ -1439,6 +1488,78 @@ struct DimensionCalibrationPlayground: View {
             selectedIndex = max(0, list.count - 1)
         }
         memberIndex = 0
+        loadCurrentGroup()
+    }
+
+    // MARK: - Batch Auto-Calculate
+
+    private var uncalibratedGroupCount: Int {
+        groups.filter { store.entry(for: $0.id) == nil }.count
+    }
+
+    /// Predicts (multiplier, xOffset, yOffset) for a given symbol dimension using
+    /// Inverse Distance Weighting over the k nearest calibrated dimension groups.
+    /// Falls back to the simple formula if fewer than k calibrated entries exist.
+    private func idwPredict(width: Double, height: Double, k: Int = 3) -> (multiplier: Double, xOffset: Double, yOffset: Double) {
+        // Build reference list from calibrated entries
+        struct RefPoint { let w, h, mul, xo, yo: Double }
+        var refs: [RefPoint] = []
+        for (key, entry) in store.entries where entry.status == "calibrated" {
+            let parts = key.split(separator: "_")
+            guard parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]) else { continue }
+            refs.append(RefPoint(w: w, h: h, mul: entry.multiplier, xo: entry.xOffset, yo: entry.yOffset))
+        }
+
+        guard !refs.isEmpty else {
+            // No calibrated data — fall back to simple formula
+            let limit = max(width, height)
+            return (limit > 0 ? 0.55 * 100.0 / limit : 0.55, 0.0, 0.0)
+        }
+
+        // Sort by Euclidean distance in (width, height) space
+        let sorted = refs.map { r -> (dist: Double, ref: RefPoint) in
+            let d = ((r.w - width) * (r.w - width) + (r.h - height) * (r.h - height)).squareRoot()
+            return (d, r)
+        }.sorted { $0.dist < $1.dist }
+
+        let topK = Array(sorted.prefix(k))
+
+        // Exact match — use directly
+        if topK[0].dist == 0 {
+            return (topK[0].ref.mul, topK[0].ref.xo, topK[0].ref.yo)
+        }
+
+        // Inverse distance weighting
+        let weights = topK.map { 1.0 / $0.dist }
+        let totalW = weights.reduce(0, +)
+        let mul = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.mul } / totalW
+        let xo  = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.xo  } / totalW
+        let yo  = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.yo  } / totalW
+        return (mul, xo, yo)
+    }
+
+    /// Fills all uncalibrated dimension groups using IDW interpolation over the
+    /// calibrated data. Results are marked "needs-review" for spot-checking.
+    private func batchAutoCalculate() {
+        var processed = 0
+
+        for group in groups {
+            guard store.entry(for: group.id) == nil else { continue }
+            guard let metrics = symbolMetrics[group.representative] else { continue }
+
+            let (autoMul, autoXO, autoYO) = idwPredict(width: metrics.width, height: metrics.height)
+            let entry = DimCalibrationEntry(
+                multiplier: autoMul,
+                xOffset: autoXO,
+                yOffset: autoYO,
+                weight: "regular",
+                status: "needs-review"
+            )
+            store.setEntry(entry, for: group.id)
+            processed += 1
+        }
+
+        print("batchAutoCalculate: processed \(processed) groups using IDW interpolation")
         loadCurrentGroup()
     }
 
@@ -1484,5 +1605,5 @@ struct DimensionCalibrationPlayground: View {
 
 #Preview {
     DimensionCalibrationPlayground()
-        .frame(width: 1200, height: 800)
+        .frame(width: 1100, height: 800)
 }
