@@ -34,6 +34,16 @@ struct IconGeneratorApp: App {
                     openWindow(id: "dim-calibration")
                 }
                 .keyboardShortcut("L", modifiers: [.command, .shift])
+
+                Button("Resizable Sizing Playground") {
+                    openWindow(id: "resizable-sizing")
+                }
+                .keyboardShortcut("R", modifiers: [.command, .shift])
+
+                Button("Resizable Dim-Cal Playground") {
+                    openWindow(id: "resizable-dim-cal")
+                }
+                .keyboardShortcut("D", modifiers: [.command, .shift])
             }
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
@@ -69,6 +79,16 @@ struct IconGeneratorApp: App {
 
         Window("Dimension Calibration Playground", id: "dim-calibration") {
             DimensionCalibrationPlayground()
+        }
+        .defaultSize(width: 1200, height: 800)
+
+        Window("Resizable Sizing Playground", id: "resizable-sizing") {
+            ResizableSizingPlayground()
+        }
+        .defaultSize(width: 1400, height: 800)
+
+        Window("Resizable Dim-Cal Playground", id: "resizable-dim-cal") {
+            ResizableDimCalPlayground()
         }
         .defaultSize(width: 1200, height: 800)
     }

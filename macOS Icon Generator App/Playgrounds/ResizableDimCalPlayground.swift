@@ -1,56 +1,23 @@
-// DimensionCalibrationPlayground.swift
+// ResizableDimCalPlayground.swift
 //
-// Calibration tool that groups SF Symbols by image dimensions (width × height,
-// 4 decimal places). Symbols with identical intrinsic dimensions at 100pt
-// reference size share the same multiplier/offsets — ~1,754 dimension groups
-// covering all ~7,006 symbols.
+// Variant of DimensionCalibrationPlayground that uses
+// .resizable().scaledToFit().frame() instead of .font(.system(size:)).
 //
-// Saves to ~/Library/Application Support/Icon Generator/dim-calibration.json
-// with per-dimension entries that map to all member symbols.
+// By stripping SF Symbol's built-in font metric padding, the glyph
+// bounding box is controlled directly — making it easier to see whether
+// dimension groups truly share the same visual sizing behavior.
+//
+// Saves to ~/Library/Application Support/Icon Generator/resizable-dim-calibration.json
+// (separate file so it doesn't interfere with the font-based calibration data).
 
 import SwiftUI
 
-// MARK: - Dimension Group
+// MARK: - Resizable Dim Calibration Store
 
-struct DimensionGroup: Identifiable {
-    let id: String // dimension key, e.g. "120.5234_100.0000"
-    let width: Double
-    let height: Double
-    let symbols: [String]
-
-    var count: Int { symbols.count }
-    /// First symbol used as the visual representative
-    var representative: String { symbols[0] }
-    /// Formatted display label
-    var dimensionLabel: String {
-        String(format: "%.1f × %.1f", width, height)
-    }
-}
-
-// MARK: - Dim Calibration Entry
-
-struct DimCalibrationEntry: Codable, Equatable {
-    var multiplier: Double
-    var xOffset: Double
-    var yOffset: Double
-    var weight: String   // "regular" or "medium"
-    var status: String   // "calibrated", "skipped", "needs-review"
-}
-
-struct DimCalibrationFile: Codable {
-    var version: Int = 1
-    /// Keyed by dimension string (4dp), e.g. "120.5234_100.0000"
-    var calibrations: [String: DimCalibrationEntry] = [:]
-    /// Symbol names that have been pulled out of their dimension groups for individual calibration
-    var excludedSymbols: [String] = []
-    /// Per-symbol calibration overrides for excluded symbols
-    var overrides: [String: DimCalibrationEntry] = [:]
-}
-
-// MARK: - Dim Calibration Store
-
+/// Separate calibration store for the resizable approach.
+/// Same format as DimCalibrationStore but writes to a different file.
 @Observable
-class DimCalibrationStore {
+class ResizableDimCalibrationStore {
     var entries: [String: DimCalibrationEntry] = [:]
     var excludedSymbols: Set<String> = []
     var overrides: [String: DimCalibrationEntry] = [:]
@@ -60,24 +27,18 @@ class DimCalibrationStore {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("dim-calibration.json")
+        self.fileURL = dir.appendingPathComponent("resizable-dim-calibration.json")
         load()
     }
 
-    func entry(for key: String) -> DimCalibrationEntry? {
-        entries[key]
-    }
+    func entry(for key: String) -> DimCalibrationEntry? { entries[key] }
 
     func setEntry(_ entry: DimCalibrationEntry, for key: String) {
         entries[key] = entry
         save()
     }
 
-    // MARK: - Exclusion Methods
-
-    func isExcluded(_ symbol: String) -> Bool {
-        excludedSymbols.contains(symbol)
-    }
+    func isExcluded(_ symbol: String) -> Bool { excludedSymbols.contains(symbol) }
 
     func exclude(symbol: String) {
         excludedSymbols.insert(symbol)
@@ -90,9 +51,7 @@ class DimCalibrationStore {
         save()
     }
 
-    func override(for symbol: String) -> DimCalibrationEntry? {
-        overrides[symbol]
-    }
+    func override(for symbol: String) -> DimCalibrationEntry? { overrides[symbol] }
 
     func setOverride(_ entry: DimCalibrationEntry, for symbol: String) {
         overrides[symbol] = entry
@@ -112,7 +71,7 @@ class DimCalibrationStore {
             let data = try encoder.encode(file)
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("DimCalibrationStore: failed to save — \(error)")
+            print("ResizableDimCalibrationStore: failed to save — \(error)")
         }
     }
 
@@ -125,35 +84,28 @@ class DimCalibrationStore {
             excludedSymbols = Set(file.excludedSymbols)
             overrides = file.overrides
         } catch {
-            print("DimCalibrationStore: failed to load — \(error)")
+            print("ResizableDimCalibrationStore: failed to load — \(error)")
         }
     }
 
-    var calibratedCount: Int {
-        entries.values.filter { $0.status == "calibrated" }.count
-    }
-
-    var skippedCount: Int {
-        entries.values.filter { $0.status == "skipped" }.count
-    }
-
+    var calibratedCount: Int { entries.values.filter { $0.status == "calibrated" }.count }
+    var skippedCount: Int { entries.values.filter { $0.status == "skipped" }.count }
     var needsReviewCount: Int {
-        let groupCount = entries.values.filter { $0.status == "needs-review" }.count
-        let overrideCount = overrides.values.filter { $0.status == "needs-review" }.count
-        return groupCount + overrideCount
+        entries.values.filter { $0.status == "needs-review" }.count +
+        overrides.values.filter { $0.status == "needs-review" }.count
     }
-
-    var overrideCount: Int {
-        overrides.count
-    }
+    var overrideCount: Int { overrides.count }
 }
 
-// MARK: - Dim Icon View
+// MARK: - Resizable Dim Icon View
 
-/// Renders an icon using calibration parameters (same formula as CalibratingIconView).
-private struct DimIconView: View {
+/// Renders an icon using .resizable().scaledToFit().frame() with a single
+/// bounding box. All symbols fit within the same frame regardless of aspect
+/// ratio — no per-symbol intrinsic dimension scaling needed.
+private struct ResizableDimIconView: View {
     let symbolName: String
     let displaySize: CGFloat
+    /// Multiplier: fraction of enclosure size used as the bounding frame
     let multiplier: CGFloat
     let xOffset: CGFloat
     let yOffset: CGFloat
@@ -169,7 +121,9 @@ private struct DimIconView: View {
     private var cornerRadius: CGFloat { baseCornerRadiusLG * scale }
     var enclosureSize: CGFloat { displaySize - (2 * backgroundInset) }
 
-    private var fontSize: CGFloat { enclosureSize * multiplier }
+    /// Single bounding frame size — symbol fits within this square
+    var frameSize: CGFloat { enclosureSize * multiplier }
+
     private var xPx: CGFloat { enclosureSize * xOffset }
     private var yPx: CGFloat { enclosureSize * yOffset }
 
@@ -182,18 +136,21 @@ private struct DimIconView: View {
             }
 
             Image(systemName: symbolName)
-                .font(.system(size: fontSize, weight: weight))
+                .resizable()
+                .scaledToFit()
+                .fontWeight(weight)
+                .frame(width: frameSize, height: frameSize)
+                .border(Color.red, width: 1)
                 .foregroundColor(symbolOnly ? .red : .white)
-                //.border(Color.red, width: 1)
                 .offset(x: xPx, y: yPx)
         }
         .frame(width: displaySize, height: displaySize)
     }
 }
 
-// MARK: - Comparison Mode
+// MARK: - Comparison & Filter Enums
 
-private enum DimComparisonMode: String, CaseIterable {
+private enum RDimComparisonMode: String, CaseIterable {
     case overlay = "Overlay"
     case tintedOverlay = "Tinted Overlay"
     case sideBySide = "Side by Side"
@@ -202,7 +159,7 @@ private enum DimComparisonMode: String, CaseIterable {
     case allIcons = "All Icons"
 }
 
-private enum DimFilterMode: String, CaseIterable {
+private enum RDimFilterMode: String, CaseIterable {
     case all = "All"
     case uncalibrated = "Uncalibrated"
     case needsReview = "Needs Review"
@@ -211,78 +168,36 @@ private enum DimFilterMode: String, CaseIterable {
     case overrides = "Overrides"
 }
 
-private enum DimSortMode: String, CaseIterable {
+private enum RDimSortMode: String, CaseIterable {
     case groupSize = "Group Size"
     case width = "Width"
     case height = "Height"
 }
 
-// MARK: - Symbol Baseline Data
-
-/// Loads baseline metrics from symbol_baselines.json (extracted from CoreGlyphs asset catalog).
-/// Baseline + capline define where the glyph sits vertically within the em square.
-struct SymbolBaselineData {
-    let capline: Double          // constant: 9.1598
-    let referencePointSize: Double // constant: 13
-    let baselines: [String: Double]
-
-    static func load() -> SymbolBaselineData? {
-        guard let url = Bundle.main.url(forResource: "symbol_baselines", withExtension: "json"),
-              let data = try? Data(contentsOf: url)
-        else { return nil }
-
-        struct File: Decodable {
-            let capline: Double
-            let referencePointSize: Double
-            let baselines: [String: Double]
-        }
-
-        guard let file = try? JSONDecoder().decode(File.self, from: data) else { return nil }
-        return SymbolBaselineData(
-            capline: file.capline,
-            referencePointSize: file.referencePointSize,
-            baselines: file.baselines
-        )
-    }
-
-    /// Compute the Y offset correction for a symbol based on its baseline.
-    func yOffsetCorrection(for symbol: String, multiplier: Double) -> Double? {
-        guard let baseline = baselines[symbol] else { return nil }
-        let glyphCenter = (baseline + capline) / 2
-        let emCenter = referencePointSize / 2
-        let offsetInEmUnits = emCenter - glyphCenter
-        return offsetInEmUnits * multiplier / referencePointSize
-    }
-}
-
 // MARK: - Main Playground
 
-struct DimensionCalibrationPlayground: View {
-    @State private var store = DimCalibrationStore()
+struct ResizableDimCalPlayground: View {
+    @State private var store = ResizableDimCalibrationStore()
     @State private var service = AppexReferenceService()
 
     @State private var groups: [DimensionGroup] = []
     @State private var selectedIndex = 0
-    @State private var memberIndex = 0 // which member of the group to show as reference
+    @State private var memberIndex = 0
 
     @State private var multiplier = 0.55
     @State private var xOffset = 0.0
     @State private var yOffset = 0.0
     @State private var weight: Font.Weight = .regular
-    @State private var comparisonMode: DimComparisonMode = .overlay
+    @State private var comparisonMode: RDimComparisonMode = .overlay
     @State private var overlayOpacity = 0.5
     @State private var searchText = ""
-    @State private var filterMode: DimFilterMode = .all
-    @State private var sortMode: DimSortMode = .groupSize
+    @State private var filterMode: RDimFilterMode = .all
+    @State private var sortMode: RDimSortMode = .groupSize
     @State private var referenceImage: NSImage?
     @State private var isLoadingReference = false
     @State private var errorMessage: String?
-    @State private var baselineData: SymbolBaselineData?
-    @State private var useBaselineYOffset = false
 
-    /// Lookup: symbol name → dimension group key (for All Icons navigation)
     @State private var symbolToGroupKey: [String: String] = [:]
-    /// Symbol metrics loaded from symbol_metrics.json (width × height at 100pt)
     @State private var symbolMetrics: [String: SymbolMetrics] = [:]
 
     private let displaySize: CGFloat = 512
@@ -294,7 +209,6 @@ struct DimensionCalibrationPlayground: View {
         _symbolMetrics = State(initialValue: metrics)
     }
 
-    /// Load metrics and build dimension groups.
     private static func buildGroups() -> ([DimensionGroup], [String: String], [String: SymbolMetrics]) {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let url = appSupport
@@ -305,7 +219,6 @@ struct DimensionCalibrationPlayground: View {
               let file = try? JSONDecoder().decode(SymbolMetricsFile.self, from: data)
         else { return ([], [:], [:]) }
 
-        // Preserve symbol ordering from sf_symbols.txt
         let orderedSymbols: [String]
         if let txtURL = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
            let contents = try? String(contentsOf: txtURL, encoding: .utf8) {
@@ -314,7 +227,6 @@ struct DimensionCalibrationPlayground: View {
             orderedSymbols = Array(file.symbols.keys).sorted()
         }
 
-        // Group by 4dp dimensions (width_height)
         var groupMap: [String: [String]] = [:]
         var widthValues: [String: Double] = [:]
         var heightValues: [String: Double] = [:]
@@ -337,20 +249,18 @@ struct DimensionCalibrationPlayground: View {
                 symbols: symbols
             )
         }
-        .sorted { $0.count > $1.count } // default sort: largest groups first
+        .sorted { $0.count > $1.count }
 
         return (groups, symbolLookup, file.symbols)
     }
 
     // MARK: - Filtered & Sorted Groups
 
-    /// Whether a group ID represents an excluded singleton (prefixed with "!")
     private func isExcludedGroup(_ group: DimensionGroup) -> Bool {
         group.id.hasPrefix("!")
     }
 
     private var filteredGroups: [DimensionGroup] {
-        // When showing overrides, only show excluded singletons
         if filterMode == .overrides {
             var singletons = store.excludedSymbols.map { symbol in
                 DimensionGroup(id: "!\(symbol)", width: 0, height: 0, symbols: [symbol])
@@ -364,14 +274,12 @@ struct DimensionCalibrationPlayground: View {
             return singletons
         }
 
-        // Filter excluded symbols out of their parent groups
         var list = groups.compactMap { group -> DimensionGroup? in
             let remaining = group.symbols.filter { !store.isExcluded($0) }
             guard !remaining.isEmpty else { return nil }
             return DimensionGroup(id: group.id, width: group.width, height: group.height, symbols: remaining)
         }
 
-        // Append excluded symbols as singleton groups
         let singletons = store.excludedSymbols.map { symbol in
             DimensionGroup(id: "!\(symbol)", width: 0, height: 0, symbols: [symbol])
         }
@@ -388,44 +296,32 @@ struct DimensionCalibrationPlayground: View {
         case .all: break
         case .uncalibrated:
             list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0]) == nil
-                }
-                let s = store.entry(for: group.id)?.status
-                return s == nil
+                if isExcludedGroup(group) { return store.override(for: group.symbols[0]) == nil }
+                return store.entry(for: group.id)?.status == nil
             }
         case .needsReview:
             list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0])?.status == "needs-review"
-                }
+                if isExcludedGroup(group) { return store.override(for: group.symbols[0])?.status == "needs-review" }
                 return store.entry(for: group.id)?.status == "needs-review"
             }
         case .calibrated:
             list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0])?.status == "calibrated"
-                }
+                if isExcludedGroup(group) { return store.override(for: group.symbols[0])?.status == "calibrated" }
                 return store.entry(for: group.id)?.status == "calibrated"
             }
         case .skipped:
             list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0])?.status == "skipped"
-                }
+                if isExcludedGroup(group) { return store.override(for: group.symbols[0])?.status == "skipped" }
                 return store.entry(for: group.id)?.status == "skipped"
             }
         case .overrides:
-            break // handled above
+            break
         }
 
         switch sortMode {
-        case .groupSize:
-            list.sort { $0.count > $1.count }
-        case .width:
-            list.sort { $0.width < $1.width }
-        case .height:
-            list.sort { $0.height < $1.height }
+        case .groupSize: list.sort { $0.count > $1.count }
+        case .width: list.sort { $0.width < $1.width }
+        case .height: list.sort { $0.height < $1.height }
         }
 
         return list
@@ -443,21 +339,6 @@ struct DimensionCalibrationPlayground: View {
         return group.symbols[idx]
     }
 
-    /// Effective Y offset: manual offset + optional baseline correction.
-    private var effectiveYOffset: CGFloat {
-        var offset = yOffset
-        if useBaselineYOffset, let symbol = currentSymbol, let data = baselineData {
-            offset += data.yOffsetCorrection(for: symbol, multiplier: multiplier) ?? 0
-        }
-        return offset
-    }
-
-    /// The baseline correction alone (for display purposes).
-    private var baselineCorrection: Double? {
-        guard let symbol = currentSymbol, let data = baselineData else { return nil }
-        return data.yOffsetCorrection(for: symbol, multiplier: multiplier)
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -469,10 +350,7 @@ struct DimensionCalibrationPlayground: View {
                 mainContent
             }
         }
-        .onAppear {
-            baselineData = SymbolBaselineData.load()
-            loadCurrentGroup()
-        }
+        .onAppear { loadCurrentGroup() }
         .onChange(of: selectedIndex) { _, _ in
             memberIndex = 0
             loadCurrentGroup()
@@ -515,9 +393,7 @@ struct DimensionCalibrationPlayground: View {
         HStack(spacing: 0) {
             controlsSidebar
                 .frame(width: 550)
-
             Divider()
-
             comparisonArea
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(NSColor.windowBackgroundColor))
@@ -547,8 +423,17 @@ struct DimensionCalibrationPlayground: View {
 
     private var searchAndFilter: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Search")
-                .font(.headline)
+            HStack {
+                Text("Search")
+                    .font(.headline)
+                Spacer()
+                Text("RESIZABLE MODE")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(.orange.opacity(0.2), in: Capsule())
+                    .foregroundStyle(.orange)
+            }
 
             TextField("Filter by symbol name or dimensions...", text: $searchText)
                 .textFieldStyle(.roundedBorder)
@@ -560,7 +445,7 @@ struct DimensionCalibrationPlayground: View {
 
             HStack(spacing: 12) {
                 Picker("Filter", selection: $filterMode) {
-                    ForEach(DimFilterMode.allCases, id: \.self) { mode in
+                    ForEach(RDimFilterMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
@@ -577,7 +462,7 @@ struct DimensionCalibrationPlayground: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Picker("Sort", selection: $sortMode) {
-                    ForEach(DimSortMode.allCases, id: \.self) { mode in
+                    ForEach(RDimSortMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
@@ -608,7 +493,6 @@ struct DimensionCalibrationPlayground: View {
                         .background(.blue.opacity(0.15), in: Capsule())
                 }
 
-                // Member browser
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("Representative")
@@ -659,7 +543,6 @@ struct DimensionCalibrationPlayground: View {
                         }
                     }
 
-                    // Show a few member names
                     if !isExcludedGroup(group) {
                         let preview = group.symbols.prefix(6).joined(separator: ", ")
                         let suffix = group.count > 6 ? "..." : ""
@@ -744,39 +627,6 @@ struct DimensionCalibrationPlayground: View {
                     .onChange(of: yOffset) { _, _ in autoSave() }
             }
 
-            // Baseline Y correction toggle
-            VStack(alignment: .leading, spacing: 4) {
-                Toggle(isOn: $useBaselineYOffset) {
-                    Text("Baseline Y Correction")
-                }
-
-                if let correction = baselineCorrection {
-                    HStack(spacing: 4) {
-                        Text("Correction:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%+.4f", correction))
-                            .monospacedDigit()
-                            .foregroundStyle(.purple)
-                        if useBaselineYOffset {
-                            Text("Effective:")
-                                .foregroundStyle(.secondary)
-                            Text(String(format: "%+.4f", effectiveYOffset))
-                                .monospacedDigit()
-                                .foregroundStyle(.blue)
-                        }
-                    }
-                    .font(.caption)
-                } else if baselineData == nil {
-                    Text("symbol_baselines.json not found in bundle")
-                        .font(.caption2)
-                        .foregroundStyle(.red)
-                } else if let symbol = currentSymbol {
-                    Text("No baseline data for \(symbol)")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-            }
-
             HStack {
                 Text("Weight")
                 Spacer()
@@ -789,13 +639,14 @@ struct DimensionCalibrationPlayground: View {
                 .onChange(of: weight) { _, _ in autoSave() }
             }
 
+            // Show computed frame size
             if let symbol = currentSymbol {
-                let view = DimIconView(
+                let view = ResizableDimIconView(
                     symbolName: symbol, displaySize: displaySize,
-                    multiplier: multiplier, xOffset: xOffset, yOffset: effectiveYOffset,
+                    multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
                     weight: weight, symbolOnly: false
                 )
-                Text("Font size: \(String(format: "%.1f", view.enclosureSize * multiplier)) pt (enclosure: \(String(format: "%.1f", view.enclosureSize)) pt)")
+                Text("Frame: \(String(format: "%.1f", view.frameSize)) × \(String(format: "%.1f", view.frameSize)) pt (enclosure: \(String(format: "%.1f", view.enclosureSize)) pt)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -826,7 +677,7 @@ struct DimensionCalibrationPlayground: View {
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("Computes multiplier = 0.55 × 100 / max(width, height) for each group using symbol_metrics.json. Results are marked 'Needs Review' for spot-checking.")
+                    Text("Uses IDW interpolation (k=3) over calibrated entries. Results marked 'Needs Review'.")
                 }
             }
 
@@ -838,44 +689,28 @@ struct DimensionCalibrationPlayground: View {
 
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                 GridRow {
-                    Text("Total groups:")
-                        .foregroundStyle(.secondary)
-                    Text("\(total)")
-                        .monospacedDigit()
+                    Text("Total groups:").foregroundStyle(.secondary)
+                    Text("\(total)").monospacedDigit()
                 }
                 GridRow {
-                    Text("Calibrated:")
-                        .foregroundStyle(.secondary)
-                    Text("\(calibrated)")
-                        .monospacedDigit()
-                        .foregroundStyle(.green)
+                    Text("Calibrated:").foregroundStyle(.secondary)
+                    Text("\(calibrated)").monospacedDigit().foregroundStyle(.green)
                 }
                 GridRow {
-                    Text("Needs review:")
-                        .foregroundStyle(.secondary)
-                    Text("\(needsReview)")
-                        .monospacedDigit()
-                        .foregroundStyle(.blue)
+                    Text("Needs review:").foregroundStyle(.secondary)
+                    Text("\(needsReview)").monospacedDigit().foregroundStyle(.blue)
                 }
                 GridRow {
-                    Text("Skipped:")
-                        .foregroundStyle(.secondary)
-                    Text("\(skipped)")
-                        .monospacedDigit()
-                        .foregroundStyle(.orange)
+                    Text("Skipped:").foregroundStyle(.secondary)
+                    Text("\(skipped)").monospacedDigit().foregroundStyle(.orange)
                 }
                 GridRow {
-                    Text("Uncalibrated:")
-                        .foregroundStyle(.secondary)
-                    Text("\(remaining)")
-                        .monospacedDigit()
+                    Text("Uncalibrated:").foregroundStyle(.secondary)
+                    Text("\(remaining)").monospacedDigit()
                 }
                 GridRow {
-                    Text("Overrides:")
-                        .foregroundStyle(.secondary)
-                    Text("\(store.overrideCount)")
-                        .monospacedDigit()
-                        .foregroundStyle(.purple)
+                    Text("Overrides:").foregroundStyle(.secondary)
+                    Text("\(store.overrideCount)").monospacedDigit().foregroundStyle(.purple)
                 }
             }
             .font(.caption)
@@ -888,7 +723,6 @@ struct DimensionCalibrationPlayground: View {
                         .foregroundStyle(.secondary)
                 }
 
-                // Symbol coverage
                 let coveredSymbols = groups.filter {
                     let s = store.entry(for: $0.id)?.status
                     return s == "calibrated" || s == "needs-review" || s == "skipped"
@@ -970,10 +804,9 @@ struct DimensionCalibrationPlayground: View {
 
             Divider()
 
-            // Mode picker + navigation bar
             VStack(spacing: 8) {
                 Picker("Mode", selection: $comparisonMode) {
-                    ForEach(DimComparisonMode.allCases, id: \.self) { mode in
+                    ForEach(RDimComparisonMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
@@ -1032,7 +865,7 @@ struct DimensionCalibrationPlayground: View {
                 galleryView(for: group)
             }
         case .allIcons:
-            EmptyView() // handled separately in comparisonArea
+            EmptyView()
         }
     }
 
@@ -1061,7 +894,7 @@ struct DimensionCalibrationPlayground: View {
                 ourIconView(for: symbol, symbolOnly: false)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .shadow(radius: 4, y: 2)
-                Text("Our Rendering")
+                Text("Our Rendering (Resizable)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1114,7 +947,6 @@ struct DimensionCalibrationPlayground: View {
         let thumbSize: CGFloat = 56
         let columns = [GridItem(.adaptive(minimum: thumbSize + 4), spacing: 4)]
 
-        // Flatten all symbols from all groups (respecting current filter/sort)
         let allSymbols: [(symbol: String, groupKey: String, status: String)] = {
             var result: [(String, String, String)] = []
             for group in filteredGroups {
@@ -1134,7 +966,7 @@ struct DimensionCalibrationPlayground: View {
 
         return VStack(spacing: 4) {
             HStack {
-                Text("All Icons")
+                Text("All Icons (Resizable)")
                     .font(.headline)
                 Spacer()
                 legendView
@@ -1162,23 +994,15 @@ struct DimensionCalibrationPlayground: View {
 
     private func allIconsThumb(symbol: String, groupKey: String, status: String, size: CGFloat) -> some View {
         let cal: DimCalibrationEntry? = {
-            if groupKey.hasPrefix("!") {
-                return store.override(for: symbol)
-            }
+            if groupKey.hasPrefix("!") { return store.override(for: symbol) }
             return store.entry(for: groupKey)
         }()
         let mul = cal?.multiplier ?? 0.55
         let xOff = cal?.xOffset ?? 0.0
-        let yOff: CGFloat = {
-            var off = cal?.yOffset ?? 0.0
-            if useBaselineYOffset, let data = baselineData {
-                off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
-            }
-            return off
-        }()
+        let yOff = cal?.yOffset ?? 0.0
         let w: Font.Weight = cal?.weight == "medium" ? .medium : .regular
 
-        return DimIconView(
+        return ResizableDimIconView(
             symbolName: symbol,
             displaySize: size,
             multiplier: mul,
@@ -1206,11 +1030,8 @@ struct DimensionCalibrationPlayground: View {
 
     private func legendDot(color: Color, label: String) -> some View {
         HStack(spacing: 3) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .foregroundStyle(.secondary)
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(label).foregroundStyle(.secondary)
         }
     }
 
@@ -1223,18 +1044,12 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
-    /// Navigate from All Icons view to a symbol's group in the normal calibration view.
     private func navigateToSymbol(_ symbol: String) {
         guard let groupKey = symbolToGroupKey[symbol] else { return }
-
-        // Switch to overlay mode for detailed calibration
         comparisonMode = .overlay
-
-        // Find the group index in the current filtered list
         let list = filteredGroups
         if let idx = list.firstIndex(where: { $0.id == groupKey }) {
             selectedIndex = idx
-            // Find the member index within the group
             if let memberIdx = list[idx].symbols.firstIndex(of: symbol) {
                 memberIndex = memberIdx
             }
@@ -1242,20 +1057,12 @@ struct DimensionCalibrationPlayground: View {
     }
 
     private func galleryIcon(for symbol: String, size: CGFloat) -> some View {
-        let yOff: CGFloat = {
-            var offset = yOffset
-            if useBaselineYOffset, let data = baselineData {
-                offset += data.yOffsetCorrection(for: symbol, multiplier: multiplier) ?? 0
-            }
-            return offset
-        }()
-
-        return DimIconView(
+        ResizableDimIconView(
             symbolName: symbol,
             displaySize: size,
             multiplier: multiplier,
             xOffset: xOffset,
-            yOffset: yOff,
+            yOffset: yOffset,
             weight: weight,
             symbolOnly: false
         )
@@ -1284,12 +1091,12 @@ struct DimensionCalibrationPlayground: View {
     }
 
     private func ourIconView(for symbol: String, symbolOnly: Bool) -> some View {
-        DimIconView(
+        ResizableDimIconView(
             symbolName: symbol,
             displaySize: displaySize,
             multiplier: multiplier,
             xOffset: xOffset,
-            yOffset: effectiveYOffset,
+            yOffset: yOffset,
             weight: weight,
             symbolOnly: symbolOnly
         )
@@ -1310,9 +1117,8 @@ struct DimensionCalibrationPlayground: View {
     }
 
     private func previousMember() {
-        guard let group = currentGroup, memberIndex > 0 else { return }
+        guard memberIndex > 0 else { return }
         memberIndex -= 1
-        _ = group // suppress unused warning
     }
 
     private func nextMember() {
@@ -1332,10 +1138,7 @@ struct DimensionCalibrationPlayground: View {
         } else {
             store.setEntry(entry, for: group.id)
         }
-
-        if selectedIndex < filteredGroups.count - 1 {
-            selectedIndex += 1
-        }
+        if selectedIndex < filteredGroups.count - 1 { selectedIndex += 1 }
     }
 
     private func markSkippedAndAdvance() {
@@ -1350,10 +1153,7 @@ struct DimensionCalibrationPlayground: View {
         } else {
             store.setEntry(entry, for: group.id)
         }
-
-        if selectedIndex < filteredGroups.count - 1 {
-            selectedIndex += 1
-        }
+        if selectedIndex < filteredGroups.count - 1 { selectedIndex += 1 }
     }
 
     private func copyPreviousAndAdvance() {
@@ -1381,10 +1181,7 @@ struct DimensionCalibrationPlayground: View {
         } else {
             store.setEntry(entry, for: group.id)
         }
-
-        if selectedIndex < filteredGroups.count - 1 {
-            selectedIndex += 1
-        }
+        if selectedIndex < filteredGroups.count - 1 { selectedIndex += 1 }
     }
 
     // MARK: - Load / Save
@@ -1395,7 +1192,6 @@ struct DimensionCalibrationPlayground: View {
             return
         }
 
-        // Load saved values or defaults — check overrides for excluded singletons
         let existing: DimCalibrationEntry? = {
             if isExcludedGroup(group) {
                 return store.override(for: group.symbols[0])
@@ -1415,7 +1211,6 @@ struct DimensionCalibrationPlayground: View {
             weight = .regular
         }
 
-        // Load reference image for current member
         guard let symbol = currentSymbol else { return }
         isLoadingReference = true
         errorMessage = nil
@@ -1435,7 +1230,6 @@ struct DimensionCalibrationPlayground: View {
                 }
             }
 
-            // Prefetch next few groups' representatives
             let list = filteredGroups
             let nextStart = selectedIndex + 1
             let nextEnd = min(nextStart + 3, list.count)
@@ -1449,7 +1243,6 @@ struct DimensionCalibrationPlayground: View {
     private func saveCurrentValues() {
         guard let group = currentGroup else { return }
         if isExcludedGroup(group) {
-            // Only update entries that already exist — don't create new ones from slider adjustments
             guard let existingStatus = store.override(for: group.symbols[0])?.status else { return }
             let entry = DimCalibrationEntry(
                 multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
@@ -1468,22 +1261,18 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
-    private func autoSave() {
-        saveCurrentValues()
-    }
+    private func autoSave() { saveCurrentValues() }
 
     // MARK: - Exclude / Restore
 
     private func excludeSymbol(_ symbol: String) {
         store.exclude(symbol: symbol)
-        // Reset member index since the group just lost a member
         memberIndex = 0
         loadCurrentGroup()
     }
 
     private func restoreSymbol(_ symbol: String) {
         store.unexclude(symbol: symbol)
-        // The singleton group we were on is now gone — stay at current index
         let list = filteredGroups
         if selectedIndex >= list.count {
             selectedIndex = max(0, list.count - 1)
@@ -1498,11 +1287,7 @@ struct DimensionCalibrationPlayground: View {
         groups.filter { store.entry(for: $0.id) == nil }.count
     }
 
-    /// Predicts (multiplier, xOffset, yOffset) for a given symbol dimension using
-    /// Inverse Distance Weighting over the k nearest calibrated dimension groups.
-    /// Falls back to the simple formula if fewer than k calibrated entries exist.
     private func idwPredict(width: Double, height: Double, k: Int = 3) -> (multiplier: Double, xOffset: Double, yOffset: Double) {
-        // Build reference list from calibrated entries
         struct RefPoint { let w, h, mul, xo, yo: Double }
         var refs: [RefPoint] = []
         for (key, entry) in store.entries where entry.status == "calibrated" {
@@ -1512,12 +1297,10 @@ struct DimensionCalibrationPlayground: View {
         }
 
         guard !refs.isEmpty else {
-            // No calibrated data — fall back to simple formula
             let limit = max(width, height)
             return (limit > 0 ? 0.55 * 100.0 / limit : 0.55, 0.0, 0.0)
         }
 
-        // Sort by Euclidean distance in (width, height) space
         let sorted = refs.map { r -> (dist: Double, ref: RefPoint) in
             let d = ((r.w - width) * (r.w - width) + (r.h - height) * (r.h - height)).squareRoot()
             return (d, r)
@@ -1525,12 +1308,10 @@ struct DimensionCalibrationPlayground: View {
 
         let topK = Array(sorted.prefix(k))
 
-        // Exact match — use directly
         if topK[0].dist == 0 {
             return (topK[0].ref.mul, topK[0].ref.xo, topK[0].ref.yo)
         }
 
-        // Inverse distance weighting
         let weights = topK.map { 1.0 / $0.dist }
         let totalW = weights.reduce(0, +)
         let mul = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.mul } / totalW
@@ -1539,47 +1320,30 @@ struct DimensionCalibrationPlayground: View {
         return (mul, xo, yo)
     }
 
-    /// Fills all uncalibrated dimension groups using IDW interpolation over the
-    /// calibrated data. Results are marked "needs-review" for spot-checking.
     private func batchAutoCalculate() {
         var processed = 0
-
         for group in groups {
             guard store.entry(for: group.id) == nil else { continue }
             guard let metrics = symbolMetrics[group.representative] else { continue }
 
             let (autoMul, autoXO, autoYO) = idwPredict(width: metrics.width, height: metrics.height)
             let entry = DimCalibrationEntry(
-                multiplier: autoMul,
-                xOffset: autoXO,
-                yOffset: autoYO,
-                weight: "regular",
-                status: "needs-review"
+                multiplier: autoMul, xOffset: autoXO, yOffset: autoYO,
+                weight: "regular", status: "needs-review"
             )
             store.setEntry(entry, for: group.id)
             processed += 1
         }
 
-        print("batchAutoCalculate: processed \(processed) groups using IDW interpolation")
+        print("batchAutoCalculate (resizable): processed \(processed) groups using IDW interpolation")
         loadCurrentGroup()
     }
 
     // MARK: - Nudge Helpers
 
-    private func nudgeMultiplier(by delta: Double) {
-        multiplier += delta
-        autoSave()
-    }
-
-    private func nudgeXOffset(by delta: Double) {
-        xOffset += delta
-        autoSave()
-    }
-
-    private func nudgeYOffset(by delta: Double) {
-        yOffset += delta
-        autoSave()
-    }
+    private func nudgeMultiplier(by delta: Double) { multiplier += delta; autoSave() }
+    private func nudgeXOffset(by delta: Double) { xOffset += delta; autoSave() }
+    private func nudgeYOffset(by delta: Double) { yOffset += delta; autoSave() }
 
     // MARK: - Status Helpers
 
@@ -1605,6 +1369,6 @@ struct DimensionCalibrationPlayground: View {
 // MARK: - Preview
 
 #Preview {
-    DimensionCalibrationPlayground()
+    ResizableDimCalPlayground()
         .frame(width: 1100, height: 800)
 }
