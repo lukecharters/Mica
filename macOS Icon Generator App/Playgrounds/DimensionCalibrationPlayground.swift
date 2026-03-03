@@ -13,7 +13,7 @@ import SwiftUI
 // MARK: - Dimension Group
 
 struct DimensionGroup: Identifiable {
-    let id: String // dimension key, e.g. "120.5234_100.0000"
+    let id: String // dimension key, e.g. "120.5234_100.0000" or "120.5234_100.0000#2"
     let width: Double
     let height: Double
     let symbols: [String]
@@ -21,9 +21,23 @@ struct DimensionGroup: Identifiable {
     var count: Int { symbols.count }
     /// First symbol used as the visual representative
     var representative: String { symbols[0] }
+
+    /// Whether this group is a sub-group (key contains `#`)
+    var isSubgroup: Bool { id.contains("#") }
+
+    /// Sub-group index (e.g. 2 for "120.5234_100.0000#2"), nil for main groups
+    var subgroupIndex: Int? {
+        guard let hashIndex = id.firstIndex(of: "#") else { return nil }
+        return Int(id[id.index(after: hashIndex)...])
+    }
+
     /// Formatted display label
     var dimensionLabel: String {
-        String(format: "%.1f × %.1f", width, height)
+        let base = String(format: "%.1f × %.1f", width, height)
+        if let idx = subgroupIndex {
+            return "\(base) #\(idx)"
+        }
+        return base
     }
 }
 
@@ -39,12 +53,14 @@ struct DimCalibrationEntry: Codable, Equatable {
 
 struct DimCalibrationFile: Codable {
     var version: Int = 1
-    /// Keyed by dimension string (4dp), e.g. "120.5234_100.0000"
+    /// Keyed by dimension string (4dp), e.g. "120.5234_100.0000" or "120.5234_100.0000#2" for sub-groups
     var calibrations: [String: DimCalibrationEntry] = [:]
     /// Symbol names that have been pulled out of their dimension groups for individual calibration
     var excludedSymbols: [String] = []
     /// Per-symbol calibration overrides for excluded symbols
     var overrides: [String: DimCalibrationEntry] = [:]
+    /// Maps sub-group keys (e.g. "120.5234_100.0000#2") to arrays of symbol names
+    var subgroups: [String: [String]] = [:]
 }
 
 // MARK: - Dim Calibration Store
@@ -54,6 +70,7 @@ class DimCalibrationStore {
     var entries: [String: DimCalibrationEntry] = [:]
     var excludedSymbols: Set<String> = []
     var overrides: [String: DimCalibrationEntry] = [:]
+    var subgroups: [String: [String]] = [:]
     private let fileURL: URL
 
     init() {
@@ -99,12 +116,98 @@ class DimCalibrationStore {
         save()
     }
 
+    // MARK: - Sub-group Methods
+
+    /// Strips `#N` suffix to get the base dimension key
+    func baseDimKey(for key: String) -> String {
+        if let hashIndex = key.firstIndex(of: "#") {
+            return String(key[..<hashIndex])
+        }
+        return key
+    }
+
+    /// Whether a key represents a sub-group (contains `#`)
+    func isSubgroupKey(_ key: String) -> Bool {
+        key.contains("#")
+    }
+
+    /// All sub-group keys for a given base dimension key
+    func subgroupKeys(for dimKey: String) -> [String] {
+        subgroups.keys.filter { baseDimKey(for: $0) == dimKey }.sorted()
+    }
+
+    /// Which sub-group key a symbol belongs to, if any
+    func subgroupKey(for symbol: String) -> String? {
+        for (key, symbols) in subgroups {
+            if symbols.contains(symbol) { return key }
+        }
+        return nil
+    }
+
+    /// Creates a new sub-group for a dimension key, returns the new key (e.g. "dim#2")
+    func createSubgroup(from dimKey: String) -> String {
+        let existing = subgroupKeys(for: dimKey)
+        let maxIndex = existing.compactMap { key -> Int? in
+            guard let hashIndex = key.firstIndex(of: "#") else { return nil }
+            return Int(key[key.index(after: hashIndex)...])
+        }.max() ?? 1
+        let newKey = "\(dimKey)#\(maxIndex + 1)"
+        subgroups[newKey] = []
+        save()
+        return newKey
+    }
+
+    /// Moves a symbol into a sub-group. Auto-cleans empty sub-groups.
+    func moveToSubgroup(symbol: String, subgroupKey: String) {
+        // Remove from any current sub-group
+        for key in subgroups.keys {
+            subgroups[key]?.removeAll { $0 == symbol }
+        }
+        subgroups[subgroupKey, default: []].append(symbol)
+        cleanEmptySubgroups()
+        save()
+    }
+
+    /// Moves a symbol back to the main group by removing it from its sub-group.
+    func moveToMainGroup(symbol: String) {
+        for key in subgroups.keys {
+            subgroups[key]?.removeAll { $0 == symbol }
+        }
+        cleanEmptySubgroups()
+        save()
+    }
+
+    /// All symbols in any sub-group of a given base dimension key
+    func subgroupedSymbols(for dimKey: String) -> Set<String> {
+        var result = Set<String>()
+        for (key, symbols) in subgroups where baseDimKey(for: key) == dimKey {
+            result.formUnion(symbols)
+        }
+        return result
+    }
+
+    /// Removes empty sub-groups and their calibration entries
+    private func cleanEmptySubgroups() {
+        let emptyKeys = subgroups.filter { $0.value.isEmpty }.map(\.key)
+        for key in emptyKeys {
+            subgroups.removeValue(forKey: key)
+            entries.removeValue(forKey: key)
+        }
+    }
+
+    var subgroupCount: Int {
+        subgroups.count
+    }
+
+    // MARK: - Persistence
+
     func save() {
         let file = DimCalibrationFile(
             version: 1,
             calibrations: entries,
             excludedSymbols: excludedSymbols.sorted(),
-            overrides: overrides
+            overrides: overrides,
+            subgroups: subgroups
         )
         do {
             let encoder = JSONEncoder()
@@ -124,21 +227,22 @@ class DimCalibrationStore {
             entries = file.calibrations
             excludedSymbols = Set(file.excludedSymbols)
             overrides = file.overrides
+            subgroups = file.subgroups
         } catch {
             print("DimCalibrationStore: failed to load — \(error)")
         }
     }
 
     var calibratedCount: Int {
-        entries.values.filter { $0.status == "calibrated" }.count
+        entries.filter { !isSubgroupKey($0.key) && $0.value.status == "calibrated" }.count
     }
 
     var skippedCount: Int {
-        entries.values.filter { $0.status == "skipped" }.count
+        entries.filter { !isSubgroupKey($0.key) && $0.value.status == "skipped" }.count
     }
 
     var needsReviewCount: Int {
-        let groupCount = entries.values.filter { $0.status == "needs-review" }.count
+        let groupCount = entries.filter { !isSubgroupKey($0.key) && $0.value.status == "needs-review" }.count
         let overrideCount = overrides.values.filter { $0.status == "needs-review" }.count
         return groupCount + overrideCount
     }
@@ -209,6 +313,7 @@ private enum DimFilterMode: String, CaseIterable {
     case calibrated = "Calibrated"
     case skipped = "Skipped"
     case overrides = "Overrides"
+    case subgroups = "Sub-groups"
 }
 
 private enum DimSortMode: String, CaseIterable {
@@ -265,7 +370,7 @@ struct DimensionCalibrationPlayground: View {
     @State private var selectedIndex = 0
     @State private var memberIndex = 0 // which member of the group to show as reference
 
-    @State private var multiplier = 0.55
+    @State private var multiplier = 0.64
     @State private var xOffset = 0.0
     @State private var yOffset = 0.0
     @State private var weight: Font.Weight = .regular
@@ -364,11 +469,48 @@ struct DimensionCalibrationPlayground: View {
             return singletons
         }
 
-        // Filter excluded symbols out of their parent groups
+        // When showing sub-groups only, build entries just for sub-groups
+        if filterMode == .subgroups {
+            var list: [DimensionGroup] = []
+            for (subKey, symbols) in store.subgroups where !symbols.isEmpty {
+                let baseDim = store.baseDimKey(for: subKey)
+                // Find parent group for width/height
+                let parent = groups.first { $0.id == baseDim }
+                list.append(DimensionGroup(
+                    id: subKey,
+                    width: parent?.width ?? 0,
+                    height: parent?.height ?? 0,
+                    symbols: symbols
+                ))
+            }
+            if !searchText.isEmpty {
+                list = list.filter { group in
+                    group.id.contains(searchText) ||
+                    group.symbols.contains { $0.localizedCaseInsensitiveContains(searchText) }
+                }
+            }
+            list.sort { $0.id < $1.id }
+            return list
+        }
+
+        // Filter excluded AND sub-grouped symbols out of their parent groups
         var list = groups.compactMap { group -> DimensionGroup? in
-            let remaining = group.symbols.filter { !store.isExcluded($0) }
+            let subgrouped = store.subgroupedSymbols(for: group.id)
+            let remaining = group.symbols.filter { !store.isExcluded($0) && !subgrouped.contains($0) }
             guard !remaining.isEmpty else { return nil }
             return DimensionGroup(id: group.id, width: group.width, height: group.height, symbols: remaining)
+        }
+
+        // Append sub-group entries
+        for (subKey, symbols) in store.subgroups where !symbols.isEmpty {
+            let baseDim = store.baseDimKey(for: subKey)
+            let parent = groups.first { $0.id == baseDim }
+            list.append(DimensionGroup(
+                id: subKey,
+                width: parent?.width ?? 0,
+                height: parent?.height ?? 0,
+                symbols: symbols
+            ))
         }
 
         // Append excluded symbols as singleton groups
@@ -415,7 +557,7 @@ struct DimensionCalibrationPlayground: View {
                 }
                 return store.entry(for: group.id)?.status == "skipped"
             }
-        case .overrides:
+        case .overrides, .subgroups:
             break // handled above
         }
 
@@ -514,7 +656,7 @@ struct DimensionCalibrationPlayground: View {
     private var mainContent: some View {
         HStack(spacing: 0) {
             controlsSidebar
-                .frame(width: 550)
+                .frame(width: 650)
 
             Divider()
 
@@ -648,13 +790,59 @@ struct DimensionCalibrationPlayground: View {
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
                                 .tint(.green)
-                            } else {
-                                Button("Exclude") {
-                                    excludeSymbol(symbol)
+                            } else if group.isSubgroup {
+                                // Sub-group member actions
+                                Menu {
+                                    Button("Move to Main Group") {
+                                        moveSymbolToMainGroup(symbol)
+                                    }
+                                    // Offer other sub-groups for the same dimension
+                                    let baseDim = store.baseDimKey(for: group.id)
+                                    let otherSubgroups = store.subgroupKeys(for: baseDim).filter { $0 != group.id }
+                                    if !otherSubgroups.isEmpty {
+                                        Divider()
+                                        ForEach(otherSubgroups, id: \.self) { subKey in
+                                            let idx = subKey.split(separator: "#").last.flatMap { Int($0) } ?? 0
+                                            Button("Move to Sub-group #\(idx)") {
+                                                moveSymbolToSubgroup(symbol, subgroupKey: subKey)
+                                            }
+                                        }
+                                    }
+                                    Divider()
+                                    Button("Exclude", role: .destructive) {
+                                        excludeFromSubgroup(symbol, subgroupKey: group.id)
+                                    }
+                                } label: {
+                                    Label("Actions", systemImage: "ellipsis.circle")
                                 }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .tint(.red)
+                                .menuStyle(.borderlessButton)
+                                .frame(width: 28)
+                            } else {
+                                // Main group member actions
+                                Menu {
+                                    Button("New Sub-group") {
+                                        createSubgroupAndMove(symbol: symbol, dimKey: group.id)
+                                    }
+                                    // Offer existing sub-groups
+                                    let existingSubgroups = store.subgroupKeys(for: group.id)
+                                    if !existingSubgroups.isEmpty {
+                                        Divider()
+                                        ForEach(existingSubgroups, id: \.self) { subKey in
+                                            let idx = subKey.split(separator: "#").last.flatMap { Int($0) } ?? 0
+                                            Button("Move to Sub-group #\(idx)") {
+                                                moveSymbolToSubgroup(symbol, subgroupKey: subKey)
+                                            }
+                                        }
+                                    }
+                                    Divider()
+                                    Button("Exclude", role: .destructive) {
+                                        excludeSymbol(symbol)
+                                    }
+                                } label: {
+                                    Label("Actions", systemImage: "ellipsis.circle")
+                                }
+                                .menuStyle(.borderlessButton)
+                                .frame(width: 28)
                             }
                         }
                     }
@@ -686,6 +874,14 @@ struct DimensionCalibrationPlayground: View {
                             .font(.caption2)
                             .foregroundStyle(.purple)
                     }
+                    if group.isSubgroup {
+                        Text("Sub-group")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(.purple.opacity(0.15), in: Capsule())
+                            .foregroundStyle(.purple)
+                    }
                 }
             } else {
                 Text("No groups match filter")
@@ -701,7 +897,7 @@ struct DimensionCalibrationPlayground: View {
                     .font(.headline)
                 Spacer()
                 Button("Reset") {
-                    multiplier = 0.55
+                    multiplier = 0.64
                     xOffset = 0.0
                     yOffset = 0.0
                     weight = .regular
@@ -718,7 +914,7 @@ struct DimensionCalibrationPlayground: View {
                     Text(String(format: "%.4f", multiplier))
                         .font(.caption.monospacedDigit())
                 }
-                Slider(value: $multiplier, in: 0.2...1.0, step: 0.001)
+                Slider(value: $multiplier, in: 0.3...1.0, step: 0.01)
                     .onChange(of: multiplier) { _, _ in autoSave() }
             }
 
@@ -729,7 +925,7 @@ struct DimensionCalibrationPlayground: View {
                     Text(String(format: "%+.4f", xOffset))
                         .font(.caption.monospacedDigit())
                 }
-                Slider(value: $xOffset, in: -0.1...0.1, step: 0.001)
+                Slider(value: $xOffset, in: -0.1...0.1, step: 0.005)
                     .onChange(of: xOffset) { _, _ in autoSave() }
             }
 
@@ -740,7 +936,7 @@ struct DimensionCalibrationPlayground: View {
                     Text(String(format: "%+.4f", yOffset))
                         .font(.caption.monospacedDigit())
                 }
-                Slider(value: $yOffset, in: -0.1...0.1, step: 0.001)
+                Slider(value: $yOffset, in: -0.1...0.1, step: 0.005)
                     .onChange(of: yOffset) { _, _ in autoSave() }
             }
 
@@ -826,7 +1022,7 @@ struct DimensionCalibrationPlayground: View {
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("Computes multiplier = 0.55 × 100 / max(width, height) for each group using symbol_metrics.json. Results are marked 'Needs Review' for spot-checking.")
+                    Text("Computes multiplier = 0.64 × 100 / max(width, height) for each group using symbol_metrics.json. Results are marked 'Needs Review' for spot-checking.")
                 }
             }
 
@@ -874,6 +1070,13 @@ struct DimensionCalibrationPlayground: View {
                     Text("Overrides:")
                         .foregroundStyle(.secondary)
                     Text("\(store.overrideCount)")
+                        .monospacedDigit()
+                        .foregroundStyle(.purple)
+                }
+                GridRow {
+                    Text("Sub-groups:")
+                        .foregroundStyle(.secondary)
+                    Text("\(store.subgroupCount)")
                         .monospacedDigit()
                         .foregroundStyle(.purple)
                 }
@@ -946,6 +1149,14 @@ struct DimensionCalibrationPlayground: View {
                         } else {
                             Text(group.dimensionLabel)
                                 .font(.title3.bold().monospacedDigit())
+                            if group.isSubgroup {
+                                Text("Sub-group")
+                                    .font(.caption)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(.purple.opacity(0.15), in: Capsule())
+                                    .foregroundStyle(.purple)
+                            }
                             Text("—")
                                 .foregroundStyle(.secondary)
                             Text(symbol)
@@ -1084,7 +1295,7 @@ struct DimensionCalibrationPlayground: View {
 
         return ScrollView {
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(group.symbols, id: \.self) { symbol in
+                ForEach(Array(group.symbols.enumerated()), id: \.element) { idx, symbol in
                     VStack(spacing: 2) {
                         galleryIcon(for: symbol, size: thumbSize)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
@@ -1092,6 +1303,9 @@ struct DimensionCalibrationPlayground: View {
                                 if store.isExcluded(symbol) {
                                     RoundedRectangle(cornerRadius: 4)
                                         .strokeBorder(.red, lineWidth: 2)
+                                } else if idx == memberIndex {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .strokeBorder(.blue, lineWidth: 2)
                                 }
                             }
 
@@ -1101,6 +1315,10 @@ struct DimensionCalibrationPlayground: View {
                             .truncationMode(.middle)
                             .frame(width: thumbSize)
                             .strikethrough(store.isExcluded(symbol), color: .red)
+                    }
+                    .onTapGesture {
+                        memberIndex = idx
+                        comparisonMode = .overlay
                     }
                 }
             }
@@ -1167,7 +1385,7 @@ struct DimensionCalibrationPlayground: View {
             }
             return store.entry(for: groupKey)
         }()
-        let mul = cal?.multiplier ?? 0.55
+        let mul = cal?.multiplier ?? 0.64
         let xOff = cal?.xOffset ?? 0.0
         let yOff: CGFloat = {
             var off = cal?.yOffset ?? 0.0
@@ -1223,9 +1441,16 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
+    /// Returns the effective group key for a symbol: sub-group key if in one, excluded key if excluded, else dimension key.
+    private func effectiveGroupKey(for symbol: String) -> String? {
+        if store.isExcluded(symbol) { return "!\(symbol)" }
+        if let subKey = store.subgroupKey(for: symbol) { return subKey }
+        return symbolToGroupKey[symbol]
+    }
+
     /// Navigate from All Icons view to a symbol's group in the normal calibration view.
     private func navigateToSymbol(_ symbol: String) {
-        guard let groupKey = symbolToGroupKey[symbol] else { return }
+        guard let groupKey = effectiveGroupKey(for: symbol) else { return }
 
         // Switch to overlay mode for detailed calibration
         comparisonMode = .overlay
@@ -1409,7 +1634,7 @@ struct DimensionCalibrationPlayground: View {
             yOffset = existing.yOffset
             weight = existing.weight == "medium" ? .medium : .regular
         } else {
-            multiplier = 0.55
+            multiplier = 0.64
             xOffset = 0.0
             yOffset = 0.0
             weight = .regular
@@ -1492,6 +1717,42 @@ struct DimensionCalibrationPlayground: View {
         loadCurrentGroup()
     }
 
+    // MARK: - Sub-group Actions
+
+    /// Creates a new sub-group from the symbol's current dimension group and moves the symbol into it.
+    private func createSubgroupAndMove(symbol: String, dimKey: String) {
+        let subKey = store.createSubgroup(from: dimKey)
+        store.moveToSubgroup(symbol: symbol, subgroupKey: subKey)
+        // Copy parent's calibration as starting point
+        if let parentEntry = store.entry(for: dimKey) {
+            store.setEntry(parentEntry, for: subKey)
+        }
+        memberIndex = 0
+        loadCurrentGroup()
+    }
+
+    /// Moves a symbol to an existing sub-group.
+    private func moveSymbolToSubgroup(_ symbol: String, subgroupKey: String) {
+        store.moveToSubgroup(symbol: symbol, subgroupKey: subgroupKey)
+        memberIndex = 0
+        loadCurrentGroup()
+    }
+
+    /// Moves a symbol back from a sub-group to its main dimension group.
+    private func moveSymbolToMainGroup(_ symbol: String) {
+        store.moveToMainGroup(symbol: symbol)
+        memberIndex = 0
+        loadCurrentGroup()
+    }
+
+    /// Excludes a symbol from a sub-group (removes from sub-group first, then excludes).
+    private func excludeFromSubgroup(_ symbol: String, subgroupKey: String) {
+        store.moveToMainGroup(symbol: symbol)
+        store.exclude(symbol: symbol)
+        memberIndex = 0
+        loadCurrentGroup()
+    }
+
     // MARK: - Batch Auto-Calculate
 
     private var uncalibratedGroupCount: Int {
@@ -1514,7 +1775,7 @@ struct DimensionCalibrationPlayground: View {
         guard !refs.isEmpty else {
             // No calibrated data — fall back to simple formula
             let limit = max(width, height)
-            return (limit > 0 ? 0.55 * 100.0 / limit : 0.55, 0.0, 0.0)
+            return (limit > 0 ? 0.64 * 100.0 / limit : 0.64, 0.0, 0.0)
         }
 
         // Sort by Euclidean distance in (width, height) space
