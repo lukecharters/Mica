@@ -99,7 +99,6 @@ struct IconContentView: View {
     // Badge layout constants
     private let baseBadgeSize: CGFloat = 80
     private let baseBadgeOffset: CGFloat = 4
-    private let baseBadgeSymbolSize: CGFloat = 45
 
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
@@ -116,39 +115,25 @@ struct IconContentView: View {
         iconSize - (2 * backgroundInset)
     }
 
-    /// Per-symbol recipe from container_recipes.plist, or nil
-    private var symbolRecipe: SymbolRecipe? {
-        guard settings.useAutoSymbolSizing else { return nil }
-        return SymbolRecipeService.recipe(for: settings.symbolName)
+    /// Resolved sizing from family calibration data (always used as baseline)
+    private var resolvedSizing: ResolvedSymbolSizing {
+        SymbolSizingService.resolve(for: settings.symbolName)
     }
 
-    /// Correction factor: plist multipliers are calibrated for macOS System Settings'
-    /// private rendering pipeline (IconRendering/Metal). SwiftUI renders glyphs ~2.5x
-    /// larger at the same font size, so we scale down to match the intended proportions.
-    private let recipeScaleFactor: CGFloat = 0.39
-
     private var symbolSize: CGFloat {
-        if let recipe = symbolRecipe {
-            return enclosureSize * recipe.pointsizeToShapeMul * recipeScaleFactor
-        }
-        // Manual mode or no recipe: preserve original sizing (125pt at 206pt enclosure)
-        let defaultMul = 0.607
-        let scale = settings.useAutoSymbolSizing ? 1.0 : settings.manualSymbolScale
-        return enclosureSize * defaultMul * scale
+        enclosureSize * resolvedSizing.multiplier * settings.manualSymbolScale
     }
 
     private var symbolFontWeight: Font.Weight {
-        symbolRecipe?.symbolWeight ?? .regular
+        resolvedSizing.weight
     }
 
     private var symbolXOffset: CGFloat {
-        guard let recipe = symbolRecipe else { return 0 }
-        return enclosureSize * recipe.xOffset
+        enclosureSize * resolvedSizing.xOffset
     }
 
     private var symbolYOffset: CGFloat {
-        guard let recipe = symbolRecipe else { return 0 }
-        return enclosureSize * recipe.yOffset
+        enclosureSize * resolvedSizing.yOffset
     }
 
     private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
@@ -159,7 +144,7 @@ struct IconContentView: View {
     // Badge scaled constants
     private var badgeSize: CGFloat { baseBadgeSize * scaleFactor }
     private var badgeOffset: CGFloat { baseBadgeOffset * scaleFactor }
-    private var badgeSymbolSize: CGFloat { baseBadgeSymbolSize * scaleFactor }
+
     var body: some View {
         ZStack {
 
@@ -229,7 +214,7 @@ struct IconContentView: View {
             
             // Badge
             if settings.showBadge {
-                BadgeView(settings: settings, badgeSize: badgeSize, badgeSymbolSize: badgeSymbolSize)
+                BadgeView(settings: settings, badgeSize: badgeSize)
                     .offset(badgeOffset(for: settings.badgePosition))
             }
         }
@@ -280,10 +265,21 @@ struct IconContentView: View {
 struct BadgeView: View {
     let settings: IconSettings
     let badgeSize: CGFloat
-    let badgeSymbolSize: CGFloat
 
     private let shadowOpacity: CGFloat = 0.31
     private let symbolShadowOpacity: CGFloat = 0.15
+
+    private var resolvedBadgeSizing: ResolvedSymbolSizing {
+        SymbolSizingService.resolve(for: settings.badgeSymbolName)
+    }
+
+    private var badgeSymbolSize: CGFloat {
+        badgeSize * resolvedBadgeSizing.multiplier * settings.badgeSymbolScale
+    }
+
+    private var badgeSymbolWeight: Font.Weight {
+        resolvedBadgeSizing.weight
+    }
 
     var body: some View {
         ZStack {
@@ -318,22 +314,22 @@ struct BadgeView: View {
                     switch settings.badgeSymbolRenderingMode {
                     case .monochrome:
                         Image(systemName: settings.badgeSymbolName)
-                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundColor(settings.badgeSymbolColor)
                             .symbolRenderingMode(.monochrome)
                     case .hierarchical:
                         Image(systemName: settings.badgeSymbolName)
-                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundStyle(settings.badgeHierarchicalSymbolColor)
                             .symbolRenderingMode(.hierarchical)
                     case .multicolor:
                         Image(systemName: settings.badgeSymbolName)
-                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundColor(settings.badgeSymbolColor)
                             .symbolRenderingMode(.multicolor)
                     case .palette:
                         Image(systemName: settings.badgeSymbolName)
-                            .font(.system(size: badgeSymbolSize, weight: .regular))
+                            .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundStyle(
                                 settings.badgePaletteSymbolPrimaryColor,
                                 settings.badgePaletteSymbolSecondaryColor,

@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "App Icon Template 2.svg",
+      "filename" : "App Icon Template - No Rect@3x 2.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "App Icon Template 1.svg",
+      "filename" : "App Icon Template - No Rect@3x 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "App Icon Template.svg",
+      "filename" : "App Icon Template - No Rect@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

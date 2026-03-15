@@ -45,6 +45,17 @@ ForEach(BadgePosition.allCases) { position in
 
                     badgeSymbolColorControls
 
+                    HStack {
+                        Text("Symbol Scale")
+                        Spacer()
+                        Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(value: $iconSettings.badgeSymbolScale,
+                           in: IconSettings.manualSymbolScaleRange,
+                           step: 0.05)
+
                     if #available(macOS 26.0, *) {
                         Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
                             get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },

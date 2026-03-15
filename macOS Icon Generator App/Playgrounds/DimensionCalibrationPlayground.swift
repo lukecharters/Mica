@@ -1,260 +1,224 @@
 // DimensionCalibrationPlayground.swift
 //
-// Calibration tool that groups SF Symbols by image dimensions (width × height,
-// 4 decimal places). Symbols with identical intrinsic dimensions at 100pt
-// reference size share the same multiplier/offsets — ~1,754 dimension groups
-// covering all ~7,006 symbols.
+// Calibration tool that groups SF Symbols by family (base symbol name).
+// Each non-container symbol gets individual calibration. Container variants
+// (.circle 117x114, .square 115x104, .rectangle 141x104) share a single
+// calibration per container type.
 //
-// Saves to ~/Library/Application Support/Icon Generator/dim-calibration.json
-// with per-dimension entries that map to all member symbols.
+// Saves to ~/Library/Application Support/Icon Generator/family-calibration.json
+// Migrates from dim-calibration.json on first load.
 
 import SwiftUI
 
-// MARK: - Dimension Group
-
-struct DimensionGroup: Identifiable {
-    let id: String // dimension key, e.g. "120.5234_100.0000" or "120.5234_100.0000#2"
-    let width: Double
-    let height: Double
-    let symbols: [String]
-
-    var count: Int { symbols.count }
-    /// First symbol used as the visual representative
-    var representative: String { symbols[0] }
-
-    /// Whether this group is a sub-group (key contains `#`)
-    var isSubgroup: Bool { id.contains("#") }
-
-    /// Sub-group index (e.g. 2 for "120.5234_100.0000#2"), nil for main groups
-    var subgroupIndex: Int? {
-        guard let hashIndex = id.firstIndex(of: "#") else { return nil }
-        return Int(id[id.index(after: hashIndex)...])
-    }
-
-    /// Formatted display label
-    var dimensionLabel: String {
-        let base = String(format: "%.1f × %.1f", width, height)
-        if let idx = subgroupIndex {
-            return "\(base) #\(idx)"
-        }
-        return base
-    }
-}
-
-// MARK: - Dim Calibration Entry
-
-struct DimCalibrationEntry: Codable, Equatable {
-    var multiplier: Double
-    var xOffset: Double
-    var yOffset: Double
-    var weight: String   // "regular" or "medium"
-    var status: String   // "calibrated", "skipped", "needs-review"
-}
-
-struct DimCalibrationFile: Codable {
-    var version: Int = 1
-    /// Keyed by dimension string (4dp), e.g. "120.5234_100.0000" or "120.5234_100.0000#2" for sub-groups
-    var calibrations: [String: DimCalibrationEntry] = [:]
-    /// Symbol names that have been pulled out of their dimension groups for individual calibration
-    var excludedSymbols: [String] = []
-    /// Per-symbol calibration overrides for excluded symbols
-    var overrides: [String: DimCalibrationEntry] = [:]
-    /// Maps sub-group keys (e.g. "120.5234_100.0000#2") to arrays of symbol names
-    var subgroups: [String: [String]] = [:]
-}
-
-// MARK: - Dim Calibration Store
+// MARK: - Calibration Store
 
 @Observable
-class DimCalibrationStore {
-    var entries: [String: DimCalibrationEntry] = [:]
-    var excludedSymbols: Set<String> = []
-    var overrides: [String: DimCalibrationEntry] = [:]
-    var subgroups: [String: [String]] = [:]
+class FamilyCalStore {
+    var symbolEntries: [String: FamilyCalEntry] = [:]
+    var containerEntries: [String: FamilyCalEntry] = [:]
+    var familyOverrides: [String: String] = [:]
     private let fileURL: URL
+
+    static let containerDims: [(key: String, label: String, width: Double, height: Double)] = [
+        ("117.0000_114.0000", "circle", 117, 114),
+        ("115.0000_104.0000", "square", 115, 104),
+        ("141.0000_104.0000", "rectangle", 141, 104),
+    ]
+    static let containerDimKeys: Set<String> = Set(containerDims.map(\.key))
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("dim-calibration.json")
+        self.fileURL = dir.appendingPathComponent("family-calibration.json")
         load()
     }
 
-    func entry(for key: String) -> DimCalibrationEntry? {
-        entries[key]
+    static func isContainer(dimKey: String) -> Bool {
+        containerDimKeys.contains(dimKey)
     }
 
-    func setEntry(_ entry: DimCalibrationEntry, for key: String) {
-        entries[key] = entry
-        save()
-    }
-
-    // MARK: - Exclusion Methods
-
-    func isExcluded(_ symbol: String) -> Bool {
-        excludedSymbols.contains(symbol)
-    }
-
-    func exclude(symbol: String) {
-        excludedSymbols.insert(symbol)
-        save()
-    }
-
-    func unexclude(symbol: String) {
-        excludedSymbols.remove(symbol)
-        overrides.removeValue(forKey: symbol)
-        save()
-    }
-
-    func override(for symbol: String) -> DimCalibrationEntry? {
-        overrides[symbol]
-    }
-
-    func setOverride(_ entry: DimCalibrationEntry, for symbol: String) {
-        overrides[symbol] = entry
-        save()
-    }
-
-    // MARK: - Sub-group Methods
-
-    /// Strips `#N` suffix to get the base dimension key
-    func baseDimKey(for key: String) -> String {
-        if let hashIndex = key.firstIndex(of: "#") {
-            return String(key[..<hashIndex])
+    func entry(forSymbol symbol: String, dimKey: String?) -> FamilyCalEntry? {
+        if let dk = dimKey, Self.containerDimKeys.contains(dk) {
+            return containerEntries[dk]
         }
-        return key
+        return symbolEntries[symbol]
     }
 
-    /// Whether a key represents a sub-group (contains `#`)
-    func isSubgroupKey(_ key: String) -> Bool {
-        key.contains("#")
-    }
-
-    /// All sub-group keys for a given base dimension key
-    func subgroupKeys(for dimKey: String) -> [String] {
-        subgroups.keys.filter { baseDimKey(for: $0) == dimKey }.sorted()
-    }
-
-    /// Which sub-group key a symbol belongs to, if any
-    func subgroupKey(for symbol: String) -> String? {
-        for (key, symbols) in subgroups {
-            if symbols.contains(symbol) { return key }
+    func setEntry(_ entry: FamilyCalEntry, forSymbol symbol: String, dimKey: String?) {
+        if let dk = dimKey, Self.containerDimKeys.contains(dk) {
+            containerEntries[dk] = entry
+        } else {
+            symbolEntries[symbol] = entry
         }
-        return nil
-    }
-
-    /// Creates a new sub-group for a dimension key, returns the new key (e.g. "dim#2")
-    func createSubgroup(from dimKey: String) -> String {
-        let existing = subgroupKeys(for: dimKey)
-        let maxIndex = existing.compactMap { key -> Int? in
-            guard let hashIndex = key.firstIndex(of: "#") else { return nil }
-            return Int(key[key.index(after: hashIndex)...])
-        }.max() ?? 1
-        let newKey = "\(dimKey)#\(maxIndex + 1)"
-        subgroups[newKey] = []
-        save()
-        return newKey
-    }
-
-    /// Moves a symbol into a sub-group. Auto-cleans empty sub-groups.
-    func moveToSubgroup(symbol: String, subgroupKey: String) {
-        // Remove from any current sub-group
-        for key in subgroups.keys {
-            subgroups[key]?.removeAll { $0 == symbol }
-        }
-        subgroups[subgroupKey, default: []].append(symbol)
-        cleanEmptySubgroups()
         save()
     }
 
-    /// Moves a symbol back to the main group by removing it from its sub-group.
-    func moveToMainGroup(symbol: String) {
-        for key in subgroups.keys {
-            subgroups[key]?.removeAll { $0 == symbol }
+    func status(forSymbol symbol: String, dimKey: String?) -> String {
+        entry(forSymbol: symbol, dimKey: dimKey)?.status ?? "uncalibrated"
+    }
+
+    func familyHasMember(withStatus target: String, members: [String]) -> Bool {
+        if target == "uncalibrated" {
+            return members.contains { symbolEntries[$0] == nil }
         }
-        cleanEmptySubgroups()
+        return members.contains { symbolEntries[$0]?.status == target }
+    }
+
+    func familyAllMembers(withStatus target: String, members: [String]) -> Bool {
+        if target == "uncalibrated" {
+            return members.allSatisfy { symbolEntries[$0] == nil }
+        }
+        return members.allSatisfy { symbolEntries[$0]?.status == target }
+    }
+
+    var calibratedSymbolCount: Int {
+        symbolEntries.values.filter { $0.status == "calibrated" }.count
+    }
+    var needsReviewSymbolCount: Int {
+        symbolEntries.values.filter { $0.status == "needs-review" }.count
+    }
+    var skippedSymbolCount: Int {
+        symbolEntries.values.filter { $0.status == "skipped" }.count
+    }
+    var totalSymbolEntries: Int { symbolEntries.count }
+
+    // MARK: - Family Overrides
+
+    func setFamilyOverride(symbol: String, newFamily: String) {
+        familyOverrides[symbol] = newFamily
         save()
     }
 
-    /// All symbols in any sub-group of a given base dimension key
-    func subgroupedSymbols(for dimKey: String) -> Set<String> {
-        var result = Set<String>()
-        for (key, symbols) in subgroups where baseDimKey(for: key) == dimKey {
-            result.formUnion(symbols)
-        }
-        return result
+    func removeFamilyOverride(symbol: String) {
+        familyOverrides.removeValue(forKey: symbol)
+        save()
     }
 
-    /// Removes empty sub-groups and their calibration entries
-    private func cleanEmptySubgroups() {
-        let emptyKeys = subgroups.filter { $0.value.isEmpty }.map(\.key)
-        for key in emptyKeys {
-            subgroups.removeValue(forKey: key)
-            entries.removeValue(forKey: key)
+    func setFamilyOverrides(_ overrides: [String: String]) {
+        for (symbol, family) in overrides {
+            familyOverrides[symbol] = family
         }
+        save()
     }
 
-    var subgroupCount: Int {
-        subgroups.count
+    func removeFamilyOverrides(for symbols: [String]) {
+        for symbol in symbols {
+            familyOverrides.removeValue(forKey: symbol)
+        }
+        save()
     }
 
     // MARK: - Persistence
 
     func save() {
-        let file = DimCalibrationFile(
-            version: 1,
-            calibrations: entries,
-            excludedSymbols: excludedSymbols.sorted(),
-            overrides: overrides,
-            subgroups: subgroups
-        )
+        let file = FamilyCalFile(version: 1, symbols: symbolEntries, containers: containerEntries, familyOverrides: familyOverrides)
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(file)
+
+            let backupURL = fileURL.deletingPathExtension().appendingPathExtension("backup.json")
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                try? FileManager.default.removeItem(at: backupURL)
+                try? FileManager.default.copyItem(at: fileURL, to: backupURL)
+            }
+
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("DimCalibrationStore: failed to save — \(error)")
+            print("FamilyCalStore: failed to save — \(error)")
         }
     }
 
     private func load() {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            migrateFromDimCalibration()
+            return
+        }
         do {
             let data = try Data(contentsOf: fileURL)
-            let file = try JSONDecoder().decode(DimCalibrationFile.self, from: data)
-            entries = file.calibrations
-            excludedSymbols = Set(file.excludedSymbols)
-            overrides = file.overrides
-            subgroups = file.subgroups
+            let file = try JSONDecoder().decode(FamilyCalFile.self, from: data)
+            symbolEntries = file.symbols
+            containerEntries = file.containers
+            familyOverrides = file.familyOverrides
+            print("FamilyCalStore: loaded \(symbolEntries.count) symbols, \(containerEntries.count) containers, \(familyOverrides.count) overrides")
         } catch {
-            print("DimCalibrationStore: failed to load — \(error)")
+            print("FamilyCalStore: failed to load — \(error)")
         }
     }
 
-    var calibratedCount: Int {
-        entries.filter { !isSubgroupKey($0.key) && $0.value.status == "calibrated" }.count
-    }
+    // MARK: - Migration from dim-calibration.json
 
-    var skippedCount: Int {
-        entries.filter { !isSubgroupKey($0.key) && $0.value.status == "skipped" }.count
-    }
+    private func migrateFromDimCalibration() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
+        let dimCalURL = dir.appendingPathComponent("dim-calibration.json")
+        let metricsURL = dir.appendingPathComponent("symbol_metrics.json")
 
-    var needsReviewCount: Int {
-        let groupCount = entries.filter { !isSubgroupKey($0.key) && $0.value.status == "needs-review" }.count
-        let overrideCount = overrides.values.filter { $0.status == "needs-review" }.count
-        return groupCount + overrideCount
-    }
+        guard FileManager.default.fileExists(atPath: dimCalURL.path),
+              FileManager.default.fileExists(atPath: metricsURL.path) else {
+            print("FamilyCalStore: no migration sources found")
+            return
+        }
 
-    var overrideCount: Int {
-        overrides.count
+        struct MigEntry: Decodable {
+            let multiplier: Double; let xOffset: Double; let yOffset: Double
+            let weight: String; let status: String
+        }
+        struct MigFile: Decodable {
+            let calibrations: [String: MigEntry]
+            let excludedSymbols: [String]?
+            let overrides: [String: MigEntry]?
+            let subgroups: [String: [String]]?
+        }
+
+        guard let dimData = try? Data(contentsOf: dimCalURL),
+              let dimFile = try? JSONDecoder().decode(MigFile.self, from: dimData),
+              let metricsData = try? Data(contentsOf: metricsURL),
+              let metricsFile = try? JSONDecoder().decode(SymbolMetricsFile.self, from: metricsData) else {
+            print("FamilyCalStore: failed to decode migration files")
+            return
+        }
+
+        var subgroupLookup: [String: String] = [:]
+        for (subKey, symbols) in dimFile.subgroups ?? [:] {
+            for symbol in symbols { subgroupLookup[symbol] = subKey }
+        }
+        let overrides = dimFile.overrides ?? [:]
+
+        for (symbol, metrics) in metricsFile.symbols {
+            let dimKey = String(format: "%.4f_%.4f", metrics.width, metrics.height)
+
+            if Self.containerDimKeys.contains(dimKey) {
+                if containerEntries[dimKey] == nil, let e = dimFile.calibrations[dimKey] {
+                    containerEntries[dimKey] = FamilyCalEntry(
+                        multiplier: e.multiplier, xOffset: e.xOffset, yOffset: e.yOffset,
+                        weight: e.weight, status: e.status)
+                }
+            } else {
+                let source: MigEntry?
+                if let ovr = overrides[symbol] {
+                    source = ovr
+                } else if let subKey = subgroupLookup[symbol], let sub = dimFile.calibrations[subKey] {
+                    source = sub
+                } else {
+                    source = dimFile.calibrations[dimKey]
+                }
+                if let s = source {
+                    symbolEntries[symbol] = FamilyCalEntry(
+                        multiplier: s.multiplier, xOffset: s.xOffset, yOffset: s.yOffset,
+                        weight: s.weight, status: s.status)
+                }
+            }
+        }
+
+        print("FamilyCalStore: migrated \(symbolEntries.count) symbols, \(containerEntries.count) containers")
+        save()
     }
 }
 
-// MARK: - Dim Icon View
+// MARK: - Icon View
 
-/// Renders an icon using calibration parameters (same formula as CalibratingIconView).
 private struct DimIconView: View {
     let symbolName: String
     let displaySize: CGFloat
@@ -288,16 +252,15 @@ private struct DimIconView: View {
             Image(systemName: symbolName)
                 .font(.system(size: fontSize, weight: weight))
                 .foregroundColor(symbolOnly ? .red : .white)
-                //.border(Color.red, width: 1)
                 .offset(x: xPx, y: yPx)
         }
         .frame(width: displaySize, height: displaySize)
     }
 }
 
-// MARK: - Comparison Mode
+// MARK: - Enums
 
-private enum DimComparisonMode: String, CaseIterable {
+private enum FamilyComparisonMode: String, CaseIterable {
     case overlay = "Overlay"
     case tintedOverlay = "Tinted Overlay"
     case sideBySide = "Side by Side"
@@ -306,29 +269,27 @@ private enum DimComparisonMode: String, CaseIterable {
     case allIcons = "All Icons"
 }
 
-private enum DimFilterMode: String, CaseIterable {
+private enum FamilyFilterMode: String, CaseIterable {
     case all = "All"
     case uncalibrated = "Uncalibrated"
     case needsReview = "Needs Review"
     case calibrated = "Calibrated"
     case skipped = "Skipped"
-    case overrides = "Overrides"
-    case subgroups = "Sub-groups"
+    case containers = "Containers"
 }
 
-private enum DimSortMode: String, CaseIterable {
-    case groupSize = "Group Size"
+private enum FamilySortMode: String, CaseIterable {
+    case familyName = "Name"
+    case familySize = "Size"
     case width = "Width"
     case height = "Height"
 }
 
 // MARK: - Symbol Baseline Data
 
-/// Loads baseline metrics from symbol_baselines.json (extracted from CoreGlyphs asset catalog).
-/// Baseline + capline define where the glyph sits vertically within the em square.
 struct SymbolBaselineData {
-    let capline: Double          // constant: 9.1598
-    let referencePointSize: Double // constant: 13
+    let capline: Double
+    let referencePointSize: Double
     let baselines: [String: Double]
 
     static func load() -> SymbolBaselineData? {
@@ -350,7 +311,6 @@ struct SymbolBaselineData {
         )
     }
 
-    /// Compute the Y offset correction for a symbol based on its baseline.
     func yOffsetCorrection(for symbol: String, multiplier: Double) -> Double? {
         guard let baseline = baselines[symbol] else { return nil }
         let glyphCenter = (baseline + capline) / 2
@@ -363,54 +323,138 @@ struct SymbolBaselineData {
 // MARK: - Main Playground
 
 struct DimensionCalibrationPlayground: View {
-    @State private var store = DimCalibrationStore()
+    @State private var store = FamilyCalStore()
     @State private var service = AppexReferenceService()
 
-    @State private var groups: [DimensionGroup] = []
+    @State private var families: [SymbolFamily] = []
     @State private var selectedIndex = 0
-    @State private var memberIndex = 0 // which member of the group to show as reference
+    @State private var memberIndex = 0
 
-    @State private var multiplier = 0.64
+    @State private var multiplier = 0.65
     @State private var xOffset = 0.0
     @State private var yOffset = 0.0
     @State private var weight: Font.Weight = .regular
-    @State private var comparisonMode: DimComparisonMode = .overlay
+    @State private var comparisonMode: FamilyComparisonMode = .overlay
     @State private var overlayOpacity = 0.5
     @State private var searchText = ""
-    @State private var filterMode: DimFilterMode = .all
-    @State private var sortMode: DimSortMode = .groupSize
+    @State private var filterMode: FamilyFilterMode = .all
+    @State private var sortMode: FamilySortMode = .familyName
     @State private var referenceImage: NSImage?
     @State private var isLoadingReference = false
     @State private var errorMessage: String?
     @State private var baselineData: SymbolBaselineData?
     @State private var useBaselineYOffset = false
+    @State private var galleryThumbSize: CGFloat = 96
+    @State private var galleryTintOverlay = false
+    @State private var galleryReferenceImages: [String: NSImage] = [:]
+    @State private var galleryLoadingSymbols: Set<String> = []
+    @State private var galleryLoadTask: Task<Void, Never>?
+    @State private var showGridOverlay = false
 
-    /// Lookup: symbol name → dimension group key (for All Icons navigation)
-    @State private var symbolToGroupKey: [String: String] = [:]
-    /// Symbol metrics loaded from symbol_metrics.json (width × height at 100pt)
+    /// symbol name -> dim key (for container lookup)
+    @State private var symbolDimKeys: [String: String] = [:]
     @State private var symbolMetrics: [String: SymbolMetrics] = [:]
+
+    // All Icons multi-selection
+    @State private var allIconsSelection: Set<String> = []
+    @State private var lastTappedSymbol: String?
+    @State private var showSelectionMoveSheet = false
+    @State private var showSelectionApplySheet = false
+    @State private var selectionMoveTargetSearch = ""
+    @State private var selectionMoveNewFamilyName = ""
+    @State private var selectionApplySourceSearch = ""
+
+    // Family management sheet state
+    @State private var showMoveSheet = false
+    @State private var showMergeSheet = false
+    @State private var showSplitSheet = false
+    @State private var showApplyConfirmation = false
+    @State private var moveTargetSearch = ""
+    @State private var moveNewFamilyName = ""
+    @State private var mergeTargetSearch = ""
+    @State private var splitSelections: Set<String> = [] // members that STAY in current family
+    @State private var splitNewFamilyName = ""
+    @State private var selectedMembersForMove: Set<String> = []
 
     private let displaySize: CGFloat = 512
 
     init() {
-        let (groups, lookup, metrics) = Self.buildGroups()
-        _groups = State(initialValue: groups)
-        _symbolToGroupKey = State(initialValue: lookup)
+        let (fams, dimKeys, metrics) = Self.buildFamilies()
+        _families = State(initialValue: fams)
+        _symbolDimKeys = State(initialValue: dimKeys)
         _symbolMetrics = State(initialValue: metrics)
     }
 
-    /// Load metrics and build dimension groups.
-    private static func buildGroups() -> ([DimensionGroup], [String: String], [String: SymbolMetrics]) {
+    // MARK: - Rebuild Families
+
+    private func rebuildFamilies() {
+        let currentFamilyId = currentFamily?.id
+        let currentSym = currentSymbol
+
+        let (fams, dimKeys, metrics) = Self.buildFamilies(overrides: store.familyOverrides)
+        families = fams
+        symbolDimKeys = dimKeys
+        symbolMetrics = metrics
+
+        // Restore selection if possible
+        let list = filteredFamilies
+        if let fid = currentFamilyId, let idx = list.firstIndex(where: { $0.id == fid }) {
+            selectedIndex = idx
+            if let sym = currentSym, let mIdx = list[idx].members.firstIndex(of: sym) {
+                memberIndex = mIdx
+            } else {
+                memberIndex = 0
+            }
+        } else {
+            selectedIndex = min(selectedIndex, max(list.count - 1, 0))
+            memberIndex = 0
+        }
+        loadCurrentMember()
+    }
+
+    // MARK: - Family Key
+
+    static func familyKey(for symbol: String) -> String {
+        var parts = symbol.split(separator: ".").map(String.init)
+        if let badgeIdx = parts.firstIndex(of: "badge"), badgeIdx > 0 {
+            parts = Array(parts[..<badgeIdx])
+        }
+        while let last = parts.last, last == "fill" || last == "slash" {
+            parts.removeLast()
+        }
+        return parts.joined(separator: ".")
+    }
+
+    // MARK: - Build Families
+
+    private static func loadFamilyOverrides() -> [String: String] {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let url = appSupport
             .appendingPathComponent("Icon Generator", isDirectory: true)
+            .appendingPathComponent("family-calibration.json")
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url),
+              let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data)
+        else { return [:] }
+        return file.familyOverrides
+    }
+
+    private static func buildFamilies(overrides: [String: String]? = nil) -> ([SymbolFamily], [String: String], [String: SymbolMetrics]) {
+        // Try Application Support first, then bundled fallback
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupportURL = appSupport
+            .appendingPathComponent("Icon Generator", isDirectory: true)
             .appendingPathComponent("symbol_metrics.json")
+        let url = FileManager.default.fileExists(atPath: appSupportURL.path)
+            ? appSupportURL
+            : Bundle.main.url(forResource: "symbol_metrics", withExtension: "json") ?? appSupportURL
 
         guard let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolMetricsFile.self, from: data)
         else { return ([], [:], [:]) }
 
-        // Preserve symbol ordering from sf_symbols.txt
+        let familyOverrides = overrides ?? loadFamilyOverrides()
+
         let orderedSymbols: [String]
         if let txtURL = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
            let contents = try? String(contentsOf: txtURL, encoding: .utf8) {
@@ -419,150 +463,100 @@ struct DimensionCalibrationPlayground: View {
             orderedSymbols = Array(file.symbols.keys).sorted()
         }
 
-        // Group by 4dp dimensions (width_height)
-        var groupMap: [String: [String]] = [:]
-        var widthValues: [String: Double] = [:]
-        var heightValues: [String: Double] = [:]
-        var symbolLookup: [String: String] = [:]
+        var containerMembers: [String: [String]] = [:]
+        var familyMembers: [String: [String]] = [:]
+        var dimKeyLookup: [String: String] = [:]
 
         for symbol in orderedSymbols {
             guard let metrics = file.symbols[symbol] else { continue }
             let dimKey = String(format: "%.4f_%.4f", metrics.width, metrics.height)
-            groupMap[dimKey, default: []].append(symbol)
-            widthValues[dimKey] = metrics.width
-            heightValues[dimKey] = metrics.height
-            symbolLookup[symbol] = dimKey
+            dimKeyLookup[symbol] = dimKey
+
+            if FamilyCalStore.containerDimKeys.contains(dimKey) {
+                containerMembers[dimKey, default: []].append(symbol)
+            } else {
+                let fk = familyOverrides[symbol] ?? familyKey(for: symbol)
+                familyMembers[fk, default: []].append(symbol)
+            }
         }
 
-        let groups = groupMap.map { key, symbols in
-            DimensionGroup(
-                id: key,
-                width: widthValues[key] ?? 0,
-                height: heightValues[key] ?? 0,
-                symbols: symbols
-            )
-        }
-        .sorted { $0.count > $1.count } // default sort: largest groups first
+        var result: [SymbolFamily] = []
 
-        return (groups, symbolLookup, file.symbols)
+        for (fk, members) in familyMembers {
+            let rep = members[0]
+            let m = file.symbols[rep]!
+            result.append(SymbolFamily(
+                id: fk, members: members, isContainer: false, containerLabel: nil,
+                width: m.width, height: m.height))
+        }
+
+        for info in FamilyCalStore.containerDims {
+            if let members = containerMembers[info.key] {
+                result.append(SymbolFamily(
+                    id: "container.\(info.label)", members: members, isContainer: true,
+                    containerLabel: info.label, width: info.width, height: info.height))
+            }
+        }
+
+        result.sort { $0.id < $1.id }
+        return (result, dimKeyLookup, file.symbols)
     }
 
-    // MARK: - Filtered & Sorted Groups
+    // MARK: - Filtered & Sorted Families
 
-    /// Whether a group ID represents an excluded singleton (prefixed with "!")
-    private func isExcludedGroup(_ group: DimensionGroup) -> Bool {
-        group.id.hasPrefix("!")
-    }
-
-    private var filteredGroups: [DimensionGroup] {
-        // When showing overrides, only show excluded singletons
-        if filterMode == .overrides {
-            var singletons = store.excludedSymbols.map { symbol in
-                DimensionGroup(id: "!\(symbol)", width: 0, height: 0, symbols: [symbol])
-            }
-            if !searchText.isEmpty {
-                singletons = singletons.filter { group in
-                    group.symbols.contains { $0.localizedCaseInsensitiveContains(searchText) }
-                }
-            }
-            singletons.sort { $0.symbols[0] < $1.symbols[0] }
-            return singletons
-        }
-
-        // When showing sub-groups only, build entries just for sub-groups
-        if filterMode == .subgroups {
-            var list: [DimensionGroup] = []
-            for (subKey, symbols) in store.subgroups where !symbols.isEmpty {
-                let baseDim = store.baseDimKey(for: subKey)
-                // Find parent group for width/height
-                let parent = groups.first { $0.id == baseDim }
-                list.append(DimensionGroup(
-                    id: subKey,
-                    width: parent?.width ?? 0,
-                    height: parent?.height ?? 0,
-                    symbols: symbols
-                ))
-            }
-            if !searchText.isEmpty {
-                list = list.filter { group in
-                    group.id.contains(searchText) ||
-                    group.symbols.contains { $0.localizedCaseInsensitiveContains(searchText) }
-                }
-            }
-            list.sort { $0.id < $1.id }
-            return list
-        }
-
-        // Filter excluded AND sub-grouped symbols out of their parent groups
-        var list = groups.compactMap { group -> DimensionGroup? in
-            let subgrouped = store.subgroupedSymbols(for: group.id)
-            let remaining = group.symbols.filter { !store.isExcluded($0) && !subgrouped.contains($0) }
-            guard !remaining.isEmpty else { return nil }
-            return DimensionGroup(id: group.id, width: group.width, height: group.height, symbols: remaining)
-        }
-
-        // Append sub-group entries
-        for (subKey, symbols) in store.subgroups where !symbols.isEmpty {
-            let baseDim = store.baseDimKey(for: subKey)
-            let parent = groups.first { $0.id == baseDim }
-            list.append(DimensionGroup(
-                id: subKey,
-                width: parent?.width ?? 0,
-                height: parent?.height ?? 0,
-                symbols: symbols
-            ))
-        }
-
-        // Append excluded symbols as singleton groups
-        let singletons = store.excludedSymbols.map { symbol in
-            DimensionGroup(id: "!\(symbol)", width: 0, height: 0, symbols: [symbol])
-        }
-        list.append(contentsOf: singletons)
-
-        if !searchText.isEmpty {
-            list = list.filter { group in
-                group.id.contains(searchText) ||
-                group.symbols.contains { $0.localizedCaseInsensitiveContains(searchText) }
-            }
-        }
+    private var filteredFamilies: [SymbolFamily] {
+        var list = families
 
         switch filterMode {
-        case .all: break
+        case .containers:
+            list = list.filter { $0.isContainer }
+        case .all:
+            break
         case .uncalibrated:
-            list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0]) == nil
+            list = list.filter { family in
+                if family.isContainer {
+                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", dimKey: dk) == nil
                 }
-                let s = store.entry(for: group.id)?.status
-                return s == nil
+                return family.members.contains { store.symbolEntries[$0] == nil }
             }
         case .needsReview:
-            list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0])?.status == "needs-review"
+            list = list.filter { family in
+                if family.isContainer {
+                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", dimKey: dk)?.status == "needs-review"
                 }
-                return store.entry(for: group.id)?.status == "needs-review"
+                return store.familyHasMember(withStatus: "needs-review", members: family.members)
             }
         case .calibrated:
-            list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0])?.status == "calibrated"
+            list = list.filter { family in
+                if family.isContainer {
+                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", dimKey: dk)?.status == "calibrated"
                 }
-                return store.entry(for: group.id)?.status == "calibrated"
+                return store.familyAllMembers(withStatus: "calibrated", members: family.members)
             }
         case .skipped:
-            list = list.filter { group in
-                if isExcludedGroup(group) {
-                    return store.override(for: group.symbols[0])?.status == "skipped"
+            list = list.filter { family in
+                if family.isContainer {
+                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", dimKey: dk)?.status == "skipped"
                 }
-                return store.entry(for: group.id)?.status == "skipped"
+                return store.familyAllMembers(withStatus: "skipped", members: family.members)
             }
-        case .overrides, .subgroups:
-            break // handled above
+        }
+
+        if !searchText.isEmpty {
+            list = list.filter { family in
+                family.id.localizedCaseInsensitiveContains(searchText) ||
+                family.members.contains { $0.localizedCaseInsensitiveContains(searchText) }
+            }
         }
 
         switch sortMode {
-        case .groupSize:
+        case .familyName:
+            list.sort { $0.id < $1.id }
+        case .familySize:
             list.sort { $0.count > $1.count }
         case .width:
             list.sort { $0.width < $1.width }
@@ -573,19 +567,23 @@ struct DimensionCalibrationPlayground: View {
         return list
     }
 
-    private var currentGroup: DimensionGroup? {
-        let list = filteredGroups
+    private var currentFamily: SymbolFamily? {
+        let list = filteredFamilies
         guard list.indices.contains(selectedIndex) else { return nil }
         return list[selectedIndex]
     }
 
     private var currentSymbol: String? {
-        guard let group = currentGroup else { return nil }
-        let idx = min(memberIndex, group.symbols.count - 1)
-        return group.symbols[idx]
+        guard let family = currentFamily else { return nil }
+        let idx = min(memberIndex, family.members.count - 1)
+        return family.members[idx]
     }
 
-    /// Effective Y offset: manual offset + optional baseline correction.
+    private var currentDimKey: String? {
+        guard let symbol = currentSymbol else { return nil }
+        return symbolDimKeys[symbol]
+    }
+
     private var effectiveYOffset: CGFloat {
         var offset = yOffset
         if useBaselineYOffset, let symbol = currentSymbol, let data = baselineData {
@@ -594,7 +592,6 @@ struct DimensionCalibrationPlayground: View {
         return offset
     }
 
-    /// The baseline correction alone (for display purposes).
     private var baselineCorrection: Double? {
         guard let symbol = currentSymbol, let data = baselineData else { return nil }
         return data.yOffsetCorrection(for: symbol, multiplier: multiplier)
@@ -604,7 +601,7 @@ struct DimensionCalibrationPlayground: View {
 
     var body: some View {
         Group {
-            if groups.isEmpty {
+            if families.isEmpty {
                 ContentUnavailableView("Metrics Not Available", systemImage: "exclamationmark.triangle",
                     description: Text("symbol_metrics.json not found. Run Generate Symbol Metrics first."))
             } else {
@@ -613,13 +610,13 @@ struct DimensionCalibrationPlayground: View {
         }
         .onAppear {
             baselineData = SymbolBaselineData.load()
-            loadCurrentGroup()
+            loadCurrentMember()
         }
         .onChange(of: selectedIndex) { _, _ in
             memberIndex = 0
-            loadCurrentGroup()
+            loadCurrentMember()
         }
-        .onChange(of: memberIndex) { _, _ in loadCurrentGroup() }
+        .onChange(of: memberIndex) { _, _ in loadCurrentMember() }
         .focusable()
         .onKeyPress(.space) { markCalibratedAndAdvance(); return .handled }
         .onKeyPress(.escape) { markSkippedAndAdvance(); return .handled }
@@ -645,8 +642,12 @@ struct DimensionCalibrationPlayground: View {
         case .downArrow where hasCommand:
             nudgeMultiplier(by: -0.001); return .handled
         case .leftArrow:
-            navigatePrevious(); return .handled
+            previousMember(); return .handled
         case .rightArrow:
+            nextMember(); return .handled
+        case .upArrow:
+            navigatePrevious(); return .handled
+        case .downArrow:
             navigateNext(); return .handled
         default:
             return .ignored
@@ -664,6 +665,21 @@ struct DimensionCalibrationPlayground: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(NSColor.windowBackgroundColor))
         }
+        .sheet(isPresented: $showMoveSheet) { moveSheet }
+        .sheet(isPresented: $showMergeSheet) { mergeSheet }
+        .sheet(isPresented: $showSplitSheet) { splitSheet }
+        .alert("Apply Calibration to Family", isPresented: $showApplyConfirmation) {
+            Button("Apply") {
+                if let symbol = currentSymbol, let entry = store.symbolEntries[symbol], let family = currentFamily {
+                    applyCalibration(entry: entry, toFamily: family)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            if let family = currentFamily {
+                Text("Copy the current symbol's calibration values to all \(family.count) members of \"\(family.id)\"?")
+            }
+        }
     }
 
     // MARK: - Controls Sidebar
@@ -673,7 +689,10 @@ struct DimensionCalibrationPlayground: View {
             VStack(alignment: .leading, spacing: 16) {
                 searchAndFilter
                 Divider()
-                groupInfo
+                familyInfo
+                if let family = currentFamily, !family.isContainer {
+                    familyActions(for: family)
+                }
                 if comparisonMode != .allIcons {
                     Divider()
                     parameterSliders
@@ -692,17 +711,17 @@ struct DimensionCalibrationPlayground: View {
             Text("Search")
                 .font(.headline)
 
-            TextField("Filter by symbol name or dimensions...", text: $searchText)
+            TextField("Filter by symbol name or family...", text: $searchText)
                 .textFieldStyle(.roundedBorder)
                 .onChange(of: searchText) { _, _ in
                     selectedIndex = 0
                     memberIndex = 0
-                    loadCurrentGroup()
+                    loadCurrentMember()
                 }
 
             HStack(spacing: 12) {
                 Picker("Filter", selection: $filterMode) {
-                    ForEach(DimFilterMode.allCases, id: \.self) { mode in
+                    ForEach(FamilyFilterMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
@@ -710,7 +729,7 @@ struct DimensionCalibrationPlayground: View {
                 .onChange(of: filterMode) { _, _ in
                     selectedIndex = 0
                     memberIndex = 0
-                    loadCurrentGroup()
+                    loadCurrentMember()
                 }
             }
 
@@ -719,58 +738,75 @@ struct DimensionCalibrationPlayground: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Picker("Sort", selection: $sortMode) {
-                    ForEach(DimSortMode.allCases, id: \.self) { mode in
+                    ForEach(FamilySortMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 260)
+                .frame(width: 280)
             }
 
-            Text("\(filteredGroups.count) dimension groups")
+            Text("\(filteredFamilies.count) families")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
 
-    private var groupInfo: some View {
+    // MARK: - Family Info
+
+    private var familyInfo: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Current Group")
+            Text("Current Family")
                 .font(.headline)
 
-            if let group = currentGroup {
+            if let family = currentFamily {
                 HStack {
-                    Text(group.dimensionLabel)
-                        .font(.title3.bold().monospacedDigit())
+                    Text(family.displayLabel)
+                        .font(.title3.bold())
                     Spacer()
-                    Text("\(group.count) symbols")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(.blue.opacity(0.15), in: Capsule())
+
+                    if family.isContainer {
+                        Text("\(family.count) symbols (shared)")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(.cyan.opacity(0.15), in: Capsule())
+                    } else {
+                        let calCount = family.members.filter {
+                            store.symbolEntries[$0]?.status == "calibrated"
+                        }.count
+                        Text("\(calCount)/\(family.count) calibrated")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(
+                                calCount == family.count ? .green.opacity(0.15) : .blue.opacity(0.15),
+                                in: Capsule()
+                            )
+                    }
                 }
 
                 // Member browser
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Representative")
+                        Text("Symbol")
                             .font(.subheadline.bold())
                         Spacer()
-                        if group.count > 1 {
+                        if family.count > 1 {
                             Button(action: previousMember) {
                                 Image(systemName: "chevron.up")
                             }
                             .buttonStyle(.borderless)
                             .disabled(memberIndex <= 0)
 
-                            Text("\(memberIndex + 1)/\(group.count)")
+                            Text("\(memberIndex + 1)/\(family.count)")
                                 .font(.caption.monospacedDigit())
 
                             Button(action: nextMember) {
                                 Image(systemName: "chevron.down")
                             }
                             .buttonStyle(.borderless)
-                            .disabled(memberIndex >= group.count - 1)
+                            .disabled(memberIndex >= family.count - 1)
                         }
                     }
 
@@ -783,112 +819,85 @@ struct DimensionCalibrationPlayground: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                             Spacer()
-                            if isExcludedGroup(group) {
-                                Button("Restore to Group") {
-                                    restoreSymbol(symbol)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .tint(.green)
-                            } else if group.isSubgroup {
-                                // Sub-group member actions
-                                Menu {
-                                    Button("Move to Main Group") {
-                                        moveSymbolToMainGroup(symbol)
-                                    }
-                                    // Offer other sub-groups for the same dimension
-                                    let baseDim = store.baseDimKey(for: group.id)
-                                    let otherSubgroups = store.subgroupKeys(for: baseDim).filter { $0 != group.id }
-                                    if !otherSubgroups.isEmpty {
-                                        Divider()
-                                        ForEach(otherSubgroups, id: \.self) { subKey in
-                                            let idx = subKey.split(separator: "#").last.flatMap { Int($0) } ?? 0
-                                            Button("Move to Sub-group #\(idx)") {
-                                                moveSymbolToSubgroup(symbol, subgroupKey: subKey)
-                                            }
-                                        }
-                                    }
-                                    Divider()
-                                    Button("Exclude", role: .destructive) {
-                                        excludeFromSubgroup(symbol, subgroupKey: group.id)
-                                    }
-                                } label: {
-                                    Label("Actions", systemImage: "ellipsis.circle")
-                                }
-                                .menuStyle(.borderlessButton)
-                                .frame(width: 28)
-                            } else {
-                                // Main group member actions
-                                Menu {
-                                    Button("New Sub-group") {
-                                        createSubgroupAndMove(symbol: symbol, dimKey: group.id)
-                                    }
-                                    // Offer existing sub-groups
-                                    let existingSubgroups = store.subgroupKeys(for: group.id)
-                                    if !existingSubgroups.isEmpty {
-                                        Divider()
-                                        ForEach(existingSubgroups, id: \.self) { subKey in
-                                            let idx = subKey.split(separator: "#").last.flatMap { Int($0) } ?? 0
-                                            Button("Move to Sub-group #\(idx)") {
-                                                moveSymbolToSubgroup(symbol, subgroupKey: subKey)
-                                            }
-                                        }
-                                    }
-                                    Divider()
-                                    Button("Exclude", role: .destructive) {
-                                        excludeSymbol(symbol)
-                                    }
-                                } label: {
-                                    Label("Actions", systemImage: "ellipsis.circle")
-                                }
-                                .menuStyle(.borderlessButton)
-                                .frame(width: 28)
-                            }
+                        }
+
+                        if let metrics = symbolMetrics[symbol] {
+                            Text(String(format: "%.1f x %.1f", metrics.width, metrics.height))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.tertiary)
                         }
                     }
 
-                    // Show a few member names
-                    if !isExcludedGroup(group) {
-                        let preview = group.symbols.prefix(6).joined(separator: ", ")
-                        let suffix = group.count > 6 ? "..." : ""
-                        Text(preview + suffix)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(2)
+                    // Member list with status markers
+                    if !family.isContainer {
+                        VStack(alignment: .leading, spacing: 1) {
+                            ForEach(Array(family.members.prefix(10).enumerated()), id: \.offset) { idx, sym in
+                                let s = store.symbolEntries[sym]?.status
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(statusColor(for: s ?? "uncalibrated"))
+                                        .frame(width: 6, height: 6)
+                                    if store.familyOverrides[sym] != nil {
+                                        Image(systemName: "arrow.turn.down.right")
+                                            .font(.system(size: 7))
+                                            .foregroundStyle(.purple)
+                                    }
+                                    Text(sym)
+                                        .font(.caption2.monospaced())
+                                        .foregroundStyle(idx == memberIndex ? .primary : .tertiary)
+                                        .fontWeight(idx == memberIndex ? .bold : .regular)
+                                }
+                                .onTapGesture { memberIndex = idx }
+                                .contextMenu {
+                                    Button("Move to Another Family...") {
+                                        selectedMembersForMove = [sym]
+                                        moveTargetSearch = ""
+                                        moveNewFamilyName = ""
+                                        showMoveSheet = true
+                                    }
+                                    if store.familyOverrides[sym] != nil {
+                                        Button("Reset to Algorithmic Family") {
+                                            store.removeFamilyOverride(symbol: sym)
+                                            rebuildFamilies()
+                                        }
+                                    }
+                                    Divider()
+                                    Button("Apply This Calibration to Family") {
+                                        if let entry = store.symbolEntries[sym] {
+                                            applyCalibration(entry: entry, toFamily: family)
+                                        }
+                                    }
+                                    .disabled(store.symbolEntries[sym] == nil)
+                                }
+                            }
+                            if family.count > 10 {
+                                Text("... +\(family.count - 10) more")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
                     }
                 }
 
-                let isOverride = isExcludedGroup(group)
-                let status: String = {
-                    if isOverride {
-                        return store.override(for: group.symbols[0])?.status ?? "uncalibrated"
-                    }
-                    return store.entry(for: group.id)?.status ?? "uncalibrated"
-                }()
+                let symbolStatus = store.status(forSymbol: currentSymbol ?? "", dimKey: currentDimKey)
                 HStack {
-                    Label(status.capitalized, systemImage: statusIcon(for: status))
+                    Label(symbolStatus.capitalized, systemImage: statusIcon(for: symbolStatus))
                         .font(.caption)
-                        .foregroundStyle(statusColor(for: status))
-                    if isOverride {
-                        Text("(Override)")
+                        .foregroundStyle(statusColor(for: symbolStatus))
+                    if family.isContainer {
+                        Text("Shared calibration")
                             .font(.caption2)
-                            .foregroundStyle(.purple)
-                    }
-                    if group.isSubgroup {
-                        Text("Sub-group")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .background(.purple.opacity(0.15), in: Capsule())
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(.cyan)
                     }
                 }
             } else {
-                Text("No groups match filter")
+                Text("No families match filter")
                     .foregroundStyle(.secondary)
             }
         }
     }
+
+    // MARK: - Parameter Sliders
 
     private var parameterSliders: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -897,7 +906,7 @@ struct DimensionCalibrationPlayground: View {
                     .font(.headline)
                 Spacer()
                 Button("Reset") {
-                    multiplier = 0.64
+                    multiplier = 0.65
                     xOffset = 0.0
                     yOffset = 0.0
                     weight = .regular
@@ -916,6 +925,17 @@ struct DimensionCalibrationPlayground: View {
                 }
                 Slider(value: $multiplier, in: 0.3...1.0, step: 0.01)
                     .onChange(of: multiplier) { _, _ in autoSave() }
+                HStack(spacing: 4) {
+                    ForEach([0.43, 0.44, 0.46, 0.48, 0.5, 0.52, 0.53, 0.54, 0.56, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66], id: \.self) { val in
+                        Button(String(format: "%.2f", val)) {
+                            multiplier = val
+                            autoSave()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                        .tint(multiplier == val ? .accentColor : nil)
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -940,7 +960,6 @@ struct DimensionCalibrationPlayground: View {
                     .onChange(of: yOffset) { _, _ in autoSave() }
             }
 
-            // Baseline Y correction toggle
             VStack(alignment: .leading, spacing: 4) {
                 Toggle(isOn: $useBaselineYOffset) {
                     Text("Baseline Y Correction")
@@ -998,45 +1017,31 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
-    @State private var showBatchConfirm = false
+    // MARK: - Progress Info
 
     private var progressInfo: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Progress")
-                    .font(.headline)
-                Spacer()
-                Button("Batch Auto-Calculate") {
-                    showBatchConfirm = true
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .tint(.blue)
-                .confirmationDialog(
-                    "Auto-calculate multipliers for all uncalibrated groups?",
-                    isPresented: $showBatchConfirm,
-                    titleVisibility: .visible
-                ) {
-                    Button("Auto-Calculate \(uncalibratedGroupCount) Groups") {
-                        batchAutoCalculate()
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Computes multiplier = 0.64 × 100 / max(width, height) for each group using symbol_metrics.json. Results are marked 'Needs Review' for spot-checking.")
-                }
-            }
+            Text("Progress")
+                .font(.headline)
 
-            let total = groups.count
-            let calibrated = store.calibratedCount
-            let needsReview = store.needsReviewCount
-            let skipped = store.skippedCount
-            let remaining = total - calibrated - needsReview - skipped
+            let nonContainerFamilies = families.filter { !$0.isContainer }
+            let totalSymbols = nonContainerFamilies.reduce(0) { $0 + $1.count }
+            let calibrated = store.calibratedSymbolCount
+            let needsReview = store.needsReviewSymbolCount
+            let skipped = store.skippedSymbolCount
+            let remaining = totalSymbols - calibrated - needsReview - skipped
 
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                 GridRow {
-                    Text("Total groups:")
+                    Text("Total symbols:")
                         .foregroundStyle(.secondary)
-                    Text("\(total)")
+                    Text("\(totalSymbols)")
+                        .monospacedDigit()
+                }
+                GridRow {
+                    Text("Families:")
+                        .foregroundStyle(.secondary)
+                    Text("\(nonContainerFamilies.count)")
                         .monospacedDigit()
                 }
                 GridRow {
@@ -1067,41 +1072,30 @@ struct DimensionCalibrationPlayground: View {
                         .monospacedDigit()
                 }
                 GridRow {
-                    Text("Overrides:")
+                    Text("Containers:")
                         .foregroundStyle(.secondary)
-                    Text("\(store.overrideCount)")
+                    Text("\(store.containerEntries.count) groups")
                         .monospacedDigit()
-                        .foregroundStyle(.purple)
-                }
-                GridRow {
-                    Text("Sub-groups:")
-                        .foregroundStyle(.secondary)
-                    Text("\(store.subgroupCount)")
-                        .monospacedDigit()
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(.cyan)
                 }
             }
             .font(.caption)
 
-            if total > 0 {
+            if totalSymbols > 0 {
                 VStack(alignment: .leading, spacing: 2) {
-                    ProgressView(value: Double(calibrated + needsReview + skipped), total: Double(total))
-                    Text("\(calibrated + needsReview + skipped) / \(total) groups")
+                    ProgressView(value: Double(calibrated + needsReview + skipped), total: Double(totalSymbols))
+                    Text("\(calibrated + needsReview + skipped) / \(totalSymbols) symbols")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
 
-                // Symbol coverage
-                let coveredSymbols = groups.filter {
-                    let s = store.entry(for: $0.id)?.status
-                    return s == "calibrated" || s == "needs-review" || s == "skipped"
-                }.reduce(0) { $0 + $1.count }
-                let totalSymbols = groups.reduce(0) { $0 + $1.count }
-
+                let calFamilies = nonContainerFamilies.filter {
+                    store.familyAllMembers(withStatus: "calibrated", members: $0.members)
+                }.count
                 VStack(alignment: .leading, spacing: 2) {
-                    ProgressView(value: Double(coveredSymbols), total: Double(totalSymbols))
+                    ProgressView(value: Double(calFamilies), total: Double(nonContainerFamilies.count))
                         .tint(.cyan)
-                    Text("\(coveredSymbols) / \(totalSymbols) symbols covered")
+                    Text("\(calFamilies) / \(nonContainerFamilies.count) families fully calibrated")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -1115,13 +1109,15 @@ struct DimensionCalibrationPlayground: View {
                 .font(.headline)
 
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 2) {
-                GridRow { Text("Left/Right"); Text("Previous / Next group") }
-                GridRow { Text("Space"); Text("Mark calibrated + advance") }
-                GridRow { Text("Tab"); Text("Same as previous + advance") }
-                GridRow { Text("Escape"); Text("Mark skipped + advance") }
+                GridRow { Text("Up/Down"); Text("Previous / Next family") }
+                GridRow { Text("Left/Right"); Text("Previous / Next member") }
+                GridRow { Text("Space"); Text("Mark calibrated + advance member") }
+                GridRow { Text("Tab"); Text("Same as previous + advance member") }
+                GridRow { Text("Escape"); Text("Mark skipped + advance member") }
                 GridRow { Text("Cmd+Up/Down"); Text("Nudge multiplier +/-0.001") }
                 GridRow { Text("Shift+Left/Right"); Text("Nudge X offset +/-0.001") }
                 GridRow { Text("Shift+Up/Down"); Text("Nudge Y offset +/-0.001") }
+                GridRow { Text("Right-click member"); Text("Move / Reset / Apply calibration") }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -1135,33 +1131,23 @@ struct DimensionCalibrationPlayground: View {
             if comparisonMode == .allIcons {
                 allIconsView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let group = currentGroup, let symbol = currentSymbol {
+            } else if let family = currentFamily, let symbol = currentSymbol {
                 VStack(spacing: 12) {
                     HStack {
-                        if isExcludedGroup(group) {
-                            Image(systemName: "person.fill.xmark")
-                                .foregroundStyle(.red)
-                            Text(symbol)
-                                .font(.title3.bold().monospaced())
-                            Text("(Override)")
+                        Text(family.displayLabel)
+                            .font(.title3.bold())
+                        if family.isContainer {
+                            Text("Container")
                                 .font(.caption)
-                                .foregroundStyle(.purple)
-                        } else {
-                            Text(group.dimensionLabel)
-                                .font(.title3.bold().monospacedDigit())
-                            if group.isSubgroup {
-                                Text("Sub-group")
-                                    .font(.caption)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(.purple.opacity(0.15), in: Capsule())
-                                    .foregroundStyle(.purple)
-                            }
-                            Text("—")
-                                .foregroundStyle(.secondary)
-                            Text(symbol)
-                                .font(.title3.monospaced())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.cyan.opacity(0.15), in: Capsule())
+                                .foregroundStyle(.cyan)
                         }
+                        Text("—")
+                            .foregroundStyle(.secondary)
+                        Text(symbol)
+                            .font(.title3.monospaced())
                     }
 
                     comparisonContent(for: symbol)
@@ -1175,32 +1161,35 @@ struct DimensionCalibrationPlayground: View {
                 }
                 .padding()
             } else {
-                ContentUnavailableView("No Groups", systemImage: "magnifyingglass",
-                    description: Text("No dimension groups match the current filter"))
+                ContentUnavailableView("No Families", systemImage: "magnifyingglass",
+                    description: Text("No families match the current filter"))
             }
 
             Divider()
 
-            // Mode picker + navigation bar
             VStack(spacing: 8) {
                 Picker("Mode", selection: $comparisonMode) {
-                    ForEach(DimComparisonMode.allCases, id: \.self) { mode in
+                    ForEach(FamilyComparisonMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 500)
 
-                if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
-                    HStack {
+                HStack(spacing: 16) {
+                    if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
                         Text("Opacity")
                         Slider(value: $overlayOpacity, in: 0...1)
                         Text(String(format: "%.0f%%", overlayOpacity * 100))
                             .font(.caption.monospacedDigit())
                             .frame(width: 36, alignment: .trailing)
                     }
-                    .frame(maxWidth: 400)
+
+                    Toggle("Grid", isOn: $showGridOverlay)
+                        .toggleStyle(.checkbox)
+                        .font(.caption)
                 }
+                .frame(maxWidth: 400)
 
                 if comparisonMode != .allIcons {
                     HStack {
@@ -1211,7 +1200,7 @@ struct DimensionCalibrationPlayground: View {
 
                         Spacer()
 
-                        Text("\(selectedIndex + 1) / \(filteredGroups.count)")
+                        Text("\(selectedIndex + 1) / \(filteredFamilies.count)")
                             .font(.caption.monospacedDigit())
 
                         Spacer()
@@ -1219,7 +1208,7 @@ struct DimensionCalibrationPlayground: View {
                         Button(action: navigateNext) {
                             Image(systemName: "chevron.right")
                         }
-                        .disabled(selectedIndex >= filteredGroups.count - 1)
+                        .disabled(selectedIndex >= filteredFamilies.count - 1)
                     }
                 }
             }
@@ -1239,11 +1228,11 @@ struct DimensionCalibrationPlayground: View {
         case .difference:
             differenceView(for: symbol)
         case .gallery:
-            if let group = currentGroup {
-                galleryView(for: group)
+            if let family = currentFamily {
+                galleryView(for: family)
             }
         case .allIcons:
-            EmptyView() // handled separately in comparisonArea
+            EmptyView()
         }
     }
 
@@ -1289,66 +1278,137 @@ struct DimensionCalibrationPlayground: View {
         .shadow(radius: 4, y: 2)
     }
 
-    private func galleryView(for group: DimensionGroup) -> some View {
-        let thumbSize: CGFloat = 96
-        let columns = [GridItem(.adaptive(minimum: thumbSize + 8), spacing: 8)]
+    // MARK: - Gallery View
 
-        return ScrollView {
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(Array(group.symbols.enumerated()), id: \.element) { idx, symbol in
-                    VStack(spacing: 2) {
-                        galleryIcon(for: symbol, size: thumbSize)
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .overlay {
-                                if store.isExcluded(symbol) {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .strokeBorder(.red, lineWidth: 2)
-                                } else if idx == memberIndex {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .strokeBorder(.blue, lineWidth: 2)
-                                }
-                            }
+    private func galleryView(for family: SymbolFamily) -> some View {
+        let columns = [GridItem(.adaptive(minimum: galleryThumbSize + 8), spacing: 8)]
 
-                        Text(symbol)
-                            .font(.system(size: 8).monospaced())
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .frame(width: thumbSize)
-                            .strikethrough(store.isExcluded(symbol), color: .red)
+        return VStack(spacing: 0) {
+            ScrollView {
+                if galleryTintOverlay && !galleryLoadingSymbols.isEmpty {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Loading references: \(family.members.count - galleryLoadingSymbols.count)/\(family.members.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .onTapGesture {
-                        memberIndex = idx
-                        comparisonMode = .overlay
+                    .padding(.top, 4)
+                }
+
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(Array(family.members.enumerated()), id: \.element) { idx, symbol in
+                        VStack(spacing: 2) {
+                            galleryThumbView(for: symbol, inFamily: family, size: galleryThumbSize)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .overlay {
+                                    if idx == memberIndex {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .strokeBorder(.blue, lineWidth: 2)
+                                    }
+                                }
+
+                            HStack(spacing: 2) {
+                                let s = family.isContainer
+                                    ? store.containerEntries[FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key ?? ""]?.status
+                                    : store.symbolEntries[symbol]?.status
+                                Circle()
+                                    .fill(statusColor(for: s ?? "uncalibrated"))
+                                    .frame(width: 5, height: 5)
+                                Text(symbol)
+                                    .font(.system(size: max(8, galleryThumbSize * 0.08)).monospaced())
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                    .frame(width: galleryThumbSize - 8)
+                            }
+                        }
+                        .draggable(symbol) {
+                            HStack(spacing: 4) {
+                                Image(systemName: symbol)
+                                    .font(.title3)
+                            }
+                            .padding(6)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+                        }
+                        .dropDestination(for: String.self) { droppedSymbols, _ in
+                            guard !family.isContainer,
+                                  let sourceSymbol = droppedSymbols.first,
+                                  let entry = store.symbolEntries[sourceSymbol],
+                                  entry.status == "calibrated"
+                            else { return false }
+                            store.symbolEntries[symbol] = entry
+                            store.save()
+                            loadCurrentMember()
+                            return true
+                        }
+                        .onTapGesture {
+                            memberIndex = idx
+                            comparisonMode = .overlay
+                        }
                     }
                 }
+                .padding(8)
             }
-            .padding(8)
+
+            Divider()
+
+            HStack(spacing: 16) {
+                Toggle("Grid", isOn: $showGridOverlay)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+
+                Toggle("Tint Overlay", isOn: $galleryTintOverlay)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                    .onChange(of: galleryTintOverlay) { _, newValue in
+                        if newValue, let family = currentFamily {
+                            loadGalleryReferences(for: family.members)
+                        } else if !newValue {
+                            galleryLoadTask?.cancel()
+                            galleryReferenceImages = [:]
+                            galleryLoadingSymbols = []
+                        }
+                    }
+
+                if galleryTintOverlay {
+                    Text("Opacity")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Slider(value: $overlayOpacity, in: 0...1)
+                        .frame(width: 100)
+                    Text(String(format: "%.0f%%", overlayOpacity * 100))
+                        .font(.caption.monospacedDigit())
+                        .frame(width: 36, alignment: .trailing)
+                }
+
+                Spacer()
+
+                Text("Size")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Slider(value: $galleryThumbSize, in: 48...256, step: 8)
+                    .frame(width: 140)
+                Text("\(Int(galleryThumbSize))")
+                    .font(.caption.monospacedDigit())
+                    .frame(width: 28, alignment: .trailing)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
         }
     }
 
     // MARK: - All Icons View
 
+    /// Flat ordered list of all non-container symbols across filtered families, used for shift-click range selection.
+    private var allIconsFlatSymbols: [String] {
+        filteredFamilies.filter { !$0.isContainer }.flatMap(\.members)
+    }
+
     private var allIconsView: some View {
         let thumbSize: CGFloat = 56
         let columns = [GridItem(.adaptive(minimum: thumbSize + 4), spacing: 4)]
-
-        // Flatten all symbols from all groups (respecting current filter/sort)
-        let allSymbols: [(symbol: String, groupKey: String, status: String)] = {
-            var result: [(String, String, String)] = []
-            for group in filteredGroups {
-                let isOverride = isExcludedGroup(group)
-                let status: String = {
-                    if isOverride {
-                        return store.override(for: group.symbols[0])?.status ?? "uncalibrated"
-                    }
-                    return store.entry(for: group.id)?.status ?? "uncalibrated"
-                }()
-                for symbol in group.symbols {
-                    result.append((symbol, group.id, status))
-                }
-            }
-            return result
-        }()
+        let familyList = filteredFamilies
+        let totalSymbols = familyList.reduce(0) { $0 + $1.count }
 
         return VStack(spacing: 4) {
             HStack {
@@ -1357,35 +1417,115 @@ struct DimensionCalibrationPlayground: View {
                 Spacer()
                 legendView
                 Spacer()
-                Text("\(allSymbols.count) symbols")
+                Toggle("Grid", isOn: $showGridOverlay)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                Text("\(totalSymbols) symbols")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 12)
             .padding(.top, 8)
 
+            ScrollViewReader { scrollProxy in
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 4) {
-                    ForEach(Array(allSymbols.enumerated()), id: \.offset) { _, item in
-                        allIconsThumb(symbol: item.symbol, groupKey: item.groupKey, status: item.status, size: thumbSize)
-                            .onTapGesture {
-                                navigateToSymbol(item.symbol)
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(familyList) { family in
+                        Section {
+                            LazyVGrid(columns: columns, spacing: 4) {
+                                ForEach(family.members, id: \.self) { symbol in
+                                    allIconsThumb(symbol: symbol, family: family, size: thumbSize)
+                                        .id(symbol)
+                                        .onTapGesture {
+                                            handleAllIconsTap(symbol: symbol, family: family)
+                                        }
+                                        .simultaneousGesture(TapGesture().modifiers(.command).onEnded {
+                                            handleAllIconsCmdTap(symbol: symbol)
+                                        })
+                                        .simultaneousGesture(TapGesture().modifiers(.shift).onEnded {
+                                            handleAllIconsShiftTap(symbol: symbol)
+                                        })
+                                        .draggable(symbol) {
+                                            // Drag preview: show count if multi-selected, otherwise single symbol
+                                            let dragSymbols = allIconsSelection.contains(symbol) ? allIconsSelection : [symbol]
+                                            HStack(spacing: 4) {
+                                                Image(systemName: symbol)
+                                                    .font(.title3)
+                                                if dragSymbols.count > 1 {
+                                                    Text("\(dragSymbols.count) symbols")
+                                                        .font(.caption.bold())
+                                                }
+                                            }
+                                            .padding(6)
+                                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+                                        }
+                                }
                             }
+                        } header: {
+                            allIconsFamilyHeader(family: family)
+                        }
                     }
                 }
                 .padding(8)
             }
+            .onAppear {
+                if let symbol = currentSymbol {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation {
+                            scrollProxy.scrollTo(symbol, anchor: .center)
+                        }
+                    }
+                }
+            }
+            } // ScrollViewReader
+
+            if !allIconsSelection.isEmpty {
+                allIconsSelectionBar
+            }
+        }
+        .sheet(isPresented: $showSelectionMoveSheet) { selectionMoveSheet }
+        .sheet(isPresented: $showSelectionApplySheet) { selectionApplySheet }
+    }
+
+    private func allIconsFamilyHeader(family: SymbolFamily) -> some View {
+        HStack(spacing: 6) {
+            Text(family.displayLabel)
+                .font(.caption.bold())
+            Text("\(family.count)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            if family.isContainer {
+                Text("Container")
+                    .font(.system(size: 9))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(.cyan.opacity(0.15), in: Capsule())
+                    .foregroundStyle(.cyan)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+        .padding(.top, 4)
+        .dropDestination(for: String.self) { droppedSymbols, _ in
+            guard !family.isContainer else { return false }
+            let symbolsToMove = allIconsSelection.isEmpty ? Set(droppedSymbols) : allIconsSelection.union(droppedSymbols)
+            let nonContainer = symbolsToMove.filter { sym in
+                guard let dk = symbolDimKeys[sym] else { return true }
+                return !FamilyCalStore.containerDimKeys.contains(dk)
+            }
+            guard !nonContainer.isEmpty else { return false }
+            moveSymbols(Array(nonContainer), toFamily: family.id)
+            allIconsSelection = []
+            return true
+        } isTargeted: { isTargeted in
+            // Could add highlight state here if desired
         }
     }
 
-    private func allIconsThumb(symbol: String, groupKey: String, status: String, size: CGFloat) -> some View {
-        let cal: DimCalibrationEntry? = {
-            if groupKey.hasPrefix("!") {
-                return store.override(for: symbol)
-            }
-            return store.entry(for: groupKey)
-        }()
-        let mul = cal?.multiplier ?? 0.64
+    private func allIconsThumb(symbol: String, family: SymbolFamily, size: CGFloat) -> some View {
+        let dk = symbolDimKeys[symbol]
+        let cal = store.entry(forSymbol: symbol, dimKey: dk)
+        let mul = cal?.multiplier ?? 0.65
         let xOff = cal?.xOffset ?? 0.0
         let yOff: CGFloat = {
             var off = cal?.yOffset ?? 0.0
@@ -1395,22 +1535,284 @@ struct DimensionCalibrationPlayground: View {
             return off
         }()
         let w: Font.Weight = cal?.weight == "medium" ? .medium : .regular
+        let status = cal?.status ?? "uncalibrated"
+        let isSelected = allIconsSelection.contains(symbol)
 
-        return DimIconView(
-            symbolName: symbol,
-            displaySize: size,
-            multiplier: mul,
-            xOffset: xOff,
-            yOffset: yOff,
-            weight: w,
-            symbolOnly: false
-        )
+        return ZStack {
+            DimIconView(
+                symbolName: symbol,
+                displaySize: size,
+                multiplier: mul,
+                xOffset: xOff,
+                yOffset: yOff,
+                weight: w,
+                symbolOnly: false
+            )
+            gridOverlay(size: size)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .overlay {
             RoundedRectangle(cornerRadius: 4)
-                .strokeBorder(borderColor(for: status), lineWidth: status == "uncalibrated" || status == "needs-review" ? 0 : 1.5)
+                .strokeBorder(
+                    isSelected ? .purple : borderColor(for: status),
+                    lineWidth: isSelected ? 2.5 : (status == "uncalibrated" || status == "needs-review" ? 0 : 1.5)
+                )
+        }
+        .overlay(alignment: .topTrailing) {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white, .purple)
+                    .offset(x: 2, y: -2)
+            }
         }
         .help(symbol)
+        .dropDestination(for: String.self) { droppedSymbols, _ in
+            guard !family.isContainer,
+                  let sourceSymbol = droppedSymbols.first,
+                  let entry = store.symbolEntries[sourceSymbol],
+                  entry.status == "calibrated"
+            else { return false }
+            // Apply to drop target + its selection if selected, otherwise just the drop target
+            let targets = isSelected ? allIconsSelection : [symbol]
+            for target in targets {
+                store.symbolEntries[target] = entry
+            }
+            store.save()
+            allIconsSelection = []
+            loadCurrentMember()
+            return true
+        }
+        .contextMenu {
+            if !family.isContainer {
+                let targetSymbols = isSelected ? Array(allIconsSelection) : [symbol]
+                let label = targetSymbols.count == 1 ? symbol : "\(targetSymbols.count) symbols"
+
+                Button("Move \(label) to Family...") {
+                    allIconsSelection = Set(targetSymbols)
+                    selectionMoveTargetSearch = ""
+                    selectionMoveNewFamilyName = ""
+                    showSelectionMoveSheet = true
+                }
+
+                Button("Apply Calibration to \(label)...") {
+                    allIconsSelection = Set(targetSymbols)
+                    selectionApplySourceSearch = ""
+                    showSelectionApplySheet = true
+                }
+
+                if targetSymbols.contains(where: { store.familyOverrides[$0] != nil }) {
+                    Divider()
+                    Button("Reset to Algorithmic Families") {
+                        let overridden = targetSymbols.filter { store.familyOverrides[$0] != nil }
+                        store.removeFamilyOverrides(for: overridden)
+                        allIconsSelection = []
+                        rebuildFamilies()
+                    }
+                }
+
+                Divider()
+                Button("Clear Selection") {
+                    allIconsSelection = []
+                }
+            }
+        }
+    }
+
+    // MARK: - All Icons Selection Handling
+
+    private func handleAllIconsTap(symbol: String, family: SymbolFamily) {
+        // Plain tap without modifiers: navigate to symbol and clear selection
+        if allIconsSelection.isEmpty {
+            navigateToSymbol(symbol, inFamily: family)
+        } else {
+            allIconsSelection = []
+        }
+    }
+
+    private func handleAllIconsCmdTap(symbol: String) {
+        if allIconsSelection.contains(symbol) {
+            allIconsSelection.remove(symbol)
+        } else {
+            allIconsSelection.insert(symbol)
+        }
+        lastTappedSymbol = symbol
+    }
+
+    private func handleAllIconsShiftTap(symbol: String) {
+        let flat = allIconsFlatSymbols
+        guard let tappedIdx = flat.firstIndex(of: symbol) else { return }
+
+        if let lastSym = lastTappedSymbol, let lastIdx = flat.firstIndex(of: lastSym) {
+            let range = min(lastIdx, tappedIdx)...max(lastIdx, tappedIdx)
+            for i in range {
+                allIconsSelection.insert(flat[i])
+            }
+        } else {
+            allIconsSelection.insert(symbol)
+        }
+        lastTappedSymbol = symbol
+    }
+
+    // MARK: - All Icons Selection Bar
+
+    private var allIconsSelectionBar: some View {
+        HStack(spacing: 12) {
+            Text("\(allIconsSelection.count) selected")
+                .font(.caption.bold())
+                .foregroundStyle(.purple)
+
+            Divider()
+                .frame(height: 16)
+
+            Button("Move to Family...") {
+                selectionMoveTargetSearch = ""
+                selectionMoveNewFamilyName = ""
+                showSelectionMoveSheet = true
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
+            Button("Apply Calibration...") {
+                selectionApplySourceSearch = ""
+                showSelectionApplySheet = true
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
+            Spacer()
+
+            Button("Deselect All") {
+                allIconsSelection = []
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+    }
+
+    // MARK: - Selection Move Sheet
+
+    private var selectionMoveSheet: some View {
+        VStack(spacing: 16) {
+            Text("Move \(allIconsSelection.count) Symbol(s) to Family")
+                .font(.headline)
+
+            let preview = allIconsSelection.sorted().prefix(5)
+            Text(preview.joined(separator: ", ") + (allIconsSelection.count > 5 ? "..." : ""))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+
+            TextField("Search families...", text: $selectionMoveTargetSearch)
+                .textFieldStyle(.roundedBorder)
+
+            let matchingFamilies = families.filter { family in
+                !family.isContainer &&
+                (selectionMoveTargetSearch.isEmpty || family.id.localizedCaseInsensitiveContains(selectionMoveTargetSearch))
+            }.prefix(20)
+
+            List(Array(matchingFamilies), id: \.id) { family in
+                Button {
+                    moveSymbols(Array(allIconsSelection), toFamily: family.id)
+                    allIconsSelection = []
+                    showSelectionMoveSheet = false
+                } label: {
+                    HStack {
+                        Text(family.id)
+                            .font(.body.monospaced())
+                        Spacer()
+                        Text("\(family.count) members")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(height: 300)
+
+            Divider()
+
+            HStack {
+                Text("Or create new family:")
+                    .font(.caption)
+                TextField("New family name", text: $selectionMoveNewFamilyName)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 200)
+                Button("Create & Move") {
+                    let name = selectionMoveNewFamilyName.trimmingCharacters(in: .whitespaces)
+                    guard !name.isEmpty else { return }
+                    moveSymbols(Array(allIconsSelection), toFamily: name)
+                    allIconsSelection = []
+                    showSelectionMoveSheet = false
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(selectionMoveNewFamilyName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            Button("Cancel") { showSelectionMoveSheet = false }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding()
+        .frame(width: 500, height: 520)
+    }
+
+    // MARK: - Selection Apply Calibration Sheet
+
+    private var selectionApplySheet: some View {
+        VStack(spacing: 16) {
+            Text("Apply Calibration to \(allIconsSelection.count) Symbol(s)")
+                .font(.headline)
+
+            Text("Choose a calibrated symbol to copy its values from:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("Search calibrated symbols...", text: $selectionApplySourceSearch)
+                .textFieldStyle(.roundedBorder)
+
+            let calibratedSymbols = store.symbolEntries
+                .filter { $0.value.status == "calibrated" }
+                .keys
+                .filter { selectionApplySourceSearch.isEmpty || $0.localizedCaseInsensitiveContains(selectionApplySourceSearch) }
+                .sorted()
+                .prefix(30)
+
+            List(Array(calibratedSymbols), id: \.self) { symbol in
+                let entry = store.symbolEntries[symbol]!
+                Button {
+                    for targetSymbol in allIconsSelection {
+                        store.symbolEntries[targetSymbol] = entry
+                    }
+                    store.save()
+                    allIconsSelection = []
+                    showSelectionApplySheet = false
+                    loadCurrentMember()
+                } label: {
+                    HStack {
+                        Image(systemName: symbol)
+                            .font(.body)
+                            .frame(width: 24)
+                        Text(symbol)
+                            .font(.body.monospaced())
+                        Spacer()
+                        Text(String(format: "mul=%.3f", entry.multiplier))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(height: 350)
+
+            Button("Cancel") { showSelectionApplySheet = false }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding()
+        .frame(width: 500, height: 520)
     }
 
     private var legendView: some View {
@@ -1441,49 +1843,100 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
-    /// Returns the effective group key for a symbol: sub-group key if in one, excluded key if excluded, else dimension key.
-    private func effectiveGroupKey(for symbol: String) -> String? {
-        if store.isExcluded(symbol) { return "!\(symbol)" }
-        if let subKey = store.subgroupKey(for: symbol) { return subKey }
-        return symbolToGroupKey[symbol]
-    }
-
-    /// Navigate from All Icons view to a symbol's group in the normal calibration view.
-    private func navigateToSymbol(_ symbol: String) {
-        guard let groupKey = effectiveGroupKey(for: symbol) else { return }
-
-        // Switch to overlay mode for detailed calibration
+    /// Navigate from All Icons view to a symbol's family.
+    private func navigateToSymbol(_ symbol: String, inFamily family: SymbolFamily) {
         comparisonMode = .overlay
 
-        // Find the group index in the current filtered list
-        let list = filteredGroups
-        if let idx = list.firstIndex(where: { $0.id == groupKey }) {
+        let list = filteredFamilies
+        if let idx = list.firstIndex(where: { $0.id == family.id }) {
             selectedIndex = idx
-            // Find the member index within the group
-            if let memberIdx = list[idx].symbols.firstIndex(of: symbol) {
+            if let memberIdx = list[idx].members.firstIndex(of: symbol) {
                 memberIndex = memberIdx
             }
         }
     }
 
-    private func galleryIcon(for symbol: String, size: CGFloat) -> some View {
-        let yOff: CGFloat = {
-            var offset = yOffset
-            if useBaselineYOffset, let data = baselineData {
-                offset += data.yOffsetCorrection(for: symbol, multiplier: multiplier) ?? 0
+    @ViewBuilder
+    private func galleryThumbView(for symbol: String, inFamily family: SymbolFamily, size: CGFloat) -> some View {
+        if galleryTintOverlay {
+            ZStack {
+                if let refImage = galleryReferenceImages[symbol] {
+                    Image(nsImage: refImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .frame(width: size, height: size)
+                } else if galleryLoadingSymbols.contains(symbol) {
+                    ProgressView()
+                        .frame(width: size, height: size)
+                        .background(Color.gray.opacity(0.1))
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: size, height: size)
+                }
+                galleryIcon(for: symbol, inFamily: family, size: size, tinted: true)
+                    .opacity(overlayOpacity)
             }
-            return offset
-        }()
+        } else {
+            galleryIcon(for: symbol, inFamily: family, size: size, tinted: false)
+        }
+    }
 
-        return DimIconView(
-            symbolName: symbol,
-            displaySize: size,
-            multiplier: multiplier,
-            xOffset: xOffset,
-            yOffset: yOff,
-            weight: weight,
-            symbolOnly: false
-        )
+    private func galleryIcon(for symbol: String, inFamily family: SymbolFamily, size: CGFloat, tinted: Bool) -> some View {
+        // Use saved calibration for each member; current slider values only for selected member
+        let dk = symbolDimKeys[symbol]
+        let isSelected = symbol == currentSymbol
+
+        let mul: CGFloat
+        let xOff: CGFloat
+        let yOff: CGFloat
+        let w: Font.Weight
+
+        if isSelected {
+            mul = multiplier
+            xOff = xOffset
+            w = weight
+            var off = yOffset
+            if useBaselineYOffset, let data = baselineData {
+                off += data.yOffsetCorrection(for: symbol, multiplier: multiplier) ?? 0
+            }
+            yOff = off
+        } else {
+            let cal = store.entry(forSymbol: symbol, dimKey: dk)
+            mul = cal?.multiplier ?? 0.65
+            xOff = cal?.xOffset ?? 0.0
+            w = cal?.weight == "medium" ? .medium : .regular
+            var off = cal?.yOffset ?? 0.0
+            if useBaselineYOffset, let data = baselineData {
+                off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
+            }
+            yOff = off
+        }
+
+        return ZStack {
+            DimIconView(
+                symbolName: symbol,
+                displaySize: size,
+                multiplier: mul,
+                xOffset: xOff,
+                yOffset: yOff,
+                weight: w,
+                symbolOnly: tinted
+            )
+            gridOverlay(size: size)
+        }
+    }
+
+    @ViewBuilder
+    private func gridOverlay(size: CGFloat) -> some View {
+        if showGridOverlay {
+            Image("App Icon Template SVG")
+                .resizable()
+                .scaledToFit()
+                .opacity(0.6)
+                .frame(width: size, height: size)
+                .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder
@@ -1509,15 +1962,302 @@ struct DimensionCalibrationPlayground: View {
     }
 
     private func ourIconView(for symbol: String, symbolOnly: Bool) -> some View {
-        DimIconView(
-            symbolName: symbol,
-            displaySize: displaySize,
-            multiplier: multiplier,
-            xOffset: xOffset,
-            yOffset: effectiveYOffset,
-            weight: weight,
-            symbolOnly: symbolOnly
-        )
+        ZStack {
+            DimIconView(
+                symbolName: symbol,
+                displaySize: displaySize,
+                multiplier: multiplier,
+                xOffset: xOffset,
+                yOffset: effectiveYOffset,
+                weight: weight,
+                symbolOnly: symbolOnly
+            )
+            gridOverlay(size: displaySize)
+        }
+    }
+
+    // MARK: - Family Actions UI
+
+    private func familyActions(for family: SymbolFamily) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Divider()
+            Text("Family Actions")
+                .font(.subheadline.bold())
+
+            HStack(spacing: 8) {
+                Button("Merge...") {
+                    mergeTargetSearch = ""
+                    showMergeSheet = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button("Split...") {
+                    splitSelections = Set(family.members)
+                    splitNewFamilyName = ""
+                    showSplitSheet = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(family.count < 2)
+
+                Button("Apply to Family") {
+                    showApplyConfirmation = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(currentSymbol == nil || store.symbolEntries[currentSymbol ?? ""] == nil)
+            }
+
+            let overriddenMembers = family.members.filter { store.familyOverrides[$0] != nil }
+            if !overriddenMembers.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.turn.down.right")
+                        .font(.caption2)
+                        .foregroundStyle(.purple)
+                    Text("\(overriddenMembers.count) custom override(s)")
+                        .font(.caption2)
+                        .foregroundStyle(.purple)
+                    Spacer()
+                    Button("Reset All") {
+                        store.removeFamilyOverrides(for: overriddenMembers)
+                        rebuildFamilies()
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                }
+            }
+        }
+    }
+
+    // MARK: - Move Sheet
+
+    private var moveSheet: some View {
+        VStack(spacing: 16) {
+            Text("Move Symbol(s) to Family")
+                .font(.headline)
+
+            let symbolsToMove = Array(selectedMembersForMove)
+            if symbolsToMove.count == 1 {
+                Text("Moving: \(symbolsToMove[0])")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Moving \(symbolsToMove.count) symbols")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            TextField("Search families...", text: $moveTargetSearch)
+                .textFieldStyle(.roundedBorder)
+
+            let matchingFamilies = families.filter { family in
+                !family.isContainer &&
+                family.id != currentFamily?.id &&
+                (moveTargetSearch.isEmpty || family.id.localizedCaseInsensitiveContains(moveTargetSearch))
+            }.prefix(20)
+
+            List(Array(matchingFamilies), id: \.id) { family in
+                Button {
+                    moveSymbols(symbolsToMove, toFamily: family.id)
+                    showMoveSheet = false
+                } label: {
+                    HStack {
+                        Text(family.id)
+                            .font(.body.monospaced())
+                        Spacer()
+                        Text("\(family.count) members")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(height: 300)
+
+            Divider()
+
+            HStack {
+                Text("Or create new family:")
+                    .font(.caption)
+                TextField("New family name", text: $moveNewFamilyName)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 200)
+                Button("Create & Move") {
+                    let name = moveNewFamilyName.trimmingCharacters(in: .whitespaces)
+                    guard !name.isEmpty else { return }
+                    moveSymbols(symbolsToMove, toFamily: name)
+                    showMoveSheet = false
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(moveNewFamilyName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            Button("Cancel") { showMoveSheet = false }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding()
+        .frame(width: 500, height: 520)
+    }
+
+    // MARK: - Merge Sheet
+
+    private var mergeSheet: some View {
+        VStack(spacing: 16) {
+            Text("Merge Family Into...")
+                .font(.headline)
+
+            if let family = currentFamily {
+                Text("Merge all \(family.count) members of \"\(family.id)\" into another family")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            TextField("Search families...", text: $mergeTargetSearch)
+                .textFieldStyle(.roundedBorder)
+
+            let matchingFamilies = families.filter { family in
+                !family.isContainer &&
+                family.id != currentFamily?.id &&
+                (mergeTargetSearch.isEmpty || family.id.localizedCaseInsensitiveContains(mergeTargetSearch))
+            }.prefix(20)
+
+            List(Array(matchingFamilies), id: \.id) { family in
+                Button {
+                    mergeCurrentFamily(into: family.id)
+                    showMergeSheet = false
+                } label: {
+                    HStack {
+                        Text(family.id)
+                            .font(.body.monospaced())
+                        Spacer()
+                        Text("\(family.count) members")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(height: 350)
+
+            Button("Cancel") { showMergeSheet = false }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding()
+        .frame(width: 500, height: 500)
+    }
+
+    // MARK: - Split Sheet
+
+    private var splitSheet: some View {
+        VStack(spacing: 16) {
+            Text("Split Family")
+                .font(.headline)
+
+            if let family = currentFamily {
+                Text("Check symbols to keep in \"\(family.id)\". Unchecked symbols move to the new family.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                List(family.members, id: \.self) { symbol in
+                    Toggle(isOn: Binding(
+                        get: { splitSelections.contains(symbol) },
+                        set: { isOn in
+                            if isOn { splitSelections.insert(symbol) } else { splitSelections.remove(symbol) }
+                        }
+                    )) {
+                        HStack(spacing: 4) {
+                            Image(systemName: symbol)
+                                .font(.body)
+                                .frame(width: 24)
+                            Text(symbol)
+                                .font(.body.monospaced())
+                        }
+                    }
+                }
+                .frame(height: 300)
+
+                let stayCount = splitSelections.count
+                let moveCount = family.count - stayCount
+
+                HStack {
+                    Text("Stay: \(stayCount)")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                    Text("Move: \(moveCount)")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+
+                HStack {
+                    Text("New family name:")
+                        .font(.caption)
+                    TextField("e.g. star.special", text: $splitNewFamilyName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 200)
+                }
+
+                let canSplit = stayCount >= 1 && moveCount >= 1 &&
+                    !splitNewFamilyName.trimmingCharacters(in: .whitespaces).isEmpty
+
+                HStack {
+                    Button("Cancel") { showSplitSheet = false }
+                        .keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Split") {
+                        performSplit(family: family)
+                        showSplitSheet = false
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canSplit)
+                }
+            }
+        }
+        .padding()
+        .frame(width: 500, height: 520)
+    }
+
+    // MARK: - Family Management Actions
+
+    private func moveSymbols(_ symbols: [String], toFamily target: String) {
+        var overrides: [String: String] = [:]
+        for symbol in symbols {
+            overrides[symbol] = target
+        }
+        store.setFamilyOverrides(overrides)
+        rebuildFamilies()
+    }
+
+    private func mergeCurrentFamily(into target: String) {
+        guard let family = currentFamily else { return }
+        var overrides: [String: String] = [:]
+        for symbol in family.members {
+            overrides[symbol] = target
+        }
+        store.setFamilyOverrides(overrides)
+        rebuildFamilies()
+    }
+
+    private func performSplit(family: SymbolFamily) {
+        let newName = splitNewFamilyName.trimmingCharacters(in: .whitespaces)
+        guard !newName.isEmpty else { return }
+        let symbolsToMove = family.members.filter { !splitSelections.contains($0) }
+        guard !symbolsToMove.isEmpty else { return }
+        var overrides: [String: String] = [:]
+        for symbol in symbolsToMove {
+            overrides[symbol] = newName
+        }
+        store.setFamilyOverrides(overrides)
+        rebuildFamilies()
+    }
+
+    private func applyCalibration(entry: FamilyCalEntry, toFamily family: SymbolFamily) {
+        for member in family.members {
+            store.symbolEntries[member] = entry
+        }
+        store.save()
+        loadCurrentMember()
     }
 
     // MARK: - Navigation
@@ -1529,119 +2269,98 @@ struct DimensionCalibrationPlayground: View {
     }
 
     private func navigateNext() {
-        guard selectedIndex < filteredGroups.count - 1 else { return }
+        guard selectedIndex < filteredFamilies.count - 1 else { return }
         saveCurrentValues()
         selectedIndex += 1
     }
 
     private func previousMember() {
-        guard let group = currentGroup, memberIndex > 0 else { return }
+        guard memberIndex > 0 else { return }
+        saveCurrentValues()
         memberIndex -= 1
-        _ = group // suppress unused warning
     }
 
     private func nextMember() {
-        guard let group = currentGroup, memberIndex < group.count - 1 else { return }
+        guard let family = currentFamily, memberIndex < family.count - 1 else { return }
+        saveCurrentValues()
         memberIndex += 1
     }
 
+    /// Advance to next member within family, or next family if at end.
+    private func advanceToNextMember() {
+        guard let family = currentFamily else { return }
+        if family.isContainer || memberIndex >= family.count - 1 {
+            // Move to next family
+            if selectedIndex < filteredFamilies.count - 1 {
+                selectedIndex += 1
+            }
+        } else {
+            memberIndex += 1
+            loadCurrentMember()
+        }
+    }
+
     private func markCalibratedAndAdvance() {
-        guard let group = currentGroup else { return }
-        let entry = DimCalibrationEntry(
+        guard let symbol = currentSymbol else { return }
+        let entry = FamilyCalEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "calibrated"
         )
-        if isExcludedGroup(group) {
-            store.setOverride(entry, for: group.symbols[0])
-        } else {
-            store.setEntry(entry, for: group.id)
-        }
-
-        if selectedIndex < filteredGroups.count - 1 {
-            selectedIndex += 1
-        }
+        store.setEntry(entry, forSymbol: symbol, dimKey: currentDimKey)
+        advanceToNextMember()
     }
 
     private func markSkippedAndAdvance() {
-        guard let group = currentGroup else { return }
-        let entry = DimCalibrationEntry(
+        guard let symbol = currentSymbol else { return }
+        let entry = FamilyCalEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "skipped"
         )
-        if isExcludedGroup(group) {
-            store.setOverride(entry, for: group.symbols[0])
-        } else {
-            store.setEntry(entry, for: group.id)
-        }
-
-        if selectedIndex < filteredGroups.count - 1 {
-            selectedIndex += 1
-        }
+        store.setEntry(entry, forSymbol: symbol, dimKey: currentDimKey)
+        advanceToNextMember()
     }
 
+    /// Copy current slider values to current symbol as calibrated, then advance.
+    /// Since sliders retain values from the previous member, this effectively copies them.
     private func copyPreviousAndAdvance() {
-        guard selectedIndex > 0, let group = currentGroup else { return }
-        let previousGroup = filteredGroups[selectedIndex - 1]
-        let previous: DimCalibrationEntry? = {
-            if isExcludedGroup(previousGroup) {
-                return store.override(for: previousGroup.symbols[0])
-            }
-            return store.entry(for: previousGroup.id)
-        }()
-        if let previous {
-            multiplier = previous.multiplier
-            xOffset = previous.xOffset
-            yOffset = previous.yOffset
-            weight = previous.weight == "medium" ? .medium : .regular
-        }
-        let entry = DimCalibrationEntry(
-            multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
-            weight: weight == .medium ? "medium" : "regular",
-            status: "calibrated"
-        )
-        if isExcludedGroup(group) {
-            store.setOverride(entry, for: group.symbols[0])
-        } else {
-            store.setEntry(entry, for: group.id)
-        }
-
-        if selectedIndex < filteredGroups.count - 1 {
-            selectedIndex += 1
-        }
+        markCalibratedAndAdvance()
     }
 
     // MARK: - Load / Save
 
-    private func loadCurrentGroup() {
-        guard let group = currentGroup else {
+    private func loadCurrentMember() {
+        guard let symbol = currentSymbol else {
             referenceImage = nil
             return
         }
 
-        // Load saved values or defaults — check overrides for excluded singletons
-        let existing: DimCalibrationEntry? = {
-            if isExcludedGroup(group) {
-                return store.override(for: group.symbols[0])
-            }
-            return store.entry(for: group.id)
-        }()
-
+        let existing = store.entry(forSymbol: symbol, dimKey: currentDimKey)
         if let existing {
             multiplier = existing.multiplier
             xOffset = existing.xOffset
             yOffset = existing.yOffset
             weight = existing.weight == "medium" ? .medium : .regular
         } else {
-            multiplier = 0.64
+            multiplier = 0.65
             xOffset = 0.0
             yOffset = 0.0
             weight = .regular
         }
 
-        // Load reference image for current member
-        guard let symbol = currentSymbol else { return }
+        loadReferenceImage()
+
+        if galleryTintOverlay && comparisonMode == .gallery, let family = currentFamily {
+            loadGalleryReferences(for: family.members)
+        }
+    }
+
+    private func loadReferenceImage() {
+        guard let symbol = currentSymbol else {
+            referenceImage = nil
+            return
+        }
         isLoadingReference = true
         errorMessage = nil
         referenceImage = nil
@@ -1660,8 +2379,7 @@ struct DimensionCalibrationPlayground: View {
                 }
             }
 
-            // Prefetch next few groups' representatives
-            let list = filteredGroups
+            let list = filteredFamilies
             let nextStart = selectedIndex + 1
             let nextEnd = min(nextStart + 3, list.count)
             if nextStart < nextEnd {
@@ -1671,158 +2389,46 @@ struct DimensionCalibrationPlayground: View {
         }
     }
 
-    private func saveCurrentValues() {
-        guard let group = currentGroup else { return }
-        if isExcludedGroup(group) {
-            // Only update entries that already exist — don't create new ones from slider adjustments
-            guard let existingStatus = store.override(for: group.symbols[0])?.status else { return }
-            let entry = DimCalibrationEntry(
-                multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
-                weight: weight == .medium ? "medium" : "regular",
-                status: existingStatus
-            )
-            store.setOverride(entry, for: group.symbols[0])
-        } else {
-            guard let existingStatus = store.entry(for: group.id)?.status else { return }
-            let entry = DimCalibrationEntry(
-                multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
-                weight: weight == .medium ? "medium" : "regular",
-                status: existingStatus
-            )
-            store.setEntry(entry, for: group.id)
+    private func loadGalleryReferences(for symbols: [String]) {
+        galleryLoadTask?.cancel()
+        galleryReferenceImages = [:]
+        galleryLoadingSymbols = Set(symbols)
+
+        galleryLoadTask = Task {
+            await withTaskGroup(of: (String, NSImage?).self) { taskGroup in
+                for symbol in symbols {
+                    taskGroup.addTask {
+                        guard !Task.isCancelled else { return (symbol, nil) }
+                        let image = try? await service.referenceIcon(for: symbol)
+                        return (symbol, image)
+                    }
+                }
+                for await (symbol, image) in taskGroup {
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        if let image {
+                            galleryReferenceImages[symbol] = image
+                        }
+                        galleryLoadingSymbols.remove(symbol)
+                    }
+                }
+            }
         }
+    }
+
+    private func saveCurrentValues() {
+        guard let symbol = currentSymbol else { return }
+        guard let existingStatus = store.entry(forSymbol: symbol, dimKey: currentDimKey)?.status else { return }
+        let entry = FamilyCalEntry(
+            multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
+            weight: weight == .medium ? "medium" : "regular",
+            status: existingStatus
+        )
+        store.setEntry(entry, forSymbol: symbol, dimKey: currentDimKey)
     }
 
     private func autoSave() {
         saveCurrentValues()
-    }
-
-    // MARK: - Exclude / Restore
-
-    private func excludeSymbol(_ symbol: String) {
-        store.exclude(symbol: symbol)
-        // Reset member index since the group just lost a member
-        memberIndex = 0
-        loadCurrentGroup()
-    }
-
-    private func restoreSymbol(_ symbol: String) {
-        store.unexclude(symbol: symbol)
-        // The singleton group we were on is now gone — stay at current index
-        let list = filteredGroups
-        if selectedIndex >= list.count {
-            selectedIndex = max(0, list.count - 1)
-        }
-        memberIndex = 0
-        loadCurrentGroup()
-    }
-
-    // MARK: - Sub-group Actions
-
-    /// Creates a new sub-group from the symbol's current dimension group and moves the symbol into it.
-    private func createSubgroupAndMove(symbol: String, dimKey: String) {
-        let subKey = store.createSubgroup(from: dimKey)
-        store.moveToSubgroup(symbol: symbol, subgroupKey: subKey)
-        // Copy parent's calibration as starting point
-        if let parentEntry = store.entry(for: dimKey) {
-            store.setEntry(parentEntry, for: subKey)
-        }
-        memberIndex = 0
-        loadCurrentGroup()
-    }
-
-    /// Moves a symbol to an existing sub-group.
-    private func moveSymbolToSubgroup(_ symbol: String, subgroupKey: String) {
-        store.moveToSubgroup(symbol: symbol, subgroupKey: subgroupKey)
-        memberIndex = 0
-        loadCurrentGroup()
-    }
-
-    /// Moves a symbol back from a sub-group to its main dimension group.
-    private func moveSymbolToMainGroup(_ symbol: String) {
-        store.moveToMainGroup(symbol: symbol)
-        memberIndex = 0
-        loadCurrentGroup()
-    }
-
-    /// Excludes a symbol from a sub-group (removes from sub-group first, then excludes).
-    private func excludeFromSubgroup(_ symbol: String, subgroupKey: String) {
-        store.moveToMainGroup(symbol: symbol)
-        store.exclude(symbol: symbol)
-        memberIndex = 0
-        loadCurrentGroup()
-    }
-
-    // MARK: - Batch Auto-Calculate
-
-    private var uncalibratedGroupCount: Int {
-        groups.filter { store.entry(for: $0.id) == nil }.count
-    }
-
-    /// Predicts (multiplier, xOffset, yOffset) for a given symbol dimension using
-    /// Inverse Distance Weighting over the k nearest calibrated dimension groups.
-    /// Falls back to the simple formula if fewer than k calibrated entries exist.
-    private func idwPredict(width: Double, height: Double, k: Int = 3) -> (multiplier: Double, xOffset: Double, yOffset: Double) {
-        // Build reference list from calibrated entries
-        struct RefPoint { let w, h, mul, xo, yo: Double }
-        var refs: [RefPoint] = []
-        for (key, entry) in store.entries where entry.status == "calibrated" {
-            let parts = key.split(separator: "_")
-            guard parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]) else { continue }
-            refs.append(RefPoint(w: w, h: h, mul: entry.multiplier, xo: entry.xOffset, yo: entry.yOffset))
-        }
-
-        guard !refs.isEmpty else {
-            // No calibrated data — fall back to simple formula
-            let limit = max(width, height)
-            return (limit > 0 ? 0.64 * 100.0 / limit : 0.64, 0.0, 0.0)
-        }
-
-        // Sort by Euclidean distance in (width, height) space
-        let sorted = refs.map { r -> (dist: Double, ref: RefPoint) in
-            let d = ((r.w - width) * (r.w - width) + (r.h - height) * (r.h - height)).squareRoot()
-            return (d, r)
-        }.sorted { $0.dist < $1.dist }
-
-        let topK = Array(sorted.prefix(k))
-
-        // Exact match — use directly
-        if topK[0].dist == 0 {
-            return (topK[0].ref.mul, topK[0].ref.xo, topK[0].ref.yo)
-        }
-
-        // Inverse distance weighting
-        let weights = topK.map { 1.0 / $0.dist }
-        let totalW = weights.reduce(0, +)
-        let mul = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.mul } / totalW
-        let xo  = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.xo  } / totalW
-        let yo  = zip(weights, topK).reduce(0.0) { $0 + $1.0 * $1.1.ref.yo  } / totalW
-        return (mul, xo, yo)
-    }
-
-    /// Fills all uncalibrated dimension groups using IDW interpolation over the
-    /// calibrated data. Results are marked "needs-review" for spot-checking.
-    private func batchAutoCalculate() {
-        var processed = 0
-
-        for group in groups {
-            guard store.entry(for: group.id) == nil else { continue }
-            guard let metrics = symbolMetrics[group.representative] else { continue }
-
-            let (autoMul, autoXO, autoYO) = idwPredict(width: metrics.width, height: metrics.height)
-            let entry = DimCalibrationEntry(
-                multiplier: autoMul,
-                xOffset: autoXO,
-                yOffset: autoYO,
-                weight: "regular",
-                status: "needs-review"
-            )
-            store.setEntry(entry, for: group.id)
-            processed += 1
-        }
-
-        print("batchAutoCalculate: processed \(processed) groups using IDW interpolation")
-        loadCurrentGroup()
     }
 
     // MARK: - Nudge Helpers
@@ -1860,6 +2466,82 @@ struct DimensionCalibrationPlayground: View {
         case "needs-review": .blue
         default: .secondary
         }
+    }
+}
+
+// MARK: - Legacy Type Aliases (used by ResizableDimCalPlayground, ResizableSizingPlayground)
+
+typealias DimCalibrationEntry = FamilyCalEntry
+
+/// Legacy store that reads from dim-calibration.json (used by ResizableSizingPlayground).
+@Observable
+class DimCalibrationStore {
+    var entries: [String: DimCalibrationEntry] = [:]
+
+    init() {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let url = appSupport
+            .appendingPathComponent("Icon Generator", isDirectory: true)
+            .appendingPathComponent("dim-calibration.json")
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url) else { return }
+        struct LegacyFile: Decodable { let calibrations: [String: DimCalibrationEntry] }
+        if let file = try? JSONDecoder().decode(LegacyFile.self, from: data) {
+            entries = file.calibrations
+        }
+    }
+
+    func entry(for key: String) -> DimCalibrationEntry? { entries[key] }
+}
+
+/// Legacy file format for dim-calibration.json (used by ResizableDimCalPlayground).
+struct DimCalibrationFile: Codable {
+    var version: Int = 1
+    var calibrations: [String: DimCalibrationEntry] = [:]
+    var excludedSymbols: [String] = []
+    var overrides: [String: DimCalibrationEntry] = [:]
+    var subgroups: [String: [String]] = [:]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
+        calibrations = try c.decodeIfPresent([String: DimCalibrationEntry].self, forKey: .calibrations) ?? [:]
+        excludedSymbols = try c.decodeIfPresent([String].self, forKey: .excludedSymbols) ?? []
+        overrides = try c.decodeIfPresent([String: DimCalibrationEntry].self, forKey: .overrides) ?? [:]
+        subgroups = try c.decodeIfPresent([String: [String]].self, forKey: .subgroups) ?? [:]
+    }
+
+    init(version: Int = 1, calibrations: [String: DimCalibrationEntry] = [:], excludedSymbols: [String] = [], overrides: [String: DimCalibrationEntry] = [:], subgroups: [String: [String]] = [:]) {
+        self.version = version
+        self.calibrations = calibrations
+        self.excludedSymbols = excludedSymbols
+        self.overrides = overrides
+        self.subgroups = subgroups
+    }
+}
+
+struct DimensionGroup: Identifiable {
+    let id: String
+    let width: Double
+    let height: Double
+    let symbols: [String]
+
+    var count: Int { symbols.count }
+    var representative: String { symbols[0] }
+
+    var isSubgroup: Bool { id.contains("#") }
+
+    var subgroupIndex: Int? {
+        guard let hashIndex = id.firstIndex(of: "#") else { return nil }
+        return Int(id[id.index(after: hashIndex)...])
+    }
+
+    var dimensionLabel: String {
+        let base = String(format: "%.1f × %.1f", width, height)
+        if let idx = subgroupIndex {
+            return "\(base) #\(idx)"
+        }
+        return base
     }
 }
 

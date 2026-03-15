@@ -15,6 +15,11 @@ struct SymbolRecipeService {
         return entry
     }
 
+    /// All symbol names that have a recipe in container_recipes.plist
+    static var allSymbolNames: [String] {
+        recipeStore.keys.sorted()
+    }
+
     // MARK: - Private
 
     /// Lazy-loaded, thread-safe recipe dictionary

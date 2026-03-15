@@ -47,22 +47,16 @@ struct IconTabContent: View {
 
                 symbolColorControls
 
-                Toggle("Auto Symbol Size", systemImage: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left",
-                       isOn: $iconSettings.useAutoSymbolSizing)
-                    .help("Automatically size the symbol to match macOS System Settings proportions")
-
-                if !iconSettings.useAutoSymbolSizing {
-                    HStack {
-                        Text("Symbol Scale")
-                        Spacer()
-                        Text("\(Int(iconSettings.manualSymbolScale * 100))%")
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                    Slider(value: $iconSettings.manualSymbolScale,
-                           in: IconSettings.manualSymbolScaleRange,
-                           step: 0.05)
+                HStack {
+                    Text("Symbol Scale")
+                    Spacer()
+                    Text("\(Int(iconSettings.manualSymbolScale * 100))%")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
                 }
+                Slider(value: $iconSettings.manualSymbolScale,
+                       in: IconSettings.manualSymbolScaleRange,
+                       step: 0.05)
 
                 if #available(macOS 26.0, *) {
                     Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(

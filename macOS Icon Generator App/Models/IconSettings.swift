@@ -17,7 +17,6 @@ struct IconSettings: Equatable {
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var exportColorSpace: ExportColorSpace = .sRGB
 
-    var useAutoSymbolSizing: Bool = true
     var manualSymbolScale: Double = 1.0
 
     // Shadow settings
@@ -48,6 +47,7 @@ struct IconSettings: Equatable {
     var badgeEnableBackgroundGradient: Bool = true
     var badgeEnableBackgroundShadow: Bool = true
     var badgeEnableSymbolShadow: Bool = true
+    var badgeSymbolScale: Double = 1.0
 
     // Badge Symbol Color Rendering Mode (macOS 26+)
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat

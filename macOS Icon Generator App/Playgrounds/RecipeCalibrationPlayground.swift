@@ -4,6 +4,7 @@
 //
 //  Calibration playground for tuning recipeScaleFactor and offsets
 //  by comparing our rendered icons against Apple's reference icons.
+//  Uses AppexReferenceService for dynamic Apple ground-truth references.
 //
 
 import SwiftUI
@@ -81,145 +82,219 @@ struct CalibrationIconView: View {
     }
 }
 
-// MARK: - Reference Symbol
-/// Pairs an SF Symbol name with its CFBundle asset name.
-/// `recipeName` overrides the recipe lookup when the plist uses a different key.
-struct ReferenceSymbol: Identifiable {
-    let id: String  // SF Symbol name
-    let asset: String  // Asset catalog name
-    let recipeName: String?  // Override for plist lookup (nil = use id)
+// MARK: - Comparison & Filter Modes
 
-    init(_ name: String, recipeName: String? = nil) {
-        self.id = name
-        self.asset = "CFBundle-\(name)"
-        self.recipeName = recipeName
-    }
+private enum RecipeComparisonMode: String, CaseIterable {
+    case overlay = "Overlay"
+    case tintedOverlay = "Tinted Overlay"
+    case sideBySide = "Side by Side"
+    case difference = "Difference"
+    case gallery = "Gallery"
+}
 
-    var effectiveRecipeName: String { recipeName ?? id }
-    var recipe: SymbolRecipe? { SymbolRecipeService.recipe(for: effectiveRecipeName) }
-    var hasRecipe: Bool { recipe != nil }
-    var hasGlyphMetrics: Bool { GlyphMetricsService.predictedMultiplier(for: id) != nil }
+private enum RecipeFilterMode: String, CaseIterable {
+    case all = "All"
+    case hasRecipe = "Has Recipe"
+    case noRecipe = "No Recipe"
 }
 
 // MARK: - Main Playground View
 struct RecipeCalibrationPlayground: View {
-    static let referenceSymbols: [ReferenceSymbol] = [
-        ReferenceSymbol("gearshape.fill", recipeName: "gear"),
-        ReferenceSymbol("square.fill"),
-        ReferenceSymbol("square.and.arrow.up"),
-        ReferenceSymbol("square.and.arrow.up.trianglebadge.exclamationmark"),
-        ReferenceSymbol("folder.fill.badge.plus", recipeName: "folder.fill"),
-        ReferenceSymbol("doc.text.magnifyingglass"),
-        ReferenceSymbol("bell.and.waves.left.and.right.fill"),
-        ReferenceSymbol("person.crop.circle"),
-        ReferenceSymbol("person.crop.circle.badge.plus"),
-        ReferenceSymbol("phone.fill"),
-        ReferenceSymbol("phone.fill.badge.checkmark"),
-        ReferenceSymbol("accessibility.badge.arrow.up.right", recipeName: "accessibility.badge.arrow.up.right")
-    ]
+    @State private var service = AppexReferenceService()
+
+    /// All SF Symbols sorted, with recipe symbols first
+    @State private var allSymbols: [String] = []
+    @State private var recipeSymbolSet: Set<String> = []
 
     @State private var selectedIndex = 0
     @State private var scaleFactor = 0.39
     @State private var xOffsetAdjust = 0.0
     @State private var yOffsetAdjust = 0.0
-    @State private var comparisonMode: ComparisonMode = .overlay
+    @State private var comparisonMode: RecipeComparisonMode = .overlay
     @State private var overlayOpacity = 0.5
-    @State private var showGallery = false
+    @State private var filterMode: RecipeFilterMode = .hasRecipe
+    @State private var searchText = ""
     @State private var useGlyphMetricsFallback = false
+    @State private var referenceImage: NSImage?
+    @State private var isLoadingReference = false
+    @State private var errorMessage: String?
+    @State private var galleryThumbSize: CGFloat = 96
+    @State private var galleryTintOverlay = false
+    @State private var galleryReferenceImages: [String: NSImage] = [:]
+    @State private var galleryLoadingSymbols: Set<String> = []
+    @State private var galleryLoadTask: Task<Void, Never>?
 
-    private let displaySize: CGFloat = 200
+    private let displaySize: CGFloat = 512
 
-    enum ComparisonMode: String, CaseIterable {
-        case overlay = "Overlay"
-        case tintedOverlay = "Tinted Overlay"
-        case sideBySide = "Side by Side"
-        case difference = "Difference"
+    init() {
+        let recipeNames = Set(SymbolRecipeService.allSymbolNames)
+
+        // Load all SF Symbols from sf_symbols.txt
+        let allNames: [String]
+        if let url = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
+           let contents = try? String(contentsOf: url, encoding: .utf8) {
+            allNames = contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        } else {
+            allNames = Array(recipeNames).sorted()
+        }
+
+        // Sort: recipe symbols first (alphabetical), then non-recipe (alphabetical)
+        let sorted = allNames.sorted { a, b in
+            let aHas = recipeNames.contains(a)
+            let bHas = recipeNames.contains(b)
+            if aHas != bHas { return aHas }
+            return a < b
+        }
+
+        _allSymbols = State(initialValue: sorted)
+        _recipeSymbolSet = State(initialValue: recipeNames)
     }
 
-    private var selected: ReferenceSymbol { Self.referenceSymbols[selectedIndex] }
+    // MARK: - Filtered Symbols
+
+    private var filteredSymbols: [String] {
+        var list = allSymbols
+
+        switch filterMode {
+        case .all: break
+        case .hasRecipe:
+            list = list.filter { recipeSymbolSet.contains($0) }
+        case .noRecipe:
+            list = list.filter { !recipeSymbolSet.contains($0) }
+        }
+
+        if !searchText.isEmpty {
+            list = list.filter { $0.localizedCaseInsensitiveContains(searchText) }
+        }
+
+        return list
+    }
+
+    private var currentSymbol: String? {
+        let list = filteredSymbols
+        guard list.indices.contains(selectedIndex) else { return nil }
+        return list[selectedIndex]
+    }
+
+    // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Controls sidebar
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    symbolPicker
-                    Divider()
-                    fallbackSizingToggle
-                    Divider()
-                    comparisonControls
-                    Divider()
-                    parameterSliders
-                    Divider()
-                    recipeInfoPanel
-                }
-                .padding()
+        Group {
+            if allSymbols.isEmpty {
+                ContentUnavailableView("No Symbols", systemImage: "exclamationmark.triangle",
+                    description: Text("sf_symbols.txt not found and no recipes loaded."))
+            } else {
+                mainContent
             }
-            .frame(width: 500)
+        }
+        .onAppear { loadReferenceImage() }
+        .onChange(of: selectedIndex) { _, _ in loadReferenceImage() }
+        .focusable()
+        .onKeyPress(.leftArrow) { navigatePrevious(); return .handled }
+        .onKeyPress(.rightArrow) { navigateNext(); return .handled }
+    }
+
+    private var mainContent: some View {
+        HStack(spacing: 0) {
+            controlsSidebar
+                .frame(width: 500)
 
             Divider()
 
-            // Main comparison area
-            VStack(spacing: 0) {
-                if showGallery {
-                    galleryView
-                } else {
-                    comparisonView
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-
-                Divider()
-
-                HStack {
-                    Toggle("Gallery", isOn: $showGallery)
-                    Spacer()
-                    if !showGallery {
-                        navigationButtons
-                    }
-                }
-                .padding(12)
-            }
-            .background(Color(NSColor.windowBackgroundColor))
+            comparisonArea
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(NSColor.windowBackgroundColor))
         }
     }
 
-    // MARK: - Symbol Picker
+    // MARK: - Controls Sidebar
 
-    private var symbolPicker: some View {
+    private var controlsSidebar: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                searchAndFilter
+                Divider()
+                symbolInfo
+                if comparisonMode != .gallery {
+                    Divider()
+                    fallbackSizingToggle
+                    Divider()
+                    parameterSliders
+                }
+                Divider()
+                recipeInfoPanel
+            }
+            .padding()
+        }
+    }
+
+    private var searchAndFilter: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Symbol")
+            Text("Search")
                 .font(.headline)
 
-            Picker("Symbol", selection: $selectedIndex) {
-                ForEach(0..<Self.referenceSymbols.count, id: \.self) { i in
-                    let ref = Self.referenceSymbols[i]
-                    HStack {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 6))
-                            .foregroundStyle(ref.hasRecipe ? .green : ref.hasGlyphMetrics ? .blue : .orange)
-                        Text(ref.id)
-                    }
-                    .tag(i)
+            TextField("Filter by symbol name...", text: $searchText)
+                .textFieldStyle(.roundedBorder)
+                .onChange(of: searchText) { _, _ in
+                    selectedIndex = 0
+                    loadReferenceImage()
+                }
+
+            Picker("Filter", selection: $filterMode) {
+                ForEach(RecipeFilterMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
                 }
             }
-            .labelsHidden()
+            .pickerStyle(.segmented)
+            .onChange(of: filterMode) { _, _ in
+                selectedIndex = 0
+                loadReferenceImage()
+            }
 
-            if !selected.hasRecipe {
-                if selected.hasGlyphMetrics {
-                    Label(useGlyphMetricsFallback
-                        ? "Using glyph metrics fallback (F3)"
-                        : "No plist recipe — glyph metrics available",
-                        systemImage: useGlyphMetricsFallback ? "function" : "info.circle")
-                        .font(.caption)
-                        .foregroundStyle(useGlyphMetricsFallback ? .blue : .orange)
-                } else {
-                    Label("No plist recipe — using flat default", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-            } else if let recipeName = selected.recipeName {
-                Label("Plist key: \"\(recipeName)\"", systemImage: "info.circle")
+            HStack {
+                Text("\(filteredSymbols.count) symbols")
                     .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(recipeSymbolSet.count) have recipes")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+        }
+    }
+
+    private var symbolInfo: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Current Symbol")
+                .font(.headline)
+
+            if let symbol = currentSymbol {
+                HStack {
+                    Image(systemName: symbol)
+                        .font(.title2)
+                    Text(symbol)
+                        .font(.body.monospaced())
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    if recipeSymbolSet.contains(symbol) {
+                        Text("Has Recipe")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(.green.opacity(0.15), in: Capsule())
+                            .foregroundStyle(.green)
+                    } else {
+                        Text("No Recipe")
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(.orange.opacity(0.15), in: Capsule())
+                            .foregroundStyle(.orange)
+                    }
+                }
+            } else {
+                Text("No symbols match filter")
                     .foregroundStyle(.secondary)
             }
         }
@@ -251,32 +326,6 @@ struct RecipeCalibrationPlayground: View {
                 Label("Flat Default", systemImage: "circle.fill")
                     .font(.caption2)
                     .foregroundStyle(.orange)
-            }
-        }
-    }
-
-    // MARK: - Comparison Controls
-
-    private var comparisonControls: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Comparison Mode")
-                .font(.headline)
-
-            Picker("Mode", selection: $comparisonMode) {
-                ForEach(ComparisonMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
-                HStack {
-                    Text("Opacity")
-                    Slider(value: $overlayOpacity, in: 0...1)
-                    Text(String(format: "%.0f%%", overlayOpacity * 100))
-                        .font(.caption.monospacedDigit())
-                        .frame(width: 36, alignment: .trailing)
-                }
             }
         }
     }
@@ -331,6 +380,18 @@ struct RecipeCalibrationPlayground: View {
                 }
                 Slider(value: $yOffsetAdjust, in: -10...10, step: 0.5)
             }
+
+            if let symbol = currentSymbol {
+                let icon = CalibrationIconView(
+                    symbolName: symbol, displaySize: displaySize,
+                    recipeScaleFactor: scaleFactor,
+                    xOffsetAdjust: xOffsetAdjust, yOffsetAdjust: yOffsetAdjust,
+                    symbolOnly: false, useGlyphMetricsFallback: useGlyphMetricsFallback
+                )
+                Text("Font size: \(String(format: "%.1f", icon.computedSymbolSize)) pt (enclosure: \(String(format: "%.1f", icon.enclosureSize)) pt)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -341,204 +402,242 @@ struct RecipeCalibrationPlayground: View {
             Text("Recipe Info")
                 .font(.headline)
 
-            let recipe = selected.recipe
-            let icon = CalibrationIconView(
-                symbolName: selected.id,
-                displaySize: displaySize,
-                recipeScaleFactor: scaleFactor,
-                xOffsetAdjust: xOffsetAdjust,
-                yOffsetAdjust: yOffsetAdjust,
-                symbolOnly: false,
-                recipeName: selected.recipeName,
-                useGlyphMetricsFallback: useGlyphMetricsFallback
-            )
+            if let symbol = currentSymbol {
+                let recipe = SymbolRecipeService.recipe(for: symbol)
+                let icon = CalibrationIconView(
+                    symbolName: symbol, displaySize: displaySize,
+                    recipeScaleFactor: scaleFactor,
+                    xOffsetAdjust: xOffsetAdjust, yOffsetAdjust: yOffsetAdjust,
+                    symbolOnly: false, useGlyphMetricsFallback: useGlyphMetricsFallback
+                )
 
-            if let recipe {
-                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
-                    GridRow {
-                        Text("Multiplier:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.6f", recipe.pointsizeToShapeMul))
-                            .monospacedDigit()
+                if let recipe {
+                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                        GridRow {
+                            Text("Multiplier:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.6f", recipe.pointsizeToShapeMul))
+                                .monospacedDigit()
+                        }
+                        GridRow {
+                            Text("Weight:")
+                                .foregroundStyle(.secondary)
+                            Text(recipe.symbolWeight == .medium ? "Medium" : "Regular")
+                        }
+                        GridRow {
+                            Text("X Offset:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.4f", recipe.xOffset))
+                                .monospacedDigit()
+                        }
+                        GridRow {
+                            Text("Y Offset:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.4f", recipe.yOffset))
+                                .monospacedDigit()
+                        }
+                        Divider()
+                            .gridCellUnsizedAxes(.horizontal)
+                        GridRow {
+                            Text("Enclosure:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.1f pt", icon.enclosureSize))
+                                .monospacedDigit()
+                        }
+                        GridRow {
+                            Text("Font Size:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.1f pt", icon.computedSymbolSize))
+                                .monospacedDigit()
+                        }
                     }
-                    GridRow {
-                        Text("Weight:")
-                            .foregroundStyle(.secondary)
-                        Text(recipe.symbolWeight == .medium ? "Medium" : "Regular")
-                    }
-                    GridRow {
-                        Text("X Offset:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.4f", recipe.xOffset))
-                            .monospacedDigit()
-                    }
-                    GridRow {
-                        Text("Y Offset:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.4f", recipe.yOffset))
-                            .monospacedDigit()
-                    }
-                    Divider()
-                        .gridCellUnsizedAxes(.horizontal)
-                    GridRow {
-                        Text("Enclosure:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.1f pt", icon.enclosureSize))
-                            .monospacedDigit()
-                    }
-                    GridRow {
-                        Text("Font Size:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.1f pt", icon.computedSymbolSize))
-                            .monospacedDigit()
-                    }
-                }
-                .font(.caption)
-            } else {
-                if let predicted = icon.glyphMetricsMul {
-                    if useGlyphMetricsFallback {
-                        Text("Using glyph metrics fallback (F3)")
-                            .font(.caption)
-                            .foregroundStyle(.blue)
-                    } else {
-                        Text("No recipe — using flat 0.607 (F3 available: \(String(format: "%.4f", predicted)))")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
+                    .font(.caption)
                 } else {
-                    Text("No recipe found — using default 0.607 multiplier")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
                     if let predicted = icon.glyphMetricsMul {
-                        GridRow {
-                            Text("F3 Multiplier:")
-                                .foregroundStyle(.secondary)
-                            Text(String(format: "%.6f", predicted))
-                                .monospacedDigit()
-                                .foregroundStyle(useGlyphMetricsFallback ? .blue : .secondary)
+                        if useGlyphMetricsFallback {
+                            Text("Using glyph metrics fallback (F3)")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                        } else {
+                            Text("No recipe — using flat 0.607 (F3 available: \(String(format: "%.4f", predicted)))")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    } else {
+                        Text("No recipe found — using default 0.607 multiplier")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                        if let predicted = icon.glyphMetricsMul {
+                            GridRow {
+                                Text("F3 Multiplier:")
+                                    .foregroundStyle(.secondary)
+                                Text(String(format: "%.6f", predicted))
+                                    .monospacedDigit()
+                                    .foregroundStyle(useGlyphMetricsFallback ? .blue : .secondary)
+                            }
+                            GridRow {
+                                Text("Effective:")
+                                    .foregroundStyle(.secondary)
+                                Text(String(format: "%.4f (mul \u{00D7} %.2f)",
+                                            predicted * scaleFactor, scaleFactor))
+                                    .monospacedDigit()
+                                    .foregroundStyle(useGlyphMetricsFallback ? .blue : .secondary)
+                            }
                         }
                         GridRow {
-                            Text("Effective:")
+                            Text("Flat Default:")
                                 .foregroundStyle(.secondary)
-                            Text(String(format: "%.4f (mul \u{00D7} %.2f)",
-                                        predicted * scaleFactor, scaleFactor))
+                            Text("0.6070")
                                 .monospacedDigit()
-                                .foregroundStyle(useGlyphMetricsFallback ? .blue : .secondary)
+                                .foregroundStyle(!useGlyphMetricsFallback ? .primary : .secondary)
+                        }
+                        Divider()
+                            .gridCellUnsizedAxes(.horizontal)
+                        GridRow {
+                            Text("Enclosure:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.1f pt", icon.enclosureSize))
+                                .monospacedDigit()
+                        }
+                        GridRow {
+                            Text("Font Size:")
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.1f pt", icon.computedSymbolSize))
+                                .monospacedDigit()
                         }
                     }
-                    GridRow {
-                        Text("Flat Default:")
-                            .foregroundStyle(.secondary)
-                        Text("0.6070")
-                            .monospacedDigit()
-                            .foregroundStyle(!useGlyphMetricsFallback ? .primary : .secondary)
-                    }
-                    Divider()
-                        .gridCellUnsizedAxes(.horizontal)
-                    GridRow {
-                        Text("Enclosure:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.1f pt", icon.enclosureSize))
-                            .monospacedDigit()
-                    }
-                    GridRow {
-                        Text("Font Size:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%.1f pt", icon.computedSymbolSize))
-                            .monospacedDigit()
-                    }
+                    .font(.caption)
                 }
-                .font(.caption)
             }
         }
     }
 
-    // MARK: - Comparison View
+    // MARK: - Comparison Area
+
+    private var comparisonArea: some View {
+        VStack(spacing: 0) {
+            if comparisonMode == .gallery {
+                galleryView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let symbol = currentSymbol {
+                VStack(spacing: 12) {
+                    HStack {
+                        Text(symbol)
+                            .font(.title3.bold().monospaced())
+                        if recipeSymbolSet.contains(symbol) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .help("Has container_recipes.plist entry")
+                        }
+                    }
+
+                    comparisonContent(for: symbol)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    if let error = errorMessage {
+                        Label(error, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .padding()
+            } else {
+                ContentUnavailableView("No Symbols", systemImage: "magnifyingglass",
+                    description: Text("No symbols match the current filter"))
+            }
+
+            Divider()
+
+            // Mode picker + navigation
+            VStack(spacing: 8) {
+                Picker("Mode", selection: $comparisonMode) {
+                    ForEach(RecipeComparisonMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 500)
+
+                if comparisonMode == .overlay || comparisonMode == .tintedOverlay {
+                    HStack {
+                        Text("Opacity")
+                        Slider(value: $overlayOpacity, in: 0...1)
+                        Text(String(format: "%.0f%%", overlayOpacity * 100))
+                            .font(.caption.monospacedDigit())
+                            .frame(width: 36, alignment: .trailing)
+                    }
+                    .frame(maxWidth: 400)
+                }
+
+                if comparisonMode != .gallery {
+                    HStack {
+                        Button(action: navigatePrevious) {
+                            Image(systemName: "chevron.left")
+                        }
+                        .disabled(selectedIndex <= 0)
+
+                        Spacer()
+
+                        Text("\(selectedIndex + 1) / \(filteredSymbols.count)")
+                            .font(.caption.monospacedDigit())
+
+                        Spacer()
+
+                        Button(action: navigateNext) {
+                            Image(systemName: "chevron.right")
+                        }
+                        .disabled(selectedIndex >= filteredSymbols.count - 1)
+                    }
+                }
+            }
+            .padding(12)
+        }
+    }
 
     @ViewBuilder
-    private var comparisonView: some View {
-        VStack(spacing: 12) {
-            Text(selected.id)
-                .font(.title3.bold())
-
-            switch comparisonMode {
-            case .overlay:
-                overlayView(tinted: false)
-            case .tintedOverlay:
-                overlayView(tinted: true)
-            case .sideBySide:
-                sideBySideView
-            case .difference:
-                differenceView
-            }
-
-            Text(comparisonMode == .tintedOverlay
-                ? "Red = our symbol, overlaid on Apple's reference"
-                : comparisonMode == .difference
-                    ? "Black = matching pixels, bright = differences"
-                    : "")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func comparisonContent(for symbol: String) -> some View {
+        switch comparisonMode {
+        case .overlay:
+            overlayView(for: symbol, tinted: false)
+        case .tintedOverlay:
+            overlayView(for: symbol, tinted: true)
+        case .sideBySide:
+            sideBySideView(for: symbol)
+        case .difference:
+            differenceView(for: symbol)
+        case .gallery:
+            EmptyView()
         }
     }
 
-    private func overlayView(tinted: Bool) -> some View {
+    private func overlayView(for symbol: String, tinted: Bool) -> some View {
         ZStack {
-            // Apple's reference (base layer)
-            Image(selected.asset)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: displaySize, height: displaySize)
-
-            // Our rendered icon (overlay)
-            CalibrationIconView(
-                symbolName: selected.id,
-                displaySize: displaySize,
-                recipeScaleFactor: scaleFactor,
-                xOffsetAdjust: xOffsetAdjust,
-                yOffsetAdjust: yOffsetAdjust,
-                symbolOnly: tinted,
-                recipeName: selected.recipeName,
-                useGlyphMetricsFallback: useGlyphMetricsFallback
-            )
-            .opacity(overlayOpacity)
+            referenceImageView
+            ourIconView(for: symbol, symbolOnly: tinted)
+                .opacity(overlayOpacity)
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 4, y: 2)
     }
 
-    private var sideBySideView: some View {
+    private func sideBySideView(for symbol: String) -> some View {
         HStack(spacing: 24) {
             VStack(spacing: 6) {
-                Image(selected.asset)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: displaySize, height: displaySize)
+                referenceImageView
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .shadow(radius: 4, y: 2)
-
                 Text("Apple Reference")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             VStack(spacing: 6) {
-                CalibrationIconView(
-                    symbolName: selected.id,
-                    displaySize: displaySize,
-                    recipeScaleFactor: scaleFactor,
-                    xOffsetAdjust: xOffsetAdjust,
-                    yOffsetAdjust: yOffsetAdjust,
-                    symbolOnly: false,
-                    recipeName: selected.recipeName,
-                    useGlyphMetricsFallback: useGlyphMetricsFallback
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .shadow(radius: 4, y: 2)
-
+                ourIconView(for: symbol, symbolOnly: false)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .shadow(radius: 4, y: 2)
                 Text("Our Rendering")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -546,24 +645,11 @@ struct RecipeCalibrationPlayground: View {
         }
     }
 
-    private var differenceView: some View {
+    private func differenceView(for symbol: String) -> some View {
         ZStack {
-            Image(selected.asset)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: displaySize, height: displaySize)
-
-            CalibrationIconView(
-                symbolName: selected.id,
-                displaySize: displaySize,
-                recipeScaleFactor: scaleFactor,
-                xOffsetAdjust: xOffsetAdjust,
-                yOffsetAdjust: yOffsetAdjust,
-                symbolOnly: false,
-                recipeName: selected.recipeName,
-                useGlyphMetricsFallback: useGlyphMetricsFallback
-            )
-            .blendMode(.difference)
+            referenceImageView
+            ourIconView(for: symbol, symbolOnly: false)
+                .blendMode(.difference)
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 4, y: 2)
@@ -572,98 +658,252 @@ struct RecipeCalibrationPlayground: View {
     // MARK: - Gallery View
 
     private var galleryView: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 16)], spacing: 16) {
-                ForEach(0..<Self.referenceSymbols.count, id: \.self) { i in
-                    let ref = Self.referenceSymbols[i]
+        let symbols = filteredSymbols
+        let columns = [GridItem(.adaptive(minimum: galleryThumbSize + 8), spacing: 8)]
 
-                    VStack(spacing: 6) {
-                        HStack(spacing: 8) {
-                            // Apple reference
-                            VStack(spacing: 4) {
-                                Image(ref.asset)
-                                    .resizable()
-                                    .interpolation(.high)
-                                    .frame(width: 100, height: 100)
+        return VStack(spacing: 0) {
+            ScrollView {
+                if galleryTintOverlay && !galleryLoadingSymbols.isEmpty {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Loading references: \(symbols.count - galleryLoadingSymbols.count)/\(symbols.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 4)
+                }
 
-                                Text("Apple")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(Array(symbols.enumerated()), id: \.element) { idx, symbol in
+                        VStack(spacing: 2) {
+                            galleryThumbView(for: symbol, size: galleryThumbSize)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .overlay {
+                                    if idx == selectedIndex {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .strokeBorder(.blue, lineWidth: 2)
+                                    }
+                                }
+                                .overlay(alignment: .topTrailing) {
+                                    if recipeSymbolSet.contains(symbol) {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 6, height: 6)
+                                            .offset(x: -2, y: 2)
+                                    }
+                                }
 
-                            // Our rendering
-                            VStack(spacing: 4) {
-                                CalibrationIconView(
-                                    symbolName: ref.id,
-                                    displaySize: 100,
-                                    recipeScaleFactor: scaleFactor,
-                                    xOffsetAdjust: 0,
-                                    yOffsetAdjust: 0,
-                                    symbolOnly: false,
-                                    recipeName: ref.recipeName,
-                                    useGlyphMetricsFallback: useGlyphMetricsFallback
-                                )
-
-                                Text("Ours")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        HStack(spacing: 4) {
-                            Image(systemName: "circle.fill")
-                                .font(.system(size: 5))
-                                .foregroundStyle(ref.hasRecipe ? .green : ref.hasGlyphMetrics ? .blue : .orange)
-                            Text(ref.id)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                            Text(symbol)
+                                .font(.system(size: max(8, galleryThumbSize * 0.08)).monospaced())
                                 .lineLimit(1)
                                 .truncationMode(.middle)
+                                .frame(width: galleryThumbSize)
+                        }
+                        .onTapGesture {
+                            selectedIndex = idx
+                            comparisonMode = .overlay
                         }
                     }
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(i == selectedIndex
-                                ? Color.accentColor.opacity(0.1)
-                                : Color.clear)
-                    )
-                    .onTapGesture {
-                        selectedIndex = i
-                        showGallery = false
+                }
+                .padding(8)
+            }
+
+            Divider()
+
+            HStack(spacing: 16) {
+                Toggle("Tint Overlay", isOn: $galleryTintOverlay)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                    .onChange(of: galleryTintOverlay) { _, newValue in
+                        if newValue {
+                            loadGalleryReferences(for: symbols)
+                        } else {
+                            galleryLoadTask?.cancel()
+                            galleryReferenceImages = [:]
+                            galleryLoadingSymbols = []
+                        }
+                    }
+
+                if galleryTintOverlay {
+                    Text("Opacity")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Slider(value: $overlayOpacity, in: 0...1)
+                        .frame(width: 100)
+                    Text(String(format: "%.0f%%", overlayOpacity * 100))
+                        .font(.caption.monospacedDigit())
+                        .frame(width: 36, alignment: .trailing)
+                }
+
+                Spacer()
+
+                Text("Size")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Slider(value: $galleryThumbSize, in: 48...256, step: 8)
+                    .frame(width: 140)
+                Text("\(Int(galleryThumbSize))")
+                    .font(.caption.monospacedDigit())
+                    .frame(width: 28, alignment: .trailing)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+        }
+    }
+
+    @ViewBuilder
+    private func galleryThumbView(for symbol: String, size: CGFloat) -> some View {
+        if galleryTintOverlay {
+            ZStack {
+                if let refImage = galleryReferenceImages[symbol] {
+                    Image(nsImage: refImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .frame(width: size, height: size)
+                } else if galleryLoadingSymbols.contains(symbol) {
+                    ProgressView()
+                        .frame(width: size, height: size)
+                        .background(Color.gray.opacity(0.1))
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: size, height: size)
+                }
+                CalibrationIconView(
+                    symbolName: symbol, displaySize: size,
+                    recipeScaleFactor: scaleFactor,
+                    xOffsetAdjust: 0, yOffsetAdjust: 0,
+                    symbolOnly: true,
+                    useGlyphMetricsFallback: useGlyphMetricsFallback
+                )
+                .opacity(overlayOpacity)
+            }
+        } else {
+            CalibrationIconView(
+                symbolName: symbol, displaySize: size,
+                recipeScaleFactor: scaleFactor,
+                xOffsetAdjust: 0, yOffsetAdjust: 0,
+                symbolOnly: false,
+                useGlyphMetricsFallback: useGlyphMetricsFallback
+            )
+        }
+    }
+
+    // MARK: - Reference Image / Our Icon
+
+    @ViewBuilder
+    private var referenceImageView: some View {
+        if isLoadingReference {
+            ProgressView()
+                .frame(width: displaySize, height: displaySize)
+        } else if let image = referenceImage {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: displaySize, height: displaySize)
+        } else {
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: displaySize, height: displaySize)
+                .overlay {
+                    Image(systemName: "questionmark")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
+
+    private func ourIconView(for symbol: String, symbolOnly: Bool) -> some View {
+        CalibrationIconView(
+            symbolName: symbol,
+            displaySize: displaySize,
+            recipeScaleFactor: scaleFactor,
+            xOffsetAdjust: xOffsetAdjust,
+            yOffsetAdjust: yOffsetAdjust,
+            symbolOnly: symbolOnly,
+            useGlyphMetricsFallback: useGlyphMetricsFallback
+        )
+    }
+
+    // MARK: - Reference Loading
+
+    private func loadReferenceImage() {
+        guard let symbol = currentSymbol else {
+            referenceImage = nil
+            return
+        }
+        isLoadingReference = true
+        errorMessage = nil
+        referenceImage = nil
+
+        Task {
+            do {
+                let image = try await service.referenceIcon(for: symbol)
+                await MainActor.run {
+                    referenceImage = image
+                    isLoadingReference = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    isLoadingReference = false
+                }
+            }
+
+            // Prefetch next few
+            let list = filteredSymbols
+            let nextStart = selectedIndex + 1
+            let nextEnd = min(nextStart + 3, list.count)
+            if nextStart < nextEnd {
+                let names = Array(list[nextStart..<nextEnd])
+                service.prefetch(names)
+            }
+        }
+    }
+
+    private func loadGalleryReferences(for symbols: [String]) {
+        galleryLoadTask?.cancel()
+        galleryReferenceImages = [:]
+        galleryLoadingSymbols = Set(symbols)
+
+        galleryLoadTask = Task {
+            await withTaskGroup(of: (String, NSImage?).self) { taskGroup in
+                for symbol in symbols {
+                    taskGroup.addTask {
+                        guard !Task.isCancelled else { return (symbol, nil) }
+                        let image = try? await service.referenceIcon(for: symbol)
+                        return (symbol, image)
+                    }
+                }
+                for await (symbol, image) in taskGroup {
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        if let image {
+                            galleryReferenceImages[symbol] = image
+                        }
+                        galleryLoadingSymbols.remove(symbol)
                     }
                 }
             }
-            .padding()
         }
     }
 
     // MARK: - Navigation
 
-    private var navigationButtons: some View {
-        HStack(spacing: 12) {
-            Button(action: {
-                selectedIndex = (selectedIndex - 1 + Self.referenceSymbols.count) % Self.referenceSymbols.count
-            }) {
-                Image(systemName: "chevron.left")
-            }
-            .keyboardShortcut(.leftArrow, modifiers: [])
+    private func navigatePrevious() {
+        guard selectedIndex > 0 else { return }
+        selectedIndex -= 1
+    }
 
-            Text("\(selectedIndex + 1) / \(Self.referenceSymbols.count)")
-                .font(.caption.monospacedDigit())
-
-            Button(action: {
-                selectedIndex = (selectedIndex + 1) % Self.referenceSymbols.count
-            }) {
-                Image(systemName: "chevron.right")
-            }
-            .keyboardShortcut(.rightArrow, modifiers: [])
-        }
+    private func navigateNext() {
+        guard selectedIndex < filteredSymbols.count - 1 else { return }
+        selectedIndex += 1
     }
 }
 
 // MARK: - Preview
 #Preview {
     RecipeCalibrationPlayground()
-        .frame(minWidth: 900, minHeight: 600)
+        .frame(minWidth: 1000, minHeight: 700)
 }

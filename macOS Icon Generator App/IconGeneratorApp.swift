@@ -44,6 +44,11 @@ struct IconGeneratorApp: App {
                     openWindow(id: "resizable-dim-cal")
                 }
                 .keyboardShortcut("D", modifiers: [.command, .shift])
+
+                Button("Recipe Calibration Playground") {
+                    openWindow(id: "recipe-calibration")
+                }
+                .keyboardShortcut("P", modifiers: [.command, .shift])
             }
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
@@ -89,6 +94,11 @@ struct IconGeneratorApp: App {
 
         Window("Resizable Dim-Cal Playground", id: "resizable-dim-cal") {
             ResizableDimCalPlayground()
+        }
+        .defaultSize(width: 1200, height: 800)
+
+        Window("Recipe Calibration Playground", id: "recipe-calibration") {
+            RecipeCalibrationPlayground()
         }
         .defaultSize(width: 1200, height: 800)
     }
