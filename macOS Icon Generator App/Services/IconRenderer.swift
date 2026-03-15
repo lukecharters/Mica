@@ -142,7 +142,7 @@ struct IconContentView: View {
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
 
     // Badge scaled constants
-    private var badgeSize: CGFloat { baseBadgeSize * scaleFactor }
+    private var badgeSize: CGFloat { baseBadgeSize * scaleFactor * settings.badgeScale }
     private var badgeOffset: CGFloat { baseBadgeOffset * scaleFactor }
 
     var body: some View {

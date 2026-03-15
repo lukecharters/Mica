@@ -48,6 +48,7 @@ struct IconSettings: Equatable {
     var badgeEnableBackgroundShadow: Bool = true
     var badgeEnableSymbolShadow: Bool = true
     var badgeSymbolScale: Double = 1.0
+    var badgeScale: Double = 1.0
 
     // Badge Symbol Color Rendering Mode (macOS 26+)
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat

@@ -26,6 +26,17 @@ ForEach(BadgePosition.allCases) { position in
     Text(position.rawValue).tag(position)
 }
 }
+                HStack {
+                    Text("Badge Size")
+                    Spacer()
+                    Text("\(Int(iconSettings.badgeScale * 100))%")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Slider(value: $iconSettings.badgeScale,
+                       in: IconSettings.manualSymbolScaleRange,
+                       step: 0.05)
+
                 // MARK: - Badge Symbol Section
                 Section(header: Text("Badge Symbol")) {
 
