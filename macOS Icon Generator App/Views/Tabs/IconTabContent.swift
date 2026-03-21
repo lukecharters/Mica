@@ -95,8 +95,12 @@ struct IconTabContent: View {
                     .pickerStyle(.menu)
 
                     Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
-                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
-                        .help("Toggle the drop shadow behind the background shape")
+                    Picker("Drop Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
+                        ForEach(BackgroundShadowStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
 
                 case .custom:
                     Toggle("Custom Gradient", isOn: Binding(
@@ -170,8 +174,12 @@ struct IconTabContent: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableBackgroundShadow)
-                        .help("Toggle the drop shadow behind the background shape")
+                    Picker("Drop Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
+                        ForEach(BackgroundShadowStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
             }
         }

@@ -20,7 +20,7 @@ struct IconSettings: Equatable {
     var manualSymbolScale: Double = 1.0
 
     // Shadow settings
-    var enableBackgroundShadow: Bool = true
+    var backgroundShadowStyle: BackgroundShadowStyle = .macOS26
     var enableSymbolShadow: Bool = true
     
     // Symbol colors
@@ -142,6 +142,14 @@ enum BadgePosition: String, CaseIterable, Identifiable {
 
 enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
     case macOS11 = "macOS 11-15"
+    case macOS26 = "macOS 26"
+
+    var id: String { rawValue }
+}
+
+enum BackgroundShadowStyle: String, CaseIterable, Identifiable {
+    case off = "Off"
+    case sequoia = "macOS 11-15"
     case macOS26 = "macOS 26"
 
     var id: String { rawValue }

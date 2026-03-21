@@ -83,12 +83,12 @@ struct IconContentView: View {
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
-    private let baseCornerRadius: CGFloat = 46
-    private let baseCornerRadiusLG: CGFloat = 54
+    private let baseCornerRadiusSequoia: CGFloat = 46
+    private let baseCornerRadius: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
-    private let baseShadowRadius: CGFloat = 4
+    private let baseShadowRadius: CGFloat = 3.6
     private let baseShadowOffset: CGFloat = 2.5
-    private let shadowOpacity: CGFloat = 0.35
+    private let shadowOpacity: CGFloat = 0.30
     private let baseShadowRadiusSequoia: CGFloat = 2
     private let baseShadowOffsetSequoia: CGFloat = 2.5
     private let shadowOpacitySequoia: CGFloat = 0.31
@@ -105,7 +105,7 @@ struct IconContentView: View {
     // Scaled layout constants
     private var iconSize: CGFloat { displaySize }
     private var cornerRadius: CGFloat {
-        let baseRadius = settings.cornerRadiusStyle == .macOS26 ? baseCornerRadiusLG : baseCornerRadius
+        let baseRadius = settings.cornerRadiusStyle == .macOS26 ? baseCornerRadius : baseCornerRadiusSequoia
         return baseRadius * scaleFactor
     }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
@@ -136,8 +136,27 @@ struct IconContentView: View {
         enclosureSize * resolvedSizing.yOffset
     }
 
-    private var shadowRadius: CGFloat { baseShadowRadius * scaleFactor }
-    private var shadowOffset: CGFloat { baseShadowOffset * scaleFactor }
+    private var backgroundShadowRadius: CGFloat {
+        switch settings.backgroundShadowStyle {
+        case .off: return 0
+        case .sequoia: return baseShadowRadiusSequoia * scaleFactor
+        case .macOS26: return baseShadowRadius * scaleFactor
+        }
+    }
+    private var backgroundShadowOffset: CGFloat {
+        switch settings.backgroundShadowStyle {
+        case .off: return 0
+        case .sequoia: return baseShadowOffsetSequoia * scaleFactor
+        case .macOS26: return baseShadowOffset * scaleFactor
+        }
+    }
+    private var backgroundShadowOpacity: CGFloat {
+        switch settings.backgroundShadowStyle {
+        case .off: return 0
+        case .sequoia: return shadowOpacitySequoia
+        case .macOS26: return shadowOpacity
+        }
+    }
     private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
 
@@ -156,9 +175,9 @@ struct IconContentView: View {
                     .aspectRatio(contentMode: .fit)
                     .padding(backgroundInset)
                     .shadow(
-                        color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                        y: settings.enableBackgroundShadow ? shadowOffset : 0
+                        color: Color.black.opacity(backgroundShadowOpacity),
+                        radius: backgroundShadowRadius,
+                        y: backgroundShadowOffset
                     )
                     .frame(width: iconSize, height: iconSize)
 
@@ -176,18 +195,18 @@ struct IconContentView: View {
                         )
                         .padding(backgroundInset)
                         .shadow(
-                            color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                            y: settings.enableBackgroundShadow ? shadowOffset : 0
+                            color: Color.black.opacity(backgroundShadowOpacity),
+                            radius: backgroundShadowRadius,
+                            y: backgroundShadowOffset
                         )
                         .frame(width: iconSize, height: iconSize)
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(settings.enableBackgroundGradient ? AnyShapeStyle(settings.baseColor.gradient) : AnyShapeStyle(settings.baseColor))
                         .shadow(
-                            color: settings.enableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                            radius: settings.enableBackgroundShadow ? shadowRadius : 0,
-                            y: settings.enableBackgroundShadow ? shadowOffset : 0
+                            color: Color.black.opacity(backgroundShadowOpacity),
+                            radius: backgroundShadowRadius,
+                            y: backgroundShadowOffset
                         )
                         .padding(backgroundInset)
                         .frame(width: iconSize, height: iconSize)
@@ -266,7 +285,7 @@ struct BadgeView: View {
     let settings: IconSettings
     let badgeSize: CGFloat
 
-    private let shadowOpacity: CGFloat = 0.31
+    private let shadowOpacity: CGFloat = 0.17
     private let symbolShadowOpacity: CGFloat = 0.15
 
     private var resolvedBadgeSizing: ResolvedSymbolSizing {

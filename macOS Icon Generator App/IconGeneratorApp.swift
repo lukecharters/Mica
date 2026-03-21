@@ -49,6 +49,11 @@ struct IconGeneratorApp: App {
                     openWindow(id: "recipe-calibration")
                 }
                 .keyboardShortcut("P", modifiers: [.command, .shift])
+
+                Button("Shadow Comparison Playground") {
+                    openWindow(id: "shadow-comparison")
+                }
+                .keyboardShortcut("S", modifiers: [.command, .shift])
             }
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
@@ -101,5 +106,10 @@ struct IconGeneratorApp: App {
             RecipeCalibrationPlayground()
         }
         .defaultSize(width: 1200, height: 800)
+
+        Window("Shadow Comparison Playground", id: "shadow-comparison") {
+            ShadowComparisonPlayground()
+        }
+        .defaultSize(width: 1400, height: 900)
     }
 }

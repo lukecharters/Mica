@@ -212,7 +212,7 @@ class IconGeneratorCLI {
             settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.paletteTertiary)
             
             // Shadow settings
-            settings.enableBackgroundShadow = !command.noBackgroundShadow
+            settings.backgroundShadowStyle = command.noBackgroundShadow ? .off : .macOS26
             settings.enableSymbolShadow = !command.noSymbolShadow
             
             // Badge settings with comprehensive validation
