@@ -73,3 +73,6 @@ fastlane/test_output
 
 
 screenshots/
+# Xcode AdditionalDocumentation (local-only)
+docs/xcode/
+scripts/get-xcode-docs.sh

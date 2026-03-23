@@ -116,9 +116,13 @@ struct ScaledIconPreview: View {
     let settings: IconSettings
     let displaySize: CGFloat
 
+    private var canvasSize: CGFloat {
+        IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
+    }
+
     var body: some View {
         IconContentView(settings: settings, displaySize: displaySize)
-            .frame(width: displaySize, height: displaySize, alignment: .center)
+            .frame(width: canvasSize, height: canvasSize, alignment: .center)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
@@ -149,14 +153,11 @@ struct ContentView_Previews: PreviewProvider {
         vm.iconSettings.useCustomColors = true
         vm.iconSettings.customPrimaryColor = .blue
         vm.iconSettings.customSecondaryColor = .indigo
-        vm.iconSettings.symbolRenderingMode = .palette
-        vm.iconSettings.paletteSymbolPrimaryColor = .white
-        vm.iconSettings.paletteSymbolSecondaryColor = .cyan
-        vm.iconSettings.paletteSymbolTertiaryColor = .mint
+        vm.iconSettings.symbolRenderingMode = .monochrome
         vm.iconSettings.showBadge = true
         vm.iconSettings.badgePosition = .bottomRight
         vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
-        vm.iconSettings.badgeSymbolRenderingMode = .hierarchical
+        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
         vm.iconSettings.badgeHierarchicalSymbolColor = .white
         vm.iconSettings.exportSize = 256
         vm.iconSettings.exportRetinaSize = false

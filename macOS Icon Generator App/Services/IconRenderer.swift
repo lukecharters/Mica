@@ -7,8 +7,9 @@ struct IconRenderer {
     @MainActor
     static func renderIcon(settings: IconSettings) -> NSImage {
         let exportSize = settings.finalExportSize
+        let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: exportSize)
         let iconView = IconContentView(settings: settings, displaySize: exportSize)
-            .frame(width: exportSize, height: exportSize)
+            .frame(width: canvasSize, height: canvasSize)
 
         let renderer = ImageRenderer(content: iconView)
         renderer.scale = 1.0
@@ -98,7 +99,7 @@ struct IconContentView: View {
 
     // Badge layout constants
     private let baseBadgeSize: CGFloat = 80
-    private let baseBadgeOffset: CGFloat = 4
+    private let badgeOffset: CGFloat = 4
 
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
@@ -162,11 +163,44 @@ struct IconContentView: View {
 
     // Badge scaled constants
     private var badgeSize: CGFloat { baseBadgeSize * scaleFactor * settings.badgeScale }
-    private var badgeOffset: CGFloat { baseBadgeOffset * scaleFactor }
+
+    /// Distance from canvas center to the badge anchor point (45° on the chiclet's continuous corner curve)
+    private var cornerAnchorDistance: CGFloat {
+        let chicletEdge = iconSize / 2 - backgroundInset
+        let cornerInset = cornerRadius * 0.293 // ≈ 1 - cos(45°) for continuous curve
+        return chicletEdge - cornerInset
+    }
+
+    /// How far the badge extends beyond the original canvas bounds
+    private var badgeOverflow: CGFloat {
+        guard settings.showBadge else { return 0 }
+        let badgeRadius = badgeSize / 2
+        return max(0, cornerAnchorDistance + badgeRadius - iconSize / 2)
+    }
+
+    /// Total canvas size including badge overflow margin
+    var totalCanvasSize: CGFloat {
+        displaySize + 2 * badgeOverflow
+    }
+
+    /// Computes total canvas size without creating the full view (for export/preview sizing)
+    static func totalCanvasSize(for settings: IconSettings, displaySize: CGFloat) -> CGFloat {
+        guard settings.showBadge else { return displaySize }
+        let scaleFactor = displaySize / 256 // baseSize
+        let backgroundInset = 25 * scaleFactor // baseBackgroundInset
+        let baseRadius = settings.cornerRadiusStyle == .macOS26 ? 54.0 : 46.0
+        let cornerRadius = baseRadius * scaleFactor
+        let iconSize = displaySize
+        let chicletEdge = iconSize / 2 - backgroundInset
+        let cornerInset = cornerRadius * 0.293
+        let anchorDistance = chicletEdge - cornerInset
+        let badgeRadius = (80 * scaleFactor * settings.badgeScale) / 2 // baseBadgeSize
+        let overflow = max(0, anchorDistance + badgeRadius - iconSize / 2)
+        return displaySize + 2 * overflow
+    }
 
     var body: some View {
         ZStack {
-
             switch settings.backgroundMode {
             case .preRendered:
                 Image(settings.preRenderedAssetName)
@@ -237,6 +271,7 @@ struct IconContentView: View {
                     .offset(badgeOffset(for: settings.badgePosition))
             }
         }
+        .frame(width: totalCanvasSize, height: totalCanvasSize)
     }
 
     @ViewBuilder
@@ -265,18 +300,12 @@ struct IconContentView: View {
     }
 
     private func badgeOffset(for position: BadgePosition) -> CGSize {
-        let iconRadius = iconSize / 2
-        let badgeRadius = badgeSize / 2
-        let offsetDistance = iconRadius - badgeRadius - badgeOffset
+        let anchor = cornerAnchorDistance
         switch position {
-        case .topRight:
-            return CGSize(width: offsetDistance, height: -offsetDistance)
-        case .topLeft:
-            return CGSize(width: -offsetDistance, height: -offsetDistance)
-        case .bottomRight:
-            return CGSize(width: offsetDistance, height: offsetDistance)
-        case .bottomLeft:
-            return CGSize(width: -offsetDistance, height: offsetDistance)
+        case .topRight:    return CGSize(width: anchor, height: -anchor)
+        case .topLeft:     return CGSize(width: -anchor, height: -anchor)
+        case .bottomRight: return CGSize(width: anchor, height: anchor)
+        case .bottomLeft:  return CGSize(width: -anchor, height: anchor)
         }
     }
 }
