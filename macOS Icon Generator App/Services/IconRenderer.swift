@@ -97,9 +97,12 @@ struct IconContentView: View {
     private let baseSymbolShadowOffset: CGFloat = 2.5
     private let symbolShadowOpacity: CGFloat = 0.23
 
-    // Badge layout constants
-    private let baseBadgeSize: CGFloat = 80
-    private let badgeOffset: CGFloat = 4
+    // Badge layout ratios — derived from native macOS badge on 208px enclosure:
+    // 100px diameter, extends 22px past horizontal edge, 26px past vertical edge, 7px shadow buffer
+    private let badgeDiameterRatio: CGFloat = 100.0 / 208.0   // ≈ 0.4808
+    private let badgeCenterXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654 from enclosure center
+    private let badgeCenterYRatio: CGFloat = 80.0 / 208.0     // ≈ 0.3846 from enclosure center
+    private let badgeShadowBufferRatio: CGFloat = 7.0 / 208.0 // ≈ 0.0337
 
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
@@ -161,21 +164,21 @@ struct IconContentView: View {
     private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
 
-    // Badge scaled constants
-    private var badgeSize: CGFloat { baseBadgeSize * scaleFactor * settings.badgeScale }
+    // Badge scaled values — all derived from enclosure size
+    private var badgeSize: CGFloat { enclosureSize * badgeDiameterRatio * settings.badgeScale }
+    private var badgeShadowBuffer: CGFloat { enclosureSize * badgeShadowBufferRatio }
 
-    /// Distance from canvas center to the badge anchor point (45° on the chiclet's continuous corner curve)
-    private var cornerAnchorDistance: CGFloat {
-        let chicletEdge = iconSize / 2 - backgroundInset
-        let cornerInset = cornerRadius * 0.293 // ≈ 1 - cos(45°) for continuous curve
-        return chicletEdge - cornerInset
-    }
+    /// Badge anchor X/Y from enclosure center (asymmetric — matches native macOS positioning)
+    private var badgeAnchorX: CGFloat { enclosureSize * badgeCenterXRatio }
+    private var badgeAnchorY: CGFloat { enclosureSize * badgeCenterYRatio }
 
-    /// How far the badge extends beyond the original canvas bounds
+    /// How far the badge (including shadow) extends beyond the original canvas bounds
     private var badgeOverflow: CGFloat {
         guard settings.showBadge else { return 0 }
         let badgeRadius = badgeSize / 2
-        return max(0, cornerAnchorDistance + badgeRadius - iconSize / 2)
+        let maxExtentX = badgeAnchorX + badgeRadius + badgeShadowBuffer - iconSize / 2
+        let maxExtentY = badgeAnchorY + badgeRadius + badgeShadowBuffer - iconSize / 2
+        return max(0, max(maxExtentX, maxExtentY))
     }
 
     /// Total canvas size including badge overflow margin
@@ -188,14 +191,14 @@ struct IconContentView: View {
         guard settings.showBadge else { return displaySize }
         let scaleFactor = displaySize / 256 // baseSize
         let backgroundInset = 25 * scaleFactor // baseBackgroundInset
-        let baseRadius = settings.cornerRadiusStyle == .macOS26 ? 54.0 : 46.0
-        let cornerRadius = baseRadius * scaleFactor
-        let iconSize = displaySize
-        let chicletEdge = iconSize / 2 - backgroundInset
-        let cornerInset = cornerRadius * 0.293
-        let anchorDistance = chicletEdge - cornerInset
-        let badgeRadius = (80 * scaleFactor * settings.badgeScale) / 2 // baseBadgeSize
-        let overflow = max(0, anchorDistance + badgeRadius - iconSize / 2)
+        let enclosureSize = displaySize - 2 * backgroundInset
+        let badgeRadius = (enclosureSize * (100.0 / 208.0) * settings.badgeScale) / 2
+        let shadowBuffer = enclosureSize * (7.0 / 208.0)
+        let anchorX = enclosureSize * (76.0 / 208.0)
+        let anchorY = enclosureSize * (80.0 / 208.0)
+        let maxExtentX = anchorX + badgeRadius + shadowBuffer - displaySize / 2
+        let maxExtentY = anchorY + badgeRadius + shadowBuffer - displaySize / 2
+        let overflow = max(0, max(maxExtentX, maxExtentY))
         return displaySize + 2 * overflow
     }
 
@@ -300,12 +303,13 @@ struct IconContentView: View {
     }
 
     private func badgeOffset(for position: BadgePosition) -> CGSize {
-        let anchor = cornerAnchorDistance
+        let ax = badgeAnchorX
+        let ay = badgeAnchorY
         switch position {
-        case .topRight:    return CGSize(width: anchor, height: -anchor)
-        case .topLeft:     return CGSize(width: -anchor, height: -anchor)
-        case .bottomRight: return CGSize(width: anchor, height: anchor)
-        case .bottomLeft:  return CGSize(width: -anchor, height: anchor)
+        case .topRight:    return CGSize(width: ax, height: -ay)
+        case .topLeft:     return CGSize(width: -ax, height: -ay)
+        case .bottomRight: return CGSize(width: ax, height: ay)
+        case .bottomLeft:  return CGSize(width: -ax, height: ay)
         }
     }
 }
