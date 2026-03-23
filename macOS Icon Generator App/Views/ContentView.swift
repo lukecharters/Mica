@@ -80,7 +80,7 @@ struct ContentView: View {
                     Spacer(minLength: 60) // Space for controls overlay
 
                     ScaledIconPreview(
-                        settings: viewModel.iconSettings,
+                        settings: $viewModel.iconSettings,
                         displaySize: previewDisplaySize
                     )
                     .padding()
@@ -113,20 +113,100 @@ struct ContentView: View {
 
 // Preview component that scales based on export size
 struct ScaledIconPreview: View {
-    let settings: IconSettings
+    @Binding var settings: IconSettings
     let displaySize: CGFloat
+
+    @State private var dragStart: CGSize = .zero
+    @State private var isDragging: Bool = false
 
     private var canvasSize: CGFloat {
         IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
     }
 
+    /// Enclosure size at the current display scale
+    private var enclosureSize: CGFloat {
+        displaySize - 2 * (25 * displaySize / 256) // backgroundInset * scaleFactor
+    }
+
     var body: some View {
-        IconContentView(settings: settings, displaySize: displaySize)
-            .frame(width: canvasSize, height: canvasSize, alignment: .center)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+        ZStack {
+            IconContentView(settings: settings, displaySize: displaySize)
+
+            // Draggable badge overlay
+            if settings.showBadge {
+                badgeDragOverlay
+            }
+        }
+        .frame(width: canvasSize, height: canvasSize, alignment: .center)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+        )
+        .onChange(of: settings.badgeManualOffsetX) { _, newValue in
+            dragStart = CGSize(width: newValue, height: settings.badgeManualOffsetY)
+        }
+        .onChange(of: settings.badgeManualOffsetY) { _, newValue in
+            dragStart = CGSize(width: settings.badgeManualOffsetX, height: newValue)
+        }
+    }
+
+    /// Transparent circle at the badge position that captures drag gestures
+    private var badgeDragOverlay: some View {
+        let badgeDiameter = enclosureSize * (100.0 / 208.0) * settings.badgeScale
+        let offset = computeBadgeOffset()
+
+        return Circle()
+            .fill(Color.clear)
+            .frame(width: badgeDiameter, height: badgeDiameter)
+            .contentShape(Circle())
+            .onHover { hovering in
+                if hovering && settings.showBadge {
+                    NSCursor.openHand.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 2)
+                    .onChanged { value in
+                        if !isDragging {
+                            isDragging = true
+                            dragStart = CGSize(
+                                width: settings.badgeManualOffsetX,
+                                height: settings.badgeManualOffsetY
+                            )
+                            NSCursor.closedHand.push()
+                        }
+                        let normalizedDX = value.translation.width / enclosureSize
+                        let normalizedDY = value.translation.height / enclosureSize
+                        let range = IconSettings.badgeOffsetRange
+                        settings.badgeManualOffsetX = min(max(dragStart.width + normalizedDX, range.lowerBound), range.upperBound)
+                        settings.badgeManualOffsetY = min(max(dragStart.height + normalizedDY, range.lowerBound), range.upperBound)
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                        NSCursor.pop()
+                        dragStart = CGSize(
+                            width: settings.badgeManualOffsetX,
+                            height: settings.badgeManualOffsetY
+                        )
+                    }
             )
+            .offset(offset)
+    }
+
+    /// Compute badge offset matching IconContentView's logic
+    private func computeBadgeOffset() -> CGSize {
+        let anchorX = enclosureSize * (76.0 / 208.0)
+        let anchorY = enclosureSize * (80.0 / 208.0)
+        let manualX = enclosureSize * settings.badgeManualOffsetX
+        let manualY = enclosureSize * settings.badgeManualOffsetY
+        switch settings.badgePosition {
+        case .topRight:    return CGSize(width: anchorX + manualX, height: -anchorY + manualY)
+        case .topLeft:     return CGSize(width: -anchorX + manualX, height: -anchorY + manualY)
+        case .bottomRight: return CGSize(width: anchorX + manualX, height: anchorY + manualY)
+        case .bottomLeft:  return CGSize(width: -anchorX + manualX, height: anchorY + manualY)
+        }
     }
 }
 

@@ -49,6 +49,8 @@ struct IconSettings: Equatable {
     var badgeEnableSymbolShadow: Bool = true
     var badgeSymbolScale: Double = 1.0
     var badgeScale: Double = 0.8
+    var badgeManualOffsetX: Double = 0.0
+    var badgeManualOffsetY: Double = 0.0
 
     // Badge Symbol Color Rendering Mode (macOS 26+)
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
@@ -159,7 +161,8 @@ extension IconSettings {
     static let minExportSize: CGFloat = 16
     static let maxExportSize: CGFloat = 1024
     static let defaultExportSize: CGFloat = 256
-    static let manualSymbolScaleRange: ClosedRange<Double> = 0.6...1.4
+    static let manualSymbolScaleRange: ClosedRange<Double> = 0.3...2.0
+    static let badgeOffsetRange: ClosedRange<Double> = -1.0...1.0
 
     var isExportSizeValid: Bool {
         (Self.minExportSize...Self.maxExportSize).contains(exportSize)

@@ -175,10 +175,15 @@ struct IconContentView: View {
     /// How far the badge (including shadow) extends beyond the original canvas bounds
     private var badgeOverflow: CGFloat {
         guard settings.showBadge else { return 0 }
+        let offset = badgeOffset(for: settings.badgePosition)
         let badgeRadius = badgeSize / 2
-        let maxExtentX = badgeAnchorX + badgeRadius + badgeShadowBuffer - iconSize / 2
-        let maxExtentY = badgeAnchorY + badgeRadius + badgeShadowBuffer - iconSize / 2
-        return max(0, max(maxExtentX, maxExtentY))
+        let buffer = badgeShadowBuffer
+        let halfCanvas = iconSize / 2
+        let overflowRight  =  offset.width  + badgeRadius + buffer - halfCanvas
+        let overflowLeft   = -offset.width  + badgeRadius + buffer - halfCanvas
+        let overflowBottom =  offset.height + badgeRadius + buffer - halfCanvas
+        let overflowTop    = -offset.height + badgeRadius + buffer - halfCanvas
+        return max(0, overflowRight, overflowLeft, overflowBottom, overflowTop)
     }
 
     /// Total canvas size including badge overflow margin
@@ -189,16 +194,33 @@ struct IconContentView: View {
     /// Computes total canvas size without creating the full view (for export/preview sizing)
     static func totalCanvasSize(for settings: IconSettings, displaySize: CGFloat) -> CGFloat {
         guard settings.showBadge else { return displaySize }
-        let scaleFactor = displaySize / 256 // baseSize
-        let backgroundInset = 25 * scaleFactor // baseBackgroundInset
+        let backgroundInset = 25 * (displaySize / 256) // baseBackgroundInset * scaleFactor
         let enclosureSize = displaySize - 2 * backgroundInset
         let badgeRadius = (enclosureSize * (100.0 / 208.0) * settings.badgeScale) / 2
         let shadowBuffer = enclosureSize * (7.0 / 208.0)
         let anchorX = enclosureSize * (76.0 / 208.0)
         let anchorY = enclosureSize * (80.0 / 208.0)
-        let maxExtentX = anchorX + badgeRadius + shadowBuffer - displaySize / 2
-        let maxExtentY = anchorY + badgeRadius + shadowBuffer - displaySize / 2
-        let overflow = max(0, max(maxExtentX, maxExtentY))
+        let manualX = enclosureSize * settings.badgeManualOffsetX
+        let manualY = enclosureSize * settings.badgeManualOffsetY
+
+        // Compute badge center for the selected position
+        let cx: CGFloat
+        let cy: CGFloat
+        switch settings.badgePosition {
+        case .topRight:    cx = anchorX + manualX;  cy = -anchorY + manualY
+        case .topLeft:     cx = -anchorX + manualX; cy = -anchorY + manualY
+        case .bottomRight: cx = anchorX + manualX;  cy = anchorY + manualY
+        case .bottomLeft:  cx = -anchorX + manualX; cy = anchorY + manualY
+        }
+
+        let halfCanvas = displaySize / 2
+        let extent = badgeRadius + shadowBuffer
+        let overflow = max(0,
+            cx + extent - halfCanvas,
+            -cx + extent - halfCanvas,
+            cy + extent - halfCanvas,
+            -cy + extent - halfCanvas
+        )
         return displaySize + 2 * overflow
     }
 
@@ -305,11 +327,13 @@ struct IconContentView: View {
     private func badgeOffset(for position: BadgePosition) -> CGSize {
         let ax = badgeAnchorX
         let ay = badgeAnchorY
+        let manualX = enclosureSize * settings.badgeManualOffsetX
+        let manualY = enclosureSize * settings.badgeManualOffsetY
         switch position {
-        case .topRight:    return CGSize(width: ax, height: -ay)
-        case .topLeft:     return CGSize(width: -ax, height: -ay)
-        case .bottomRight: return CGSize(width: ax, height: ay)
-        case .bottomLeft:  return CGSize(width: -ax, height: ay)
+        case .topRight:    return CGSize(width: ax + manualX, height: -ay + manualY)
+        case .topLeft:     return CGSize(width: -ax + manualX, height: -ay + manualY)
+        case .bottomRight: return CGSize(width: ax + manualX, height: ay + manualY)
+        case .bottomLeft:  return CGSize(width: -ax + manualX, height: ay + manualY)
         }
     }
 }
