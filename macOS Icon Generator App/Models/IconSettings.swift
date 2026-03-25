@@ -55,6 +55,18 @@ struct IconSettings: Equatable {
     // Badge Symbol Color Rendering Mode (macOS 26+)
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
 
+    // Custom image source (main icon)
+    var iconSource: IconSource = .sfSymbol
+    var importedImage: ImportedImage? = nil
+    var importedImagePaddingCompensation: Bool = false
+    var importedImageScale: Double = 1.0
+
+    // Custom image source (badge)
+    var badgeIconSource: IconSource = .sfSymbol
+    var badgeImportedImage: ImportedImage? = nil
+    var badgeImportedImagePaddingCompensation: Bool = false
+    var badgeImportedImageScale: Double = 1.0
+
     var gradientColors: [Color] {
         [customPrimaryColor, customSecondaryColor]
     }
@@ -163,6 +175,7 @@ extension IconSettings {
     static let defaultExportSize: CGFloat = 256
     static let manualSymbolScaleRange: ClosedRange<Double> = 0.3...2.0
     static let badgeOffsetRange: ClosedRange<Double> = -1.0...1.0
+    static let importedImageScaleRange: ClosedRange<Double> = 0.3...2.0
 
     var isExportSizeValid: Bool {
         (Self.minExportSize...Self.maxExportSize).contains(exportSize)

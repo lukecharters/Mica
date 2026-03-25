@@ -272,22 +272,13 @@ struct IconContentView: View {
                 }
             }
 
-            // SF Symbol
-            applySymbolColorRenderingMode(
-                to: applySymbolColor(
-                    to: Image(systemName: settings.symbolName)
-                        .font(.system(size: symbolSize, weight: symbolFontWeight))
+            // Icon content (SF Symbol or custom image)
+            iconContent
+                .shadow(
+                    color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                    radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+                    y: settings.enableSymbolShadow ? symbolShadowOffset : 0
                 )
-                .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
-            )
-            .offset(x: symbolXOffset, y: symbolYOffset)
-            .frame(width: iconSize, height: iconSize)
-            .padding(-backgroundInset)
-            .shadow(
-                color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-                y: settings.enableSymbolShadow ? symbolShadowOffset : 0
-            )
         
             
             // Badge
@@ -324,6 +315,40 @@ struct IconContentView: View {
         }
     }
 
+    /// Padding compensation factor for imported app icons that already include macOS icon padding/shadow.
+    private let paddingCompensationFactor: CGFloat = 1.22
+
+    @ViewBuilder
+    private var iconContent: some View {
+        switch settings.iconSource {
+        case .sfSymbol:
+            applySymbolColorRenderingMode(
+                to: applySymbolColor(
+                    to: Image(systemName: settings.symbolName)
+                        .font(.system(size: symbolSize, weight: symbolFontWeight))
+                )
+                .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
+            )
+            .offset(x: symbolXOffset, y: symbolYOffset)
+            .frame(width: iconSize, height: iconSize)
+            .padding(-backgroundInset)
+
+        case .customImage:
+            if let nsImage = settings.importedImage?.nsImage {
+                let effectiveScale = settings.importedImageScale
+                    * (settings.importedImagePaddingCompensation ? paddingCompensationFactor : 1.0)
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(
+                        width: enclosureSize * 0.85 * effectiveScale,
+                        height: enclosureSize * 0.85 * effectiveScale
+                    )
+            }
+        }
+    }
+
     private func badgeOffset(for position: BadgePosition) -> CGSize {
         let ax = badgeAnchorX
         let ay = badgeAnchorY
@@ -342,7 +367,7 @@ struct BadgeView: View {
     let settings: IconSettings
     let badgeSize: CGFloat
 
-    private let shadowOpacity: CGFloat = 0.17
+    private let shadowOpacity: CGFloat = 0.23
     private let symbolShadowOpacity: CGFloat = 0.15
 
     private var resolvedBadgeSizing: ResolvedSymbolSizing {
@@ -385,6 +410,20 @@ struct BadgeView: View {
                     )
             }
 
+            badgeContent
+            .shadow(
+                color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
+                y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
+            )
+        }
+        .frame(width: badgeSize, height: badgeSize)
+    }
+
+    @ViewBuilder
+    private var badgeContent: some View {
+        switch settings.badgeIconSource {
+        case .sfSymbol:
             applyBadgeSymbolColorRenderingMode(
                 to: Group {
                     switch settings.badgeSymbolRenderingMode {
@@ -415,13 +454,21 @@ struct BadgeView: View {
                     }
                 }
             )
-            .shadow(
-                color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
-                y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
-            )
+
+        case .customImage:
+            if let nsImage = settings.badgeImportedImage?.nsImage {
+                let effectiveScale = settings.badgeImportedImageScale
+                    * (settings.badgeImportedImagePaddingCompensation ? 1.22 : 1.0)
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(
+                        width: badgeSize * 0.65 * effectiveScale,
+                        height: badgeSize * 0.65 * effectiveScale
+                    )
+            }
         }
-        .frame(width: badgeSize, height: badgeSize)
     }
 
     @ViewBuilder

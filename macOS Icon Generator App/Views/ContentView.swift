@@ -1,5 +1,6 @@
 // ContentView.swift - Main view of our application
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @StateObject private var viewModel = IconViewModel()
@@ -118,6 +119,7 @@ struct ScaledIconPreview: View {
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
+    @State private var isDropTargeted: Bool = false
 
     private var canvasSize: CGFloat {
         IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
@@ -140,8 +142,13 @@ struct ScaledIconPreview: View {
         .frame(width: canvasSize, height: canvasSize, alignment: .center)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                .stroke(isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.3),
+                        lineWidth: isDropTargeted ? 2 : 1)
         )
+        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            handleDrop(providers: providers)
+            return true
+        }
         .onChange(of: settings.badgeManualOffsetX) { _, newValue in
             dragStart = CGSize(width: newValue, height: settings.badgeManualOffsetY)
         }
@@ -206,6 +213,34 @@ struct ScaledIconPreview: View {
         case .topLeft:     return CGSize(width: -anchorX + manualX, height: -anchorY + manualY)
         case .bottomRight: return CGSize(width: anchorX + manualX, height: anchorY + manualY)
         case .bottomLeft:  return CGSize(width: -anchorX + manualX, height: anchorY + manualY)
+        }
+    }
+
+    // MARK: - Drag and Drop
+
+    private func handleDrop(providers: [NSItemProvider]) {
+        for provider in providers {
+            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
+                    guard let urlData = data as? Data,
+                          let url = URL(dataRepresentation: urlData, relativeTo: nil)
+                    else { return }
+                    Task { @MainActor in
+                        do {
+                            let imported = try ImageImportService.importFromURL(url)
+                            // Drop always targets main icon (badge is small and hard to hit)
+                            settings.importedImage = imported
+                            settings.iconSource = .customImage
+                            if imported.isAppIcon {
+                                settings.importedImagePaddingCompensation = true
+                            }
+                        } catch {
+                            print("Drop import failed: \(error.localizedDescription)")
+                        }
+                    }
+                }
+                return // Only process first item
+            }
         }
     }
 }

@@ -18,54 +18,74 @@ struct IconTabContent: View {
 
     var body: some View {
         Form {
-            // MARK: - Symbol Section
-            Section(header: Text("SF Symbol")) {
-                VStack(alignment: .leading, spacing: 8) {
+            // MARK: - Icon Content Section
+            Section(header: Text("Icon Content")) {
+                Picker("Source", selection: $iconSettings.iconSource) {
+                    Label("SF Symbol", systemImage: "character.textbox").tag(IconSource.sfSymbol)
+                    Label("Custom Image", systemImage: "photo").tag(IconSource.customImage)
+                }
+                .pickerStyle(.segmented)
+
+                switch iconSettings.iconSource {
+                case .sfSymbol:
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            TextField("Symbol name", text: $iconSettings.symbolName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            Button(action: { showSymbolNameHelp.toggle() }) {
+                                Image(systemName: "info.circle")
+                            }
+                            .buttonStyle(BorderlessButtonStyle())
+                            .popover(isPresented: $showSymbolNameHelp) {
+                                Text("Enter the name of any SF Symbol. \nDownload Apple's SF Symbols app to see a list of all available symbols.")
+                                    .padding()
+                                    .multilineTextAlignment(.leading)
+                            }
+                        }
+                    }
+
                     HStack(spacing: 6) {
-                        TextField("Symbol name", text: $iconSettings.symbolName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        Button(action: { showSymbolNameHelp.toggle() }) {
-                            Image(systemName: "info.circle")
+                        Picker("Rendering Mode", systemImage: "paintpalette", selection: $iconSettings.symbolRenderingMode) {
+                            ForEach(SymbolRenderingMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
                         }
-                        .buttonStyle(BorderlessButtonStyle())
-                        .popover(isPresented: $showSymbolNameHelp) {
-                            Text("Enter the name of any SF Symbol. \nDownload Apple's SF Symbols app to see a list of all available symbols.")
-                                .padding()
-                                .multilineTextAlignment(.leading)
-                        }
+                        .pickerStyle(.segmented)
                     }
-                }
 
-                HStack(spacing: 6) {
-                    Picker("Rendering Mode", systemImage: "paintpalette", selection: $iconSettings.symbolRenderingMode) {
-                        ForEach(SymbolRenderingMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
+                    symbolColorControls
+
+                    HStack {
+                        Text("Symbol Scale")
+                        Spacer()
+                        Text("\(Int(iconSettings.manualSymbolScale * 100))%")
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
                     }
-                    .pickerStyle(.segmented)
-                }
+                    Slider(value: $iconSettings.manualSymbolScale,
+                           in: IconSettings.manualSymbolScaleRange,
+                           step: 0.05)
 
-                symbolColorControls
+                    if #available(macOS 26.0, *) {
+                        Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
+                            get: { iconSettings.symbolColorRenderingMode == .gradient },
+                            set: { iconSettings.symbolColorRenderingMode = $0 ? .gradient : .flat }
+                        ))
+                    }
+                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableSymbolShadow)
+                        .help("Toggle the drop shadow behind the SF Symbol")
 
-                HStack {
-                    Text("Symbol Scale")
-                    Spacer()
-                    Text("\(Int(iconSettings.manualSymbolScale * 100))%")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-                Slider(value: $iconSettings.manualSymbolScale,
-                       in: IconSettings.manualSymbolScaleRange,
-                       step: 0.05)
+                case .customImage:
+                    ImageImportControls(
+                        importedImage: $iconSettings.importedImage,
+                        paddingCompensation: $iconSettings.importedImagePaddingCompensation,
+                        imageScale: $iconSettings.importedImageScale,
+                        onImport: {}
+                    )
 
-                if #available(macOS 26.0, *) {
-                    Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
-                        get: { iconSettings.symbolColorRenderingMode == .gradient },
-                        set: { iconSettings.symbolColorRenderingMode = $0 ? .gradient : .flat }
-                    ))
+                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableSymbolShadow)
+                        .help("Toggle the drop shadow behind the imported image")
                 }
-                Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableSymbolShadow)
-                    .help("Toggle the drop shadow behind the SF Symbol")
             }
 
             // MARK: - Background Section

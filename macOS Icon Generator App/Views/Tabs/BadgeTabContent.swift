@@ -72,45 +72,63 @@ struct BadgeTabContent: View {
                        in: IconSettings.manualSymbolScaleRange,
                        step: 0.05)
 
-                // MARK: - Badge Symbol Section
-                Section(header: Text("Badge Symbol")) {
+                // MARK: - Badge Content Section
+                Section(header: Text("Badge Content")) {
+                    Picker("Source", selection: $iconSettings.badgeIconSource) {
+                        Label("SF Symbol", systemImage: "character.textbox").tag(IconSource.sfSymbol)
+                        Label("Custom Image", systemImage: "photo").tag(IconSource.customImage)
+                    }
+                    .pickerStyle(.segmented)
 
+                    switch iconSettings.badgeIconSource {
+                    case .sfSymbol:
+                        TextField("Symbol Name", text: $iconSettings.badgeSymbolName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
 
-                    TextField("Symbol Name", text: $iconSettings.badgeSymbolName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
-
-                    HStack(spacing: 6) {
-                        Picker("Rendering Mode", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
-                            ForEach(SymbolRenderingMode.allCases) { mode in
-                                Text(mode.rawValue).tag(mode)
+                        HStack(spacing: 6) {
+                            Picker("Rendering Mode", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
+                                ForEach(SymbolRenderingMode.allCases) { mode in
+                                    Text(mode.rawValue).tag(mode)
+                                }
                             }
+                            .pickerStyle(.segmented)
                         }
-                        .pickerStyle(.segmented)
+
+                        badgeSymbolColorControls
+
+                        HStack {
+                            Text("Symbol Scale")
+                            Spacer()
+                            Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $iconSettings.badgeSymbolScale,
+                               in: IconSettings.manualSymbolScaleRange,
+                               step: 0.05)
+
+                        if #available(macOS 26.0, *) {
+                            Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
+                                get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
+                                set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
+                            ))
+                        }
+
+                        Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
+                            .help("Toggle the drop shadow behind the badge symbol")
+
+                    case .customImage:
+                        ImageImportControls(
+                            importedImage: $iconSettings.badgeImportedImage,
+                            paddingCompensation: $iconSettings.badgeImportedImagePaddingCompensation,
+                            imageScale: $iconSettings.badgeImportedImageScale,
+                            onImport: {}
+                        )
+
+                        Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
+                            .help("Toggle the drop shadow behind the badge image")
                     }
-
-                    badgeSymbolColorControls
-
-                    HStack {
-                        Text("Symbol Scale")
-                        Spacer()
-                        Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                    Slider(value: $iconSettings.badgeSymbolScale,
-                           in: IconSettings.manualSymbolScaleRange,
-                           step: 0.05)
-
-                    if #available(macOS 26.0, *) {
-                        Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
-                            get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
-                            set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
-                        ))
-                    }
-
-                    Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
-                        .help("Toggle the drop shadow behind the badge symbol")
                 }
 
                 // MARK: - Badge Background Section
