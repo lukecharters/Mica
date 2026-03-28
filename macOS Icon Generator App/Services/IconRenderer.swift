@@ -270,17 +270,38 @@ struct IconContentView: View {
                         .padding(backgroundInset)
                         .frame(width: iconSize, height: iconSize)
                 }
+
+            case .importedImage:
+                if let nsImage = settings.importedBackground?.nsImage {
+                    let effectiveScale = settings.importedBackgroundScale
+                        * (settings.importedBackgroundPaddingCompensation ? paddingCompensationFactor : 1.0)
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(
+                            width: enclosureSize * effectiveScale,
+                            height: enclosureSize * effectiveScale
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                        .shadow(
+                            color: Color.black.opacity(backgroundShadowOpacity),
+                            radius: backgroundShadowRadius,
+                            y: backgroundShadowOffset
+                        )
+                }
             }
 
-            // Icon content (SF Symbol or custom image)
-            iconContent
-                .shadow(
-                    color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                    radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-                    y: settings.enableSymbolShadow ? symbolShadowOffset : 0
-                )
-        
-            
+            // Icon content (SF Symbol or custom image) — hidden when background is an imported image
+            if settings.backgroundMode != .importedImage {
+                iconContent
+                    .shadow(
+                        color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                        radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+                        y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+                    )
+            }
+
             // Badge
             if settings.showBadge {
                 BadgeView(settings: settings, badgeSize: badgeSize)
@@ -336,7 +357,6 @@ struct IconContentView: View {
         case .customImage:
             if let nsImage = settings.importedImage?.nsImage {
                 let effectiveScale = settings.importedImageScale
-                    * (settings.importedImagePaddingCompensation ? paddingCompensationFactor : 1.0)
                 Image(nsImage: nsImage)
                     .resizable()
                     .interpolation(.high)
@@ -384,7 +404,24 @@ struct BadgeView: View {
 
     var body: some View {
         ZStack {
-            if settings.badgeUseCustomColors {
+            if settings.badgeUseImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
+                let effectiveScale = settings.badgeImportedBackgroundScale
+                    * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(
+                        width: badgeSize * effectiveScale,
+                        height: badgeSize * effectiveScale
+                    )
+                    .clipShape(Circle())
+                    .shadow(
+                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                    )
+            } else if settings.badgeUseCustomColors {
                 Circle()
                     .fill(
                         settings.badgeEnableBackgroundGradient
@@ -410,12 +447,15 @@ struct BadgeView: View {
                     )
             }
 
-            badgeContent
-            .shadow(
-                color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
-                y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
-            )
+            // Badge symbol — hidden when background is an imported image
+            if !settings.badgeUseImportedBackground {
+                badgeContent
+                    .shadow(
+                        color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                        radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
+                        y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
+                    )
+            }
         }
         .frame(width: badgeSize, height: badgeSize)
     }
@@ -458,7 +498,6 @@ struct BadgeView: View {
         case .customImage:
             if let nsImage = settings.badgeImportedImage?.nsImage {
                 let effectiveScale = settings.badgeImportedImageScale
-                    * (settings.badgeImportedImagePaddingCompensation ? 1.22 : 1.0)
                 Image(nsImage: nsImage)
                     .resizable()
                     .interpolation(.high)

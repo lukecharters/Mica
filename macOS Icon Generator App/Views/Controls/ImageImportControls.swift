@@ -6,6 +6,7 @@ struct ImageImportControls: View {
     @Binding var importedImage: ImportedImage?
     @Binding var paddingCompensation: Bool
     @Binding var imageScale: Double
+    var showAppImport: Bool = true
     var onImport: () -> Void
 
     var body: some View {
@@ -34,7 +35,9 @@ struct ImageImportControls: View {
         // Import buttons
         HStack {
             Button("Choose Image…") { showImagePicker() }
-            Button("Choose App…") { showAppPicker() }
+            if showAppImport {
+                Button("Choose App…") { showAppPicker() }
+            }
         }
 
         // Padding compensation (only for app icons)

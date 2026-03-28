@@ -121,8 +121,9 @@ struct BadgeTabContent: View {
                     case .customImage:
                         ImageImportControls(
                             importedImage: $iconSettings.badgeImportedImage,
-                            paddingCompensation: $iconSettings.badgeImportedImagePaddingCompensation,
+                            paddingCompensation: .constant(false),
                             imageScale: $iconSettings.badgeImportedImageScale,
+                            showAppImport: false,
                             onImport: {}
                         )
 
@@ -133,6 +134,19 @@ struct BadgeTabContent: View {
 
                 // MARK: - Badge Background Section
                 Section(header: Text("Badge Background")) {
+                    Toggle("Use Imported Image", systemImage: "photo", isOn: $iconSettings.badgeUseImportedBackground)
+
+                    if iconSettings.badgeUseImportedBackground {
+                        ImageImportControls(
+                            importedImage: $iconSettings.badgeImportedBackground,
+                            paddingCompensation: $iconSettings.badgeImportedBackgroundPaddingCompensation,
+                            imageScale: $iconSettings.badgeImportedBackgroundScale,
+                            showAppImport: true,
+                            onImport: {}
+                        )
+                    }
+
+                    if !iconSettings.badgeUseImportedBackground {
                     Toggle("Custom Gradient", isOn: Binding(
                         get: { iconSettings.badgeUseCustomColors },
                         set: { newValue in
@@ -196,6 +210,7 @@ struct BadgeTabContent: View {
                     if !iconSettings.badgeUseCustomColors {
                         Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.badgeEnableBackgroundGradient)
                     }
+                    } // end if !badgeUseImportedBackground
 
                     Toggle("Drop Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableBackgroundShadow)
                         .help("Toggle the drop shadow behind the badge background")

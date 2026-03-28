@@ -31,7 +31,8 @@ struct ContentView: View {
                     .tag(1)
             }
             .tabViewStyle(GroupedTabViewStyle())
-            .frame(minWidth: 350, maxWidth: 600)
+            .padding(.top, 8)
+            .frame(minWidth: 350, maxWidth: 500)
 
             // Center: Preview pane with overlay controls
             previewPane
@@ -228,11 +229,16 @@ struct ScaledIconPreview: View {
                     Task { @MainActor in
                         do {
                             let imported = try ImageImportService.importFromURL(url)
-                            // Drop always targets main icon (badge is small and hard to hit)
-                            settings.importedImage = imported
-                            settings.iconSource = .customImage
                             if imported.isAppIcon {
-                                settings.importedImagePaddingCompensation = true
+                                // App/appex icons → replace background (full icon with padding)
+                                settings.importedBackground = imported
+                                settings.importedBackgroundPaddingCompensation = true
+                                settings.backgroundMode = .importedImage
+                            } else {
+                                // Regular images → replace background without padding compensation
+                                settings.importedBackground = imported
+                                settings.importedBackgroundPaddingCompensation = false
+                                settings.backgroundMode = .importedImage
                             }
                         } catch {
                             print("Drop import failed: \(error.localizedDescription)")

@@ -9,7 +9,7 @@ struct IconGeneratorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 750, minHeight: 550)
+                .frame(minWidth: 700, minHeight: 520)
                 .environmentObject(appViewModel)
         }
         .windowStyle(.titleBar)

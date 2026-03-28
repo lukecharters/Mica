@@ -78,8 +78,9 @@ struct IconTabContent: View {
                 case .customImage:
                     ImageImportControls(
                         importedImage: $iconSettings.importedImage,
-                        paddingCompensation: $iconSettings.importedImagePaddingCompensation,
+                        paddingCompensation: .constant(false),
                         imageScale: $iconSettings.importedImageScale,
+                        showAppImport: false,
                         onImport: {}
                     )
 
@@ -91,13 +92,29 @@ struct IconTabContent: View {
             // MARK: - Background Section
             Section(header: Text("Background")) {
                 Picker("Background Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
-                    ForEach(BackgroundMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
+                    Text("Custom").tag(BackgroundMode.custom)
+                    Text("Pre-rendered").tag(BackgroundMode.preRendered)
+                    Text("Image").tag(BackgroundMode.importedImage)
                 }
                 .pickerStyle(.segmented)
 
                 switch iconSettings.backgroundMode {
+                case .importedImage:
+                    ImageImportControls(
+                        importedImage: $iconSettings.importedBackground,
+                        paddingCompensation: $iconSettings.importedBackgroundPaddingCompensation,
+                        imageScale: $iconSettings.importedBackgroundScale,
+                        showAppImport: true,
+                        onImport: {}
+                    )
+
+                    Picker("Drop Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
+                        ForEach(BackgroundShadowStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
                 case .preRendered:
                     Picker(
                         selection: $iconSettings.preRenderedColorName,

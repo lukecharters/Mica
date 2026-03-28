@@ -55,17 +55,26 @@ struct IconSettings: Equatable {
     // Badge Symbol Color Rendering Mode (macOS 26+)
     var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
 
-    // Custom image source (main icon)
+    // Custom image source (main icon symbol)
     var iconSource: IconSource = .sfSymbol
     var importedImage: ImportedImage? = nil
-    var importedImagePaddingCompensation: Bool = false
     var importedImageScale: Double = 1.0
 
-    // Custom image source (badge)
+    // Custom image source (main icon background)
+    var importedBackground: ImportedImage? = nil
+    var importedBackgroundPaddingCompensation: Bool = false
+    var importedBackgroundScale: Double = 1.0
+
+    // Custom image source (badge symbol)
     var badgeIconSource: IconSource = .sfSymbol
     var badgeImportedImage: ImportedImage? = nil
-    var badgeImportedImagePaddingCompensation: Bool = false
     var badgeImportedImageScale: Double = 1.0
+
+    // Custom image source (badge background)
+    var badgeUseImportedBackground: Bool = false
+    var badgeImportedBackground: ImportedImage? = nil
+    var badgeImportedBackgroundPaddingCompensation: Bool = false
+    var badgeImportedBackgroundScale: Double = 1.0
 
     var gradientColors: [Color] {
         [customPrimaryColor, customSecondaryColor]
@@ -110,6 +119,7 @@ enum SymbolRenderingMode: String, CaseIterable, Identifiable {
 enum BackgroundMode: String, CaseIterable, Identifiable {
     case custom = "Custom"
     case preRendered = "Pre-rendered"
+    case importedImage = "Image"
     var id: String { rawValue }
 }
 
