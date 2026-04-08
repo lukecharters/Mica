@@ -6,7 +6,7 @@ struct ImageImportControls: View {
     @Binding var importedImage: ImportedImage?
     @Binding var paddingCompensation: Bool
     @Binding var imageScale: Double
-    var showAppImport: Bool = true
+    var showPaddingCompensation: Bool = true
     var onImport: () -> Void
 
     var body: some View {
@@ -32,18 +32,17 @@ struct ImageImportControls: View {
             }
         }
 
-        // Import buttons
-        HStack {
-            Button("Choose Image…") { showImagePicker() }
-            if showAppImport {
-                Button("Choose App…") { showAppPicker() }
-            }
-        }
+        // Import button
+        Button("Choose File…") { showFilePicker() }
 
-        // Padding compensation (only for app icons)
-        if importedImage?.isAppIcon == true {
-            Toggle("Compensate for icon padding", isOn: $paddingCompensation)
-                .help("Scale up to fill the chiclet, compensating for existing macOS icon padding and shadow")
+        // Padding compensation
+        if showPaddingCompensation {
+            Toggle("Icon Padding", isOn: Binding(
+                
+                get: { !paddingCompensation },
+                set: { paddingCompensation = !$0 }
+            ))
+                .help("Keep existing macOS icon padding and shadow. Turn off to scale up and fill the chiclet.")
         }
 
         // Image scale slider
@@ -59,32 +58,19 @@ struct ImageImportControls: View {
                step: 0.05)
     }
 
-    private func showImagePicker() {
+    private func showFilePicker() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = ImageImportService.supportedImageTypes
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = "Choose an image to import"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        do {
-            importedImage = try ImageImportService.importFromURL(url)
-            onImport()
-        } catch {
-            NSAlert(error: error).runModal()
-        }
-    }
-
-    private func showAppPicker() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = ImageImportService.supportedBundleTypes
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.treatsFilePackagesAsDirectories = false
-        panel.message = "Choose an app or extension to extract its icon"
+        panel.message = "Choose a file to import"
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
-            importedImage = try ImageImportService.importFromURL(url)
-            paddingCompensation = true
+            let imported = try ImageImportService.importFromURL(url)
+            importedImage = imported
+            if imported.isAppIcon {
+                paddingCompensation = true
+            }
             onImport()
         } catch {
             NSAlert(error: error).runModal()

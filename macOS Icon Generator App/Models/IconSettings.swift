@@ -48,7 +48,7 @@ struct IconSettings: Equatable {
     var badgeEnableBackgroundShadow: Bool = true
     var badgeEnableSymbolShadow: Bool = true
     var badgeSymbolScale: Double = 1.0
-    var badgeScale: Double = 0.8
+    var badgeScale: Double = 1.0
     var badgeManualOffsetX: Double = 0.0
     var badgeManualOffsetY: Double = 0.0
 

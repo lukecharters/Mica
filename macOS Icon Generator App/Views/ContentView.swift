@@ -2,6 +2,19 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Focused Value for Paste
+
+struct FocusedIconSettingsKey: FocusedValueKey {
+    typealias Value = Binding<IconSettings>
+}
+
+extension FocusedValues {
+    var iconSettings: Binding<IconSettings>? {
+        get { self[FocusedIconSettingsKey.self] }
+        set { self[FocusedIconSettingsKey.self] = newValue }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = IconViewModel()
 
@@ -57,6 +70,7 @@ struct ContentView: View {
                 .help("Toggle Inspector")
             }
         }
+        .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
             document: IconDocument(settings: viewModel.iconSettings),

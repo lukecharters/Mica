@@ -123,7 +123,7 @@ struct BadgeTabContent: View {
                             importedImage: $iconSettings.badgeImportedImage,
                             paddingCompensation: .constant(false),
                             imageScale: $iconSettings.badgeImportedImageScale,
-                            showAppImport: false,
+                            showPaddingCompensation: false,
                             onImport: {}
                         )
 
@@ -141,7 +141,6 @@ struct BadgeTabContent: View {
                             importedImage: $iconSettings.badgeImportedBackground,
                             paddingCompensation: $iconSettings.badgeImportedBackgroundPaddingCompensation,
                             imageScale: $iconSettings.badgeImportedBackgroundScale,
-                            showAppImport: true,
                             onImport: {}
                         )
                     }

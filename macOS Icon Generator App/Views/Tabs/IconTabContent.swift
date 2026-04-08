@@ -22,7 +22,7 @@ struct IconTabContent: View {
             Section(header: Text("Icon Content")) {
                 Picker("Source", selection: $iconSettings.iconSource) {
                     Label("SF Symbol", systemImage: "character.textbox").tag(IconSource.sfSymbol)
-                    Label("Custom Image", systemImage: "photo").tag(IconSource.customImage)
+                    Label("Imported", systemImage: "photo").tag(IconSource.customImage)
                 }
                 .pickerStyle(.segmented)
 
@@ -80,7 +80,7 @@ struct IconTabContent: View {
                         importedImage: $iconSettings.importedImage,
                         paddingCompensation: .constant(false),
                         imageScale: $iconSettings.importedImageScale,
-                        showAppImport: false,
+                        showPaddingCompensation: false,
                         onImport: {}
                     )
 
@@ -92,9 +92,9 @@ struct IconTabContent: View {
             // MARK: - Background Section
             Section(header: Text("Background")) {
                 Picker("Background Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
-                    Text("Custom").tag(BackgroundMode.custom)
-                    Text("Pre-rendered").tag(BackgroundMode.preRendered)
-                    Text("Image").tag(BackgroundMode.importedImage)
+                    Text("Standard").tag(BackgroundMode.custom)
+                    Text("Liquid Glass").tag(BackgroundMode.preRendered)
+                    Text("Imported").tag(BackgroundMode.importedImage)
                 }
                 .pickerStyle(.segmented)
 
@@ -104,7 +104,6 @@ struct IconTabContent: View {
                         importedImage: $iconSettings.importedBackground,
                         paddingCompensation: $iconSettings.importedBackgroundPaddingCompensation,
                         imageScale: $iconSettings.importedBackgroundScale,
-                        showAppImport: true,
                         onImport: {}
                     )
 

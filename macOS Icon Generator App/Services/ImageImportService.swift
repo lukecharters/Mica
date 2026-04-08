@@ -25,38 +25,46 @@ enum ImageImportService {
 
     // MARK: - Supported types
 
-    static let supportedImageTypes: [UTType] = [.png, .jpeg, .gif, .tiff, .pdf, .svg]
-    static let supportedBundleTypes: [UTType] = [.application, .applicationBundle]
     static let allDropTypes: [UTType] = [.fileURL]
 
     // MARK: - Public API
 
-    /// Import from any supported URL — auto-detects bundles vs images.
+    /// Import from any URL. If NSImage can load it, imports as an image;
+    /// otherwise extracts the file's Finder icon via NSWorkspace.
     static func importFromURL(_ url: URL) throws -> ImportedImage {
-        let isBundle = isBundleURL(url)
-        if isBundle {
-            return try extractBundleIcon(from: url)
+        if let image = NSImage(contentsOf: url) {
+            let data = try renderToData(image, targetSize: 1024)
+            return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isAppIcon: false)
         }
-        return try importImageFile(from: url)
+        return try extractFileIcon(from: url)
     }
 
-    /// Extract the icon from a .app or .appex bundle via NSWorkspace.
-    static func extractBundleIcon(from bundleURL: URL) throws -> ImportedImage {
-        let iconImage = NSWorkspace.shared.icon(forFile: bundleURL.path)
+    /// Import from pasteboard image data (e.g. Cmd+V).
+    /// Returns nil if the pasteboard contains no usable image.
+    static func importFromPasteboard() throws -> ImportedImage? {
+        let pasteboard = NSPasteboard.general
+
+        // Try file URLs first — supports copied Finder files and app bundles
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
+            .urlReadingFileURLsOnly: true
+        ]) as? [URL], let url = urls.first {
+            return try importFromURL(url)
+        }
+
+        // Try raw image data from pasteboard
+        if let image = NSImage(pasteboard: pasteboard) {
+            let data = try renderToData(image, targetSize: 1024)
+            return ImportedImage(id: UUID(), imageData: data, sourceName: "Pasted Image", isAppIcon: false)
+        }
+
+        return nil
+    }
+
+    /// Extract the Finder icon for any file via NSWorkspace.
+    static func extractFileIcon(from url: URL) throws -> ImportedImage {
+        let iconImage = NSWorkspace.shared.icon(forFile: url.path)
         let data = try renderToData(iconImage, targetSize: 1024)
-        let name = bundleURL.lastPathComponent
-        return ImportedImage(id: UUID(), imageData: data, sourceName: name, isAppIcon: true)
-    }
-
-    // MARK: - Private
-
-    private static func importImageFile(from url: URL) throws -> ImportedImage {
-        guard let image = NSImage(contentsOf: url) else {
-            throw ImageImportError.failedToLoadImage(url)
-        }
-        let data = try renderToData(image, targetSize: 1024)
-        let name = url.lastPathComponent
-        return ImportedImage(id: UUID(), imageData: data, sourceName: name, isAppIcon: false)
+        return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isAppIcon: true)
     }
 
     /// Renders an NSImage into a CGContext at the target pixel size, returns PNG Data.
@@ -141,9 +149,4 @@ enum ImageImportService {
         return data as Data
     }
 
-    /// Checks whether a URL points to a .app or .appex bundle.
-    private static func isBundleURL(_ url: URL) -> Bool {
-        let ext = url.pathExtension.lowercased()
-        return ext == "app" || ext == "appex"
-    }
 }
