@@ -7,33 +7,43 @@
 import AppKit
 import Foundation
 
+@MainActor
 @Observable
 class AppexReferenceService {
-    private var cache: [String: NSImage] = [:]
+    private var cache: [CacheKey: NSImage] = [:]
     var isGenerating = false
 
     private let sourceBundlePath = "/System/Library/ExtensionKit/Extensions/Storage.appex"
 
+    // MARK: - Cache Key
+
+    private struct CacheKey: Hashable {
+        let symbolName: String
+        let enclosureColor: AppexEnclosureColor
+    }
+
     // MARK: - Public API
 
     /// Generate or return cached reference icon at 512pt @2x
-    func referenceIcon(for symbolName: String) async throws -> NSImage {
-        if let cached = cache[symbolName] { return cached }
+    func referenceIcon(for symbolName: String, enclosureColor: AppexEnclosureColor = .blue) async throws -> NSImage {
+        let key = CacheKey(symbolName: symbolName, enclosureColor: enclosureColor)
+        if let cached = cache[key] { return cached }
 
         isGenerating = true
         defer { isGenerating = false }
 
-        let icon = try generateIcon(for: symbolName)
-        cache[symbolName] = icon
+        let icon = try await generateIcon(for: symbolName, enclosureColor: enclosureColor)
+        cache[key] = icon
         return icon
     }
 
     /// Pre-fetch next N symbols in background
-    func prefetch(_ symbolNames: [String]) {
+    func prefetch(_ symbolNames: [String], enclosureColor: AppexEnclosureColor = .blue) {
         for name in symbolNames {
-            guard cache[name] == nil else { continue }
+            let key = CacheKey(symbolName: name, enclosureColor: enclosureColor)
+            guard cache[key] == nil else { continue }
             Task.detached(priority: .utility) { [weak self] in
-                _ = try? await self?.referenceIcon(for: name)
+                _ = try? await self?.referenceIcon(for: name, enclosureColor: enclosureColor)
             }
         }
     }
@@ -44,7 +54,24 @@ class AppexReferenceService {
 
     /// Copy .appex to a unique temp path, configure, render, and clean up.
     /// Each render gets its own UUID-named bundle so LaunchServices never serves a stale icon.
-    private func generateIcon(for symbolName: String) throws -> NSImage {
+    /// Blocking file I/O is dispatched to a background thread via Task.detached.
+    private func generateIcon(for symbolName: String, enclosureColor: AppexEnclosureColor) async throws -> NSImage {
+        let sourceBundlePath = self.sourceBundlePath
+        let task = Task.detached(priority: .userInitiated) {
+            try AppexReferenceService.generateIconSync(
+                symbolName: symbolName,
+                enclosureColor: enclosureColor,
+                sourceBundlePath: sourceBundlePath
+            )
+        }
+        return try await task.value
+    }
+
+    private nonisolated static func generateIconSync(
+        symbolName: String,
+        enclosureColor: AppexEnclosureColor,
+        sourceBundlePath: String
+    ) throws -> NSImage {
         let sourceURL = URL(fileURLWithPath: sourceBundlePath)
         guard FileManager.default.fileExists(atPath: sourceBundlePath) else {
             throw AppexError.sourceBundleNotFound
@@ -56,7 +83,7 @@ class AppexReferenceService {
         try FileManager.default.copyItem(at: sourceURL, to: wsURL)
         defer { try? FileManager.default.removeItem(at: wsURL) }
 
-        try configurePlist(at: wsURL, symbolName: symbolName)
+        try configurePlist(at: wsURL, symbolName: symbolName, enclosureColor: enclosureColor)
         try touchBundle(at: wsURL)
 
         return try renderIcon(at: wsURL)
@@ -64,7 +91,7 @@ class AppexReferenceService {
 
     // MARK: - Plist Configuration
 
-    private func configurePlist(at bundleURL: URL, symbolName: String) throws {
+    private nonisolated static func configurePlist(at bundleURL: URL, symbolName: String, enclosureColor: AppexEnclosureColor) throws {
         let plistURL = bundleURL.appendingPathComponent("Contents/Info.plist", isDirectory: false)
 
         let data = try Data(contentsOf: plistURL)
@@ -76,7 +103,7 @@ class AppexReferenceService {
         }
 
         graphicConfig["ISSymbolName"] = symbolName
-        graphicConfig["ISEnclosureColor"] = "blue"
+        graphicConfig["ISEnclosureColor"] = enclosureColor.rawValue
         graphicConfig["ISSymbolColor"] = "white"
 
         bundleIcons["ISGraphicIconConfiguration"] = graphicConfig
@@ -87,7 +114,7 @@ class AppexReferenceService {
     }
 
     /// Touch the bundle to invalidate LaunchServices icon cache
-    private func touchBundle(at bundleURL: URL) throws {
+    private nonisolated static func touchBundle(at bundleURL: URL) throws {
         try FileManager.default.setAttributes(
             [.modificationDate: Date()],
             ofItemAtPath: bundleURL.path
@@ -97,7 +124,7 @@ class AppexReferenceService {
     // MARK: - Icon Rendering
 
     /// Render NSWorkspace icon into a 512pt @2x NSImage
-    private func renderIcon(at bundleURL: URL) throws -> NSImage {
+    private nonisolated static func renderIcon(at bundleURL: URL) throws -> NSImage {
         guard let iconImage = NSWorkspace.shared.icon(forFile: bundleURL.path).copy() as? NSImage else {
             throw AppexError.renderFailed
         }

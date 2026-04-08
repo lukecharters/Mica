@@ -31,30 +31,58 @@ struct ContentView: View {
     @State private var selectedTab: Int = 0
     @State private var zoomLevel: Double = 1.0
     @State private var showInspector: Bool = true
+    @State private var appexService = AppexReferenceService()
 
     var body: some View {
         HSplitView {
-            // Left: TabView with settings
-            TabView(selection: $selectedTab) {
-                IconTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
-                    .tabItem { Label("Icon", systemImage: "app") }
-                    .tag(0)
-                BadgeTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
-                    .tabItem { Label("Badge", systemImage: "seal") }
-                    .tag(1)
+            // Left: Mode picker + contextual controls
+            VStack(spacing: 0) {
+                Picker("Generation Mode", selection: $viewModel.generationMode) {
+                    ForEach(GenerationMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
+
+                Divider()
+
+                if viewModel.generationMode == .swiftUI {
+                    TabView(selection: $selectedTab) {
+                        IconTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
+                            .tabItem { Label("Icon", systemImage: "app") }
+                            .tag(0)
+                        BadgeTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
+                            .tabItem { Label("Badge", systemImage: "seal") }
+                            .tag(1)
+                    }
+                    .tabViewStyle(GroupedTabViewStyle())
+                    .padding(.top, 4)
+                } else {
+                    AppexIconControls(
+                        iconSettings: $viewModel.iconSettings,
+                        enclosureColor: $viewModel.appexEnclosureColor
+                    )
+                }
             }
-            .tabViewStyle(GroupedTabViewStyle())
-            .padding(.top, 8)
             .frame(minWidth: 350, maxWidth: 500)
 
             // Center: Preview pane with overlay controls
-            previewPane
+            if viewModel.generationMode == .swiftUI {
+                previewPane
+            } else {
+                AppexPreviewPane(viewModel: viewModel, appexService: appexService)
+            }
 
             // Right: Export settings sidebar (inspector)
             if showInspector {
                 ExportSettingsSidebar(
                     iconSettings: $viewModel.iconSettings,
-                    showExportDialog: $viewModel.showExportDialog
+                    showExportDialog: $viewModel.showExportDialog,
+                    generationMode: viewModel.generationMode,
+                    appexHasImage: viewModel.appexRenderedImage != nil
                 )
             }
         }
@@ -73,9 +101,13 @@ struct ContentView: View {
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: IconDocument(settings: viewModel.iconSettings),
+            document: viewModel.generationMode == .appleReference
+                ? IconDocument(preRenderedImage: viewModel.appexRenderedImage ?? NSImage())
+                : IconDocument(settings: viewModel.iconSettings),
             contentType: .png,
-            defaultFilename: "CustomIcon"
+            defaultFilename: viewModel.generationMode == .appleReference
+                ? "\(viewModel.iconSettings.symbolName)-apple-reference"
+                : "CustomIcon"
         ) { result in
             switch result {
             case .success(let url):

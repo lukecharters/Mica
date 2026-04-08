@@ -4,52 +4,68 @@ import SwiftUI
 struct ExportSettingsSidebar: View {
     @Binding var iconSettings: IconSettings
     @Binding var showExportDialog: Bool
+    var generationMode: GenerationMode = .swiftUI
+    var appexHasImage: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // MARK: - Export Size Section
-            SidebarSection(title: "Export Size") {
-                VStack(alignment: .leading, spacing: 8) {
-                    // Size picker with common presets
-                    Picker("Size", selection: $iconSettings.exportSize) {
-                        Text("16pt").tag(CGFloat(16))
-                        Text("32pt").tag(CGFloat(32))
-                        Text("64pt").tag(CGFloat(64))
-                        Text("128pt").tag(CGFloat(128))
-                        Text("256pt").tag(CGFloat(256))
-                        Text("512pt").tag(CGFloat(512))
-                        Text("1024pt").tag(CGFloat(1024))
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-
-                    Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
-                        .font(.subheadline)
-
-                    Text(retinaSizeDescription)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Divider()
-                .padding(.vertical, 8)
-
-            // MARK: - Color Space Section
-            SidebarSection(title: "Color Space") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Picker("Color Space", selection: $iconSettings.exportColorSpace) {
-                        ForEach(ExportColorSpace.allCases) { colorSpace in
-                            Text(colorSpace.rawValue).tag(colorSpace)
+            if generationMode == .swiftUI {
+                // MARK: - Export Size Section
+                SidebarSection(title: "Export Size") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Size picker with common presets
+                        Picker("Size", selection: $iconSettings.exportSize) {
+                            Text("16pt").tag(CGFloat(16))
+                            Text("32pt").tag(CGFloat(32))
+                            Text("64pt").tag(CGFloat(64))
+                            Text("128pt").tag(CGFloat(128))
+                            Text("256pt").tag(CGFloat(256))
+                            Text("512pt").tag(CGFloat(512))
+                            Text("1024pt").tag(CGFloat(1024))
                         }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
+                        .pickerStyle(.menu)
+                        .labelsHidden()
 
-                    Text(colorSpaceDescription)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
+                            .font(.subheadline)
+
+                        Text(retinaSizeDescription)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Divider()
+                    .padding(.vertical, 8)
+
+                // MARK: - Color Space Section
+                SidebarSection(title: "Color Space") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Color Space", selection: $iconSettings.exportColorSpace) {
+                            ForEach(ExportColorSpace.allCases) { colorSpace in
+                                Text(colorSpace.rawValue).tag(colorSpace)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+
+                        Text(colorSpaceDescription)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } else {
+                // MARK: - Apple Reference Info Section
+                SidebarSection(title: "Apple Reference") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("512pt @2x (1024×1024px)", systemImage: "photo")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Label("Display P3 color space", systemImage: "circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -63,6 +79,7 @@ struct ExportSettingsSidebar: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .keyboardShortcut("e", modifiers: .command)
+            .disabled(generationMode == .appleReference && !appexHasImage)
         }
         .padding()
         .frame(width: 220)

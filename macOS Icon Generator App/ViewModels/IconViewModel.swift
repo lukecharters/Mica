@@ -11,8 +11,43 @@ final class IconViewModel: ObservableObject {
     @Published var testingMode: Bool = false
     @Published var layoutSettings: LayoutSettings = LayoutSettings()
 
+    // Generation mode
+    @Published var generationMode: GenerationMode = .swiftUI
+    @Published var appexEnclosureColor: AppexEnclosureColor = .blue
+    @Published var appexRenderedImage: NSImage? = nil
+    @Published var appexIsGenerating: Bool = false
+    @Published var appexError: String? = nil
+
     // Derived values (no type changes)
     var actualExportSize: CGFloat { iconSettings.finalExportSize }
+
+    // MARK: - Appex Generation
+
+    struct AppexGenerationKey: Equatable {
+        let symbolName: String
+        let enclosureColor: AppexEnclosureColor
+    }
+
+    var appexGenerationKey: AppexGenerationKey {
+        AppexGenerationKey(symbolName: iconSettings.symbolName, enclosureColor: appexEnclosureColor)
+    }
+
+    func generateAppexIcon(service: AppexReferenceService) async {
+        appexIsGenerating = true
+        appexError = nil
+        do {
+            appexRenderedImage = try await service.referenceIcon(
+                for: iconSettings.symbolName,
+                enclosureColor: appexEnclosureColor
+            )
+        } catch {
+            appexError = error.localizedDescription
+            appexRenderedImage = nil
+        }
+        appexIsGenerating = false
+    }
+
+    // MARK: - Color Selection
 
     // Actions for selecting preset colors (kept simple; types unchanged)
     func selectPresetColor(index: Int, options: [(name: String, color: Color)]) {

@@ -4,28 +4,35 @@ import UniformTypeIdentifiers
 
 struct IconDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.png] }
-    
+
     var settings: IconSettings
-    
+    var preRenderedImage: NSImage?
+
     init(settings: IconSettings) {
         self.settings = settings
+        self.preRenderedImage = nil
     }
-    
+
+    init(preRenderedImage: NSImage) {
+        self.settings = IconSettings()
+        self.preRenderedImage = preRenderedImage
+    }
+
     init(configuration: ReadConfiguration) throws {
         // We don't support reading icons back in, only exporting them
         self.settings = IconSettings()
+        self.preRenderedImage = nil
     }
-    
+
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        // Use the safe rendering method that works from any thread
-        let image = IconRenderer.renderIconSafely(settings: settings)
-        
+        let image = preRenderedImage ?? IconRenderer.renderIconSafely(settings: settings)
+
         guard let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData),
               let pngData = bitmap.representation(using: .png, properties: [:]) else {
             throw CocoaError(.fileWriteUnknown)
         }
-        
+
         return FileWrapper(regularFileWithContents: pngData)
     }
 }
