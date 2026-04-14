@@ -10,6 +10,16 @@ struct SidebarView: View {
 
     @State private var selectedTab: Int = 0
 
+    // Persisted section expand/collapse state
+    @AppStorage("sidebar.iconSource.expanded") private var iconSourceExpanded = true
+    @AppStorage("sidebar.iconLayout.expanded") private var iconLayoutExpanded = true
+    @AppStorage("sidebar.iconAppearance.expanded") private var iconAppearanceExpanded = true
+    @AppStorage("sidebar.background.expanded") private var backgroundExpanded = true
+    @AppStorage("sidebar.badgeSource.expanded") private var badgeSourceExpanded = true
+    @AppStorage("sidebar.badgeLayout.expanded") private var badgeLayoutExpanded = true
+    @AppStorage("sidebar.badgeAppearance.expanded") private var badgeAppearanceExpanded = true
+    @AppStorage("sidebar.badgeBackground.expanded") private var badgeBackgroundExpanded = true
+
     private var isAppleReference: Bool {
         generationMode == .appleReference
     }
@@ -31,7 +41,7 @@ struct SidebarView: View {
 
     private var iconTab: some View {
         Form {
-            Section("Source") {
+            Section("Source", isExpanded: $iconSourceExpanded) {
                 IconSourceSection(
                     iconSettings: $iconSettings,
                     generationMode: $generationMode
@@ -39,12 +49,12 @@ struct SidebarView: View {
             }
 
             if !isAppleReference {
-                Section("Layout") {
+                Section("Layout", isExpanded: $iconLayoutExpanded) {
                     IconLayoutSection(iconSettings: $iconSettings)
                 }
             }
 
-            Section("Appearance") {
+            Section("Appearance", isExpanded: $iconAppearanceExpanded) {
                 IconAppearanceSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions,
@@ -55,7 +65,7 @@ struct SidebarView: View {
             }
 
             if !isAppleReference {
-                Section("Background") {
+                Section("Background", isExpanded: $backgroundExpanded) {
                     BackgroundSection(
                         iconSettings: $iconSettings,
                         colorOptions: colorOptions
@@ -79,22 +89,22 @@ struct SidebarView: View {
                 }
             }
 
-            Section("Source") {
+            Section("Source", isExpanded: $badgeSourceExpanded) {
                 BadgeSourceSection(iconSettings: $iconSettings)
             }
 
-            Section("Layout") {
+            Section("Layout", isExpanded: $badgeLayoutExpanded) {
                 BadgeLayoutSection(iconSettings: $iconSettings)
             }
 
-            Section("Appearance") {
+            Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                 BadgeAppearanceSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
                 )
             }
 
-            Section("Background") {
+            Section("Background", isExpanded: $badgeBackgroundExpanded) {
                 BadgeBackgroundSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
