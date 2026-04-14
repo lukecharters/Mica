@@ -8,25 +8,30 @@ struct SidebarView: View {
     @Binding var appexSymbolColor: AppexEnclosureColor
     let colorOptions: [(name: String, color: Color)]
 
-    // Persisted disclosure group state
-    @AppStorage("sidebar.iconSource.expanded") private var iconSourceExpanded = true
-    @AppStorage("sidebar.iconLayout.expanded") private var iconLayoutExpanded = true
-    @AppStorage("sidebar.iconAppearance.expanded") private var iconAppearanceExpanded = true
-    @AppStorage("sidebar.background.expanded") private var backgroundExpanded = true
-    @AppStorage("sidebar.badgeSource.expanded") private var badgeSourceExpanded = true
-    @AppStorage("sidebar.badgeLayout.expanded") private var badgeLayoutExpanded = true
-    @AppStorage("sidebar.badgeAppearance.expanded") private var badgeAppearanceExpanded = true
-    @AppStorage("sidebar.badgeBackground.expanded") private var badgeBackgroundExpanded = true
+    @State private var selectedTab: Int = 0
 
     private var isAppleReference: Bool {
         generationMode == .appleReference
     }
 
     var body: some View {
-        Form {
-            // MARK: - Icon
+        TabView(selection: $selectedTab) {
+            iconTab
+                .tabItem { Label("Icon", systemImage: "app") }
+                .tag(0)
+            badgeTab
+                .tabItem { Label("Badge", systemImage: "seal") }
+                .tag(1)
+        }
+        .tabViewStyle(GroupedTabViewStyle())
+        .padding(.top, 4)
+    }
 
-            Section("Source", isExpanded: $iconSourceExpanded) {
+    // MARK: - Icon Tab
+
+    private var iconTab: some View {
+        Form {
+            Section("Source") {
                 IconSourceSection(
                     iconSettings: $iconSettings,
                     generationMode: $generationMode
@@ -34,12 +39,12 @@ struct SidebarView: View {
             }
 
             if !isAppleReference {
-                Section("Layout", isExpanded: $iconLayoutExpanded) {
+                Section("Layout") {
                     IconLayoutSection(iconSettings: $iconSettings)
                 }
             }
 
-            Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+            Section("Appearance") {
                 IconAppearanceSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions,
@@ -50,42 +55,46 @@ struct SidebarView: View {
             }
 
             if !isAppleReference {
-                Section("Background", isExpanded: $backgroundExpanded) {
+                Section("Background") {
                     BackgroundSection(
                         iconSettings: $iconSettings,
                         colorOptions: colorOptions
                     )
                 }
             }
+        }
+        .formStyle(GroupedFormStyle())
+    }
 
-            // MARK: - Badge
+    // MARK: - Badge Tab
 
+    private var badgeTab: some View {
+        Form {
             Section {
                 HStack {
-                    Text("Badge")
-                        .font(.headline)
+                    Text("Show Badge")
                     Spacer()
                     Toggle("", isOn: $iconSettings.showBadge)
                         .labelsHidden()
                 }
             }
 
-            Section("Source", isExpanded: $badgeSourceExpanded) {
+            Section("Source") {
                 BadgeSourceSection(iconSettings: $iconSettings)
             }
 
-            Section("Layout", isExpanded: $badgeLayoutExpanded) {
+            Section("Layout") {
                 BadgeLayoutSection(iconSettings: $iconSettings)
             }
 
-            Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
+            Section("Appearance") {
                 BadgeAppearanceSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
                 )
             }
 
-            Section("Background", isExpanded: $badgeBackgroundExpanded) {
+            Section("Background") {
                 BadgeBackgroundSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
