@@ -55,15 +55,17 @@ struct BadgeLayoutSection: View {
                in: IconSettings.manualSymbolScaleRange,
                step: 0.05)
 
-        HStack {
-            Text("Scale")
-            Spacer()
-            Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+        if iconSettings.badgeIconSource == .sfSymbol {
+            HStack {
+                Text("Scale")
+                Spacer()
+                Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            Slider(value: $iconSettings.badgeSymbolScale,
+                   in: IconSettings.manualSymbolScaleRange,
+                   step: 0.05)
         }
-        Slider(value: $iconSettings.badgeSymbolScale,
-               in: IconSettings.manualSymbolScaleRange,
-               step: 0.05)
     }
 }
