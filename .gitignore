@@ -67,6 +67,9 @@ fastlane/test_output
 # Claude Code local overrides
 .claude.local.md
 
+# Superpowers brainstorm sessions
+.superpowers/
+
 # Github Copilot
 .github/
 .vscode/
