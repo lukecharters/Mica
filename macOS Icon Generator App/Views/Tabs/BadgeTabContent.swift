@@ -97,6 +97,13 @@ struct BadgeTabContent: View {
 
                         badgeSymbolColorControls
 
+                        Picker("Weight", systemImage: "bold", selection: $iconSettings.badgeSymbolWeight) {
+                            ForEach(SymbolWeight.allCases) { weight in
+                                Text(weight.rawValue).tag(weight)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
                         HStack {
                             Text("Symbol Scale")
                             Spacer()

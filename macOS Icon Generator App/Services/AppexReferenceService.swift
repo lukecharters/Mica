@@ -20,30 +20,31 @@ class AppexReferenceService {
     private struct CacheKey: Hashable {
         let symbolName: String
         let enclosureColor: AppexEnclosureColor
+        let symbolColor: AppexEnclosureColor
     }
 
     // MARK: - Public API
 
     /// Generate or return cached reference icon at 512pt @2x
-    func referenceIcon(for symbolName: String, enclosureColor: AppexEnclosureColor = .blue) async throws -> NSImage {
-        let key = CacheKey(symbolName: symbolName, enclosureColor: enclosureColor)
+    func referenceIcon(for symbolName: String, enclosureColor: AppexEnclosureColor = .blue, symbolColor: AppexEnclosureColor = .white) async throws -> NSImage {
+        let key = CacheKey(symbolName: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
         if let cached = cache[key] { return cached }
 
         isGenerating = true
         defer { isGenerating = false }
 
-        let icon = try await generateIcon(for: symbolName, enclosureColor: enclosureColor)
+        let icon = try await generateIcon(for: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
         cache[key] = icon
         return icon
     }
 
     /// Pre-fetch next N symbols in background
-    func prefetch(_ symbolNames: [String], enclosureColor: AppexEnclosureColor = .blue) {
+    func prefetch(_ symbolNames: [String], enclosureColor: AppexEnclosureColor = .blue, symbolColor: AppexEnclosureColor = .white) {
         for name in symbolNames {
-            let key = CacheKey(symbolName: name, enclosureColor: enclosureColor)
+            let key = CacheKey(symbolName: name, enclosureColor: enclosureColor, symbolColor: symbolColor)
             guard cache[key] == nil else { continue }
             Task.detached(priority: .utility) { [weak self] in
-                _ = try? await self?.referenceIcon(for: name, enclosureColor: enclosureColor)
+                _ = try? await self?.referenceIcon(for: name, enclosureColor: enclosureColor, symbolColor: symbolColor)
             }
         }
     }
@@ -55,12 +56,13 @@ class AppexReferenceService {
     /// Copy .appex to a unique temp path, configure, render, and clean up.
     /// Each render gets its own UUID-named bundle so LaunchServices never serves a stale icon.
     /// Blocking file I/O is dispatched to a background thread via Task.detached.
-    private func generateIcon(for symbolName: String, enclosureColor: AppexEnclosureColor) async throws -> NSImage {
+    private func generateIcon(for symbolName: String, enclosureColor: AppexEnclosureColor, symbolColor: AppexEnclosureColor) async throws -> NSImage {
         let sourceBundlePath = self.sourceBundlePath
         let task = Task.detached(priority: .userInitiated) {
             try AppexReferenceService.generateIconSync(
                 symbolName: symbolName,
                 enclosureColor: enclosureColor,
+                symbolColor: symbolColor,
                 sourceBundlePath: sourceBundlePath
             )
         }
@@ -70,7 +72,11 @@ class AppexReferenceService {
     private nonisolated static func generateIconSync(
         symbolName: String,
         enclosureColor: AppexEnclosureColor,
-        sourceBundlePath: String
+        symbolColor: AppexEnclosureColor,
+        sourceBundlePath: String,
+        pointSize: CGFloat = 512,
+        scaleFactor: Int = 2,
+        colorSpace: ExportColorSpace = .displayP3
     ) throws -> NSImage {
         let sourceURL = URL(fileURLWithPath: sourceBundlePath)
         guard FileManager.default.fileExists(atPath: sourceBundlePath) else {
@@ -83,15 +89,39 @@ class AppexReferenceService {
         try FileManager.default.copyItem(at: sourceURL, to: wsURL)
         defer { try? FileManager.default.removeItem(at: wsURL) }
 
-        try configurePlist(at: wsURL, symbolName: symbolName, enclosureColor: enclosureColor)
+        try configurePlist(at: wsURL, symbolName: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
         try touchBundle(at: wsURL)
 
-        return try renderIcon(at: wsURL)
+        return try renderIcon(at: wsURL, pointSize: pointSize, scaleFactor: scaleFactor, cgColorSpace: colorSpace.cgColorSpace)
+    }
+
+    // MARK: - Export
+
+    /// Re-render icon at the specified export settings.
+    /// Bypasses the preview cache — use for file export only.
+    nonisolated static func renderForExport(
+        symbolName: String,
+        enclosureColor: AppexEnclosureColor,
+        symbolColor: AppexEnclosureColor,
+        pointSize: CGFloat,
+        scaleFactor: Int,
+        colorSpace: ExportColorSpace
+    ) throws -> NSImage {
+        let sourceBundlePath = "/System/Library/ExtensionKit/Extensions/Storage.appex"
+        return try generateIconSync(
+            symbolName: symbolName,
+            enclosureColor: enclosureColor,
+            symbolColor: symbolColor,
+            sourceBundlePath: sourceBundlePath,
+            pointSize: pointSize,
+            scaleFactor: scaleFactor,
+            colorSpace: colorSpace
+        )
     }
 
     // MARK: - Plist Configuration
 
-    private nonisolated static func configurePlist(at bundleURL: URL, symbolName: String, enclosureColor: AppexEnclosureColor) throws {
+    private nonisolated static func configurePlist(at bundleURL: URL, symbolName: String, enclosureColor: AppexEnclosureColor, symbolColor: AppexEnclosureColor) throws {
         let plistURL = bundleURL.appendingPathComponent("Contents/Info.plist", isDirectory: false)
 
         let data = try Data(contentsOf: plistURL)
@@ -104,7 +134,7 @@ class AppexReferenceService {
 
         graphicConfig["ISSymbolName"] = symbolName
         graphicConfig["ISEnclosureColor"] = enclosureColor.rawValue
-        graphicConfig["ISSymbolColor"] = "white"
+        graphicConfig["ISSymbolColor"] = symbolColor.rawValue
 
         bundleIcons["ISGraphicIconConfiguration"] = graphicConfig
         plist["CFBundleIcons"] = bundleIcons
@@ -123,21 +153,19 @@ class AppexReferenceService {
 
     // MARK: - Icon Rendering
 
-    /// Render NSWorkspace icon into a 512pt @2x NSImage
-    private nonisolated static func renderIcon(at bundleURL: URL) throws -> NSImage {
+    /// Render NSWorkspace icon into an NSImage at the specified size and color space.
+    private nonisolated static func renderIcon(
+        at bundleURL: URL,
+        pointSize: CGFloat,
+        scaleFactor: Int,
+        cgColorSpace: CGColorSpace
+    ) throws -> NSImage {
         guard let iconImage = NSWorkspace.shared.icon(forFile: bundleURL.path).copy() as? NSImage else {
             throw AppexError.renderFailed
         }
 
-        let pointSize: CGFloat = 512
-        let pixelSize = 1024 // 2x scale factor
+        let pixelSize = Int(pointSize) * scaleFactor
         let drawingRect = NSRect(origin: .zero, size: NSSize(width: pointSize, height: pointSize))
-
-        guard let cgColorSpace = CGColorSpace(name: CGColorSpace.displayP3) else {
-            throw AppexError.renderFailed
-        }
-
-        let bytesPerRow = pixelSize * 4
         let bitmapInfo = CGBitmapInfo.byteOrder32Big.union(
             CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
         )
@@ -147,7 +175,7 @@ class AppexReferenceService {
             width: pixelSize,
             height: pixelSize,
             bitsPerComponent: 8,
-            bytesPerRow: bytesPerRow,
+            bytesPerRow: 0,
             space: cgColorSpace,
             bitmapInfo: bitmapInfo.rawValue
         ) else {
@@ -156,7 +184,7 @@ class AppexReferenceService {
 
         cgContext.interpolationQuality = .high
         cgContext.clear(CGRect(origin: .zero, size: CGSize(width: CGFloat(pixelSize), height: CGFloat(pixelSize))))
-        cgContext.scaleBy(x: 2.0, y: 2.0)
+        cgContext.scaleBy(x: CGFloat(scaleFactor), y: CGFloat(scaleFactor))
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: cgContext, flipped: false)

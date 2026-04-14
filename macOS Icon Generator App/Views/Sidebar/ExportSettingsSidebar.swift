@@ -9,63 +9,54 @@ struct ExportSettingsSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if generationMode == .swiftUI {
-                // MARK: - Export Size Section
-                SidebarSection(title: "Export Size") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        // Size picker with common presets
-                        Picker("Size", selection: $iconSettings.exportSize) {
-                            Text("16pt").tag(CGFloat(16))
-                            Text("32pt").tag(CGFloat(32))
-                            Text("64pt").tag(CGFloat(64))
-                            Text("128pt").tag(CGFloat(128))
-                            Text("256pt").tag(CGFloat(256))
-                            Text("512pt").tag(CGFloat(512))
-                            Text("1024pt").tag(CGFloat(1024))
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-
-                        Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
-                            .font(.subheadline)
-
-                        Text(retinaSizeDescription)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+            // MARK: - Export Size Section
+            SidebarSection(title: "Export Size") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Size", selection: $iconSettings.exportSize) {
+                        Text("16pt").tag(CGFloat(16))
+                        Text("32pt").tag(CGFloat(32))
+                        Text("64pt").tag(CGFloat(64))
+                        Text("128pt").tag(CGFloat(128))
+                        Text("256pt").tag(CGFloat(256))
+                        Text("512pt").tag(CGFloat(512))
+                        Text("1024pt").tag(CGFloat(1024))
                     }
-                }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
 
-                Divider()
-                    .padding(.vertical, 8)
+                    Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
+                        .font(.subheadline)
 
-                // MARK: - Color Space Section
-                SidebarSection(title: "Color Space") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("Color Space", selection: $iconSettings.exportColorSpace) {
-                            ForEach(ExportColorSpace.allCases) { colorSpace in
-                                Text(colorSpace.rawValue).tag(colorSpace)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
+                    Text(retinaSizeDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-                        Text(colorSpaceDescription)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            } else {
-                // MARK: - Apple Reference Info Section
-                SidebarSection(title: "Apple Reference") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("512pt @2x (1024×1024px)", systemImage: "photo")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Label("Display P3 color space", systemImage: "circle.fill")
+                    if generationMode == .appleReference {
+                        Text("Preview always renders at 512pt @2x.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                }
+            }
+
+            Divider()
+                .padding(.vertical, 8)
+
+            // MARK: - Color Space Section
+            SidebarSection(title: "Color Space") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Color Space", selection: $iconSettings.exportColorSpace) {
+                        ForEach(ExportColorSpace.allCases) { colorSpace in
+                            Text(colorSpace.rawValue).tag(colorSpace)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+
+                    Text(colorSpaceDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 

@@ -18,6 +18,8 @@ struct IconSettings: Equatable {
     var exportColorSpace: ExportColorSpace = .sRGB
 
     var manualSymbolScale: Double = 1.0
+    var symbolWeight: SymbolWeight = .auto
+    var badgeSymbolWeight: SymbolWeight = .auto
 
     // Shadow settings
     var backgroundShadowStyle: BackgroundShadowStyle = .macOS26
@@ -153,6 +155,15 @@ enum ExportColorSpace: String, CaseIterable, Identifiable {
             return NSColorSpace.displayP3
         }
     }
+
+    var cgColorSpace: CGColorSpace {
+        switch self {
+        case .sRGB:
+            return CGColorSpace(name: CGColorSpace.sRGB)!
+        case .displayP3:
+            return CGColorSpace(name: CGColorSpace.displayP3)!
+        }
+    }
 }
 
 enum BadgePosition: String, CaseIterable, Identifiable {
@@ -177,6 +188,37 @@ enum BackgroundShadowStyle: String, CaseIterable, Identifiable {
     case macOS26 = "macOS 26"
 
     var id: String { rawValue }
+}
+
+enum SymbolWeight: String, CaseIterable, Identifiable {
+    case auto = "Auto"
+    case ultraLight = "Ultralight"
+    case thin = "Thin"
+    case light = "Light"
+    case regular = "Regular"
+    case medium = "Medium"
+    case semibold = "Semibold"
+    case bold = "Bold"
+    case heavy = "Heavy"
+    case black = "Black"
+
+    var id: String { rawValue }
+
+    /// Returns the corresponding `Font.Weight`, or `nil` for `.auto` (caller uses calibration data).
+    var fontWeight: Font.Weight? {
+        switch self {
+        case .auto:       return nil
+        case .ultraLight: return .ultraLight
+        case .thin:       return .thin
+        case .light:      return .light
+        case .regular:    return .regular
+        case .medium:     return .medium
+        case .semibold:   return .semibold
+        case .bold:       return .bold
+        case .heavy:      return .heavy
+        case .black:      return .black
+        }
+    }
 }
 
 extension IconSettings {

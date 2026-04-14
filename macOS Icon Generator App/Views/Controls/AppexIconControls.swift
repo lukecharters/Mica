@@ -4,33 +4,40 @@ import SwiftUI
 struct AppexIconControls: View {
     @Binding var iconSettings: IconSettings
     @Binding var enclosureColor: AppexEnclosureColor
+    @Binding var symbolColor: AppexEnclosureColor
+    @State private var showSymbolNameHelp = false
 
     var body: some View {
         Form {
             Section(header: Text("Symbol")) {
                 HStack(spacing: 6) {
-                    TextField("Symbol name", text: $iconSettings.symbolName)
+                    TextField("Symbol Name", text: $iconSettings.symbolName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                    Button(action: { showSymbolNameHelp.toggle() }) {
+                        Image(systemName: "info.circle")
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                    .popover(isPresented: $showSymbolNameHelp) {
+                        Text("Enter the name of any SF Symbol. \nDownload Apple's SF Symbols app to see a list of all available symbols.")
+                            .padding()
+                            .multilineTextAlignment(.leading)
+                    }
                 }
-
-                HStack(spacing: 8) {
-                    Image(systemName: validSymbolName)
-                        .font(.system(size: 28))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 36, height: 36)
-
-                    Text(iconSettings.symbolName.isEmpty ? "Enter a symbol name" : iconSettings.symbolName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-
-                    Spacer()
+                Picker("Color", selection: $symbolColor) {
+                    ForEach(AppexEnclosureColor.allCases) { color in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(color.previewColor)
+                                .frame(width: 12, height: 12)
+                            Text(color.displayName)
+                        }
+                        .tag(color)
+                    }
                 }
-                .frame(height: 36)
+                .pickerStyle(.menu)
             }
 
-            Section(header: Text("Enclosure Color")) {
+            Section(header: Text("Background")) {
                 Picker("Color", selection: $enclosureColor) {
                     ForEach(AppexEnclosureColor.allCases) { color in
                         HStack(spacing: 6) {
@@ -43,14 +50,15 @@ struct AppexIconControls: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .labelsHidden()
             }
+
+//            Section(header: Text("Symbol Color")) {
+//
+//                .labelsHidden()
+//            }
 
             Section {
                 Label("Rendered by Apple's system icon pipeline.", systemImage: "apple.logo")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Label("Fixed output: 512pt @2x (1024×1024px), Display P3.", systemImage: "info.circle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

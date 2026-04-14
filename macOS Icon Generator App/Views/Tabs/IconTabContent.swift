@@ -29,8 +29,8 @@ struct IconTabContent: View {
                 switch iconSettings.iconSource {
                 case .sfSymbol:
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            TextField("Symbol name", text: $iconSettings.symbolName)
+                        HStack(spacing: 8) {
+                            TextField("Symbol Name", text: $iconSettings.symbolName)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                             Button(action: { showSymbolNameHelp.toggle() }) {
                                 Image(systemName: "info.circle")
@@ -55,8 +55,15 @@ struct IconTabContent: View {
 
                     symbolColorControls
 
+                    Picker("Weight", systemImage: "bold", selection: $iconSettings.symbolWeight) {
+                        ForEach(SymbolWeight.allCases) { weight in
+                            Text(weight.rawValue).tag(weight)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    
                     HStack {
-                        Text("Symbol Scale")
+                        Text("Scale")
                         Spacer()
                         Text("\(Int(iconSettings.manualSymbolScale * 100))%")
                             .foregroundStyle(.secondary)
@@ -229,13 +236,13 @@ struct IconTabContent: View {
         switch iconSettings.symbolRenderingMode {
         case .monochrome, .multicolor:
             colorPickerWithDropdown(
-                label: iconSettings.symbolRenderingMode == .monochrome ? "Symbol Color" : "Base Color",
+                label: "Color",
                 color: $iconSettings.symbolColor,
                 useCustom: $useCustomSymbolColor
             )
         case .hierarchical:
             colorPickerWithDropdown(
-                label: "Base Color",
+                label: "Color",
                 color: $iconSettings.hierarchicalSymbolColor,
                 useCustom: $useCustomHierarchicalColor
             )

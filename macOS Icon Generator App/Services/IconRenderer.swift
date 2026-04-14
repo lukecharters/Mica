@@ -99,10 +99,10 @@ struct IconContentView: View {
 
     // Badge layout ratios — derived from native macOS badge on 208px enclosure:
     // 100px diameter, extends 22px past horizontal edge, 26px past vertical edge, 7px shadow buffer
-    private let badgeDiameterRatio: CGFloat = 100.0 / 208.0   // ≈ 0.4808
+    private let badgeDiameterRatio: CGFloat = 80.0 / 208.0    // ≈ 0.3846 (80% of native 100px on 208px enclosure)
     private let badgeCenterXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654 from enclosure center
     private let badgeCenterYRatio: CGFloat = 80.0 / 208.0     // ≈ 0.3846 from enclosure center
-    private let badgeShadowBufferRatio: CGFloat = 7.0 / 208.0 // ≈ 0.0337
+    private let badgeShadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269 (proportional to 80px badge)
 
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
@@ -129,7 +129,7 @@ struct IconContentView: View {
     }
 
     private var symbolFontWeight: Font.Weight {
-        resolvedSizing.weight
+        settings.symbolWeight.fontWeight ?? resolvedSizing.weight
     }
 
     private var symbolXOffset: CGFloat {
@@ -196,8 +196,8 @@ struct IconContentView: View {
         guard settings.showBadge else { return displaySize }
         let backgroundInset = 25 * (displaySize / 256) // baseBackgroundInset * scaleFactor
         let enclosureSize = displaySize - 2 * backgroundInset
-        let badgeRadius = (enclosureSize * (100.0 / 208.0) * settings.badgeScale) / 2
-        let shadowBuffer = enclosureSize * (7.0 / 208.0)
+        let badgeRadius = (enclosureSize * (80.0 / 208.0) * settings.badgeScale) / 2
+        let shadowBuffer = enclosureSize * (5.6 / 208.0)
         let anchorX = enclosureSize * (76.0 / 208.0)
         let anchorY = enclosureSize * (80.0 / 208.0)
         let manualX = enclosureSize * settings.badgeManualOffsetX
@@ -399,7 +399,7 @@ struct BadgeView: View {
     }
 
     private var badgeSymbolWeight: Font.Weight {
-        resolvedBadgeSizing.weight
+        settings.badgeSymbolWeight.fontWeight ?? resolvedBadgeSizing.weight
     }
 
     var body: some View {

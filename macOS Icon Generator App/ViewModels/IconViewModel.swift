@@ -14,6 +14,7 @@ final class IconViewModel: ObservableObject {
     // Generation mode
     @Published var generationMode: GenerationMode = .swiftUI
     @Published var appexEnclosureColor: AppexEnclosureColor = .blue
+    @Published var appexSymbolColor: AppexEnclosureColor = .white
     @Published var appexRenderedImage: NSImage? = nil
     @Published var appexIsGenerating: Bool = false
     @Published var appexError: String? = nil
@@ -26,10 +27,11 @@ final class IconViewModel: ObservableObject {
     struct AppexGenerationKey: Equatable {
         let symbolName: String
         let enclosureColor: AppexEnclosureColor
+        let symbolColor: AppexEnclosureColor
     }
 
     var appexGenerationKey: AppexGenerationKey {
-        AppexGenerationKey(symbolName: iconSettings.symbolName, enclosureColor: appexEnclosureColor)
+        AppexGenerationKey(symbolName: iconSettings.symbolName, enclosureColor: appexEnclosureColor, symbolColor: appexSymbolColor)
     }
 
     func generateAppexIcon(service: AppexReferenceService) async {
@@ -38,7 +40,8 @@ final class IconViewModel: ObservableObject {
         do {
             appexRenderedImage = try await service.referenceIcon(
                 for: iconSettings.symbolName,
-                enclosureColor: appexEnclosureColor
+                enclosureColor: appexEnclosureColor,
+                symbolColor: appexSymbolColor
             )
         } catch {
             appexError = error.localizedDescription

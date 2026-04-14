@@ -20,8 +20,9 @@ struct ContentView: View {
 
     init() {}
 
-    init(viewModel: IconViewModel) {
+    init(viewModel: IconViewModel, showInspector: Bool = true) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _showInspector = State(initialValue: showInspector)
     }
 
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
@@ -63,7 +64,8 @@ struct ContentView: View {
                 } else {
                     AppexIconControls(
                         iconSettings: $viewModel.iconSettings,
-                        enclosureColor: $viewModel.appexEnclosureColor
+                        enclosureColor: $viewModel.appexEnclosureColor,
+                        symbolColor: $viewModel.appexSymbolColor
                     )
                 }
             }
@@ -102,7 +104,14 @@ struct ContentView: View {
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
             document: viewModel.generationMode == .appleReference
-                ? IconDocument(preRenderedImage: viewModel.appexRenderedImage ?? NSImage())
+                ? IconDocument(appexExport: .init(
+                    symbolName: viewModel.iconSettings.symbolName,
+                    enclosureColor: viewModel.appexEnclosureColor,
+                    symbolColor: viewModel.appexSymbolColor,
+                    pointSize: viewModel.iconSettings.exportSize,
+                    scaleFactor: viewModel.iconSettings.exportRetinaSize ? 2 : 1,
+                    colorSpace: viewModel.iconSettings.exportColorSpace
+                  ))
                 : IconDocument(settings: viewModel.iconSettings),
             contentType: .png,
             defaultFilename: viewModel.generationMode == .appleReference
@@ -300,22 +309,27 @@ struct ScaledIconPreview: View {
 struct ContentView_Previews: PreviewProvider {
     @MainActor static var previews: some View {
         Group {
+            ContentView(viewModel: customVM, showInspector: false)
+                .previewDisplayName("Custom VM")
+                .previewLayout(.fixed(width: 1200, height: 800))
+            
             ContentView()
                 .previewDisplayName("Default VM")
+                .previewLayout(.fixed(width: 1200, height: 800))
 
             ContentView(viewModel: IconViewModel())
                 .previewDisplayName("Injected VM")
-
-            ContentView(viewModel: customVM)
-                .previewDisplayName("Custom VM")
+                .previewLayout(.fixed(width: 1200, height: 800))
 
             ContentView(viewModel: retinaLargeVM)
                 .previewDisplayName("Retina 1024px")
+                .previewLayout(.fixed(width: 1200, height: 800))
         }
     }
 
     @MainActor private static var customVM: IconViewModel {
         let vm = IconViewModel()
+        vm.generationMode = .appleReference
         vm.iconSettings.symbolName = "gearshape.fill"
         vm.iconSettings.useCustomColors = true
         vm.iconSettings.customPrimaryColor = .blue
@@ -348,20 +362,21 @@ struct ContentView_GridPreviews: PreviewProvider {
     @MainActor static var previews: some View {
         VStack(spacing: 20) {
             HStack(spacing: 20) {
-                ContentView(viewModel: monoVM)
+                ContentView(viewModel: monoVM, showInspector: false)
                     .previewDisplayName("Monochrome")
-                ContentView(viewModel: hierarchicalVM)
+                ContentView(viewModel: hierarchicalVM, showInspector: false)
                     .previewDisplayName("Hierarchical")
             }
             HStack(spacing: 20) {
-                ContentView(viewModel: multicolorVM)
+                ContentView(viewModel: multicolorVM, showInspector: false)
                     .previewDisplayName("Multicolor")
-                ContentView(viewModel: paletteVM)
+                ContentView(viewModel: paletteVM, showInspector: false)
                     .previewDisplayName("Palette")
             }
         }
         .padding()
         .previewDisplayName("Rendering Modes Grid")
+        .previewLayout(.fixed(width: 1500, height: 800))
     }
 
     @MainActor private static var monoVM: IconViewModel {
@@ -371,7 +386,7 @@ struct ContentView_GridPreviews: PreviewProvider {
         vm.iconSettings.baseColor = .blue
         vm.iconSettings.symbolRenderingMode = .monochrome
         vm.iconSettings.symbolColor = .white
-        vm.iconSettings.exportSize = 512
+        vm.iconSettings.exportSize = 256
         vm.iconSettings.exportRetinaSize = false
         return vm
     }
