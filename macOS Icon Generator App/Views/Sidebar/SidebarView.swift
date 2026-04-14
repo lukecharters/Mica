@@ -24,41 +24,41 @@ struct SidebarView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Icon")) {
-                DisclosureGroup("Source", isExpanded: $iconSourceExpanded) {
-                    IconSourceSection(
-                        iconSettings: $iconSettings,
-                        generationMode: $generationMode
-                    )
-                }
+            // MARK: - Icon
 
-                if !isAppleReference {
-                    DisclosureGroup("Layout", isExpanded: $iconLayoutExpanded) {
-                        IconLayoutSection(iconSettings: $iconSettings)
-                    }
-                }
+            Section("Source", isExpanded: $iconSourceExpanded) {
+                IconSourceSection(
+                    iconSettings: $iconSettings,
+                    generationMode: $generationMode
+                )
+            }
 
-                DisclosureGroup("Appearance", isExpanded: $iconAppearanceExpanded) {
-                    IconAppearanceSection(
-                        iconSettings: $iconSettings,
-                        colorOptions: colorOptions,
-                        isAppleReference: isAppleReference,
-                        appexSymbolColor: $appexSymbolColor,
-                        appexEnclosureColor: $appexEnclosureColor
-                    )
-                }
-
-                if !isAppleReference {
-                    DisclosureGroup("Background", isExpanded: $backgroundExpanded) {
-                        BackgroundSection(
-                            iconSettings: $iconSettings,
-                            colorOptions: colorOptions
-                        )
-                    }
+            if !isAppleReference {
+                Section("Layout", isExpanded: $iconLayoutExpanded) {
+                    IconLayoutSection(iconSettings: $iconSettings)
                 }
             }
 
-            Divider()
+            Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+                IconAppearanceSection(
+                    iconSettings: $iconSettings,
+                    colorOptions: colorOptions,
+                    isAppleReference: isAppleReference,
+                    appexSymbolColor: $appexSymbolColor,
+                    appexEnclosureColor: $appexEnclosureColor
+                )
+            }
+
+            if !isAppleReference {
+                Section("Background", isExpanded: $backgroundExpanded) {
+                    BackgroundSection(
+                        iconSettings: $iconSettings,
+                        colorOptions: colorOptions
+                    )
+                }
+            }
+
+            // MARK: - Badge
 
             Section {
                 HStack {
@@ -68,28 +68,28 @@ struct SidebarView: View {
                     Toggle("", isOn: $iconSettings.showBadge)
                         .labelsHidden()
                 }
+            }
 
-                DisclosureGroup("Source", isExpanded: $badgeSourceExpanded) {
-                    BadgeSourceSection(iconSettings: $iconSettings)
-                }
+            Section("Source", isExpanded: $badgeSourceExpanded) {
+                BadgeSourceSection(iconSettings: $iconSettings)
+            }
 
-                DisclosureGroup("Layout", isExpanded: $badgeLayoutExpanded) {
-                    BadgeLayoutSection(iconSettings: $iconSettings)
-                }
+            Section("Layout", isExpanded: $badgeLayoutExpanded) {
+                BadgeLayoutSection(iconSettings: $iconSettings)
+            }
 
-                DisclosureGroup("Appearance", isExpanded: $badgeAppearanceExpanded) {
-                    BadgeAppearanceSection(
-                        iconSettings: $iconSettings,
-                        colorOptions: colorOptions
-                    )
-                }
+            Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
+                BadgeAppearanceSection(
+                    iconSettings: $iconSettings,
+                    colorOptions: colorOptions
+                )
+            }
 
-                DisclosureGroup("Background", isExpanded: $badgeBackgroundExpanded) {
-                    BadgeBackgroundSection(
-                        iconSettings: $iconSettings,
-                        colorOptions: colorOptions
-                    )
-                }
+            Section("Background", isExpanded: $badgeBackgroundExpanded) {
+                BadgeBackgroundSection(
+                    iconSettings: $iconSettings,
+                    colorOptions: colorOptions
+                )
             }
         }
         .formStyle(GroupedFormStyle())
