@@ -29,46 +29,20 @@ struct ContentView: View {
 
     private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
 
-    @State private var selectedTab: Int = 0
     @State private var zoomLevel: Double = 1.0
     @State private var showInspector: Bool = true
     @State private var appexService = AppexReferenceService()
 
     var body: some View {
         HSplitView {
-            // Left: Mode picker + contextual controls
-            VStack(spacing: 0) {
-                Picker("Generation Mode", selection: $viewModel.generationMode) {
-                    ForEach(GenerationMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-
-                Divider()
-
-                if viewModel.generationMode == .swiftUI {
-                    TabView(selection: $selectedTab) {
-                        IconTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
-                            .tabItem { Label("Icon", systemImage: "app") }
-                            .tag(0)
-                        BadgeTabContent(iconSettings: $viewModel.iconSettings, colorOptions: colorOptions)
-                            .tabItem { Label("Badge", systemImage: "seal") }
-                            .tag(1)
-                    }
-                    .tabViewStyle(GroupedTabViewStyle())
-                    .padding(.top, 4)
-                } else {
-                    AppexIconControls(
-                        iconSettings: $viewModel.iconSettings,
-                        enclosureColor: $viewModel.appexEnclosureColor,
-                        symbolColor: $viewModel.appexSymbolColor
-                    )
-                }
-            }
+            // Left: Sidebar controls
+            SidebarView(
+                iconSettings: $viewModel.iconSettings,
+                generationMode: $viewModel.generationMode,
+                appexEnclosureColor: $viewModel.appexEnclosureColor,
+                appexSymbolColor: $viewModel.appexSymbolColor,
+                colorOptions: colorOptions
+            )
             .frame(minWidth: 350, maxWidth: 500)
 
             // Center: Preview pane with overlay controls
