@@ -8,9 +8,9 @@ struct SidebarView: View {
     @Binding var appexSymbolColor: AppexEnclosureColor
     let colorOptions: [(name: String, color: Color)]
 
-    @State private var selectedTab: Int = 0
+    @State private var selectedSegment: IconOrBadge = .icon
 
-    // Persisted section expand/collapse state
+    // Persisted section expand/collapse state (reused keys from prior sidebar redesign)
     @AppStorage("sidebar.iconSource.expanded") private var iconSourceExpanded = true
     @AppStorage("sidebar.iconLayout.expanded") private var iconLayoutExpanded = true
     @AppStorage("sidebar.iconAppearance.expanded") private var iconAppearanceExpanded = true
@@ -25,21 +25,31 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            iconTab
-                .tabItem { Label("Icon", systemImage: "app") }
-                .tag(0)
-            badgeTab
-                .tabItem { Label("Badge", systemImage: "seal") }
-                .tag(1)
+        VStack(spacing: 0) {
+            IconBadgePicker(selection: $selectedSegment)
+
+            Divider()
+                .padding(.top, 4)
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    switch selectedSegment {
+                    case .icon:
+                        iconContent
+                    case .badge:
+                        badgeContent
+                    }
+                }
+            }
+            .id(selectedSegment) // Reset scroll position when switching segments
         }
-        .tabViewStyle(GroupedTabViewStyle())
-        .padding(.top, 4)
     }
 
-    // MARK: - Icon Tab
+    // MARK: - Icon content (Symbol form + Background form stacked)
 
-    private var iconTab: some View {
+    @ViewBuilder
+    private var iconContent: some View {
+        groupHeader("Symbol")
         Form {
             Section("Source", isExpanded: $iconSourceExpanded) {
                 IconSourceSection(
@@ -63,8 +73,16 @@ struct SidebarView: View {
                     appexEnclosureColor: $appexEnclosureColor
                 )
             }
+        }
+        .formStyle(GroupedFormStyle())
+        .fixedSize(horizontal: false, vertical: true)
 
-            if !isAppleReference {
+        if !isAppleReference {
+            Divider()
+                .padding(.top, 4)
+
+            groupHeader("Background")
+            Form {
                 Section("Background", isExpanded: $backgroundExpanded) {
                     BackgroundSection(
                         iconSettings: $iconSettings,
@@ -72,38 +90,51 @@ struct SidebarView: View {
                     )
                 }
             }
+            .formStyle(GroupedFormStyle())
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .formStyle(GroupedFormStyle())
     }
 
-    // MARK: - Badge Tab
+    // MARK: - Badge content (Show Badge toggle + Symbol form + Background form stacked)
 
-    private var badgeTab: some View {
+    @ViewBuilder
+    private var badgeContent: some View {
         Form {
             Section {
                 HStack {
                     Text("Show Badge")
                     Spacer()
-                    Toggle("", isOn: $iconSettings.showBadge)
+                    Toggle("Show Badge", isOn: $iconSettings.showBadge)
                         .labelsHidden()
                 }
             }
+        }
+        .formStyle(GroupedFormStyle())
+        .fixedSize(horizontal: false, vertical: true)
 
+        groupHeader("Symbol")
+        Form {
             Section("Source", isExpanded: $badgeSourceExpanded) {
                 BadgeSourceSection(iconSettings: $iconSettings)
             }
-
             Section("Layout", isExpanded: $badgeLayoutExpanded) {
                 BadgeLayoutSection(iconSettings: $iconSettings)
             }
-
             Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                 BadgeAppearanceSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
                 )
             }
+        }
+        .formStyle(GroupedFormStyle())
+        .fixedSize(horizontal: false, vertical: true)
 
+        Divider()
+            .padding(.top, 4)
+
+        groupHeader("Background")
+        Form {
             Section("Background", isExpanded: $badgeBackgroundExpanded) {
                 BadgeBackgroundSection(
                     iconSettings: $iconSettings,
@@ -112,5 +143,19 @@ struct SidebarView: View {
             }
         }
         .formStyle(GroupedFormStyle())
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: - Shared
+
+    private func groupHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.title3)
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
     }
 }
