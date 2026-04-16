@@ -84,6 +84,21 @@
 			);
 			target = 8C71CC982DBDDDD2006FB320 /* macOS Icon Generator App */;
 		};
+		8C886B372EBDFFFD00753351 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/AppexEnclosureColor.swift,
+				Models/FamilyCalibration.swift,
+				Models/GenerationMode.swift,
+				Models/IconSettings.swift,
+				Models/ImportedImage.swift,
+				Services/AppexReferenceService.swift,
+				Services/IconRenderer.swift,
+				Services/ImageImportService.swift,
+				Services/SymbolSizingService.swift,
+			);
+			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -111,6 +126,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				8C886B362EBDFFFD00753351 /* Exceptions for "macOS Icon Generator App" folder in "macOS Icon Generator App" target */,
+				8C886B372EBDFFFD00753351 /* Exceptions for "macOS Icon Generator App" folder in "sfIconGen-CLI" target */,
 			);
 			path = "macOS Icon Generator App";
 			sourceTree = "<group>";
@@ -1253,7 +1269,7 @@
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 1.5.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
