@@ -81,6 +81,7 @@ struct IconRenderer {
 struct IconContentView: View {
     let settings: IconSettings
     let displaySize: CGFloat
+    var badgeAppexImage: NSImage? = nil
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
@@ -304,7 +305,7 @@ struct IconContentView: View {
 
             // Badge
             if settings.showBadge {
-                BadgeView(settings: settings, badgeSize: badgeSize)
+                BadgeView(settings: settings, badgeSize: badgeSize, badgeAppexImage: badgeAppexImage)
                     .offset(badgeOffset(for: settings.badgePosition))
             }
         }
@@ -389,6 +390,7 @@ struct IconContentView: View {
 struct BadgeView: View {
     let settings: IconSettings
     let badgeSize: CGFloat
+    var badgeAppexImage: NSImage? = nil
 
     private let shadowOpacity: CGFloat = 0.23
     private let symbolShadowOpacity: CGFloat = 0.15
@@ -406,61 +408,79 @@ struct BadgeView: View {
     }
 
     var body: some View {
-        ZStack {
-            if settings.badgeUseImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
-                let effectiveScale = settings.badgeImportedBackgroundScale
-                    * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(
-                        width: badgeSize * effectiveScale,
-                        height: badgeSize * effectiveScale
-                    )
-                    .clipShape(Circle())
-                    .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
-                    )
-            } else if settings.badgeUseCustomColors {
+        if settings.badgeIconSource == .appleReference, let appexImage = badgeAppexImage {
+            Image(nsImage: appexImage)
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: badgeSize, height: badgeSize)
+        } else if settings.badgeIconSource == .appleReference {
+            // Apple Ref selected but image not yet rendered — show placeholder
+            ZStack {
                 Circle()
-                    .fill(
-                        settings.badgeEnableBackgroundGradient
-                            ? AnyShapeStyle(LinearGradient(
-                                gradient: Gradient(colors: settings.badgeGradientColors),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ))
-                            : AnyShapeStyle(settings.badgeCustomPrimaryColor)
-                    )
-                    .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
-                    )
-            } else {
-                Circle()
-                    .fill(settings.badgeEnableBackgroundGradient ? AnyShapeStyle(settings.badgeBaseColor.gradient) : AnyShapeStyle(settings.badgeBaseColor))
-                    .shadow(
-                        color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                        radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                        y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
-                    )
+                    .fill(Color.secondary.opacity(0.2))
+                ProgressView()
+                    .scaleEffect(0.5)
             }
+            .frame(width: badgeSize, height: badgeSize)
+        } else {
+            // Existing rendering for SF Symbol and Imported modes
+            ZStack {
+                if settings.badgeUseImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
+                    let effectiveScale = settings.badgeImportedBackgroundScale
+                        * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(
+                            width: badgeSize * effectiveScale,
+                            height: badgeSize * effectiveScale
+                        )
+                        .clipShape(Circle())
+                        .shadow(
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                        )
+                } else if settings.badgeUseCustomColors {
+                    Circle()
+                        .fill(
+                            settings.badgeEnableBackgroundGradient
+                                ? AnyShapeStyle(LinearGradient(
+                                    gradient: Gradient(colors: settings.badgeGradientColors),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ))
+                                : AnyShapeStyle(settings.badgeCustomPrimaryColor)
+                        )
+                        .shadow(
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                        )
+                } else {
+                    Circle()
+                        .fill(settings.badgeEnableBackgroundGradient ? AnyShapeStyle(settings.badgeBaseColor.gradient) : AnyShapeStyle(settings.badgeBaseColor))
+                        .shadow(
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
+                        )
+                }
 
-            // Badge symbol — hidden when background is an imported image
-            if !settings.badgeUseImportedBackground {
-                badgeContent
-                    .shadow(
-                        color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                        radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
-                        y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
-                    )
+                // Badge symbol — hidden when background is an imported image
+                if !settings.badgeUseImportedBackground {
+                    badgeContent
+                        .shadow(
+                            color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                            radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
+                            y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
+                        )
+                }
             }
+            .frame(width: badgeSize, height: badgeSize)
         }
-        .frame(width: badgeSize, height: badgeSize)
     }
 
     @ViewBuilder
