@@ -5,6 +5,10 @@ struct BadgeAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
+    // Apple Reference bindings (only used when badgeIconSource == .appleReference)
+    @Binding var badgeAppexSymbolColor: AppexEnclosureColor
+    @Binding var badgeAppexEnclosureColor: AppexEnclosureColor
+
     @State private var useCustomBadgeSymbolColor = false
     @State private var useCustomBadgeHierarchicalColor = false
     @State private var useCustomBadgePalettePrimaryColor = false
@@ -12,11 +16,47 @@ struct BadgeAppearanceSection: View {
     @State private var useCustomBadgePaletteTertiaryColor = false
 
     var body: some View {
-        if iconSettings.badgeIconSource == .sfSymbol {
+        switch iconSettings.badgeIconSource {
+        case .appleReference:
+            appleReferenceControls
+        case .sfSymbol:
             sfSymbolControls
-        } else {
+        case .customImage:
             importedControls
         }
+    }
+
+    @ViewBuilder
+    private var appleReferenceControls: some View {
+        Picker("Symbol Color", selection: $badgeAppexSymbolColor) {
+            ForEach(AppexEnclosureColor.allCases) { color in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(color.previewColor)
+                        .frame(width: 12, height: 12)
+                    Text(color.displayName)
+                }
+                .tag(color)
+            }
+        }
+        .pickerStyle(.menu)
+
+        Picker("Background", selection: $badgeAppexEnclosureColor) {
+            ForEach(AppexEnclosureColor.allCases) { color in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(color.previewColor)
+                        .frame(width: 12, height: 12)
+                    Text(color.displayName)
+                }
+                .tag(color)
+            }
+        }
+        .pickerStyle(.menu)
+
+        Label("Rendered by Apple's system icon pipeline.", systemImage: "apple.logo")
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 
     @ViewBuilder

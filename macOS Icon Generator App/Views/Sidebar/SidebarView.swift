@@ -14,11 +14,18 @@ struct SidebarView: View {
     @AppStorage("sidebar.iconSource.expanded") private var iconSourceExpanded = true
     @AppStorage("sidebar.iconLayout.expanded") private var iconLayoutExpanded = true
     @AppStorage("sidebar.iconAppearance.expanded") private var iconAppearanceExpanded = true
-    @AppStorage("sidebar.background.expanded") private var backgroundExpanded = true
+    @AppStorage("sidebar.backgroundSource.expanded") private var backgroundSourceExpanded = true
+    @AppStorage("sidebar.backgroundLayout.expanded") private var backgroundLayoutExpanded = true
+    @AppStorage("sidebar.backgroundAppearance.expanded") private var backgroundAppearanceExpanded = true
     @AppStorage("sidebar.badgeSource.expanded") private var badgeSourceExpanded = true
     @AppStorage("sidebar.badgeLayout.expanded") private var badgeLayoutExpanded = true
     @AppStorage("sidebar.badgeAppearance.expanded") private var badgeAppearanceExpanded = true
-    @AppStorage("sidebar.badgeBackground.expanded") private var badgeBackgroundExpanded = true
+    @AppStorage("sidebar.badgeBackgroundSource.expanded") private var badgeBackgroundSourceExpanded = true
+    @AppStorage("sidebar.badgeBackgroundLayout.expanded") private var badgeBackgroundLayoutExpanded = true
+    @AppStorage("sidebar.badgeBackgroundAppearance.expanded") private var badgeBackgroundAppearanceExpanded = true
+
+    @State private var badgeAppexSymbolColor: AppexEnclosureColor = .white
+    @State private var badgeAppexEnclosureColor: AppexEnclosureColor = .blue
 
     private var isAppleReference: Bool {
         generationMode == .appleReference
@@ -75,6 +82,7 @@ struct SidebarView: View {
             }
         }
         .formStyle(GroupedFormStyle())
+        .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
 
         if !isAppleReference {
@@ -83,14 +91,25 @@ struct SidebarView: View {
 
             groupHeader("Background")
             Form {
-                Section("Background", isExpanded: $backgroundExpanded) {
-                    BackgroundSection(
+                Section("Source", isExpanded: $backgroundSourceExpanded) {
+                    BackgroundSourceSection(iconSettings: $iconSettings)
+                }
+
+                if iconSettings.backgroundMode == .importedImage{
+                    Section("Layout", isExpanded: $backgroundLayoutExpanded) {
+                        BackgroundLayoutSection(iconSettings: $iconSettings)
+                    }
+                }
+
+                Section("Appearance", isExpanded: $backgroundAppearanceExpanded) {
+                    BackgroundAppearanceSection(
                         iconSettings: $iconSettings,
                         colorOptions: colorOptions
                     )
                 }
             }
             .formStyle(GroupedFormStyle())
+            .scrollDisabled(true)
             .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -110,6 +129,7 @@ struct SidebarView: View {
             }
         }
         .formStyle(GroupedFormStyle())
+        .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
 
         groupHeader("Symbol")
@@ -123,11 +143,14 @@ struct SidebarView: View {
             Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                 BadgeAppearanceSection(
                     iconSettings: $iconSettings,
-                    colorOptions: colorOptions
+                    colorOptions: colorOptions,
+                    badgeAppexSymbolColor: $badgeAppexSymbolColor,
+                    badgeAppexEnclosureColor: $badgeAppexEnclosureColor
                 )
             }
         }
         .formStyle(GroupedFormStyle())
+        .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
 
         Divider()
@@ -135,14 +158,25 @@ struct SidebarView: View {
 
         groupHeader("Background")
         Form {
-            Section("Background", isExpanded: $badgeBackgroundExpanded) {
-                BadgeBackgroundSection(
+            Section("Source", isExpanded: $badgeBackgroundSourceExpanded) {
+                BadgeBackgroundSourceSection(iconSettings: $iconSettings)
+            }
+
+            if iconSettings.badgeUseImportedBackground {
+                Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
+                    BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
+                }
+            }
+
+            Section("Appearance", isExpanded: $badgeBackgroundAppearanceExpanded) {
+                BadgeBackgroundAppearanceSection(
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
                 )
             }
         }
         .formStyle(GroupedFormStyle())
+        .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
     }
 
