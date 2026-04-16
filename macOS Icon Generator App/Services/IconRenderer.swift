@@ -366,6 +366,9 @@ struct IconContentView: View {
                         height: enclosureSize * 0.85 * effectiveScale
                     )
             }
+
+        case .appleReference:
+            EmptyView() // Handled by GenerationMode — appex image replaces the whole icon
         }
     }
 
@@ -507,6 +510,9 @@ struct BadgeView: View {
                         height: badgeSize * 0.65 * effectiveScale
                     )
             }
+
+        case .appleReference:
+            EmptyView() // Handled in body — appex image is the complete badge
         }
     }
 

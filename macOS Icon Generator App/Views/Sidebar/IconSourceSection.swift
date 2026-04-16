@@ -22,6 +22,7 @@ struct IconSourceSection: View {
                 switch iconSettings.iconSource {
                 case .sfSymbol: return .sfSymbol
                 case .customImage: return .imported
+                case .appleReference: return .appleReference
                 }
             },
             set: { newValue in
@@ -65,13 +66,7 @@ struct IconSourceSection: View {
             }
 
         case .imported:
-            ImageImportControls(
-                importedImage: $iconSettings.importedImage,
-                paddingCompensation: .constant(false),
-                imageScale: $iconSettings.importedImageScale,
-                showPaddingCompensation: false,
-                onImport: {}
-            )
+            ImageImportControls(importedImage: $iconSettings.importedImage)
 
         case .appleReference:
             HStack(spacing: 8) {

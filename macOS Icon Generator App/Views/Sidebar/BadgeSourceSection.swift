@@ -19,13 +19,10 @@ struct BadgeSourceSection: View {
                 .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
 
         case .customImage:
-            ImageImportControls(
-                importedImage: $iconSettings.badgeImportedImage,
-                paddingCompensation: .constant(false),
-                imageScale: $iconSettings.badgeImportedImageScale,
-                showPaddingCompensation: false,
-                onImport: {}
-            )
+            ImageImportControls(importedImage: $iconSettings.badgeImportedImage)
+
+        case .appleReference:
+            EmptyView() // Apple Ref source UI to be implemented in later tasks
         }
     }
 }

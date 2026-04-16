@@ -55,7 +55,8 @@ struct BadgeLayoutSection: View {
                in: IconSettings.manualSymbolScaleRange,
                step: 0.05)
 
-        if iconSettings.badgeIconSource == .sfSymbol {
+        switch iconSettings.badgeIconSource {
+        case .sfSymbol:
             HStack {
                 Text("Scale")
                 Spacer()
@@ -66,6 +67,16 @@ struct BadgeLayoutSection: View {
             Slider(value: $iconSettings.badgeSymbolScale,
                    in: IconSettings.manualSymbolScaleRange,
                    step: 0.05)
+
+        case .customImage:
+            ImageImportLayoutControls(
+                paddingCompensation: .constant(false),
+                imageScale: $iconSettings.badgeImportedImageScale,
+                showPaddingCompensation: false
+            )
+
+        case .appleReference:
+            EmptyView() // Layout hidden in Apple Ref mode by SidebarView
         }
     }
 }
