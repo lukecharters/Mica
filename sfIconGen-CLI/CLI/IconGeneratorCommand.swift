@@ -1,6 +1,32 @@
 import ArgumentParser
 import Foundation
 
+// MARK: - Shared Validation Helpers
+
+private let validRenderingModes = ["monochrome", "hierarchical", "multicolor", "palette"]
+private let validSymbolWeights = ["auto", "ultralight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"]
+private let validAppexColors = ["black", "blue", "brown", "cyan", "gray", "green", "indigo", "orange", "pink", "purple", "red", "teal", "white", "yellow"]
+
+private func validateScale(_ scale: String, name: String) throws -> Double {
+    guard let value = Double(scale) else {
+        throw ValidationError("\(name) must be a number.")
+    }
+    guard IconSettings.manualSymbolScaleRange.contains(value) else {
+        throw ValidationError("\(name) must be between 0.3 and 2.0. You provided: \(scale)")
+    }
+    return value
+}
+
+private func validateOffset(_ offset: String, name: String) throws -> Double {
+    guard let value = Double(offset) else {
+        throw ValidationError("\(name) must be a number.")
+    }
+    guard IconSettings.badgeOffsetRange.contains(value) else {
+        throw ValidationError("\(name) must be between -1.0 and 1.0. You provided: \(offset)")
+    }
+    return value
+}
+
 // MARK: - Export Options
 
 struct ExportOptions: ParsableArguments {
@@ -18,7 +44,7 @@ struct ExportOptions: ParsableArguments {
         name: [.customLong("size"), .customShort("s")],
         help: ArgumentHelp(
             "Export size in pixels (16-1024)",
-            discussion: "Specify any integer size between 16 and 1024 pixels. Common sizes: 128, 256, 512, 1024.",
+            discussion: "Common sizes: 128, 256, 512, 1024.",
             valueName: "pixels"
         ),
         transform: { size in
@@ -28,40 +54,110 @@ struct ExportOptions: ParsableArguments {
             let minSize = Int(IconSettings.minExportSize)
             let maxSize = Int(IconSettings.maxExportSize)
             guard (minSize...maxSize).contains(intSize) else {
-                throw ValidationError(
-                    "Size must be between \(minSize) and \(maxSize) pixels. You provided: \(intSize)"
-                )
+                throw ValidationError("Size must be between \(minSize) and \(maxSize) pixels. You provided: \(intSize)")
             }
             return intSize
         }
     )
     var size: Int = 256
 
-    @Flag(
-        name: .long,
-        help: ArgumentHelp(
-            "Export at 2x resolution",
-            discussion: "Doubles the pixel dimensions for high-DPI displays"
-        )
-    )
+    @Flag(name: .long, help: "Export at 2x resolution (doubles pixel dimensions)")
     var retina: Bool = false
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Color space for export",
-            discussion: "Options: sRGB (standard), displayP3 (wide gamut for modern displays)",
-            valueName: "space"
-        ),
+        help: ArgumentHelp("Color space: sRGB (default) or displayP3", valueName: "space"),
         transform: { space in
-            let validSpaces = ["sRGB", "displayP3"]
-            guard validSpaces.contains(space) else {
-                throw ValidationError("Color space must be one of: \(validSpaces.joined(separator: ", "))")
+            guard ["sRGB", "displayP3"].contains(space) else {
+                throw ValidationError("Color space must be 'sRGB' or 'displayP3'")
             }
             return space
         }
     )
     var colorSpace: String = "sRGB"
+}
+
+// MARK: - Generation Options
+
+struct GenerationOptions: ParsableArguments {
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Generation mode",
+            discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
+            valueName: "mode"
+        ),
+        transform: { mode in
+            let valid = ["custom", "apple-reference"]
+            guard valid.contains(mode.lowercased()) else {
+                throw ValidationError("Generation mode must be one of: \(valid.joined(separator: ", "))")
+            }
+            return mode.lowercased()
+        }
+    )
+    var generationMode: String = "custom"
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Icon source type",
+            discussion: "Options: symbol (SF Symbol, default), image (imported file)",
+            valueName: "source"
+        ),
+        transform: { source in
+            let valid = ["symbol", "image"]
+            guard valid.contains(source.lowercased()) else {
+                throw ValidationError("Icon source must be one of: \(valid.joined(separator: ", "))")
+            }
+            return source.lowercased()
+        }
+    )
+    var iconSource: String = "symbol"
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Path to image file for icon symbol (use with --icon-source image)", valueName: "path")
+    )
+    var importedImage: String?
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Scale for imported symbol image (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Imported image scale") }
+    )
+    var importedImageScale: Double = 1.0
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Appex enclosure (background) color for Apple Reference mode",
+            discussion: "Options: \(validAppexColors.joined(separator: ", "))",
+            valueName: "color"
+        ),
+        transform: { color in
+            guard validAppexColors.contains(color.lowercased()) else {
+                throw ValidationError("Appex enclosure color must be one of: \(validAppexColors.joined(separator: ", "))")
+            }
+            return color.lowercased()
+        }
+    )
+    var appexEnclosureColor: String = "blue"
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Appex symbol color for Apple Reference mode",
+            discussion: "Options: \(validAppexColors.joined(separator: ", "))",
+            valueName: "color"
+        ),
+        transform: { color in
+            guard validAppexColors.contains(color.lowercased()) else {
+                throw ValidationError("Appex symbol color must be one of: \(validAppexColors.joined(separator: ", "))")
+            }
+            return color.lowercased()
+        }
+    )
+    var appexSymbolColor: String = "white"
 }
 
 // MARK: - Background Options
@@ -70,62 +166,41 @@ struct BackgroundOptions: ParsableArguments {
     @Option(
         name: .long,
         help: ArgumentHelp(
-            "Base gradient color",
-            discussion: "Supports named colors (blue, red, green, etc.), hex codes (#FF5733), or RGB values (255,87,51)",
-            valueName: "color"
-        )
+            "Background mode",
+            discussion: "Options: custom (color/gradient, default), image (imported file)",
+            valueName: "mode"
+        ),
+        transform: { mode in
+            let valid = ["custom", "image"]
+            guard valid.contains(mode.lowercased()) else {
+                throw ValidationError("Background mode must be one of: \(valid.joined(separator: ", "))")
+            }
+            return mode.lowercased()
+        }
     )
+    var backgroundMode: String = "custom"
+
+    @Option(name: .long, help: ArgumentHelp("Base gradient color", valueName: "color"))
     var baseColor: String = "blue"
 
-    @Flag(
-        name: .long,
-        help: ArgumentHelp(
-            "Enable custom gradient colors",
-            discussion: "When enabled, use --custom-primary and --custom-secondary to define gradient"
-        )
-    )
+    @Flag(name: .long, help: "Enable custom gradient colors (use with --custom-primary/--custom-secondary)")
     var useCustomColors: Bool = false
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Primary gradient color",
-            discussion: "Top color of the gradient. Only used with --use-custom-colors",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Primary (top) gradient color", valueName: "color"))
     var customPrimary: String?
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Secondary gradient color",
-            discussion: "Bottom color of the gradient. Only used with --use-custom-colors",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Secondary (bottom) gradient color", valueName: "color"))
     var customSecondary: String?
 
-    @Flag(
-        name: .long,
-        help: ArgumentHelp(
-            "Disable background gradient",
-            discussion: "Uses a flat color instead of a gradient for the background"
-        )
-    )
+    @Flag(name: .long, help: "Disable background gradient (use flat color)")
     var noGradient: Bool = false
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Corner radius style",
-            discussion: "Options: macos11 (macOS 11-15 style), macos26 (macOS 26 style, default)",
-            valueName: "style"
-        ),
+        help: ArgumentHelp("Corner radius: macos11 or macos26 (default)", valueName: "style"),
         transform: { style in
-            let valid = ["macos11", "macos26"]
-            guard valid.contains(style.lowercased()) else {
-                throw ValidationError("Corner radius must be one of: \(valid.joined(separator: ", "))")
+            guard ["macos11", "macos26"].contains(style.lowercased()) else {
+                throw ValidationError("Corner radius must be 'macos11' or 'macos26'")
             }
             return style.lowercased()
         }
@@ -134,29 +209,32 @@ struct BackgroundOptions: ParsableArguments {
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Background shadow style",
-            discussion: "Options: off (no shadow), macos11 (macOS 11-15 style), macos26 (macOS 26 style, default)",
-            valueName: "style"
-        ),
+        help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default)", valueName: "style"),
         transform: { style in
-            let valid = ["off", "macos11", "macos26"]
-            guard valid.contains(style.lowercased()) else {
-                throw ValidationError("Background shadow style must be one of: \(valid.joined(separator: ", "))")
+            guard ["off", "macos11", "macos26"].contains(style.lowercased()) else {
+                throw ValidationError("Background shadow style must be 'off', 'macos11', or 'macos26'")
             }
             return style.lowercased()
         }
     )
     var backgroundShadowStyle: String = "macos26"
 
-    // Hidden deprecated alias for --background-shadow-style off
-    @Flag(
-        name: .long,
-        help: .hidden
-    )
+    @Flag(name: .long, help: .hidden) // deprecated alias for --background-shadow-style off
     var noBackgroundShadow: Bool = false
 
-    /// Resolves the effective shadow style, accounting for the deprecated --no-background-shadow flag.
+    @Option(name: .long, help: ArgumentHelp("Path to image file for background", valueName: "path"))
+    var importedBackground: String?
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Scale for imported background (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Imported background scale") }
+    )
+    var importedBackgroundScale: Double = 1.0
+
+    @Flag(name: .long, help: "Enable padding compensation for app icon backgrounds")
+    var importedBackgroundPaddingCompensation: Bool = false
+
     var effectiveShadowStyle: String {
         noBackgroundShadow ? "off" : backgroundShadowStyle
     }
@@ -169,92 +247,42 @@ struct SymbolOptions: ParsableArguments {
         name: .long,
         help: ArgumentHelp(
             "Symbol rendering mode",
-            discussion: """
-                Rendering modes:
-                \u{2022} monochrome: Single color, uses --symbol-color
-                \u{2022} hierarchical: Multiple opacities of one color, uses --hierarchical-color
-                \u{2022} multicolor: Uses symbol's built-in colors
-                \u{2022} palette: Custom colors for each layer, uses --palette-* options
-                """,
+            discussion: "monochrome (default), hierarchical, multicolor, or palette",
             valueName: "mode"
         ),
         transform: { mode in
-            let validModes = ["monochrome", "hierarchical", "multicolor", "palette"]
-            guard validModes.contains(mode.lowercased()) else {
-                throw ValidationError("Rendering mode must be one of: \(validModes.joined(separator: ", "))")
+            guard validRenderingModes.contains(mode.lowercased()) else {
+                throw ValidationError("Rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
             }
             return mode.lowercased()
         }
     )
     var renderingMode: String = "monochrome"
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Symbol color for monochrome mode",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Symbol color (monochrome mode)", valueName: "color"))
     var symbolColor: String = "white"
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Symbol color for hierarchical mode",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Symbol color (hierarchical mode)", valueName: "color"))
     var hierarchicalColor: String = "white"
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Primary color for palette mode",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Primary color (palette mode)", valueName: "color"))
     var palettePrimary: String = "white"
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Secondary color for palette mode",
-            discussion: "Supports opacity notation: 'white:0.5' for 50% opacity",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Secondary color (palette mode, supports opacity e.g. 'white:0.5')", valueName: "color"))
     var paletteSecondary: String = "white:0.5"
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Tertiary color for palette mode",
-            discussion: "Supports opacity notation: 'white:0.26' for 26% opacity",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Tertiary color (palette mode, supports opacity e.g. 'white:0.26')", valueName: "color"))
     var paletteTertiary: String = "white:0.26"
 
-    @Flag(
-        name: .long,
-        help: ArgumentHelp(
-            "Disable symbol shadow",
-            discussion: "Removes the shadow behind the SF Symbol itself"
-        )
-    )
+    @Flag(name: .long, help: "Disable symbol shadow")
     var noSymbolShadow: Bool = false
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Symbol weight",
-            discussion: "Options: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black",
-            valueName: "weight"
-        ),
+        help: ArgumentHelp("Symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
         transform: { weight in
-            let valid = ["auto", "ultralight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"]
-            guard valid.contains(weight.lowercased()) else {
-                throw ValidationError("Symbol weight must be one of: \(valid.joined(separator: ", "))")
+            guard validSymbolWeights.contains(weight.lowercased()) else {
+                throw ValidationError("Symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
             }
             return weight.lowercased()
         }
@@ -263,34 +291,17 @@ struct SymbolOptions: ParsableArguments {
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Manual symbol scale multiplier (0.3-2.0)",
-            discussion: "Adjusts the size of the symbol relative to the icon. Default: 1.0",
-            valueName: "scale"
-        ),
-        transform: { scale in
-            guard let value = Double(scale) else {
-                throw ValidationError("Symbol scale must be a number.")
-            }
-            guard IconSettings.manualSymbolScaleRange.contains(value) else {
-                throw ValidationError("Symbol scale must be between 0.3 and 2.0. You provided: \(scale)")
-            }
-            return value
-        }
+        help: ArgumentHelp("Symbol scale multiplier (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Symbol scale") }
     )
     var symbolScale: Double = 1.0
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Symbol color rendering mode (macOS 26+)",
-            discussion: "Options: flat (default), gradient",
-            valueName: "mode"
-        ),
+        help: ArgumentHelp("Symbol color rendering: flat (default) or gradient (macOS 26+)", valueName: "mode"),
         transform: { mode in
-            let valid = ["flat", "gradient"]
-            guard valid.contains(mode.lowercased()) else {
-                throw ValidationError("Symbol color rendering must be one of: \(valid.joined(separator: ", "))")
+            guard ["flat", "gradient"].contains(mode.lowercased()) else {
+                throw ValidationError("Symbol color rendering must be 'flat' or 'gradient'")
             }
             return mode.lowercased()
         }
@@ -301,98 +312,189 @@ struct SymbolOptions: ParsableArguments {
 // MARK: - Badge Options
 
 struct BadgeOptions: ParsableArguments {
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Add badge with SF Symbol",
-            discussion: "Overlays a smaller circular badge with the specified symbol",
-            valueName: "symbol"
-        )
-    )
+    // Badge activation and position
+    @Option(name: .long, help: ArgumentHelp("Add badge with SF Symbol", valueName: "symbol"))
     var badge: String?
 
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Badge position",
-            discussion: "Options: top-left, top-right, bottom-left, bottom-right",
-            valueName: "position"
-        ),
-        transform: { position in
-            let validPositions = ["top-left", "top-right", "bottom-left", "bottom-right"]
-            guard validPositions.contains(position.lowercased()) else {
-                throw ValidationError("Badge position must be one of: \(validPositions.joined(separator: ", "))")
+        help: ArgumentHelp("Badge position: top-left, top-right, bottom-left, bottom-right", valueName: "position"),
+        transform: { pos in
+            let valid = ["top-left", "top-right", "bottom-left", "bottom-right"]
+            guard valid.contains(pos.lowercased()) else {
+                throw ValidationError("Badge position must be one of: \(valid.joined(separator: ", "))")
             }
-            return position.lowercased()
+            return pos.lowercased()
         }
     )
     var badgePosition: String = "bottom-right"
 
+    // Badge layout
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Badge base color",
-            discussion: "Base color for badge gradient when not using custom colors",
-            valueName: "color"
-        )
+        help: ArgumentHelp("Overall badge scale (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Badge scale") }
     )
+    var badgeScale: Double = 1.0
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge symbol scale within badge (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Badge symbol scale") }
+    )
+    var badgeSymbolScale: Double = 1.0
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge horizontal offset (-1.0 to 1.0)", valueName: "offset"),
+        transform: { try validateOffset($0, name: "Badge offset X") }
+    )
+    var badgeOffsetX: Double = 0.0
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge vertical offset (-1.0 to 1.0)", valueName: "offset"),
+        transform: { try validateOffset($0, name: "Badge offset Y") }
+    )
+    var badgeOffsetY: Double = 0.0
+
+    // Badge background colors
+    @Option(name: .long, help: ArgumentHelp("Badge base color", valueName: "color"))
     var badgeColor: String = "gray"
 
-    @Flag(
-        name: .long,
-        help: ArgumentHelp(
-            "Enable custom badge colors",
-            discussion: "Use --badge-primary and --badge-secondary for custom badge gradient"
-        )
-    )
+    @Flag(name: .long, help: "Enable custom badge gradient (use with --badge-primary/--badge-secondary)")
     var badgeUseCustom: Bool = false
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Badge primary color",
-            discussion: "Top color of badge gradient. Only used with --badge-use-custom",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Badge primary (top) gradient color", valueName: "color"))
     var badgePrimary: String = "white"
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Badge secondary color",
-            discussion: "Bottom color of badge gradient. Only used with --badge-use-custom",
-            valueName: "color"
-        )
-    )
+    @Option(name: .long, help: ArgumentHelp("Badge secondary (bottom) gradient color", valueName: "color"))
     var badgeSecondary: String = "indigo"
 
+    // Badge symbol rendering
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Badge rendering mode",
-            discussion: "Same modes as main symbol: monochrome, hierarchical, multicolor, palette",
-            valueName: "mode"
-        ),
+        help: ArgumentHelp("Badge rendering mode: monochrome, hierarchical, multicolor, palette", valueName: "mode"),
         transform: { mode in
-            let validModes = ["monochrome", "hierarchical", "multicolor", "palette"]
-            guard validModes.contains(mode.lowercased()) else {
-                throw ValidationError("Badge rendering mode must be one of: \(validModes.joined(separator: ", "))")
+            guard validRenderingModes.contains(mode.lowercased()) else {
+                throw ValidationError("Badge rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
             }
             return mode.lowercased()
         }
     )
     var badgeRendering: String = "monochrome"
 
+    @Option(name: .long, help: ArgumentHelp("Badge symbol color (monochrome)", valueName: "color"))
+    var badgeSymbolColor: String = "white"
+
+    @Option(name: .long, help: ArgumentHelp("Badge symbol color (hierarchical)", valueName: "color"))
+    var badgeHierarchicalColor: String = "white"
+
+    @Option(name: .long, help: ArgumentHelp("Badge primary color (palette)", valueName: "color"))
+    var badgePalettePrimary: String = "white"
+
+    @Option(name: .long, help: ArgumentHelp("Badge secondary color (palette, supports opacity)", valueName: "color"))
+    var badgePaletteSecondary: String = "white:0.5"
+
+    @Option(name: .long, help: ArgumentHelp("Badge tertiary color (palette, supports opacity)", valueName: "color"))
+    var badgePaletteTertiary: String = "white:0.26"
+
     @Option(
         name: .long,
-        help: ArgumentHelp(
-            "Badge symbol color",
-            discussion: "Color of the symbol within the badge",
-            valueName: "color"
-        )
+        help: ArgumentHelp("Badge symbol weight", valueName: "weight"),
+        transform: { weight in
+            guard validSymbolWeights.contains(weight.lowercased()) else {
+                throw ValidationError("Badge symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
+            }
+            return weight.lowercased()
+        }
     )
-    var badgeSymbolColor: String = "white"
+    var badgeSymbolWeight: String = "auto"
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge symbol color rendering: flat or gradient", valueName: "mode"),
+        transform: { mode in
+            guard ["flat", "gradient"].contains(mode.lowercased()) else {
+                throw ValidationError("Badge symbol color rendering must be 'flat' or 'gradient'")
+            }
+            return mode.lowercased()
+        }
+    )
+    var badgeSymbolColorRendering: String = "flat"
+
+    // Badge shadow/gradient toggles
+    @Flag(name: .long, help: "Disable badge background gradient")
+    var badgeNoGradient: Bool = false
+
+    @Flag(name: .long, help: "Disable badge background shadow")
+    var badgeNoBackgroundShadow: Bool = false
+
+    @Flag(name: .long, help: "Disable badge symbol shadow")
+    var badgeNoSymbolShadow: Bool = false
+
+    // Badge icon source
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge icon source: symbol (default), image, apple-reference", valueName: "source"),
+        transform: { source in
+            let valid = ["symbol", "image", "apple-reference"]
+            guard valid.contains(source.lowercased()) else {
+                throw ValidationError("Badge icon source must be one of: \(valid.joined(separator: ", "))")
+            }
+            return source.lowercased()
+        }
+    )
+    var badgeIconSource: String = "symbol"
+
+    @Option(name: .long, help: ArgumentHelp("Path to image file for badge symbol", valueName: "path"))
+    var badgeImportedImage: String?
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Scale for imported badge image (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Badge imported image scale") }
+    )
+    var badgeImportedImageScale: Double = 1.0
+
+    // Badge appex colors
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge appex enclosure color (Apple Reference badge)", valueName: "color"),
+        transform: { color in
+            guard validAppexColors.contains(color.lowercased()) else {
+                throw ValidationError("Badge appex enclosure color must be one of: \(validAppexColors.joined(separator: ", "))")
+            }
+            return color.lowercased()
+        }
+    )
+    var badgeAppexEnclosureColor: String = "blue"
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Badge appex symbol color (Apple Reference badge)", valueName: "color"),
+        transform: { color in
+            guard validAppexColors.contains(color.lowercased()) else {
+                throw ValidationError("Badge appex symbol color must be one of: \(validAppexColors.joined(separator: ", "))")
+            }
+            return color.lowercased()
+        }
+    )
+    var badgeAppexSymbolColor: String = "white"
+
+    // Badge imported background
+    @Option(name: .long, help: ArgumentHelp("Path to image file for badge background", valueName: "path"))
+    var badgeImportedBackground: String?
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp("Scale for imported badge background (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Badge imported background scale") }
+    )
+    var badgeImportedBackgroundScale: Double = 1.0
+
+    @Flag(name: .long, help: "Enable padding compensation for badge background app icons")
+    var badgeImportedBackgroundPaddingCompensation: Bool = false
 }
 
 // MARK: - Main Command
@@ -404,7 +506,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         abstract: "Generate customized macOS app icons using SF Symbols",
         usage: """
             sfIconGen-CLI <symbol-name> [<options>]
-            sfIconGen-CLI star.fill --output ~/Desktop/my-icon.png
+            sfIconGen-CLI star.fill -o ~/Desktop/my-icon.png
             sfIconGen-CLI folder.fill --size 512 --retina --base-color red
             """,
         discussion: """
@@ -414,50 +516,53 @@ struct IconGeneratorCommand: AsyncParsableCommand {
               sfIconGen-CLI star.fill
               sfIconGen-CLI folder.fill -o ~/Desktop/folder-icon.png
 
-            Custom sizes (16-1024 pixels):
-              sfIconGen-CLI heart.fill --size 450
-              sfIconGen-CLI app.fill --size 1024 --retina --color-space displayP3
-
             Custom colors and rendering:
               sfIconGen-CLI shield.fill --rendering-mode hierarchical --hierarchical-color white
-              sfIconGen-CLI person.3.fill --rendering-mode palette \\
-                --palette-primary white --palette-secondary blue --palette-tertiary gray
-
-            Background customization:
               sfIconGen-CLI app.fill --use-custom-colors --custom-primary "#FF6B35" --custom-secondary "#F7931E"
-              sfIconGen-CLI app.fill --corner-radius macos11 --no-gradient
-              sfIconGen-CLI app.fill --background-shadow-style off
 
             Symbol adjustments:
               sfIconGen-CLI star.fill --symbol-weight bold --symbol-scale 1.3
-              sfIconGen-CLI star.fill --symbol-color-rendering gradient
+              sfIconGen-CLI star.fill --corner-radius macos11 --no-gradient
+
+            Apple Reference mode:
+              sfIconGen-CLI star.fill --generation-mode apple-reference \\
+                --appex-enclosure-color blue --appex-symbol-color white
+
+            Imported image icon:
+              sfIconGen-CLI star.fill --icon-source image --imported-image ~/my-icon.png
+
+            Imported background:
+              sfIconGen-CLI star.fill --background-mode image --imported-background ~/bg.png
 
             Badge support:
               sfIconGen-CLI star.fill --badge plus.circle --badge-position bottom-right
-              sfIconGen-CLI star.fill --badge gear --badge-color green --badge-use-custom \\
-                --badge-primary white --badge-secondary green
+              sfIconGen-CLI star.fill --badge gear --badge-scale 1.3 \\
+                --badge-offset-x 0.2 --badge-offset-y -0.1
 
-            Minimal style:
-              sfIconGen-CLI circle --base-color black --background-shadow-style off --no-symbol-shadow
+            Badge with Apple Reference:
+              sfIconGen-CLI star.fill --badge gear --badge-icon-source apple-reference \\
+                --badge-appex-enclosure-color red --badge-appex-symbol-color white
+
+            High-resolution export:
+              sfIconGen-CLI app.fill --size 1024 --retina --color-space displayP3
             """,
         version: "1.0.0"
     )
 
-    // MARK: - Required Arguments
-
     @Argument(
         help: ArgumentHelp(
             "The SF Symbol name to render",
-            discussion: "Use any valid SF Symbol name (e.g., 'star.fill', 'folder.badge.plus', 'heart.circle'). You can find symbol names in Apple's SF Symbols app or documentation.",
+            discussion: "Use any valid SF Symbol name (e.g., 'star.fill', 'folder.badge.plus'). When using --icon-source image, this is still required but only used for the output filename.",
             valueName: "symbol-name"
         )
     )
     var symbolName: String
 
-    // MARK: - Option Groups
-
     @OptionGroup(title: "Export")
     var export: ExportOptions
+
+    @OptionGroup(title: "Generation")
+    var generation: GenerationOptions
 
     @OptionGroup(title: "Background")
     var background: BackgroundOptions
@@ -495,6 +600,8 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         try validateSymbolName()
         try validateColorDependencies()
         try validateBadgeDependencies()
+        try validateGenerationDependencies()
+        try validateImagePaths()
         try validateOutputPath()
         try validateColorFormats()
     }
@@ -525,9 +632,38 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         if badge.badgeUseCustom && badge.badge == nil {
             throw ValidationError("--badge-use-custom requires --badge to be specified")
         }
-        if let badgeName = badge.badge {
-            guard !badgeName.isEmpty else {
-                throw ValidationError("Badge symbol name cannot be empty")
+        if let badgeName = badge.badge, badgeName.isEmpty {
+            throw ValidationError("Badge symbol name cannot be empty")
+        }
+        if badge.badgeIconSource == "image" && badge.badgeImportedImage == nil {
+            throw ValidationError("--badge-icon-source image requires --badge-imported-image")
+        }
+        if badge.badgeImportedImage != nil && badge.badge == nil && badge.badgeIconSource != "image" {
+            throw ValidationError("--badge-imported-image requires --badge and --badge-icon-source image")
+        }
+    }
+
+    private func validateGenerationDependencies() throws {
+        if generation.iconSource == "image" && generation.importedImage == nil {
+            throw ValidationError("--icon-source image requires --imported-image <path>")
+        }
+        if background.backgroundMode == "image" && background.importedBackground == nil {
+            throw ValidationError("--background-mode image requires --imported-background <path>")
+        }
+    }
+
+    private func validateImagePaths() throws {
+        let paths: [(String?, String)] = [
+            (generation.importedImage, "--imported-image"),
+            (background.importedBackground, "--imported-background"),
+            (badge.badgeImportedImage, "--badge-imported-image"),
+            (badge.badgeImportedBackground, "--badge-imported-background"),
+        ]
+        for (path, name) in paths {
+            guard let path = path else { continue }
+            let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                throw ValidationError("File not found for \(name): \(path)")
             }
         }
     }
@@ -557,7 +693,11 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             (badge.badgeColor, "badge-color"),
             (badge.badgeSymbolColor, "badge-symbol-color"),
             (badge.badgePrimary, "badge-primary"),
-            (badge.badgeSecondary, "badge-secondary")
+            (badge.badgeSecondary, "badge-secondary"),
+            (badge.badgeHierarchicalColor, "badge-hierarchical-color"),
+            (badge.badgePalettePrimary, "badge-palette-primary"),
+            (badge.badgePaletteSecondary, "badge-palette-secondary"),
+            (badge.badgePaletteTertiary, "badge-palette-tertiary"),
         ]
 
         var allColors = colorsToTest
