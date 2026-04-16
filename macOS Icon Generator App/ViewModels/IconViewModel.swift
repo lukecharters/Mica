@@ -19,6 +19,13 @@ final class IconViewModel: ObservableObject {
     @Published var appexIsGenerating: Bool = false
     @Published var appexError: String? = nil
 
+    // Badge appex state
+    @Published var badgeAppexEnclosureColor: AppexEnclosureColor = .blue
+    @Published var badgeAppexSymbolColor: AppexEnclosureColor = .white
+    @Published var badgeAppexRenderedImage: NSImage? = nil
+    @Published var badgeAppexIsGenerating: Bool = false
+    @Published var badgeAppexError: String? = nil
+
     // Derived values (no type changes)
     var actualExportSize: CGFloat { iconSettings.finalExportSize }
 
@@ -48,6 +55,30 @@ final class IconViewModel: ObservableObject {
             appexRenderedImage = nil
         }
         appexIsGenerating = false
+    }
+
+    var badgeAppexGenerationKey: AppexGenerationKey {
+        AppexGenerationKey(
+            symbolName: iconSettings.badgeSymbolName,
+            enclosureColor: badgeAppexEnclosureColor,
+            symbolColor: badgeAppexSymbolColor
+        )
+    }
+
+    func generateBadgeAppexIcon(service: AppexReferenceService) async {
+        badgeAppexIsGenerating = true
+        badgeAppexError = nil
+        do {
+            badgeAppexRenderedImage = try await service.referenceIcon(
+                for: iconSettings.badgeSymbolName,
+                enclosureColor: badgeAppexEnclosureColor,
+                symbolColor: badgeAppexSymbolColor
+            )
+        } catch {
+            badgeAppexError = error.localizedDescription
+            badgeAppexRenderedImage = nil
+        }
+        badgeAppexIsGenerating = false
     }
 
     // MARK: - Color Selection
