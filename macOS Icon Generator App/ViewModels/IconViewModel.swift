@@ -57,8 +57,18 @@ final class IconViewModel: ObservableObject {
         appexIsGenerating = false
     }
 
-    var badgeAppexGenerationKey: AppexGenerationKey {
-        AppexGenerationKey(
+    struct BadgeAppexGenerationKey: Equatable {
+        let showBadge: Bool
+        let badgeIconSource: IconSource
+        let symbolName: String
+        let enclosureColor: AppexEnclosureColor
+        let symbolColor: AppexEnclosureColor
+    }
+
+    var badgeAppexGenerationKey: BadgeAppexGenerationKey {
+        BadgeAppexGenerationKey(
+            showBadge: iconSettings.showBadge,
+            badgeIconSource: iconSettings.badgeIconSource,
             symbolName: iconSettings.badgeSymbolName,
             enclosureColor: badgeAppexEnclosureColor,
             symbolColor: badgeAppexSymbolColor

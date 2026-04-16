@@ -96,8 +96,10 @@ struct ContentView: View {
                     pointSize: viewModel.iconSettings.exportSize,
                     scaleFactor: viewModel.iconSettings.exportRetinaSize ? 2 : 1,
                     colorSpace: viewModel.iconSettings.exportColorSpace
-                  ))
-                : IconDocument(settings: viewModel.iconSettings),
+                  ),
+                  settings: viewModel.iconSettings,
+                  badgeAppexImage: viewModel.badgeAppexRenderedImage)
+                : IconDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
             contentType: .png,
             defaultFilename: viewModel.generationMode == .appleReference
                 ? "\(viewModel.iconSettings.symbolName)-apple-reference"

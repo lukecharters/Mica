@@ -9,6 +9,7 @@ struct IconDocument: FileDocument {
     var settings: IconSettings
     var preRenderedImage: NSImage?
     var appexExportParams: AppexExportParams?
+    var badgeAppexImage: NSImage?
 
     struct AppexExportParams {
         let symbolName: String
@@ -19,22 +20,25 @@ struct IconDocument: FileDocument {
         let colorSpace: ExportColorSpace
     }
 
-    init(settings: IconSettings) {
+    init(settings: IconSettings, badgeAppexImage: NSImage? = nil) {
         self.settings = settings
         self.preRenderedImage = nil
         self.appexExportParams = nil
+        self.badgeAppexImage = badgeAppexImage
     }
 
     init(preRenderedImage: NSImage) {
         self.settings = IconSettings()
         self.preRenderedImage = preRenderedImage
         self.appexExportParams = nil
+        self.badgeAppexImage = nil
     }
 
-    init(appexExport: AppexExportParams) {
-        self.settings = IconSettings()
+    init(appexExport: AppexExportParams, settings: IconSettings = IconSettings(), badgeAppexImage: NSImage? = nil) {
+        self.settings = settings
         self.preRenderedImage = nil
         self.appexExportParams = appexExport
+        self.badgeAppexImage = badgeAppexImage
     }
 
     init(configuration: ReadConfiguration) throws {
@@ -42,6 +46,7 @@ struct IconDocument: FileDocument {
         self.settings = IconSettings()
         self.preRenderedImage = nil
         self.appexExportParams = nil
+        self.badgeAppexImage = nil
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
@@ -49,7 +54,7 @@ struct IconDocument: FileDocument {
         let scaleFactor: Int
 
         if let params = appexExportParams {
-            image = try AppexReferenceService.renderForExport(
+            let appexImage = try AppexReferenceService.renderForExport(
                 symbolName: params.symbolName,
                 enclosureColor: params.enclosureColor,
                 symbolColor: params.symbolColor,
@@ -57,12 +62,39 @@ struct IconDocument: FileDocument {
                 scaleFactor: params.scaleFactor,
                 colorSpace: params.colorSpace
             )
+            if settings.showBadge {
+                if Thread.isMainThread {
+                    image = MainActor.assumeIsolated {
+                        IconRenderer.renderAppexWithBadge(
+                            appexImage: appexImage,
+                            settings: settings,
+                            badgeAppexImage: badgeAppexImage
+                        )
+                    }
+                } else {
+                    var composited = appexImage
+                    let capturedSettings = settings
+                    let capturedBadgeImage = badgeAppexImage
+                    DispatchQueue.main.sync {
+                        composited = MainActor.assumeIsolated {
+                            IconRenderer.renderAppexWithBadge(
+                                appexImage: appexImage,
+                                settings: capturedSettings,
+                                badgeAppexImage: capturedBadgeImage
+                            )
+                        }
+                    }
+                    image = composited
+                }
+            } else {
+                image = appexImage
+            }
             scaleFactor = params.scaleFactor
         } else if let preRendered = preRenderedImage {
             image = preRendered
             scaleFactor = 2
         } else {
-            image = IconRenderer.renderIconSafely(settings: settings)
+            image = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: badgeAppexImage)
             scaleFactor = settings.exportRetinaSize ? 2 : 1
         }
 

@@ -59,11 +59,24 @@ struct AppexPreviewPane: View {
             }
             .frame(width: size, height: size)
         } else if let image = viewModel.appexRenderedImage {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .antialiased(true)
-                .frame(width: size, height: size)
+            ZStack {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .antialiased(true)
+                    .frame(width: size, height: size)
+
+                if viewModel.iconSettings.showBadge {
+                    let enclosureSize = size * (1 - 50.0 / 256.0)
+                    let badgeSize = enclosureSize * (80.0 / 208.0) * viewModel.iconSettings.badgeScale
+                    BadgeView(
+                        settings: viewModel.iconSettings,
+                        badgeSize: badgeSize,
+                        badgeAppexImage: viewModel.badgeAppexRenderedImage
+                    )
+                    .offset(badgeOffset(enclosureSize: enclosureSize))
+                }
+            }
         } else if let error = viewModel.appexError {
             ContentUnavailableView(
                 "Generation Failed",
@@ -78,6 +91,19 @@ struct AppexPreviewPane: View {
                 description: Text("Enter a symbol name to generate")
             )
             .frame(width: 512, height: 512)
+        }
+    }
+
+    private func badgeOffset(enclosureSize: CGFloat) -> CGSize {
+        let ax = enclosureSize * (76.0 / 208.0)
+        let ay = enclosureSize * (80.0 / 208.0)
+        let mx = enclosureSize * viewModel.iconSettings.badgeManualOffsetX
+        let my = enclosureSize * viewModel.iconSettings.badgeManualOffsetY
+        switch viewModel.iconSettings.badgePosition {
+        case .topRight:    return CGSize(width: ax + mx, height: -ay + my)
+        case .topLeft:     return CGSize(width: -ax + mx, height: -ay + my)
+        case .bottomRight: return CGSize(width: ax + mx, height: ay + my)
+        case .bottomLeft:  return CGSize(width: -ax + mx, height: ay + my)
         }
     }
 

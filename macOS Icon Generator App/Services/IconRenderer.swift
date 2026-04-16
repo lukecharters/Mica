@@ -5,10 +5,10 @@ import CoreGraphics
 struct IconRenderer {
     // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
     @MainActor
-    static func renderIcon(settings: IconSettings) -> NSImage {
+    static func renderIcon(settings: IconSettings, badgeAppexImage: NSImage? = nil) -> NSImage {
         let exportSize = settings.finalExportSize
         let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: exportSize)
-        let iconView = IconContentView(settings: settings, displaySize: exportSize)
+        let iconView = IconContentView(settings: settings, displaySize: exportSize, badgeAppexImage: badgeAppexImage)
             .frame(width: canvasSize, height: canvasSize)
 
         let renderer = ImageRenderer(content: iconView)
@@ -22,14 +22,71 @@ struct IconRenderer {
         return NSImage(size: CGSize(width: exportSize, height: exportSize))
     }
 
+    /// Render an appex base image with a badge overlay composited on top.
+    @MainActor
+    static func renderAppexWithBadge(
+        appexImage: NSImage,
+        settings: IconSettings,
+        badgeAppexImage: NSImage? = nil
+    ) -> NSImage {
+        let exportSize = settings.finalExportSize
+        let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: exportSize)
+        let scaleFactor = exportSize / 256.0
+        let backgroundInset = 25 * scaleFactor
+        let enclosureSize = exportSize - 2 * backgroundInset
+        let badgeDiameterRatio: CGFloat = 80.0 / 208.0
+        let badgeSize = enclosureSize * badgeDiameterRatio * settings.badgeScale
+
+        let compositeView = ZStack {
+            Image(nsImage: appexImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: exportSize, height: exportSize)
+
+            if settings.showBadge {
+                BadgeView(
+                    settings: settings,
+                    badgeSize: badgeSize,
+                    badgeAppexImage: badgeAppexImage
+                )
+                .offset(badgeOffset(for: settings, enclosureSize: enclosureSize))
+            }
+        }
+        .frame(width: canvasSize, height: canvasSize)
+
+        let renderer = ImageRenderer(content: compositeView)
+        renderer.scale = 1.0
+        renderer.isOpaque = false
+
+        if let nsImage = renderer.nsImage {
+            let colorSpaceConverted = convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
+            return setImageDPI(image: colorSpaceConverted, settings: settings)
+        }
+        return NSImage(size: CGSize(width: exportSize, height: exportSize))
+    }
+
+    /// Badge offset calculation (mirrors IconContentView.badgeOffset)
+    private static func badgeOffset(for settings: IconSettings, enclosureSize: CGFloat) -> CGSize {
+        let ax = enclosureSize * (76.0 / 208.0)
+        let ay = enclosureSize * (80.0 / 208.0)
+        let mx = enclosureSize * settings.badgeManualOffsetX
+        let my = enclosureSize * settings.badgeManualOffsetY
+        switch settings.badgePosition {
+        case .topRight:    return CGSize(width: ax + mx, height: -ay + my)
+        case .topLeft:     return CGSize(width: -ax + mx, height: -ay + my)
+        case .bottomRight: return CGSize(width: ax + mx, height: ay + my)
+        case .bottomLeft:  return CGSize(width: -ax + mx, height: ay + my)
+        }
+    }
+
     // Thread-safe wrapper that hops to the main queue when needed
-    static func renderIconSafely(settings: IconSettings) -> NSImage {
+    static func renderIconSafely(settings: IconSettings, badgeAppexImage: NSImage? = nil) -> NSImage {
         if Thread.isMainThread {
-            return MainActor.assumeIsolated { renderIcon(settings: settings) }
+            return MainActor.assumeIsolated { renderIcon(settings: settings, badgeAppexImage: badgeAppexImage) }
         }
         var output = NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
         DispatchQueue.main.sync {
-            output = MainActor.assumeIsolated { renderIcon(settings: settings) }
+            output = MainActor.assumeIsolated { renderIcon(settings: settings, badgeAppexImage: badgeAppexImage) }
         }
         return output
     }
@@ -426,23 +483,25 @@ struct BadgeView: View {
         } else {
             // Existing rendering for SF Symbol and Imported modes
             ZStack {
-                if settings.badgeUseImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
-                    let effectiveScale = settings.badgeImportedBackgroundScale
-                        * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(
-                            width: badgeSize * effectiveScale,
-                            height: badgeSize * effectiveScale
-                        )
-                        .clipShape(Circle())
-                        .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
-                        )
+                if settings.badgeUseImportedBackground {
+                    if let nsImage = settings.badgeImportedBackground?.nsImage {
+                        let effectiveScale = settings.badgeImportedBackgroundScale
+                            * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .interpolation(.high)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(
+                                width: badgeSize * effectiveScale,
+                                height: badgeSize * effectiveScale
+                            )
+                            .clipShape(Circle())
+                            .shadow(
+                                color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                                radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                                y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                            )
+                    }
                 } else if settings.badgeUseCustomColors {
                     Circle()
                         .fill(
