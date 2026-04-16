@@ -6,6 +6,8 @@ struct SidebarView: View {
     @Binding var generationMode: GenerationMode
     @Binding var appexEnclosureColor: AppexEnclosureColor
     @Binding var appexSymbolColor: AppexEnclosureColor
+    @Binding var badgeAppexEnclosureColor: AppexEnclosureColor
+    @Binding var badgeAppexSymbolColor: AppexEnclosureColor
     let colorOptions: [(name: String, color: Color)]
 
     @State private var selectedSegment: IconOrBadge = .icon
@@ -23,9 +25,6 @@ struct SidebarView: View {
     @AppStorage("sidebar.badgeBackgroundSource.expanded") private var badgeBackgroundSourceExpanded = true
     @AppStorage("sidebar.badgeBackgroundLayout.expanded") private var badgeBackgroundLayoutExpanded = true
     @AppStorage("sidebar.badgeBackgroundAppearance.expanded") private var badgeBackgroundAppearanceExpanded = true
-
-    @State private var badgeAppexSymbolColor: AppexEnclosureColor = .white
-    @State private var badgeAppexEnclosureColor: AppexEnclosureColor = .blue
 
     private var isAppleReference: Bool {
         generationMode == .appleReference
@@ -153,31 +152,33 @@ struct SidebarView: View {
         .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
 
-        Divider()
-            .padding(.top, 4)
+        if iconSettings.badgeIconSource != .appleReference {
+            Divider()
+                .padding(.top, 4)
 
-        groupHeader("Background")
-        Form {
-            Section("Source", isExpanded: $badgeBackgroundSourceExpanded) {
-                BadgeBackgroundSourceSection(iconSettings: $iconSettings)
-            }
+            groupHeader("Background")
+            Form {
+                Section("Source", isExpanded: $badgeBackgroundSourceExpanded) {
+                    BadgeBackgroundSourceSection(iconSettings: $iconSettings)
+                }
 
-            if iconSettings.badgeUseImportedBackground {
-                Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
-                    BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
+                if iconSettings.badgeUseImportedBackground {
+                    Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
+                        BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
+                    }
+                }
+
+                Section("Appearance", isExpanded: $badgeBackgroundAppearanceExpanded) {
+                    BadgeBackgroundAppearanceSection(
+                        iconSettings: $iconSettings,
+                        colorOptions: colorOptions
+                    )
                 }
             }
-
-            Section("Appearance", isExpanded: $badgeBackgroundAppearanceExpanded) {
-                BadgeBackgroundAppearanceSection(
-                    iconSettings: $iconSettings,
-                    colorOptions: colorOptions
-                )
-            }
+            .formStyle(GroupedFormStyle())
+            .scrollDisabled(true)
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .formStyle(GroupedFormStyle())
-        .scrollDisabled(true)
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Shared

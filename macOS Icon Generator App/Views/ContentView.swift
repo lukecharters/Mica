@@ -41,6 +41,8 @@ struct ContentView: View {
                 generationMode: $viewModel.generationMode,
                 appexEnclosureColor: $viewModel.appexEnclosureColor,
                 appexSymbolColor: $viewModel.appexSymbolColor,
+                badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
+                badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
                 colorOptions: colorOptions
             )
             .frame(minWidth: 350, maxWidth: 500)
@@ -48,6 +50,15 @@ struct ContentView: View {
             // Center: Preview pane with overlay controls
             if viewModel.generationMode == .swiftUI {
                 previewPane
+                    .task(id: viewModel.badgeAppexGenerationKey) {
+                        guard viewModel.iconSettings.showBadge,
+                              viewModel.iconSettings.badgeIconSource == .appleReference else {
+                            return
+                        }
+                        try? await Task.sleep(for: .milliseconds(400))
+                        guard !Task.isCancelled else { return }
+                        await viewModel.generateBadgeAppexIcon(service: appexService)
+                    }
             } else {
                 AppexPreviewPane(viewModel: viewModel, appexService: appexService)
             }
@@ -112,7 +123,8 @@ struct ContentView: View {
 
                     ScaledIconPreview(
                         settings: $viewModel.iconSettings,
-                        displaySize: previewDisplaySize
+                        displaySize: previewDisplaySize,
+                        badgeAppexImage: viewModel.badgeAppexRenderedImage
                     )
                     .padding()
 
@@ -146,6 +158,7 @@ struct ContentView: View {
 struct ScaledIconPreview: View {
     @Binding var settings: IconSettings
     let displaySize: CGFloat
+    var badgeAppexImage: NSImage? = nil
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -162,7 +175,7 @@ struct ScaledIconPreview: View {
 
     var body: some View {
         ZStack {
-            IconContentView(settings: settings, displaySize: displaySize)
+            IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
 
             // Draggable badge overlay
             if settings.showBadge {

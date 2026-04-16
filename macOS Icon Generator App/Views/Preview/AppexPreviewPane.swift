@@ -21,6 +21,15 @@ struct AppexPreviewPane: View {
             guard !Task.isCancelled else { return }
             await viewModel.generateAppexIcon(service: appexService)
         }
+        .task(id: viewModel.badgeAppexGenerationKey) {
+            guard viewModel.iconSettings.showBadge,
+                  viewModel.iconSettings.badgeIconSource == .appleReference else {
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await viewModel.generateBadgeAppexIcon(service: appexService)
+        }
     }
 
     private var previewContent: some View {
