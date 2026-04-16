@@ -2,12 +2,13 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Source controls for an imported image: thumbnail preview + "Choose File" picker.
+/// Layout controls (padding compensation, scale) live in `ImageImportLayoutControls`.
 struct ImageImportControls: View {
     @Binding var importedImage: ImportedImage?
-    @Binding var paddingCompensation: Bool
-    @Binding var imageScale: Double
-    var showPaddingCompensation: Bool = true
-    var onImport: () -> Void
+    /// Called after a successful import. Use to react to `imported.isAppIcon`
+    /// (e.g., toggle padding compensation).
+    var onImport: (ImportedImage) -> Void = { _ in }
 
     var body: some View {
         // Thumbnail preview
@@ -34,28 +35,6 @@ struct ImageImportControls: View {
 
         // Import button
         Button("Choose File…") { showFilePicker() }
-
-        // Padding compensation
-        if showPaddingCompensation {
-            Toggle("Icon Padding", isOn: Binding(
-                
-                get: { !paddingCompensation },
-                set: { paddingCompensation = !$0 }
-            ))
-                .help("Keep existing macOS icon padding and shadow. Turn off to scale up and fill the chiclet.")
-        }
-
-        // Image scale slider
-        HStack {
-            Text("Image Scale")
-            Spacer()
-            Text("\(Int(imageScale * 100))%")
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-        }
-        Slider(value: $imageScale,
-               in: IconSettings.importedImageScaleRange,
-               step: 0.05)
     }
 
     private func showFilePicker() {
@@ -68,12 +47,38 @@ struct ImageImportControls: View {
         do {
             let imported = try ImageImportService.importFromURL(url)
             importedImage = imported
-            if imported.isAppIcon {
-                paddingCompensation = true
-            }
-            onImport()
+            onImport(imported)
         } catch {
             NSAlert(error: error).runModal()
         }
+    }
+}
+
+/// Layout controls for an imported image: optional padding compensation + scale slider.
+/// Source controls (thumbnail + import button) live in `ImageImportControls`.
+struct ImageImportLayoutControls: View {
+    @Binding var paddingCompensation: Bool
+    @Binding var imageScale: Double
+    var showPaddingCompensation: Bool = true
+
+    var body: some View {
+        if showPaddingCompensation {
+            Toggle("Icon Padding", isOn: Binding(
+                get: { !paddingCompensation },
+                set: { paddingCompensation = !$0 }
+            ))
+            .help("Keep existing macOS icon padding and shadow. Turn off to scale up and fill the chiclet.")
+        }
+
+        HStack {
+            Text("Image Scale")
+            Spacer()
+            Text("\(Int(imageScale * 100))%")
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        Slider(value: $imageScale,
+               in: IconSettings.importedImageScaleRange,
+               step: 0.05)
     }
 }
