@@ -74,7 +74,38 @@ build_cli() {
 }
 
 setup_run() {
-    echo "[setup] (stub)"
+    if [[ ! -f "${FIXTURE_SYMBOL}" ]]; then
+        echo "ERROR: missing fixture ${FIXTURE_SYMBOL}" >&2
+        exit 2
+    fi
+    if [[ ! -f "${FIXTURE_BACKGROUND}" ]]; then
+        echo "ERROR: missing fixture ${FIXTURE_BACKGROUND}" >&2
+        exit 2
+    fi
+
+    local timestamp
+    timestamp="$(date +%Y-%m-%d-%H%M%S)"
+    OUTPUT_DIR="${OUTPUT_ROOT}/${timestamp}"
+    mkdir -p "${OUTPUT_DIR}"
+    README="${OUTPUT_DIR}/README.txt"
+
+    local git_sha git_branch
+    git_sha="$(git -C "${PROJECT_ROOT}" rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+    git_branch="$(git -C "${PROJECT_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
+
+    {
+        echo "sfIconGen-CLI smoke test"
+        echo "========================"
+        echo "Timestamp:   ${timestamp}"
+        echo "CLI binary:  ${CLI_BINARY}"
+        echo "Git branch:  ${git_branch}"
+        echo "Git SHA:     ${git_sha}"
+        echo "Output dir:  ${OUTPUT_DIR}"
+        echo ""
+        echo "Results:"
+    } > "${README}"
+
+    echo "==> Output dir: ${OUTPUT_DIR}"
 }
 
 run_happy_case() {
