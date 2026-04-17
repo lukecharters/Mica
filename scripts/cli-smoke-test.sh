@@ -79,7 +79,7 @@ HAPPY_CASES=(
     "badge-scale|star.fill|--badge|plus.circle|--badge-scale|1.3"
     "badge-symbol-scale|star.fill|--badge|plus.circle|--badge-symbol-scale|0.7"
     "badge-offset-x|star.fill|--badge|plus.circle|--badge-offset-x|0.2"
-    "badge-offset-y|star.fill|--badge|plus.circle|--badge-offset-y|-0.1"
+    "badge-offset-y|star.fill|--badge|plus.circle|--badge-offset-y=-0.1"
     "badge-color-red|star.fill|--badge|plus.circle|--badge-color|red"
     "badge-use-custom|star.fill|--badge|plus.circle|--badge-use-custom|--badge-primary|#00AAFF|--badge-secondary|#0055AA"
     "badge-rendering-hierarchical|star.fill|--badge|plus.circle|--badge-rendering|hierarchical|--badge-hierarchical-color|cyan"
