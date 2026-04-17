@@ -7,12 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8C2136062F920062001C769A /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C2136052F920062001C769A /* ArgumentParser */; };
 		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
 		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
 		8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C3148D22E61E3F400C7A0A9 /* ArgumentParser */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		8C2136092F920188001C769A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8C3148C82E61E39F00C7A0A9;
+			remoteInfo = "sfIconGen-CLI";
+		};
 		8C50A4C92E75A893000ED391 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
@@ -63,6 +71,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8C2136D42F920372001C769A /* sfIconGen-CLI Tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "sfIconGen-CLI Tests"; sourceTree = "<group>"; };
 		8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8C3148B62E61E07300C7A0A9 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		8C3148C92E61E39F00C7A0A9 /* sfIconGen-CLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "sfIconGen-CLI"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -205,6 +214,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C2136062F920062001C769A /* ArgumentParser in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,6 +233,7 @@
 		8C71CC902DBDDDD2006FB320 = {
 			isa = PBXGroup;
 			children = (
+				8C2136D42F920372001C769A /* sfIconGen-CLI Tests */,
 				8C75F6482E921B52008FB893 /* Products */,
 				8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */,
 				8C71CCAD2DBDDDD3006FB320 /* macOS Icon Generator AppTests */,
@@ -432,6 +443,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				8C21360A2F920188001C769A /* PBXTargetDependency */,
 				8C75F5862E8D5AC4008FB893 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -439,6 +451,7 @@
 			);
 			name = "sfIconGen-CLI Tests";
 			packageProductDependencies = (
+				8C2136052F920062001C769A /* ArgumentParser */,
 			);
 			productName = "sfIconGen-CLI Tests";
 			productReference = 8C75F5812E8D5AC4008FB893 /* sfIconGen-CLI Tests.xctest */;
@@ -627,6 +640,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		8C21360A2F920188001C769A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
+			targetProxy = 8C2136092F920188001C769A /* PBXContainerItemProxy */;
+		};
 		8C50A4CA2E75A893000ED391 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8C50A4BB2E75A891000ED391 /* IconMakerApp */;
@@ -1275,6 +1293,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		8C2136052F920062001C769A /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
 		8C3148D22E61E3F400C7A0A9 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;

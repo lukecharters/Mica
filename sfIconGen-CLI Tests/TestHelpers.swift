@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import ArgumentParser
 @testable import sfIconGen_CLI
 
 /// Convenience wrapper for `IconGeneratorCommand.parse(_:)`.
