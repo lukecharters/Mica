@@ -39,7 +39,38 @@ NEGATIVE_CASES=()
 # ---- phase functions ---------------------------------------------------------
 
 build_cli() {
-    echo "[build] (stub)"
+    echo "==> Building ${SCHEME}..."
+    if ! xcodebuild \
+            -project "${XCODE_PROJECT}" \
+            -scheme "${SCHEME}" \
+            -configuration Debug \
+            build \
+            -quiet 2>&1; then
+        echo "ERROR: xcodebuild failed for scheme ${SCHEME}." >&2
+        exit 2
+    fi
+
+    local built_products_dir
+    built_products_dir="$(
+        xcodebuild \
+            -project "${XCODE_PROJECT}" \
+            -scheme "${SCHEME}" \
+            -configuration Debug \
+            -showBuildSettings 2>/dev/null \
+        | awk -F '= ' '/^[[:space:]]+BUILT_PRODUCTS_DIR[[:space:]]*=/ { print $2; exit }'
+    )"
+
+    if [[ -z "${built_products_dir}" ]]; then
+        echo "ERROR: could not resolve BUILT_PRODUCTS_DIR from xcodebuild." >&2
+        exit 2
+    fi
+
+    CLI_BINARY="${built_products_dir}/${SCHEME}"
+    if [[ ! -x "${CLI_BINARY}" ]]; then
+        echo "ERROR: built CLI binary not found or not executable: ${CLI_BINARY}" >&2
+        exit 2
+    fi
+    echo "==> CLI binary: ${CLI_BINARY}"
 }
 
 setup_run() {
