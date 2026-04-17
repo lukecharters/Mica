@@ -98,7 +98,18 @@ HAPPY_CASES=(
     "badge-imported-background-scale|star.fill|--badge|plus.circle|--badge-imported-background|\$BACKGROUND_FIXTURE|--badge-imported-background-scale|1.2"
     "badge-imported-background-padding-compensation|star.fill|--badge|plus.circle|--badge-imported-background|\$BACKGROUND_FIXTURE|--badge-imported-background-padding-compensation"
 )
-NEGATIVE_CASES=()
+NEGATIVE_CASES=(
+    "size-too-large|Size must be between|star.fill|--size|9999"
+    "size-non-numeric|whole number|star.fill|--size|abc"
+    "rendering-mode-invalid|Rendering mode must be|star.fill|--rendering-mode|invalid"
+    "badge-use-custom-without-badge|--badge-use-custom requires|star.fill|--badge-use-custom"
+    "icon-source-image-without-path|requires --imported-image|star.fill|--icon-source|image"
+    "imported-image-missing|File not found|star.fill|--icon-source|image|--imported-image|/nonexistent/path.png"
+    "base-color-invalid|Invalid color format|star.fill|--base-color|not-a-color"
+    "symbol-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--symbol-scale|5.0"
+    "color-space-invalid|Color space must be|star.fill|--color-space|BGR"
+    "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge|plus.circle|--badge-offset-x|9.0"
+)
 
 # ---- phase functions ---------------------------------------------------------
 
@@ -228,7 +239,34 @@ run_happy_case() {
 }
 
 run_negative_case() {
-    echo "[negative] (stub) $1"
+    local entry="$1"
+    local old_ifs="${IFS}"
+    IFS='|' read -ra parts <<< "${entry}"
+    IFS="${old_ifs}"
+
+    if [[ "${#parts[@]}" -lt 3 ]]; then
+        echo "FAIL  N-???  malformed negative entry: ${entry}" | tee -a "${README}"
+        NEG_FAIL=$((NEG_FAIL + 1))
+        return
+    fi
+
+    local name="${parts[0]}"
+    local expected="${parts[1]}"
+    local symbol="${parts[2]}"
+    local rest=("${parts[@]:3}")
+
+    local output
+    local exit_code=0
+    output="$("${CLI_BINARY}" "${symbol}" ${rest[@]+"${rest[@]}"} 2>&1)" || exit_code=$?
+
+    if [[ "${exit_code}" -ne 0 ]] && echo "${output}" | grep -qi -- "${expected}"; then
+        NEG_PASS=$((NEG_PASS + 1))
+        echo "PASS  N-${name}  (errored as expected)" | tee -a "${README}"
+    else
+        NEG_FAIL=$((NEG_FAIL + 1))
+        echo "FAIL  N-${name}  exit=${exit_code}, expected substring: ${expected}" | tee -a "${README}"
+        echo "${output}" | sed 's/^/        /' | head -5 >> "${README}"
+    fi
 }
 
 print_summary() {
