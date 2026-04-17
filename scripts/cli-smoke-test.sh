@@ -112,7 +112,55 @@ setup_run() {
 }
 
 run_happy_case() {
-    echo "[happy] (stub) $1"
+    local entry="$1"
+    local old_ifs="${IFS}"
+    IFS='|' read -ra parts <<< "${entry}"
+    IFS="${old_ifs}"
+
+    if [[ "${#parts[@]}" -lt 2 ]]; then
+        echo "FAIL  ???  malformed entry: ${entry}" | tee -a "${README}"
+        HAPPY_FAIL=$((HAPPY_FAIL + 1))
+        return
+    fi
+
+    local slug="${parts[0]}"
+    local symbol="${parts[1]}"
+    local rest=("${parts[@]:2}")
+
+    HAPPY_INDEX=$((HAPPY_INDEX + 1))
+    local index_formatted
+    printf -v index_formatted "%03d" "${HAPPY_INDEX}"
+    local output_file="${OUTPUT_DIR}/${index_formatted}__${slug}.png"
+
+    local stderr_file
+    stderr_file="$(mktemp)"
+    local exit_code=0
+    # Resolve fixture placeholders: $SYMBOL_FIXTURE, $BACKGROUND_FIXTURE.
+    local expanded=()
+    local a
+    for a in ${rest[@]+"${rest[@]}"}; do
+        case "${a}" in
+            '$SYMBOL_FIXTURE')     expanded+=("${FIXTURE_SYMBOL}") ;;
+            '$BACKGROUND_FIXTURE') expanded+=("${FIXTURE_BACKGROUND}") ;;
+            *)                     expanded+=("${a}") ;;
+        esac
+    done
+
+    "${CLI_BINARY}" "${symbol}" ${expanded[@]+"${expanded[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
+        || exit_code=$?
+
+    if [[ "${exit_code}" -eq 0 && -s "${output_file}" ]]; then
+        HAPPY_PASS=$((HAPPY_PASS + 1))
+        echo "PASS  ${index_formatted}  ${slug}" | tee -a "${README}"
+    else
+        HAPPY_FAIL=$((HAPPY_FAIL + 1))
+        echo "FAIL  ${index_formatted}  ${slug}  exit=${exit_code}" | tee -a "${README}"
+        if [[ -s "${stderr_file}" ]]; then
+            sed 's/^/        /' "${stderr_file}" | head -5 >> "${README}"
+        fi
+    fi
+
+    rm -f "${stderr_file}"
 }
 
 run_negative_case() {
