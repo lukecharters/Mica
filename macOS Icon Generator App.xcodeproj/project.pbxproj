@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8C2136062F920062001C769A /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C2136052F920062001C769A /* ArgumentParser */; };
+		8C2137A12F921790001C769A /* sfIconGen-CLI in Embed sfIconGen-CLI */ = {isa = PBXBuildFile; fileRef = 8C3148C92E61E39F00C7A0A9 /* sfIconGen-CLI */; };
 		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
 		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
 		8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C3148D22E61E3F400C7A0A9 /* ArgumentParser */; };
@@ -15,6 +16,13 @@
 
 /* Begin PBXContainerItemProxy section */
 		8C2136092F920188001C769A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8C3148C82E61E39F00C7A0A9;
+			remoteInfo = "sfIconGen-CLI";
+		};
+		8C21379E2F9216F6001C769A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
 			proxyType = 1;
@@ -59,6 +67,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		8C2137A02F92173C001C769A /* Embed sfIconGen-CLI */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				8C2137A12F921790001C769A /* sfIconGen-CLI in Embed sfIconGen-CLI */,
+			);
+			name = "Embed sfIconGen-CLI";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8C3148C72E61E39F00C7A0A9 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -371,10 +390,12 @@
 				8C71CC952DBDDDD2006FB320 /* Sources */,
 				8C71CC962DBDDDD2006FB320 /* Frameworks */,
 				8C71CC972DBDDDD2006FB320 /* Resources */,
+				8C2137A02F92173C001C769A /* Embed sfIconGen-CLI */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8C21379F2F9216F6001C769A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */,
@@ -644,6 +665,11 @@
 			isa = PBXTargetDependency;
 			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
 			targetProxy = 8C2136092F920188001C769A /* PBXContainerItemProxy */;
+		};
+		8C21379F2F9216F6001C769A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8C3148C82E61E39F00C7A0A9 /* sfIconGen-CLI */;
+			targetProxy = 8C21379E2F9216F6001C769A /* PBXContainerItemProxy */;
 		};
 		8C50A4CA2E75A893000ED391 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
