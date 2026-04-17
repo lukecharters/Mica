@@ -270,7 +270,29 @@ run_negative_case() {
 }
 
 print_summary() {
-    echo "[summary] (stub)"
+    local happy_total=$((HAPPY_PASS + HAPPY_FAIL))
+    local neg_total=$((NEG_PASS + NEG_FAIL))
+    local line="Happy: ${HAPPY_PASS}/${happy_total} passed | Negative: ${NEG_PASS}/${neg_total} passed | Output: ${OUTPUT_DIR}"
+
+    echo ""
+    echo "============================================================"
+    echo "${line}"
+    echo "============================================================"
+    {
+        echo ""
+        echo "============================================================"
+        echo "${line}"
+        echo "============================================================"
+    } >> "${README}"
+
+    if command -v open >/dev/null 2>&1; then
+        open "${OUTPUT_DIR}"
+    fi
+
+    if [[ "${HAPPY_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 ]]; then
+        exit 1
+    fi
+    exit 0
 }
 
 # ---- main --------------------------------------------------------------------
