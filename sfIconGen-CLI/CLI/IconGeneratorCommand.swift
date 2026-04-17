@@ -594,6 +594,14 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         }
     }
 
+    // MARK: - Testing Support
+
+    /// Expose the private validation chain for unit tests. Mirrors the
+    /// `IconGeneratorCLI.buildTestSettings(from:)` pattern.
+    func performValidationForTesting() throws {
+        try performValidation()
+    }
+
     // MARK: - Validation
 
     private func performValidation() throws {
