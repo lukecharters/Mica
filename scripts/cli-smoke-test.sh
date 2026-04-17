@@ -86,7 +86,10 @@ setup_run() {
     local timestamp
     timestamp="$(date +%Y-%m-%d-%H%M%S)"
     OUTPUT_DIR="${OUTPUT_ROOT}/${timestamp}"
-    mkdir -p "${OUTPUT_DIR}"
+    if ! mkdir -p "${OUTPUT_DIR}"; then
+        echo "ERROR: failed to create output directory: ${OUTPUT_DIR}" >&2
+        exit 2
+    fi
     README="${OUTPUT_DIR}/README.txt"
 
     local git_sha git_branch
