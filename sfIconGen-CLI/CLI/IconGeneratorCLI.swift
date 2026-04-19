@@ -24,27 +24,43 @@ class IconGeneratorCLI {
     
     func generateIcon(from command: IconGeneratorCommand) async throws {
         do {
-            // Phase 1: Enhanced validation
+            // Phase 1: Validation
             currentPhase = .validation
             try await performEnhancedValidation(command)
-            
-            // Phase 2: Build settings with comprehensive error handling
+
+            // Phase 2: Build settings
             currentPhase = .settingsBuilding
             let settings = try buildIconSettings(from: command)
-            
-            // Phase 3: Render icon with progress tracking
+
+            // Phase 3: Render
             currentPhase = .rendering
-            let image = try await renderIconWithErrorHandling(settings: settings)
-            
-            // Phase 4: Save with enhanced file operations
+            let image: NSImage
+
+            if command.generation.generationMode == "apple-reference" {
+                image = try await renderAppleReference(command: command, settings: settings)
+            } else {
+                // Load badge appex image if badge uses apple-reference source
+                var badgeAppexImage: NSImage? = nil
+                if settings.showBadge && command.badge.badgeIconSource == "apple-reference" {
+                    badgeAppexImage = try renderAppexIcon(
+                        symbolName: settings.badgeSymbolName,
+                        enclosureColor: command.badge.badgeAppexEnclosureColor,
+                        symbolColor: command.badge.badgeAppexSymbolColor,
+                        settings: settings
+                    )
+                }
+                image = try await renderIconWithErrorHandling(settings: settings, badgeAppexImage: badgeAppexImage)
+            }
+
+            // Phase 4: Save
             currentPhase = .saving
-            let outputURL = try resolveOutputPath(symbolName: command.symbolName, userPath: command.outputPath)
+            let outputURL = try resolveOutputPath(symbolName: command.symbolName, userPath: command.export.outputPath)
             try await saveImageWithValidation(image, to: outputURL, settings: settings)
-            
-            // Phase 5: Success reporting
+
+            // Phase 5: Report
             currentPhase = .complete
-            reportSuccess(outputURL: outputURL, settings: settings)
-            
+            reportSuccess(outputURL: outputURL, settings: settings, generationMode: command.generation.generationMode)
+
         } catch let error as CLIError {
             handleCLIError(error, phase: currentPhase)
             throw error
@@ -56,21 +72,88 @@ class IconGeneratorCLI {
             throw CLIError.unexpectedError("Unexpected error during \(currentPhase): \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Apple Reference Rendering
+
+    private func renderAppleReference(command: IconGeneratorCommand, settings: IconSettings) async throws -> NSImage {
+        let appexPath = "/System/Library/ExtensionKit/Extensions/Storage.appex"
+        guard FileManager.default.fileExists(atPath: appexPath) else {
+            throw CLIError.renderingError("Apple Reference mode requires Storage.appex at \(appexPath). This file is not available on this system.")
+        }
+
+        let scaleFactor = settings.exportRetinaSize ? 2 : 1
+        let appexImage = try AppexReferenceService.renderForExport(
+            symbolName: command.symbolName,
+            enclosureColor: parseAppexColor(command.generation.appexEnclosureColor),
+            symbolColor: parseAppexColor(command.generation.appexSymbolColor),
+            pointSize: settings.exportSize,
+            scaleFactor: scaleFactor,
+            colorSpace: settings.exportColorSpace
+        )
+
+        // If badge is present, composite via renderAppexWithBadge
+        if settings.showBadge {
+            var badgeAppexImage: NSImage? = nil
+            if command.badge.badgeIconSource == "apple-reference" {
+                badgeAppexImage = try renderAppexIcon(
+                    symbolName: settings.badgeSymbolName,
+                    enclosureColor: command.badge.badgeAppexEnclosureColor,
+                    symbolColor: command.badge.badgeAppexSymbolColor,
+                    settings: settings
+                )
+            }
+            return try await withCheckedThrowingContinuation { continuation in
+                Task { @MainActor in
+                    let composited = IconRenderer.renderAppexWithBadge(
+                        appexImage: appexImage,
+                        settings: settings,
+                        badgeAppexImage: badgeAppexImage
+                    )
+                    continuation.resume(returning: composited)
+                }
+            }
+        }
+
+        return appexImage
+    }
+
+    private func renderAppexIcon(symbolName: String, enclosureColor: String, symbolColor: String, settings: IconSettings) throws -> NSImage {
+        let scaleFactor = settings.exportRetinaSize ? 2 : 1
+        return try AppexReferenceService.renderForExport(
+            symbolName: symbolName,
+            enclosureColor: parseAppexColor(enclosureColor),
+            symbolColor: parseAppexColor(symbolColor),
+            pointSize: settings.exportSize,
+            scaleFactor: scaleFactor,
+            colorSpace: settings.exportColorSpace
+        )
+    }
+
+    private func parseAppexColor(_ input: String) -> AppexEnclosureColor {
+        AppexEnclosureColor(rawValue: input) ?? .blue
+    }
     
     // MARK: - Enhanced Validation
     
     private func performEnhancedValidation(_ command: IconGeneratorCommand) async throws {
-        // Validate SF Symbol exists (if possible)
-        try validateSFSymbolExists(command.symbolName)
-        
+        // Validate SF Symbol exists (only when using SF Symbol source)
+        if command.generation.iconSource == "symbol" {
+            try validateSFSymbolExists(command.symbolName)
+        }
+
+        // Validate badge symbol exists (only when badge uses SF Symbol source)
+        if let badgeName = command.badge.badge, command.badge.badgeIconSource == "symbol" {
+            try validateSFSymbolExists(badgeName)
+        }
+
         // Pre-validate all color strings with context
         try validateAllColors(command)
-        
+
         // Validate file system permissions
-        if let outputPath = command.outputPath {
+        if let outputPath = command.export.outputPath {
             try validateOutputPermissions(outputPath)
         }
-        
+
         // Validate rendering mode consistency
         try validateRenderingModeConsistency(command)
     }
@@ -85,27 +168,26 @@ class IconGeneratorCLI {
     
     private func validateAllColors(_ command: IconGeneratorCommand) throws {
         let colorValidations: [(String, String, Bool)] = [
-            (command.baseColor, "base-color", true),
-            (command.symbolColor, "symbol-color", true),
-            (command.hierarchicalColor, "hierarchical-color", command.renderingMode == "hierarchical"),
-            (command.palettePrimary, "palette-primary", command.renderingMode == "palette"),
-            (command.paletteSecondary, "palette-secondary", command.renderingMode == "palette"),
-            (command.paletteTertiary, "palette-tertiary", command.renderingMode == "palette"),
-            (command.badgeColor, "badge-color", command.badge != nil),
-            (command.badgeSymbolColor, "badge-symbol-color", command.badge != nil)
+            (command.background.baseColor, "base-color", true),
+            (command.symbol.symbolColor, "symbol-color", true),
+            (command.symbol.hierarchicalColor, "hierarchical-color", command.symbol.renderingMode == "hierarchical"),
+            (command.symbol.palettePrimary, "palette-primary", command.symbol.renderingMode == "palette"),
+            (command.symbol.paletteSecondary, "palette-secondary", command.symbol.renderingMode == "palette"),
+            (command.symbol.paletteTertiary, "palette-tertiary", command.symbol.renderingMode == "palette"),
+            (command.badge.badgeColor, "badge-color", command.badge.badge != nil),
+            (command.badge.badgeSymbolColor, "badge-symbol-color", command.badge.badge != nil)
         ]
-        
-        // Add custom colors if specified
+
         var allValidations = colorValidations
-        if let primary = command.customPrimary {
-            allValidations.append((primary, "custom-primary", command.useCustomColors))
+        if let primary = command.background.customPrimary {
+            allValidations.append((primary, "custom-primary", command.background.useCustomColors))
         }
-        if let secondary = command.customSecondary {
-            allValidations.append((secondary, "custom-secondary", command.useCustomColors))
+        if let secondary = command.background.customSecondary {
+            allValidations.append((secondary, "custom-secondary", command.background.useCustomColors))
         }
-        if command.badgeUseCustom {
-            allValidations.append((command.badgePrimary, "badge-primary", true))
-            allValidations.append((command.badgeSecondary, "badge-secondary", true))
+        if command.badge.badgeUseCustom {
+            allValidations.append((command.badge.badgePrimary, "badge-primary", true))
+            allValidations.append((command.badge.badgeSecondary, "badge-secondary", true))
         }
         
         for (colorStr, paramName, shouldValidate) in allValidations {
@@ -153,16 +235,13 @@ class IconGeneratorCLI {
     }
     
     private func validateRenderingModeConsistency(_ command: IconGeneratorCommand) throws {
-        // Validate that rendering mode and color arguments are consistent
-        switch command.renderingMode {
+        switch command.symbol.renderingMode {
         case "palette":
-            // Ensure all palette colors are provided
-            if command.palettePrimary.isEmpty || command.paletteSecondary.isEmpty || command.paletteTertiary.isEmpty {
+            if command.symbol.palettePrimary.isEmpty || command.symbol.paletteSecondary.isEmpty || command.symbol.paletteTertiary.isEmpty {
                 throw CLIError.configurationError("Palette rendering mode requires all three palette colors (--palette-primary, --palette-secondary, --palette-tertiary)")
             }
         case "hierarchical":
-            // Hierarchical should have hierarchical color
-            if command.hierarchicalColor.isEmpty {
+            if command.symbol.hierarchicalColor.isEmpty {
                 throw CLIError.configurationError("Hierarchical rendering mode should specify --hierarchical-color")
             }
         default:
@@ -174,100 +253,159 @@ class IconGeneratorCLI {
     
     private func buildIconSettings(from command: IconGeneratorCommand) throws -> IconSettings {
         var settings = IconSettings()
-        settings.backgroundMode = .custom
-        
+
         do {
-            // Basic properties with validation
+            // Export properties
             settings.symbolName = command.symbolName
-            settings.exportSize = CGFloat(command.size)
-            settings.exportRetinaSize = command.retina
-            settings.exportColorSpace = try parseColorSpace(command.colorSpace)
-            
-            // Background colors with enhanced parsing
-            settings.baseColor = try ColorParser.parse(command.baseColor)
-            settings.useCustomColors = command.useCustomColors
-            
-            if command.useCustomColors {
-                if let primary = command.customPrimary {
+            settings.exportSize = CGFloat(command.export.size)
+            settings.exportRetinaSize = command.export.retina
+            settings.exportColorSpace = try parseColorSpace(command.export.colorSpace)
+
+            // Icon source
+            switch command.generation.iconSource {
+            case "image":
+                settings.iconSource = .customImage
+                if let path = command.generation.importedImage {
+                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                    settings.importedImage = try ImageImportService.importFromURL(url)
+                    settings.importedImageScale = command.generation.importedImageScale
+                }
+            default:
+                settings.iconSource = .sfSymbol
+            }
+
+            // Background mode
+            switch command.background.backgroundMode {
+            case "image":
+                settings.backgroundMode = .importedImage
+                if let path = command.background.importedBackground {
+                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                    settings.importedBackground = try ImageImportService.importFromURL(url)
+                    settings.importedBackgroundScale = command.background.importedBackgroundScale
+                    settings.importedBackgroundPaddingCompensation = command.background.importedBackgroundPaddingCompensation
+                }
+            default:
+                settings.backgroundMode = .custom
+            }
+
+            // Background colors
+            settings.baseColor = try ColorParser.parse(command.background.baseColor)
+            settings.useCustomColors = command.background.useCustomColors
+
+            if command.background.useCustomColors {
+                if let primary = command.background.customPrimary {
                     settings.customPrimaryColor = try ColorParser.parse(primary)
                 } else {
-                    // Use base color as fallback
                     settings.customPrimaryColor = settings.baseColor
                 }
-                
-                if let secondary = command.customSecondary {
+                if let secondary = command.background.customSecondary {
                     settings.customSecondaryColor = try ColorParser.parse(secondary)
                 } else {
-                    // Create a darker version of primary as fallback
                     settings.customSecondaryColor = createDarkerColor(settings.customPrimaryColor)
                 }
             }
-            
-            // Symbol rendering with mode-specific validation
-            settings.symbolRenderingMode = try parseRenderingMode(command.renderingMode)
-            settings.symbolColor = try ColorParser.parse(command.symbolColor)
-            settings.hierarchicalSymbolColor = try ColorParser.parse(command.hierarchicalColor)
-            settings.paletteSymbolPrimaryColor = try ColorParser.parse(command.palettePrimary)
-            settings.paletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(command.paletteSecondary)
-            settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.paletteTertiary)
-            
-            // Shadow settings
-            settings.backgroundShadowStyle = command.noBackgroundShadow ? .off : .macOS26
-            settings.enableSymbolShadow = !command.noSymbolShadow
-            
-            // Badge settings with comprehensive validation
-            if let badgeSymbol = command.badge {
-                try validateSFSymbolExists(badgeSymbol) // Validate badge symbol exists
-                
+
+            // Background style
+            settings.enableBackgroundGradient = !command.background.noGradient
+            settings.cornerRadiusStyle = try parseCornerRadius(command.background.cornerRadius)
+            settings.backgroundShadowStyle = try parseShadowStyle(command.background.effectiveShadowStyle)
+
+            // Symbol rendering
+            settings.symbolRenderingMode = try parseRenderingMode(command.symbol.renderingMode)
+            settings.symbolColor = try ColorParser.parse(command.symbol.symbolColor)
+            settings.hierarchicalSymbolColor = try ColorParser.parse(command.symbol.hierarchicalColor)
+            settings.paletteSymbolPrimaryColor = try ColorParser.parse(command.symbol.palettePrimary)
+            settings.paletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(command.symbol.paletteSecondary)
+            settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.symbol.paletteTertiary)
+
+            // Symbol style
+            settings.enableSymbolShadow = !command.symbol.noSymbolShadow
+            settings.symbolWeight = try parseSymbolWeight(command.symbol.symbolWeight)
+            settings.manualSymbolScale = command.symbol.symbolScale
+            settings.symbolColorRenderingMode = try parseSymbolColorRendering(command.symbol.symbolColorRendering)
+
+            // Badge settings
+            if let badgeSymbol = command.badge.badge {
                 settings.showBadge = true
                 settings.badgeSymbolName = badgeSymbol
-                settings.badgePosition = try parseBadgePosition(command.badgePosition)
-                settings.badgeBaseColor = try ColorParser.parse(command.badgeColor)
-                settings.badgeUseCustomColors = command.badgeUseCustom
-                
-                if command.badgeUseCustom {
-                    settings.badgeCustomPrimaryColor = try ColorParser.parse(command.badgePrimary)
-                    settings.badgeCustomSecondaryColor = try ColorParser.parse(command.badgeSecondary)
+                settings.badgePosition = try parseBadgePosition(command.badge.badgePosition)
+
+                // Badge layout
+                settings.badgeScale = command.badge.badgeScale
+                settings.badgeSymbolScale = command.badge.badgeSymbolScale
+                settings.badgeManualOffsetX = command.badge.badgeOffsetX
+                settings.badgeManualOffsetY = command.badge.badgeOffsetY
+
+                // Badge background
+                settings.badgeBaseColor = try ColorParser.parse(command.badge.badgeColor)
+                settings.badgeUseCustomColors = command.badge.badgeUseCustom
+                if command.badge.badgeUseCustom {
+                    settings.badgeCustomPrimaryColor = try ColorParser.parse(command.badge.badgePrimary)
+                    settings.badgeCustomSecondaryColor = try ColorParser.parse(command.badge.badgeSecondary)
                 }
-                
-                settings.badgeSymbolRenderingMode = try parseRenderingMode(command.badgeRendering)
-                settings.badgeSymbolColor = try ColorParser.parse(command.badgeSymbolColor)
-                settings.badgeHierarchicalSymbolColor = try ColorParser.parse(command.badgeSymbolColor)
-                
-                // Set badge palette colors (using main palette colors as defaults if badge uses palette mode)
-                if command.badgeRendering == "palette" {
-                    settings.badgePaletteSymbolPrimaryColor = settings.paletteSymbolPrimaryColor
-                    settings.badgePaletteSymbolSecondaryColor = settings.paletteSymbolSecondaryColor
-                    settings.badgePaletteSymbolTertiaryColor = settings.paletteSymbolTertiaryColor
+                settings.badgeEnableBackgroundGradient = !command.badge.badgeNoGradient
+                settings.badgeEnableBackgroundShadow = !command.badge.badgeNoBackgroundShadow
+                settings.badgeEnableSymbolShadow = !command.badge.badgeNoSymbolShadow
+
+                // Badge symbol rendering
+                settings.badgeSymbolRenderingMode = try parseRenderingMode(command.badge.badgeRendering)
+                settings.badgeSymbolColor = try ColorParser.parse(command.badge.badgeSymbolColor)
+                settings.badgeHierarchicalSymbolColor = try ColorParser.parse(command.badge.badgeHierarchicalColor)
+                settings.badgePaletteSymbolPrimaryColor = try ColorParser.parse(command.badge.badgePalettePrimary)
+                settings.badgePaletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(command.badge.badgePaletteSecondary)
+                settings.badgePaletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.badge.badgePaletteTertiary)
+                settings.badgeSymbolWeight = try parseSymbolWeight(command.badge.badgeSymbolWeight)
+                settings.badgeSymbolColorRenderingMode = try parseSymbolColorRendering(command.badge.badgeSymbolColorRendering)
+
+                // Badge icon source
+                switch command.badge.badgeIconSource {
+                case "image":
+                    settings.badgeIconSource = .customImage
+                    if let path = command.badge.badgeImportedImage {
+                        let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                        settings.badgeImportedImage = try ImageImportService.importFromURL(url)
+                        settings.badgeImportedImageScale = command.badge.badgeImportedImageScale
+                    }
+                case "apple-reference":
+                    settings.badgeIconSource = .appleReference
+                default:
+                    settings.badgeIconSource = .sfSymbol
+                }
+
+                // Badge imported background
+                if let path = command.badge.badgeImportedBackground {
+                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                    settings.badgeUseImportedBackground = true
+                    settings.badgeImportedBackground = try ImageImportService.importFromURL(url)
+                    settings.badgeImportedBackgroundScale = command.badge.badgeImportedBackgroundScale
+                    settings.badgeImportedBackgroundPaddingCompensation = command.badge.badgeImportedBackgroundPaddingCompensation
                 }
             }
-            
+
         } catch let error as ColorParseError {
             throw CLIError.invalidColorFormat("Color parsing error: \(error.localizedDescription)")
+        } catch let error as ImageImportError {
+            throw CLIError.imageConversion("Image import error: \(error.localizedDescription)")
         }
-        
+
         return settings
     }
     
     // MARK: - Enhanced Rendering
     
-    private func renderIconWithErrorHandling(settings: IconSettings) async throws -> NSImage {
+    private func renderIconWithErrorHandling(settings: IconSettings, badgeAppexImage: NSImage? = nil) async throws -> NSImage {
         return try await withCheckedThrowingContinuation { continuation in
             Task { @MainActor in
-                let image = IconRenderer.renderIconSafely(settings: settings)
-                
-                // Validate the rendered image
+                let image = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: badgeAppexImage)
+
                 guard image.size.width > 0 && image.size.height > 0 else {
                     continuation.resume(throwing: CLIError.renderingError("Generated image has invalid dimensions"))
                     return
                 }
-                
-                // Validate image has content
                 guard image.cgImage(forProposedRect: nil, context: nil, hints: nil) != nil else {
                     continuation.resume(throwing: CLIError.renderingError("Failed to generate valid image content"))
                     return
                 }
-                
                 continuation.resume(returning: image)
             }
         }
@@ -385,8 +523,53 @@ class IconGeneratorCLI {
         case "top-right": return .topRight
         case "bottom-left": return .bottomLeft
         case "bottom-right": return .bottomRight
-        default: 
+        default:
             throw CLIError.invalidArgument("Invalid badge position: \(input). Must be 'top-left', 'top-right', 'bottom-left', or 'bottom-right'")
+        }
+    }
+
+    private func parseCornerRadius(_ input: String) throws -> IconCornerRadiusStyle {
+        switch input.lowercased() {
+        case "macos11": return .macOS11
+        case "macos26": return .macOS26
+        default:
+            throw CLIError.invalidArgument("Invalid corner radius: \(input). Must be 'macos11' or 'macos26'")
+        }
+    }
+
+    private func parseShadowStyle(_ input: String) throws -> BackgroundShadowStyle {
+        switch input.lowercased() {
+        case "off": return .off
+        case "macos11": return .sequoia
+        case "macos26": return .macOS26
+        default:
+            throw CLIError.invalidArgument("Invalid shadow style: \(input). Must be 'off', 'macos11', or 'macos26'")
+        }
+    }
+
+    private func parseSymbolWeight(_ input: String) throws -> SymbolWeight {
+        switch input.lowercased() {
+        case "auto": return .auto
+        case "ultralight": return .ultraLight
+        case "thin": return .thin
+        case "light": return .light
+        case "regular": return .regular
+        case "medium": return .medium
+        case "semibold": return .semibold
+        case "bold": return .bold
+        case "heavy": return .heavy
+        case "black": return .black
+        default:
+            throw CLIError.invalidArgument("Invalid symbol weight: \(input). Must be one of: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black")
+        }
+    }
+
+    private func parseSymbolColorRendering(_ input: String) throws -> SymbolColorRenderingMode {
+        switch input.lowercased() {
+        case "flat": return .flat
+        case "gradient": return .gradient
+        default:
+            throw CLIError.invalidArgument("Invalid symbol color rendering: \(input). Must be 'flat' or 'gradient'")
         }
     }
     
@@ -406,20 +589,24 @@ class IconGeneratorCLI {
     
     // MARK: - Progress and Error Reporting
     
-    private func reportSuccess(outputURL: URL, settings: IconSettings) {
+    private func reportSuccess(outputURL: URL, settings: IconSettings, generationMode: String = "custom") {
         let fileSize = getFileSize(outputURL)
-        let dimensions = settings.exportRetinaSize ? 
-            "\(Int(settings.exportSize * 2))x\(Int(settings.exportSize * 2))" : 
+        let dimensions = settings.exportRetinaSize ?
+            "\(Int(settings.exportSize * 2))x\(Int(settings.exportSize * 2))" :
             "\(Int(settings.exportSize))x\(Int(settings.exportSize))"
-        
-        print("✅ Icon generated successfully!")
-        print("   📄 File: \(outputURL.path)")
-        print("   📐 Size: \(dimensions) pixels")
-        print("   🎨 Mode: \(settings.symbolRenderingMode.rawValue)")
-        print("   💾 File size: \(fileSize)")
-        
+
+        print("Icon generated successfully!")
+        print("  File: \(outputURL.path)")
+        print("  Size: \(dimensions) pixels")
+        if generationMode == "apple-reference" {
+            print("  Mode: Apple Reference")
+        } else {
+            print("  Rendering: \(settings.symbolRenderingMode.rawValue)")
+        }
+        print("  File size: \(fileSize)")
+
         if settings.showBadge {
-            print("   🏷️  Badge: \(settings.badgeSymbolName)")
+            print("  Badge: \(settings.badgeSymbolName)")
         }
     }
     
