@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "6A18C887-ED66-4F7E-9C2E-C6D69BDE0E85",
+      "name" : "Full",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testExecutionOrdering" : "random"
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:macOS Icon Generator App.xcodeproj",
+        "identifier" : "8C71CCA92DBDDDD3006FB320",
+        "name" : "macOS Icon Generator AppTests"
+      }
+    },
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:macOS Icon Generator App.xcodeproj",
+        "identifier" : "8C71CCB32DBDDDD3006FB320",
+        "name" : "macOS Icon Generator AppUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

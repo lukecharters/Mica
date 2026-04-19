@@ -92,6 +92,8 @@
 
 /* Begin PBXFileReference section */
 		8C2136D42F920372001C769A /* sfIconGen-CLI Tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "sfIconGen-CLI Tests"; sourceTree = "<group>"; };
+		8C27BE312F95153C00C00DCA /* Default.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = Default.xctestplan; sourceTree = "<group>"; };
+		8C27BE322F95155700C00DCA /* Full.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = Full.xctestplan; sourceTree = "<group>"; };
 		8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8C3148B62E61E07300C7A0A9 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		8C3148C92E61E39F00C7A0A9 /* sfIconGen-CLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "sfIconGen-CLI"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -254,6 +256,8 @@
 		8C71CC902DBDDDD2006FB320 = {
 			isa = PBXGroup;
 			children = (
+				8C27BE312F95153C00C00DCA /* Default.xctestplan */,
+				8C27BE322F95155700C00DCA /* Full.xctestplan */,
 				8C2136D42F920372001C769A /* sfIconGen-CLI Tests */,
 				8C75F6482E921B52008FB893 /* Products */,
 				8C71CC9B2DBDDDD2006FB320 /* macOS Icon Generator App */,
