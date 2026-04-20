@@ -19,12 +19,16 @@ class CalibrationStore {
     var entries: [String: CalibrationEntry] = [:]
     private let fileURL: URL
 
-    init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("icon-calibration.json")
-        print("CalibrationStore: \(fileURL.path)")
+    init(fileURL: URL? = nil) {
+        if let fileURL {
+            self.fileURL = fileURL
+        } else {
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            let dir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            self.fileURL = dir.appendingPathComponent("icon-calibration.json")
+        }
+        print("CalibrationStore: \(self.fileURL.path)")
         load()
     }
 

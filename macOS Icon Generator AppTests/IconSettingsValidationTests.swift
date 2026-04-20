@@ -5,6 +5,7 @@ import Testing
 import SwiftUI
 @testable import macOS_Icon_Generator_App
 
+@Suite(.tags(.unit))
 @MainActor
 struct IconSettingsValidationTests {
     
