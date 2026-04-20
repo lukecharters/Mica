@@ -4,6 +4,7 @@ import SwiftUI
 import AppKit
 @testable import macOS_Icon_Generator_App
 
+@Suite(.tags(.rendering))
 @MainActor
 struct IconRenderingTests {
 
