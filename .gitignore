@@ -69,6 +69,7 @@ fastlane/test_output
 
 # Superpowers brainstorm sessions
 .superpowers/
+.worktrees/
 
 # Github Copilot
 .github/
