@@ -150,15 +150,16 @@ struct IconDocumentTests {
         #expect(stored.scaleFactor == 1)
     }
 
-    // MARK: - init(configuration:) — the unsupported read path
+    // MARK: - Unsupported read-path state-shape contract
 
-    @Test("The read-configuration init produces default state (reading is unsupported)")
-    func init_configuration_defaultsAll() throws {
+    @Test("Unsupported read-path state shape matches the documented defaults")
+    func unsupportedReadPath_stateShapeMatchesDocumentedDefaults() throws {
         // FileDocumentReadConfiguration cannot be constructed directly in
-        // this Xcode 26.4 environment, so this test stays indirect. It
-        // locks in the documented stored-property shape of an unsupported
-        // read by comparing an explicit snapshot against a manually
-        // assembled stand-in document.
+        // this Xcode 26.4 environment, so this is a state-shape contract
+        // test, not direct execution coverage of init(configuration:).
+        // It locks in the documented stored-property shape of an
+        // unsupported read by comparing an explicit snapshot against a
+        // manually assembled stand-in document.
         let expected = ReadStateSnapshot(
             settings: IconSettings(),
             hasPreRenderedImage: false,
