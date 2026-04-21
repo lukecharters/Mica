@@ -51,15 +51,12 @@ struct ImageImportServiceTests {
     }
 
     /// A fresh scratch directory per test with UUID suffix, cleaned up in deinit.
-    /// Uses the test bundle's parent directory instead of temporary folders.
+    /// Uses NSTemporaryDirectory() so each test gets an isolated temp path.
     final class TempDir {
         let url: URL
 
         init() {
-            let baseURL = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Library/Application Support", isDirectory: true)
-                .appendingPathComponent("macOS Icon Generator App Tests", isDirectory: true)
-            try? FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true)
+            let baseURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
             url = baseURL.appendingPathComponent(
                 "ImageImportServiceTests-\(UUID().uuidString)",
                 isDirectory: true
