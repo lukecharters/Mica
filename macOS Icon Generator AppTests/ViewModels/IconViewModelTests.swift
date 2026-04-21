@@ -135,6 +135,50 @@ struct IconViewModelTests {
         #expect(a != b)
     }
 
+    @Test("BadgeAppexGenerationKey: differing badge icon source breaks equality")
+    func badgeAppexGenerationKey_inequal_differentBadgeIconSource() {
+        let a = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
+        let b = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .customImage,
+            symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
+        #expect(a != b)
+    }
+
+    @Test("BadgeAppexGenerationKey: differing symbol name breaks equality")
+    func badgeAppexGenerationKey_inequal_differentSymbolName() {
+        let a = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
+        let b = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "bell.fill", enclosureColor: .blue, symbolColor: .white)
+        #expect(a != b)
+    }
+
+    @Test("BadgeAppexGenerationKey: differing enclosure color breaks equality")
+    func badgeAppexGenerationKey_inequal_differentEnclosureColor() {
+        let a = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
+        let b = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "gearshape.fill", enclosureColor: .green, symbolColor: .white)
+        #expect(a != b)
+    }
+
+    @Test("BadgeAppexGenerationKey: differing symbol color breaks equality")
+    func badgeAppexGenerationKey_inequal_differentSymbolColor() {
+        let a = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
+        let b = IconViewModel.BadgeAppexGenerationKey(
+            showBadge: true, badgeIconSource: .sfSymbol,
+            symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .yellow)
+        #expect(a != b)
+    }
+
     // MARK: - Preset color selectors
 
     @Test("selectPresetColor with a valid index writes to iconSettings.baseColor")
