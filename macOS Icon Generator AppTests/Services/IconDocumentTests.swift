@@ -40,7 +40,7 @@ struct IconDocumentTests {
 
     /// Extracts the unsupported-read state shape without depending on a
     /// comparator document or a constructible ReadConfiguration.
-    static func snapshot(of document: IconDocument) -> ReadStateSnapshot {
+    private static func snapshot(of document: IconDocument) -> ReadStateSnapshot {
         ReadStateSnapshot(
             settings: document.settings,
             hasPreRenderedImage: document.preRenderedImage != nil,
@@ -154,17 +154,23 @@ struct IconDocumentTests {
 
     @Test("The read-configuration init produces default state (reading is unsupported)")
     func init_configuration_defaultsAll() throws {
-        // ReadConfiguration is not reliably constructible here, so this
-        // test keeps the unsupported read-path check indirect. It locks
-        // in the documented shape of a refused read: default settings
-        // plus false for every payload-presence flag.
+        // FileDocumentReadConfiguration cannot be constructed directly in
+        // this Xcode 26.4 environment, so this test stays indirect. It
+        // locks in the documented stored-property shape of an unsupported
+        // read by comparing an explicit snapshot against a manually
+        // assembled stand-in document.
         let expected = ReadStateSnapshot(
             settings: IconSettings(),
             hasPreRenderedImage: false,
             hasAppexExportParams: false,
             hasBadgeAppexImage: false
         )
-        let actual = Self.snapshot(of: IconDocument(settings: IconSettings()))
+        var standIn = IconDocument(preRenderedImage: Self.makeSentinelImage())
+        standIn.settings = IconSettings()
+        standIn.preRenderedImage = nil
+        standIn.appexExportParams = nil
+        standIn.badgeAppexImage = nil
+        let actual = Self.snapshot(of: standIn)
 
         #expect(actual == expected)
     }
