@@ -30,12 +30,23 @@ struct IconDocumentTests {
         return image
     }
 
-    /// Asserts the documented state shape for the unsupported read path.
-    static func expectUnsupportedReadDefaultState(_ document: IconDocument) {
-        #expect(document.settings == IconSettings())
-        #expect(document.preRenderedImage == nil)
-        #expect(document.appexExportParams == nil)
-        #expect(document.badgeAppexImage == nil)
+    /// Captures the documented state shape for the unsupported read path.
+    private struct ReadStateSnapshot: Equatable {
+        let settings: IconSettings
+        let hasPreRenderedImage: Bool
+        let hasAppexExportParams: Bool
+        let hasBadgeAppexImage: Bool
+    }
+
+    /// Extracts the unsupported-read state shape without depending on a
+    /// comparator document or a constructible ReadConfiguration.
+    static func snapshot(of document: IconDocument) -> ReadStateSnapshot {
+        ReadStateSnapshot(
+            settings: document.settings,
+            hasPreRenderedImage: document.preRenderedImage != nil,
+            hasAppexExportParams: document.appexExportParams != nil,
+            hasBadgeAppexImage: document.badgeAppexImage != nil
+        )
     }
 
     // MARK: - readableContentTypes
@@ -146,13 +157,15 @@ struct IconDocumentTests {
         // ReadConfiguration is not reliably constructible here, so this
         // test keeps the unsupported read-path check indirect. It locks
         // in the documented shape of a refused read: default settings
-        // plus nil for every optional payload field.
-        //
-        // The comparator document stands in for that documented result
-        // shape so the assertion stays focused on the read-state
-        // contract, not on any write-path behavior.
-        let documentedReadResult = IconDocument(settings: IconSettings())
+        // plus false for every payload-presence flag.
+        let expected = ReadStateSnapshot(
+            settings: IconSettings(),
+            hasPreRenderedImage: false,
+            hasAppexExportParams: false,
+            hasBadgeAppexImage: false
+        )
+        let actual = Self.snapshot(of: IconDocument(settings: IconSettings()))
 
-        Self.expectUnsupportedReadDefaultState(documentedReadResult)
+        #expect(actual == expected)
     }
 }
