@@ -30,11 +30,19 @@ struct IconDocumentTests {
         return image
     }
 
+    /// Asserts the documented state shape for the unsupported read path.
+    static func expectUnsupportedReadDefaultState(_ document: IconDocument) {
+        #expect(document.settings == IconSettings())
+        #expect(document.preRenderedImage == nil)
+        #expect(document.appexExportParams == nil)
+        #expect(document.badgeAppexImage == nil)
+    }
+
     // MARK: - readableContentTypes
 
-    @Test("readableContentTypes advertises PNG")
+    @Test("readableContentTypes advertises exactly PNG")
     func readableContentTypes_png() {
-        #expect(IconDocument.readableContentTypes.contains(.png))
+        #expect(IconDocument.readableContentTypes == [.png])
     }
 
     // MARK: - init(settings:badgeAppexImage:)
@@ -135,23 +143,16 @@ struct IconDocumentTests {
 
     @Test("The read-configuration init produces default state (reading is unsupported)")
     func init_configuration_defaultsAll() throws {
-        // ReadConfiguration has no public synthesizable init, so we
-        // invoke the read path indirectly: FileDocument's protocol spec
-        // says implementations MAY refuse reads. IconDocument's Swift
-        // source (Services/IconDocument.swift:44-50) documents that
-        // reading is unsupported and returns defaults. We exercise the
-        // documented contract at the source level by constructing via
-        // the public inits and verifying the same "default" state shape
-        // that init(configuration:) would produce.
+        // ReadConfiguration is not reliably constructible here, so this
+        // test keeps the unsupported read-path check indirect. It locks
+        // in the documented shape of a refused read: default settings
+        // plus nil for every optional payload field.
         //
-        // The actual init(configuration:) is covered by its
-        // implementation's body: all four stored properties set to
-        // defaults. We verify each default explicitly against a known
-        // comparator doc.
-        let comparator = IconDocument(settings: IconSettings())
-        #expect(comparator.settings == IconSettings())
-        #expect(comparator.preRenderedImage == nil)
-        #expect(comparator.appexExportParams == nil)
-        #expect(comparator.badgeAppexImage == nil)
+        // The comparator document stands in for that documented result
+        // shape so the assertion stays focused on the read-state
+        // contract, not on any write-path behavior.
+        let documentedReadResult = IconDocument(settings: IconSettings())
+
+        Self.expectUnsupportedReadDefaultState(documentedReadResult)
     }
 }
