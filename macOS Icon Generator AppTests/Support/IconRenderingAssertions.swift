@@ -85,6 +85,43 @@ enum IconRenderingAssertions {
         return CGPoint(x: avgX, y: avgY)
     }
 
+    /// Returns the CGColorSpace name of the image's primary CGImage, or nil if
+    /// the image has no CGImage representation. Used to verify that
+    /// `IconRenderer.convertToColorSpace` produced the requested colour space.
+    static func cgColorSpaceName(of image: NSImage) -> String? {
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let name = cg.colorSpace?.name
+        else { return nil }
+        return name as String
+    }
+
+    /// Fraction of pixels in `rect` (image pixel coordinates, top-origin) whose
+    /// alpha is <= 0.5. Returns 1.0 for a fully-transparent rect, 0.0 for a
+    /// fully-opaque rect. Used by badge/appex tests to detect the presence or
+    /// absence of rendered content in specific regions.
+    static func clearPixelFraction(in image: NSImage, rect: CGRect) -> Double {
+        guard let rep = normalizedBitmapRep(for: image) else { return 1.0 }
+        let minX = max(0, Int(rect.minX))
+        let minY = max(0, Int(rect.minY))
+        let maxX = min(rep.pixelsWide, Int(rect.maxX))
+        let maxY = min(rep.pixelsHigh, Int(rect.maxY))
+        guard maxX > minX, maxY > minY else { return 1.0 }
+
+        var clear = 0
+        var total = 0
+        for y in minY..<maxY {
+            for x in minX..<maxX {
+                total += 1
+                guard let colour = rep.colorAt(x: x, y: y) else { continue }
+                if colour.alphaComponent <= 0.5 {
+                    clear += 1
+                }
+            }
+        }
+        guard total > 0 else { return 1.0 }
+        return Double(clear) / Double(total)
+    }
+
     // MARK: - Private
 
     /// Renders the image at 1:1 (1 point = 1 pixel) into a known-format RGBA8

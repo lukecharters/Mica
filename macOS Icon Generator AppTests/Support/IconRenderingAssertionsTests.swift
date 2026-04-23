@@ -105,4 +105,95 @@ struct IconRenderingAssertionsTests {
         // Y-centroid should be near 50 (full vertical span).
         #expect(abs(centroid.y - 50) < 2)
     }
+
+    // MARK: - cgColorSpaceName(of:)
+
+    @Test("cgColorSpaceName returns the CGColorSpace name for an sRGB NSImage")
+    func cgColorSpaceName_sRGB() throws {
+        let cs = CGColorSpace(name: CGColorSpace.sRGB)!
+        let ctx = try #require(CGContext(
+            data: nil, width: 8, height: 8,
+            bitsPerComponent: 8, bytesPerRow: 0,
+            space: cs,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        ctx.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+        let cg = try #require(ctx.makeImage())
+        let image = NSImage(cgImage: cg, size: NSSize(width: 8, height: 8))
+
+        let name = IconRenderingAssertions.cgColorSpaceName(of: image)
+        let value = try #require(name)
+        #expect(value == (CGColorSpace.sRGB as String),
+                "sRGB CGImage must report its color-space name as kCGColorSpaceSRGB")
+    }
+
+    @Test("cgColorSpaceName returns the CGColorSpace name for a Display P3 NSImage")
+    func cgColorSpaceName_displayP3() throws {
+        let cs = CGColorSpace(name: CGColorSpace.displayP3)!
+        let ctx = try #require(CGContext(
+            data: nil, width: 8, height: 8,
+            bitsPerComponent: 8, bytesPerRow: 0,
+            space: cs,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        ctx.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+        ctx.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+        let cg = try #require(ctx.makeImage())
+        let image = NSImage(cgImage: cg, size: NSSize(width: 8, height: 8))
+
+        let name = IconRenderingAssertions.cgColorSpaceName(of: image)
+        let value = try #require(name)
+        #expect(value == (CGColorSpace.displayP3 as String),
+                "Display P3 CGImage must report its color-space name as kCGColorSpaceDisplayP3")
+    }
+
+    // MARK: - clearPixelFraction(in:rect:)
+
+    @Test("clearPixelFraction returns 1.0 for a fully transparent image")
+    func clearPixelFraction_fullyTransparent() {
+        let image = NSImage(size: NSSize(width: 16, height: 16))
+        // NSImage with no drawing ops is fully transparent.
+        let fraction = IconRenderingAssertions.clearPixelFraction(
+            in: image,
+            rect: CGRect(x: 0, y: 0, width: 16, height: 16)
+        )
+        #expect(fraction == 1.0,
+                "Untouched 16x16 NSImage is fully transparent — every pixel must count as clear")
+    }
+
+    @Test("clearPixelFraction returns 0.0 for a fully opaque image")
+    func clearPixelFraction_fullyOpaque() {
+        let image = NSImage(size: NSSize(width: 16, height: 16))
+        image.lockFocus()
+        NSColor.red.setFill()
+        NSRect(x: 0, y: 0, width: 16, height: 16).fill()
+        image.unlockFocus()
+
+        let fraction = IconRenderingAssertions.clearPixelFraction(
+            in: image,
+            rect: CGRect(x: 0, y: 0, width: 16, height: 16)
+        )
+        #expect(fraction == 0.0,
+                "Solid red NSImage has no clear pixels — fraction must be 0.0")
+    }
+
+    @Test("clearPixelFraction restricts to the provided rect")
+    func clearPixelFraction_honoursRect() {
+        let image = NSImage(size: NSSize(width: 16, height: 16))
+        image.lockFocus()
+        NSColor.red.setFill()
+        // Fill only the left half — right half stays transparent.
+        NSRect(x: 0, y: 0, width: 8, height: 16).fill()
+        image.unlockFocus()
+
+        let leftFraction = IconRenderingAssertions.clearPixelFraction(
+            in: image, rect: CGRect(x: 0, y: 0, width: 8, height: 16)
+        )
+        let rightFraction = IconRenderingAssertions.clearPixelFraction(
+            in: image, rect: CGRect(x: 8, y: 0, width: 8, height: 16)
+        )
+        #expect(leftFraction == 0.0, "Left half is solid red")
+        #expect(rightFraction == 1.0, "Right half is untouched")
+    }
 }
