@@ -99,6 +99,10 @@ enum IconRenderingAssertions {
     /// alpha is <= 0.5. Returns 1.0 for a fully-transparent rect, 0.0 for a
     /// fully-opaque rect. Used by badge/appex tests to detect the presence or
     /// absence of rendered content in specific regions.
+    ///
+    /// Note: y increases downward in this rect, opposite to NSImage's logical
+    /// (AppKit) coordinates — `centroidOfNonClearPixels` flips y to bottom-origin,
+    /// but this helper does not.
     static func clearPixelFraction(in image: NSImage, rect: CGRect) -> Double {
         guard let rep = normalizedBitmapRep(for: image) else { return 1.0 }
         let minX = max(0, Int(rect.minX))
@@ -111,8 +115,8 @@ enum IconRenderingAssertions {
         var total = 0
         for y in minY..<maxY {
             for x in minX..<maxX {
-                total += 1
                 guard let colour = rep.colorAt(x: x, y: y) else { continue }
+                total += 1
                 if colour.alphaComponent <= 0.5 {
                     clear += 1
                 }
