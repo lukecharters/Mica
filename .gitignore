@@ -83,3 +83,5 @@ scripts/get-xcode-docs.sh
 
 # CLI smoke-test runs
 scripts/smoke-output/
+
+default.profraw
