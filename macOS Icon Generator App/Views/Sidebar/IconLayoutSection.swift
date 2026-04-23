@@ -8,16 +8,19 @@ struct IconLayoutSection: View {
         switch iconSettings.iconSource {
         case .sfSymbol:
             HStack {
-                Text("Scale")
-                Spacer()
-                Text("\(Int(iconSettings.manualSymbolScale * 100))%")
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
+
+                //                Spacer()
+                
+            
             Slider(value: $iconSettings.manualSymbolScale,
                    in: IconSettings.manualSymbolScaleRange,
-                   step: 0.05)
-
+                   step: 0.05) {
+                Text("Scale")
+                Text("\(Int(iconSettings.manualSymbolScale * 100))%")
+                    .foregroundStyle(.secondary)
+                //                .monospacedDigit()
+            }
+            }
         case .customImage:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
