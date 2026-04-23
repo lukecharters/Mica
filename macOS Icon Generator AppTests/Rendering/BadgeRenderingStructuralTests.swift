@@ -17,8 +17,6 @@
 
 import Testing
 import AppKit
-import SwiftUI
-import CoreGraphics
 @testable import macOS_Icon_Generator_App
 
 @Suite(.tags(.rendering))
@@ -28,7 +26,8 @@ struct BadgeRenderingStructuralTests {
     // MARK: - Helpers
 
     /// Render a 256pt non-retina icon at the default settings, optionally with
-    /// a badge at the given position.
+    /// a badge at the given position. Inherits `@MainActor` from the enclosing
+    /// struct — required by `IconRenderer.renderIconSafely` / SwiftUI `ImageRenderer`.
     static func renderIcon(withBadgeAt position: BadgePosition?,
                            manualOffset: (x: Double, y: Double) = (0, 0),
                            exportSize: CGFloat = 256) -> NSImage {
