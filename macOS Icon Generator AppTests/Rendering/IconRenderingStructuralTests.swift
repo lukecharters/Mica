@@ -49,13 +49,17 @@ struct IconRenderingStructuralTests {
         let image = IconRenderer.renderIconSafely(settings: settings)
 
         // Logical size is always exportSize (DPI-aware retina).
-        #expect(Int(image.size.width) == Int(arg.size))
-        #expect(Int(image.size.height) == Int(arg.size))
+        #expect(Int(image.size.width) == Int(arg.size),
+                "Logical width must equal exportSize (\(Int(arg.size))) for retina=\(arg.retina), got \(Int(image.size.width))")
+        #expect(Int(image.size.height) == Int(arg.size),
+                "Logical height must equal exportSize (\(Int(arg.size))) for retina=\(arg.retina), got \(Int(image.size.height))")
 
         let data = try #require(image.tiffRepresentation)
         let rep = try #require(NSBitmapImageRep(data: data))
-        #expect(rep.pixelsWide == Int(settings.finalExportSize))
-        #expect(rep.pixelsHigh == Int(settings.finalExportSize))
+        #expect(rep.pixelsWide == Int(settings.finalExportSize),
+                "Pixel width must equal finalExportSize (\(Int(settings.finalExportSize))) for (size=\(Int(arg.size)),retina=\(arg.retina)), got \(rep.pixelsWide)")
+        #expect(rep.pixelsHigh == Int(settings.finalExportSize),
+                "Pixel height must equal finalExportSize (\(Int(settings.finalExportSize))) for (size=\(Int(arg.size)),retina=\(arg.retina)), got \(rep.pixelsHigh)")
     }
 
     // MARK: - exportColorSpace matrix
@@ -125,6 +129,40 @@ struct IconRenderingStructuralTests {
             #expect(isBlue,
                     "Mode \(mode): quadrant \(name) must be blue-dominant (chiclet) — R=\(color.redComponent) B=\(color.blueComponent)")
         }
+    }
+
+    @Test("Hierarchical and monochrome render person.3.sequence.fill differently")
+    func renderingMode_hierarchical_differsFromMonochrome() throws {
+        func render(_ mode: SymbolRenderingMode) -> NSImage {
+            var settings = IconSettings()
+            settings.symbolName = "person.3.sequence.fill"
+            settings.exportSize = 256
+            settings.exportRetinaSize = false
+            settings.symbolRenderingMode = mode
+            settings.baseColor = .blue
+            settings.symbolColor = .white
+            return IconRenderer.renderIconSafely(settings: settings)
+        }
+
+        let mono = try #require(IconRenderingAssertions.quadrantAverageColors(of: render(.monochrome)))
+        let hier = try #require(IconRenderingAssertions.quadrantAverageColors(of: render(.hierarchical)))
+
+        // The symbol has multiple glyph layers; hierarchical assigns distinct
+        // opacities per layer, so at least one channel in at least one
+        // quadrant must diverge from the monochrome render beyond noise.
+        let noiseTolerance: CGFloat = 0.02
+        let distinguishable =
+            abs(mono.topLeft.redComponent    - hier.topLeft.redComponent)    > noiseTolerance ||
+            abs(mono.topRight.redComponent   - hier.topRight.redComponent)   > noiseTolerance ||
+            abs(mono.bottomLeft.redComponent - hier.bottomLeft.redComponent) > noiseTolerance ||
+            abs(mono.bottomRight.redComponent - hier.bottomRight.redComponent) > noiseTolerance ||
+            abs(mono.topLeft.greenComponent    - hier.topLeft.greenComponent)    > noiseTolerance ||
+            abs(mono.topRight.greenComponent   - hier.topRight.greenComponent)   > noiseTolerance ||
+            abs(mono.bottomLeft.greenComponent - hier.bottomLeft.greenComponent) > noiseTolerance ||
+            abs(mono.bottomRight.greenComponent - hier.bottomRight.greenComponent) > noiseTolerance
+
+        #expect(distinguishable,
+                "Monochrome and hierarchical renders of person.3.sequence.fill must produce measurably different quadrant averages. Diffs: TL R=\(abs(mono.topLeft.redComponent - hier.topLeft.redComponent)), TR R=\(abs(mono.topRight.redComponent - hier.topRight.redComponent)), BL R=\(abs(mono.bottomLeft.redComponent - hier.bottomLeft.redComponent)), BR R=\(abs(mono.bottomRight.redComponent - hier.bottomRight.redComponent))")
     }
 
     // MARK: - Alpha bounding box sits inside the enclosure
