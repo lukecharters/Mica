@@ -9,20 +9,7 @@
     }
   ],
   "defaultOptions" : {
-    "testExecutionOrdering" : "random",
-    "includedTags" : [
-      {
-        "name" : "unit"
-      },
-      {
-        "name" : "rendering"
-      }
-    ],
-    "excludedTags" : [
-      {
-        "name" : "slow"
-      }
-    ]
+    "testExecutionOrdering" : "random"
   },
   "testTargets" : [
     {

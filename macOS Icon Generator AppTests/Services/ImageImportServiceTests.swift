@@ -181,7 +181,8 @@ struct ImageImportServiceTests {
     // MARK: - importFromURL — NSWorkspace fallback (slow)
 
     @Test("importFromURL falls back to extractFileIcon for a non-image file",
-          .tags(.slow))
+          .tags(.slow),
+          .enabled(if: TestFilters.runSlowTests, "Slow test — run via Full.xctestplan (RUN_SLOW_TESTS=1)"))
     func importFromURL_nonImage_fallsBackToIcon() throws {
         let temp = TempDir()
         let txtURL = temp.url.appendingPathComponent("hello.txt")
@@ -209,7 +210,8 @@ struct ImageImportServiceTests {
     // MARK: - extractFileIcon (slow)
 
     @Test("extractFileIcon returns a PNG-normalized Finder icon",
-          .tags(.slow))
+          .tags(.slow),
+          .enabled(if: TestFilters.runSlowTests, "Slow test — run via Full.xctestplan (RUN_SLOW_TESTS=1)"))
     func extractFileIcon_forFinderApp() throws {
         let finderURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.finder")
             ?? URL(fileURLWithPath: "/System/Library/CoreServices/Finder.app")

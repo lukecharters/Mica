@@ -9,6 +9,12 @@
     }
   ],
   "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "RUN_SLOW_TESTS",
+        "value" : "1"
+      }
+    ],
     "testExecutionOrdering" : "random"
   },
   "testTargets" : [

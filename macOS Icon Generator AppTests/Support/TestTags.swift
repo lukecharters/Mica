@@ -1,7 +1,10 @@
-// Tags for selecting subsets of tests in .xctestplan files.
+// Tags for organising tests in the Xcode Test Navigator.
 //
-// Default.xctestplan includes .unit and .rendering, excludes .slow.
-// Full.xctestplan runs everything.
+// Xcode's command-line test runner does NOT honour `includedTags` /
+// `excludedTags` in .xctestplan JSON for Swift Testing @Tag values —
+// tagging is still useful in-IDE for filtering the Navigator, but
+// execution filtering must use runtime traits instead. See
+// TestFilters.swift for the slow-test gate.
 
 import Testing
 

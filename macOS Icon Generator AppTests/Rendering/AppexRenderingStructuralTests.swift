@@ -116,7 +116,8 @@ struct AppexRenderingStructuralTests {
     // MARK: - Slow path: AppexReferenceService.renderForExport
 
     @Test("AppexReferenceService.renderForExport returns a sized non-empty image for star.fill",
-          .tags(.slow))
+          .tags(.slow),
+          .enabled(if: TestFilters.runSlowTests, "Slow test — run via Full.xctestplan (RUN_SLOW_TESTS=1)"))
     func appexReferenceService_renderForExport_starFill() throws {
         try #require(
             FileManager.default.fileExists(atPath: "/System/Library/ExtensionKit/Extensions/Storage.appex"),
