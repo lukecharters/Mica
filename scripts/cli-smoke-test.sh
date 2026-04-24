@@ -30,6 +30,9 @@ HAPPY_PASS=0
 HAPPY_FAIL=0
 NEG_PASS=0
 NEG_FAIL=0
+GETICON_INDEX=0
+GETICON_PASS=0
+GETICON_FAIL=0
 
 # ---- case data ---------------------------------------------------------------
 # Populated in later tasks.
@@ -109,6 +112,24 @@ NEGATIVE_CASES=(
     "symbol-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--symbol-scale|5.0"
     "color-space-invalid|Color space must be|star.fill|--color-space|BGR"
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge|plus.circle|--badge-offset-x|9.0"
+
+    # ---- geticon subcommand ----
+    "geticon-bad-scalefactor|--scalefactor must be 1 or 2|geticon|/System/Applications/Calculator.app|--scalefactor|3"
+    "geticon-depth-without-recursive|--depth requires --recursive|geticon|/System/Applications|--depth|2"
+    "geticon-path-not-found|Bundle not found|geticon|/nonexistent/path.app"
+    "geticon-dir-without-recursive|Pass --recursive|geticon|/System/Applications"
+)
+
+# Happy-path cases for the `geticon` subcommand. Format differs from HAPPY_CASES
+# because geticon takes an input path (not a symbol name) and writes one or
+# more PNGs into an output directory (not via -o <file>).
+# Entry format: slug|inputPath[|arg1|arg2|...]
+GETICON_CASES=(
+    "geticon-baseline|/System/Applications/Calculator.app"
+    "geticon-size-256|/System/Applications/Calculator.app|--size|256"
+    "geticon-retina|/System/Applications/Calculator.app|--size|128|--scalefactor|2"
+    "geticon-colorspace-sRGB|/System/Applications/Calculator.app|--colorspace|sRGB"
+    "geticon-recursive|/System/Applications/Utilities|--recursive|--depth|0|--size|128"
 )
 
 # ---- phase functions ---------------------------------------------------------
@@ -238,6 +259,58 @@ run_happy_case() {
     rm -f "${stderr_file}"
 }
 
+run_geticon_case() {
+    local entry="$1"
+    local old_ifs="${IFS}"
+    IFS='|' read -ra parts <<< "${entry}"
+    IFS="${old_ifs}"
+
+    if [[ "${#parts[@]}" -lt 2 ]]; then
+        echo "FAIL  G???  malformed entry: ${entry}" | tee -a "${README}"
+        GETICON_FAIL=$((GETICON_FAIL + 1))
+        return
+    fi
+
+    local slug="${parts[0]}"
+    local input_path="${parts[1]}"
+    local rest=("${parts[@]:2}")
+
+    GETICON_INDEX=$((GETICON_INDEX + 1))
+    local index_formatted
+    printf -v index_formatted "G%03d" "${GETICON_INDEX}"
+    local case_dir="${OUTPUT_DIR}/${index_formatted}__${slug}"
+    mkdir -p "${case_dir}"
+
+    if [[ ! -e "${input_path}" ]]; then
+        GETICON_FAIL=$((GETICON_FAIL + 1))
+        echo "FAIL  ${index_formatted}  ${slug}  missing input: ${input_path}" | tee -a "${README}"
+        return
+    fi
+
+    local stderr_file
+    stderr_file="$(mktemp)"
+    local exit_code=0
+
+    "${CLI_BINARY}" geticon "${input_path}" "${case_dir}" ${rest[@]+"${rest[@]}"} 2>"${stderr_file}" >/dev/null \
+        || exit_code=$?
+
+    local png_count
+    png_count=$(find "${case_dir}" -maxdepth 2 -name "*.png" 2>/dev/null | wc -l | tr -d ' ')
+
+    if [[ "${exit_code}" -eq 0 && "${png_count}" -gt 0 ]]; then
+        GETICON_PASS=$((GETICON_PASS + 1))
+        echo "PASS  ${index_formatted}  ${slug}  (${png_count} PNG$([[ ${png_count} -eq 1 ]] || echo s))" | tee -a "${README}"
+    else
+        GETICON_FAIL=$((GETICON_FAIL + 1))
+        echo "FAIL  ${index_formatted}  ${slug}  exit=${exit_code}, PNGs=${png_count}" | tee -a "${README}"
+        if [[ -s "${stderr_file}" ]]; then
+            sed 's/^/        /' "${stderr_file}" | head -5 >> "${README}"
+        fi
+    fi
+
+    rm -f "${stderr_file}"
+}
+
 run_negative_case() {
     local entry="$1"
     local old_ifs="${IFS}"
@@ -272,7 +345,8 @@ run_negative_case() {
 print_summary() {
     local happy_total=$((HAPPY_PASS + HAPPY_FAIL))
     local neg_total=$((NEG_PASS + NEG_FAIL))
-    local line="Happy: ${HAPPY_PASS}/${happy_total} passed | Negative: ${NEG_PASS}/${neg_total} passed | Output: ${OUTPUT_DIR}"
+    local geticon_total=$((GETICON_PASS + GETICON_FAIL))
+    local line="Happy: ${HAPPY_PASS}/${happy_total} | Negative: ${NEG_PASS}/${neg_total} | Geticon: ${GETICON_PASS}/${geticon_total} | Output: ${OUTPUT_DIR}"
 
     echo ""
     echo "============================================================"
@@ -289,7 +363,7 @@ print_summary() {
         open "${OUTPUT_DIR}"
     fi
 
-    if [[ "${HAPPY_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 ]]; then
+    if [[ "${HAPPY_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${GETICON_FAIL}" -ne 0 ]]; then
         exit 1
     fi
     exit 0
@@ -303,6 +377,10 @@ main() {
     for entry in "${HAPPY_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
         run_happy_case "$entry"
+    done
+    for entry in "${GETICON_CASES[@]-}"; do
+        [[ -z "$entry" ]] && continue
+        run_geticon_case "$entry"
     done
     for entry in "${NEGATIVE_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue

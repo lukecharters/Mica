@@ -499,18 +499,17 @@ struct BadgeOptions: ParsableArguments {
 
 // MARK: - Main Command
 
-@main
 struct IconGeneratorCommand: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
-        commandName: "sfIconGen-CLI",
+        commandName: "generate",
         abstract: "Generate customized macOS app icons using SF Symbols",
         usage: """
-            sfIconGen-CLI <symbol-name> [<options>]
+            sfIconGen-CLI [generate] <symbol-name> [<options>]
             sfIconGen-CLI star.fill -o ~/Desktop/my-icon.png
-            sfIconGen-CLI folder.fill --size 512 --retina --base-color red
+            sfIconGen-CLI generate folder.fill --size 512 --retina --base-color red
             """,
         discussion: """
-            EXAMPLES:
+            EXAMPLES (the `generate` subcommand name is optional — it is the default):
 
             Basic usage:
               sfIconGen-CLI star.fill
