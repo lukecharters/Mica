@@ -15,27 +15,24 @@ struct BadgeLayoutSection: View {
             iconSettings.badgeManualOffsetY = 0
         }
 
-        HStack {
+        Slider(value: $iconSettings.badgeManualOffsetX,
+               in: IconSettings.badgeOffsetRange,
+               step: 0.01) {
             Text("X Offset")
-            Spacer()
             Text("\(Int(iconSettings.badgeManualOffsetX * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
-        Slider(value: $iconSettings.badgeManualOffsetX,
-               in: IconSettings.badgeOffsetRange,
-               step: 0.01)
 
-        HStack {
+        Slider(value: $iconSettings.badgeManualOffsetY,
+               in: IconSettings.badgeOffsetRange,
+               step: 0.01) {
             Text("Y Offset")
             Spacer()
             Text("\(Int(iconSettings.badgeManualOffsetY * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
-        Slider(value: $iconSettings.badgeManualOffsetY,
-               in: IconSettings.badgeOffsetRange,
-               step: 0.01)
 
         if iconSettings.badgeManualOffsetX != 0 || iconSettings.badgeManualOffsetY != 0 {
             Button("Reset Position") {
@@ -44,29 +41,26 @@ struct BadgeLayoutSection: View {
             }
         }
 
-        HStack {
+        Slider(value: $iconSettings.badgeScale,
+               in: IconSettings.manualSymbolScaleRange,
+               step: 0.05){
             Text("Size")
             Spacer()
             Text("\(Int(iconSettings.badgeScale * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
-        Slider(value: $iconSettings.badgeScale,
-               in: IconSettings.manualSymbolScaleRange,
-               step: 0.05)
 
         switch iconSettings.badgeIconSource {
         case .sfSymbol:
-            HStack {
+            Slider(value: $iconSettings.badgeSymbolScale,
+                   in: IconSettings.manualSymbolScaleRange,
+                   step: 0.05) {
                 Text("Scale")
-                Spacer()
                 Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
-            Slider(value: $iconSettings.badgeSymbolScale,
-                   in: IconSettings.manualSymbolScaleRange,
-                   step: 0.05)
 
         case .customImage:
             ImageImportLayoutControls(

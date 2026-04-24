@@ -70,15 +70,13 @@ struct ImageImportLayoutControls: View {
             .help("Keep existing macOS icon padding and shadow. Turn off to scale up and fill the chiclet.")
         }
 
-        HStack {
+        Slider(value: $imageScale,
+               in: IconSettings.importedImageScaleRange,
+               step: 0.05){
             Text("Image Scale")
-            Spacer()
             Text("\(Int(imageScale * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
-        Slider(value: $imageScale,
-               in: IconSettings.importedImageScaleRange,
-               step: 0.05)
     }
 }
