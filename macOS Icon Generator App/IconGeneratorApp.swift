@@ -155,6 +155,8 @@ struct IconGeneratorApp: App {
                 }
                 .disabled(iconSettings == nil)
             }
+
+            #if DEBUG
             CommandGroup(after: .newItem) {
                 Button("Calibration Playground") {
                     openWindow(id: "calibration")
@@ -196,6 +198,8 @@ struct IconGeneratorApp: App {
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
+            #endif
+            #if DEBUG
             CommandGroup(after: .help) {
                 Button("Run Export Tests") {
                     runExportTests()
@@ -211,8 +215,10 @@ struct IconGeneratorApp: App {
                     }
                 }
             }
+            #endif
         }
 
+        #if DEBUG
         Window("Calibration Playground", id: "calibration") {
             AppleReferenceCalibrationPlayground()
         }
@@ -252,5 +258,6 @@ struct IconGeneratorApp: App {
             ShadowComparisonPlayground()
         }
         .defaultSize(width: 1400, height: 900)
+        #endif
     }
 }
