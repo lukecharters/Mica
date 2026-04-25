@@ -178,20 +178,10 @@ struct IconGeneratorApp: App {
                 }
                 .keyboardShortcut("L", modifiers: [.command, .shift])
 
-                Button("Resizable Sizing Playground") {
-                    openWindow(id: "resizable-sizing")
-                }
-                .keyboardShortcut("R", modifiers: [.command, .shift])
-
                 Button("Resizable Dim-Cal Playground") {
                     openWindow(id: "resizable-dim-cal")
                 }
                 .keyboardShortcut("D", modifiers: [.command, .shift])
-
-                Button("Recipe Calibration Playground") {
-                    openWindow(id: "recipe-calibration")
-                }
-                .keyboardShortcut("P", modifiers: [.command, .shift])
 
                 Button("Shadow Comparison Playground") {
                     openWindow(id: "shadow-comparison")
@@ -239,18 +229,8 @@ struct IconGeneratorApp: App {
         }
         .defaultSize(width: 1200, height: 800)
 
-        Window("Resizable Sizing Playground", id: "resizable-sizing") {
-            ResizableSizingPlayground()
-        }
-        .defaultSize(width: 1400, height: 800)
-
         Window("Resizable Dim-Cal Playground", id: "resizable-dim-cal") {
             ResizableDimCalPlayground()
-        }
-        .defaultSize(width: 1200, height: 800)
-
-        Window("Recipe Calibration Playground", id: "recipe-calibration") {
-            RecipeCalibrationPlayground()
         }
         .defaultSize(width: 1200, height: 800)
 

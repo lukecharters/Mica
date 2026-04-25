@@ -9,7 +9,6 @@ final class IconViewModel: ObservableObject {
     @Published var showExportDialog: Bool = false
     @Published var exportPath: URL? = nil
     @Published var testingMode: Bool = false
-    @Published var layoutSettings: LayoutSettings = LayoutSettings()
 
     // Generation mode
     @Published var generationMode: GenerationMode = .swiftUI

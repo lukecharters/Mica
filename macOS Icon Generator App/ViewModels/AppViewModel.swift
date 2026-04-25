@@ -5,9 +5,4 @@ import SwiftUI
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published var iconVM: IconViewModel = IconViewModel()
-
-    // Example coordination hooks (no behavior change required for now)
-    func runExportDryRun() {
-        _ = IconRenderer.renderIconSafely(settings: iconVM.iconSettings)
-    }
 }

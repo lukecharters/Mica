@@ -26,9 +26,4 @@ struct OptionsCatalog {
     static func color(named name: String) -> Color {
         colorOptions.first { $0.name == name }?.color ?? .blue
     }
-
-    /// Reverse lookup: find the catalog name for a given color.
-    static func colorName(for color: Color) -> String? {
-        colorOptions.first { $0.color == color }?.name
-    }
 }
