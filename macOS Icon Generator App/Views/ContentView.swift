@@ -298,13 +298,14 @@ struct ScaledIconPreview: View {
 struct ContentView_Previews: PreviewProvider {
     @MainActor static var previews: some View {
         Group {
-            ContentView(viewModel: customVM, showInspector: false)
-                .previewDisplayName("Custom VM")
-                .previewLayout(.fixed(width: 1200, height: 800))
-            
             ContentView()
                 .previewDisplayName("Default VM")
                 .previewLayout(.fixed(width: 1200, height: 800))
+            
+            ContentView(viewModel: customVM, showInspector: false)
+                .previewDisplayName("Custom VM")
+                .previewLayout(.fixed(width: 1200, height: 800))
+
 
             ContentView(viewModel: IconViewModel())
                 .previewDisplayName("Injected VM")

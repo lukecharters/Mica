@@ -11,7 +11,7 @@ struct IconSourceSection: View {
     private enum SourceType: String, CaseIterable, Identifiable {
         case sfSymbol = "SF Symbol"
         case imported = "Imported"
-        case appleReference = "Apple Ref"
+        case appleReference = "System"
         var id: String { rawValue }
     }
 

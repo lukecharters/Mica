@@ -10,7 +10,7 @@ struct BadgeSourceSection: View {
         Picker("Source", selection: $iconSettings.badgeIconSource) {
             Text("SF Symbol").tag(IconSource.sfSymbol)
             Text("Imported").tag(IconSource.customImage)
-            Text("Apple Ref").tag(IconSource.appleReference)
+            Text("System").tag(IconSource.appleReference)
         }
         .pickerStyle(.segmented)
         .labelsHidden()
