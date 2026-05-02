@@ -21,17 +21,17 @@
     {
       "parallelizable" : true,
       "target" : {
-        "containerPath" : "container:macOS Icon Generator App.xcodeproj",
+        "containerPath" : "container:Mica.xcodeproj",
         "identifier" : "8C71CCA92DBDDDD3006FB320",
-        "name" : "macOS Icon Generator AppTests"
+        "name" : "MicaTests"
       }
     },
     {
       "parallelizable" : false,
       "target" : {
-        "containerPath" : "container:macOS Icon Generator App.xcodeproj",
+        "containerPath" : "container:Mica.xcodeproj",
         "identifier" : "8C71CCB32DBDDDD3006FB320",
-        "name" : "macOS Icon Generator AppUITests"
+        "name" : "MicaUITests"
       }
     }
   ],

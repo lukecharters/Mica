@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# CLI smoke-test for sfIconGen-CLI.
+# CLI smoke-test for mica-cli.
 # Exercises every non-default argument value (happy path) plus a fixed set of
 # invalid-input cases (negative path). Produces per-case PNGs in a timestamped
 # output directory and a README.txt summary. See
@@ -16,8 +16,8 @@ readonly FIXTURES_DIR="${PROJECT_ROOT}/scripts/fixtures"
 readonly OUTPUT_ROOT="${PROJECT_ROOT}/scripts/smoke-output"
 readonly FIXTURE_SYMBOL="${FIXTURES_DIR}/test-symbol.png"
 readonly FIXTURE_BACKGROUND="${FIXTURES_DIR}/test-background.png"
-readonly SCHEME="sfIconGen-CLI"
-readonly XCODE_PROJECT="${PROJECT_ROOT}/macOS Icon Generator App.xcodeproj"
+readonly SCHEME="mica-cli"
+readonly XCODE_PROJECT="${PROJECT_ROOT}/Mica.xcodeproj"
 
 # Populated by setup_run / build_cli.
 CLI_BINARY=""
@@ -193,7 +193,7 @@ setup_run() {
     git_branch="$(git -C "${PROJECT_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
 
     {
-        echo "sfIconGen-CLI smoke test"
+        echo "mica-cli smoke test"
         echo "========================"
         echo "Timestamp:   ${timestamp}"
         echo "CLI binary:  ${CLI_BINARY}"
