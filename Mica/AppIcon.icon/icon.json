@@ -1,31 +1,39 @@
 {
   "fill" : {
-    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+    "automatic-gradient" : "extended-gray:1.00000,1.00000"
   },
   "groups" : [
     {
-      "hidden" : false,
+      "blur-material" : null,
       "layers" : [
         {
           "hidden" : false,
-          "image-name" : "app.grid.light 2.svg",
-          "name" : "app.grid.light 2",
+          "image-name" : "Image 6.svg",
+          "name" : "Image 6",
           "position" : {
-            "scale" : 1.83,
+            "scale" : 1.3,
             "translation-in-points" : [
-              0,
-              0
+              60,
+              18.232749999999896
             ]
           }
         }
       ],
+      "position" : {
+        "scale" : 1,
+        "translation-in-points" : [
+          -9,
+          -13
+        ]
+      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
       },
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0.5
+        "value" : 0.01
       }
     }
   ],
