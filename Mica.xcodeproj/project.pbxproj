@@ -35,21 +35,21 @@
 			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 8C71CC982DBDDDD2006FB320;
-			remoteInfo = "Mica";
+			remoteInfo = Mica;
 		};
 		8C71CCB52DBDDDD3006FB320 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 8C71CC982DBDDDD2006FB320;
-			remoteInfo = "Mica";
+			remoteInfo = Mica;
 		};
 		8C75F5852E8D5AC4008FB893 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8C71CC912DBDDDD2006FB320 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 8C71CC982DBDDDD2006FB320;
-			remoteInfo = "Mica";
+			remoteInfo = Mica;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -77,19 +77,32 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		8C2136D42F920372001C769A /* mica-cli Tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "mica-cli Tests"; sourceTree = "<group>"; };
 		8C27BE312F95153C00C00DCA /* Default.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Default.xctestplan; sourceTree = "<group>"; };
 		8C27BE322F95155700C00DCA /* Full.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Full.xctestplan; sourceTree = "<group>"; };
 		8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8C3148B62E61E07300C7A0A9 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		8C3148C92E61E39F00C7A0A9 /* mica-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "mica-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C71CC992DBDDDD2006FB320 /* Mica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mica.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C71CCAA2DBDDDD3006FB320 /* MicaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MicaTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C71CCB42DBDDDD3006FB320 /* MicaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MicaUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C71CC992DBDDDD2006FB320 /* Mica.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mica.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C71CCAA2DBDDDD3006FB320 /* MicaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MicaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C71CCB42DBDDDD3006FB320 /* MicaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MicaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C75F5812E8D5AC4008FB893 /* mica-cli Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "mica-cli Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8C4155762FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+			target = 8C71CCA92DBDDDD3006FB320 /* MicaTests */;
+		};
+		8C4155772FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+			);
+			target = 8C71CCB32DBDDDD3006FB320 /* MicaUITests */;
+		};
 		8C886B362EBDFFFD00753351 /* Exceptions for "Mica" folder in "Mica" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -125,19 +138,21 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				8C886B362EBDFFFD00753351 /* Exceptions for "Mica" folder in "Mica" target */,
+				8C4155762FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaTests" target */,
+				8C4155772FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaUITests" target */,
 				8C886B372EBDFFFD00753351 /* Exceptions for "Mica" folder in "mica-cli" target */,
 			);
-			path = "Mica";
+			path = Mica;
 			sourceTree = "<group>";
 		};
 		8C71CCAD2DBDDDD3006FB320 /* MicaTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "MicaTests";
+			path = MicaTests;
 			sourceTree = "<group>";
 		};
 		8C71CCB72DBDDDD3006FB320 /* MicaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "MicaUITests";
+			path = MicaUITests;
 			sourceTree = "<group>";
 		};
 		8C75F5822E8D5AC4008FB893 /* mica-cli Tests */ = {
@@ -211,7 +226,6 @@
 				8C71CCB72DBDDDD3006FB320 /* MicaUITests */,
 				8C71CC9A2DBDDDD2006FB320 /* Products */,
 				8C3148CA2E61E39F00C7A0A9 /* mica-cli */,
-				8C2136D42F920372001C769A /* mica-cli Tests */,
 				8C75F5822E8D5AC4008FB893 /* mica-cli Tests */,
 			);
 			sourceTree = "<group>";
@@ -271,10 +285,10 @@
 			fileSystemSynchronizedGroups = (
 				8C71CC9B2DBDDDD2006FB320 /* Mica */,
 			);
-			name = "Mica";
+			name = Mica;
 			packageProductDependencies = (
 			);
-			productName = "Mica";
+			productName = Mica;
 			productReference = 8C71CC992DBDDDD2006FB320 /* Mica.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -294,11 +308,11 @@
 			fileSystemSynchronizedGroups = (
 				8C71CCAD2DBDDDD3006FB320 /* MicaTests */,
 			);
-			name = "MicaTests";
+			name = MicaTests;
 			packageProductDependencies = (
 				8C27BE2B2F95085F00C00DCA /* SnapshotTesting */,
 			);
-			productName = "MicaTests";
+			productName = MicaTests;
 			productReference = 8C71CCAA2DBDDDD3006FB320 /* MicaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -318,10 +332,10 @@
 			fileSystemSynchronizedGroups = (
 				8C71CCB72DBDDDD3006FB320 /* MicaUITests */,
 			);
-			name = "MicaUITests";
+			name = MicaUITests;
 			packageProductDependencies = (
 			);
-			productName = "MicaUITests";
+			productName = MicaUITests;
 			productReference = 8C71CCB42DBDDDD3006FB320 /* MicaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -516,7 +530,7 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.mica-cli";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -537,7 +551,7 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				ENABLE_HARDENED_RUNTIME = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.mica-cli";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -677,7 +691,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Mica/Mica.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Mica/Mica.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
@@ -695,15 +709,16 @@
 				EXCLUDED_SOURCE_FILE_NAMES = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Mica-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Mica;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.Mica";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.mica;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -717,7 +732,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Mica/Mica.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Mica/Mica.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
@@ -740,15 +755,16 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Mica-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Mica;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.Mica";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.mica;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -767,9 +783,9 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.MicaTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.MicaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -789,9 +805,9 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.MicaTests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.MicaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -810,14 +826,14 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.MicaUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.MicaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "Mica";
+				TEST_TARGET_NAME = Mica;
 			};
 			name = Debug;
 		};
@@ -831,14 +847,14 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.MicaUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.MicaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "Mica";
+				TEST_TARGET_NAME = Mica;
 			};
 			name = Release;
 		};
@@ -851,7 +867,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.mica-cli-Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -874,7 +890,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.lukecharters.mica-cli-Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
