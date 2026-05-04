@@ -27,7 +27,7 @@ struct MicaApp: App {
                 .environmentObject(appViewModel)
         }
         .defaultSize(width: 1200, height: 800)
-        .windowStyle(.automatic)
+        .windowStyle(.titleBar)
         .commands {
             CommandGroup(after: .pasteboard) {
                 Divider()
