@@ -23,10 +23,11 @@ struct MicaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 900, minHeight: 620)
+                .frame(minWidth: 800, idealWidth: 1200, minHeight: 500, idealHeight: 800)
                 .environmentObject(appViewModel)
         }
-        .windowStyle(.titleBar)
+        .defaultSize(width: 1200, height: 800)
+        .windowStyle(.automatic)
         .commands {
             CommandGroup(after: .pasteboard) {
                 Divider()

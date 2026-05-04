@@ -45,7 +45,7 @@ struct ContentView: View {
                 badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
                 colorOptions: colorOptions
             )
-            .frame(minWidth: 350, maxWidth: 420)
+            .frame(minWidth: 350, idealWidth: 420, maxWidth: 500)
 
             // Center: Preview pane with overlay controls
             if viewModel.generationMode == .swiftUI {
