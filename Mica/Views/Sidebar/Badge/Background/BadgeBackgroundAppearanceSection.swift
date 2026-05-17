@@ -74,3 +74,4 @@ struct BadgeBackgroundAppearanceSection: View {
         Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableBackgroundShadow)
     }
 }
+

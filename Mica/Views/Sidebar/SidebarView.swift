@@ -11,6 +11,7 @@ struct SidebarView: View {
     let colorOptions: [(name: String, color: Color)]
 
     @State private var selectedSegment: IconOrBadge = .icon
+    @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
 
     // Persisted section expand/collapse state (reused keys from prior sidebar redesign)
     @AppStorage("sidebar.iconSource.expanded") private var iconSourceExpanded = true
@@ -30,9 +31,36 @@ struct SidebarView: View {
         generationMode == .appleReference
     }
 
+    private var modePickerBinding: Binding<Bool> {
+        Binding(
+            get: {
+                switch selectedSegment {
+                case .icon: generationMode == .appleReference
+                case .badge: iconSettings.badgeIconSource == .appleReference
+                }
+            },
+            set: { newValue in
+                switch selectedSegment {
+                case .icon:
+                    generationMode = newValue ? .appleReference : .swiftUI
+                case .badge:
+                    if newValue {
+                        if iconSettings.badgeIconSource != .appleReference {
+                            lastNonSystemBadgeSource = iconSettings.badgeIconSource
+                        }
+                        iconSettings.badgeIconSource = .appleReference
+                    } else {
+                        iconSettings.badgeIconSource = lastNonSystemBadgeSource
+                    }
+                }
+            }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             IconBadgePicker(selection: $selectedSegment)
+            IconModePicker(isSystem: modePickerBinding)
 
             Divider()
                 .padding(.top, 4)
@@ -55,12 +83,12 @@ struct SidebarView: View {
 
     @ViewBuilder
     private var iconContent: some View {
-        groupHeader("Symbol")
+        groupHeader("Foreground")
         Form {
             Section("Source", isExpanded: $iconSourceExpanded) {
                 IconSourceSection(
                     iconSettings: $iconSettings,
-                    generationMode: $generationMode
+                    isSystem: isAppleReference
                 )
             }
 
@@ -131,10 +159,13 @@ struct SidebarView: View {
         .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
 
-        groupHeader("Symbol")
+        groupHeader("Foreground")
         Form {
             Section("Source", isExpanded: $badgeSourceExpanded) {
-                BadgeSourceSection(iconSettings: $iconSettings)
+                BadgeSourceSection(
+                    iconSettings: $iconSettings,
+                    isSystem: iconSettings.badgeIconSource == .appleReference
+                )
             }
             Section("Layout", isExpanded: $badgeLayoutExpanded) {
                 BadgeLayoutSection(iconSettings: $iconSettings)

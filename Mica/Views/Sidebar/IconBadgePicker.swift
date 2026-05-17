@@ -37,10 +37,10 @@ struct IconBadgePicker: View {
                         selection = segment
                     }
                 } label: {
-                    VStack(spacing: 4) {
+                    VStack(spacing: 2) {
                         Image(systemName: segment.systemImageName)
-                            .font(.system(size: 22))
-                            .symbolRenderingMode(.hierarchical)
+                            .font(.system(size: 28))
+                            .symbolRenderingMode(.monochrome)
                             .frame(width: 36, height: 28)
                         Text(segment.label)
                             .font(.caption)
@@ -51,16 +51,17 @@ struct IconBadgePicker: View {
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(selection == segment
-                                  ? Color.accentColor.opacity(0.12)
+                                  ? Color.accentColor.opacity(0.8)
                                   : Color.clear)
                     )
-                    .foregroundStyle(selection == segment ? Color.accentColor : .secondary)
+                    .foregroundStyle(selection == segment ? Color.white : .secondary)
                 }
                 .buttonStyle(.borderless)
             }
         }
+        
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
     }
 }
 
