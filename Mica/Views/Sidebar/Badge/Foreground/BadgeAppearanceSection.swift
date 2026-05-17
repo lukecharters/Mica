@@ -133,3 +133,21 @@ struct BadgeAppearanceSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var badgeSymbolColor: AppexEnclosureColor = .white
+    @Previewable @State var badgeEnclosureColor: AppexEnclosureColor = .blue
+    Form {
+        Section("Appearance") {
+            BadgeAppearanceSection(
+                iconSettings: $settings,
+                colorOptions: OptionsCatalog.colorOptions,
+                badgeAppexSymbolColor: $badgeSymbolColor,
+                badgeAppexEnclosureColor: $badgeEnclosureColor
+            )
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

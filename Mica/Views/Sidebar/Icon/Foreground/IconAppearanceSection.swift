@@ -133,3 +133,21 @@ struct IconAppearanceSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var symbolColor: AppexEnclosureColor = .white
+    @Previewable @State var enclosureColor: AppexEnclosureColor = .blue
+    Form {
+        Section("Appearance") {
+            IconAppearanceSection(
+                iconSettings: $settings,
+                colorOptions: OptionsCatalog.colorOptions,
+                appexSymbolColor: $symbolColor,
+                appexEnclosureColor: $enclosureColor
+            )
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

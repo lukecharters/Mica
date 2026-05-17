@@ -80,3 +80,14 @@ struct IconSourceSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Source") {
+            IconSourceSection(iconSettings: $settings, isSystem: false)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

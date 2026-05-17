@@ -134,3 +134,17 @@ struct BackgroundAppearanceSection: View {
         .pickerStyle(.segmented)
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Appearance") {
+            BackgroundAppearanceSection(
+                iconSettings: $settings,
+                colorOptions: OptionsCatalog.colorOptions
+            )
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

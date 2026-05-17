@@ -91,3 +91,10 @@ struct PreviewControls: View {
         return "\(Int(zoomLevel * 100))%"
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var zoomLevel: Double = 1.0
+    PreviewControls(iconSettings: $settings, zoomLevel: $zoomLevel)
+        .padding()
+}

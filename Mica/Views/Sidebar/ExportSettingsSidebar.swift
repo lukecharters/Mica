@@ -113,3 +113,23 @@ struct SidebarSection<Content: View>: View {
         }
     }
 }
+
+#Preview("Export Sidebar") {
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var showExportDialog = false
+    ExportSettingsSidebar(
+        iconSettings: $settings,
+        showExportDialog: $showExportDialog
+    )
+    .frame(height: 500)
+}
+
+#Preview("Sidebar Section") {
+    SidebarSection(title: "Export Size") {
+        Text("Section contents")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+    .padding()
+    .frame(width: 220)
+}

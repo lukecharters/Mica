@@ -424,3 +424,8 @@ struct ContentView_GridPreviews: PreviewProvider {
         return vm
     }
 }
+
+#Preview {
+    ContentView()
+        .frame(width: 1200, height: 800)
+}

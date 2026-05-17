@@ -24,3 +24,14 @@ struct BadgeBackgroundSourceSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Source") {
+            BadgeBackgroundSourceSection(iconSettings: $settings)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

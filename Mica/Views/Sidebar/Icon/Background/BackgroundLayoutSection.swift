@@ -21,3 +21,18 @@ struct BackgroundLayoutSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings: IconSettings = {
+        var s = IconSettings()
+        s.backgroundMode = .importedImage
+        return s
+    }()
+    Form {
+        Section("Layout") {
+            BackgroundLayoutSection(iconSettings: $settings)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

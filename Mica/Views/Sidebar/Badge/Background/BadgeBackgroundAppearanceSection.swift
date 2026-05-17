@@ -75,3 +75,17 @@ struct BadgeBackgroundAppearanceSection: View {
     }
 }
 
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Appearance") {
+            BadgeBackgroundAppearanceSection(
+                iconSettings: $settings,
+                colorOptions: OptionsCatalog.colorOptions
+            )
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}
+

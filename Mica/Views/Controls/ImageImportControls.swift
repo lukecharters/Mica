@@ -80,3 +80,29 @@ struct ImageImportLayoutControls: View {
         }
     }
 }
+
+#Preview("Image Import") {
+    @Previewable @State var imported: ImportedImage? = nil
+    Form {
+        Section("Source") {
+            ImageImportControls(importedImage: $imported)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 360)
+}
+
+#Preview("Image Layout") {
+    @Previewable @State var paddingCompensation = false
+    @Previewable @State var imageScale = 1.0
+    Form {
+        Section("Layout") {
+            ImageImportLayoutControls(
+                paddingCompensation: $paddingCompensation,
+                imageScale: $imageScale
+            )
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 360)
+}

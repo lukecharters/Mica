@@ -25,3 +25,14 @@ struct BackgroundSourceSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Source") {
+            BackgroundSourceSection(iconSettings: $settings)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

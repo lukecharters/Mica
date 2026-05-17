@@ -225,3 +225,22 @@ struct SidebarView: View {
         .padding(.bottom, 4)
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var mode: GenerationMode = .swiftUI
+    @Previewable @State var enclosureColor: AppexEnclosureColor = .blue
+    @Previewable @State var symbolColor: AppexEnclosureColor = .white
+    @Previewable @State var badgeEnclosureColor: AppexEnclosureColor = .blue
+    @Previewable @State var badgeSymbolColor: AppexEnclosureColor = .white
+    SidebarView(
+        iconSettings: $settings,
+        generationMode: $mode,
+        appexEnclosureColor: $enclosureColor,
+        appexSymbolColor: $symbolColor,
+        badgeAppexEnclosureColor: $badgeEnclosureColor,
+        badgeAppexSymbolColor: $badgeSymbolColor,
+        colorOptions: OptionsCatalog.colorOptions
+    )
+    .frame(width: 420, height: 700)
+}

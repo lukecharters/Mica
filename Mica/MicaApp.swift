@@ -7,18 +7,6 @@ struct MicaApp: App {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.iconSettings) private var iconSettings
 
-    init() {
-        Self.migrateAppSupportFolderIfNeeded()
-    }
-
-    private static func migrateAppSupportFolderIfNeeded() {
-        let fm = FileManager.default
-        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
-        let oldDir = appSupport.appendingPathComponent("Icon Generator", isDirectory: true)
-        let newDir = appSupport.appendingPathComponent("Mica", isDirectory: true)
-        guard fm.fileExists(atPath: oldDir.path), !fm.fileExists(atPath: newDir.path) else { return }
-        try? fm.moveItem(at: oldDir, to: newDir)
-    }
 
     var body: some Scene {
         WindowGroup {

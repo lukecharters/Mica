@@ -51,3 +51,33 @@ struct ColorPickerWithDropdown: View {
         }
     }
 }
+
+#Preview("Preset") {
+    @Previewable @State var color: Color = .blue
+    @Previewable @State var useCustom = false
+    Form {
+        ColorPickerWithDropdown(
+            label: "Color",
+            color: $color,
+            useCustom: $useCustom,
+            colorOptions: OptionsCatalog.colorOptions
+        )
+    }
+    .formStyle(.grouped)
+    .frame(width: 320)
+}
+
+#Preview("Custom") {
+    @Previewable @State var color: Color = .orange
+    @Previewable @State var useCustom = true
+    Form {
+        ColorPickerWithDropdown(
+            label: "Color",
+            color: $color,
+            useCustom: $useCustom,
+            colorOptions: OptionsCatalog.colorOptions
+        )
+    }
+    .formStyle(.grouped)
+    .frame(width: 320)
+}

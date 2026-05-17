@@ -70,3 +70,14 @@ struct BadgeSourceSection: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Source") {
+            BadgeSourceSection(iconSettings: $settings, isSystem: false)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

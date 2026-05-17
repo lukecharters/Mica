@@ -11,3 +11,14 @@ struct BadgeBackgroundLayoutSection: View {
         )
     }
 }
+
+#Preview {
+    @Previewable @State var settings = IconSettings()
+    Form {
+        Section("Layout") {
+            BadgeBackgroundLayoutSection(iconSettings: $settings)
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: 380)
+}

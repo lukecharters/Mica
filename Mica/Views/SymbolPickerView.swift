@@ -79,3 +79,8 @@ struct SymbolPickerView: View {
         .frame(width: 600, height: 400)
     }
 }
+
+#Preview {
+    @Previewable @State var selectedSymbol = "star.fill"
+    SymbolPickerView(selectedSymbol: $selectedSymbol)
+}

@@ -130,3 +130,11 @@ struct AppexPreviewPane: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 }
+
+#Preview {
+    AppexPreviewPane(
+        viewModel: IconViewModel(),
+        appexService: AppexReferenceService()
+    )
+    .frame(width: 600, height: 600)
+}
