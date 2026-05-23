@@ -58,11 +58,13 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack() {
             IconBadgePicker(selection: $selectedSegment)
             IconModePicker(isSystem: modePickerBinding)
 
+
             Divider()
+//                .padding(.horizontal, 20)
                 .padding(.top, 4)
 
             ScrollView {
@@ -114,6 +116,7 @@ struct SidebarView: View {
 
         if !isAppleReference {
             Divider()
+                .padding(.horizontal, 20)
                 .padding(.top, 4)
 
             groupHeader("Background")
@@ -143,6 +146,7 @@ struct SidebarView: View {
 
     // MARK: - Badge content (Show Badge toggle + Symbol form + Background form stacked)
 
+    //TODO: Move badge toggle above scroll view
     @ViewBuilder
     private var badgeContent: some View {
         Form {
@@ -185,6 +189,7 @@ struct SidebarView: View {
 
         if iconSettings.badgeIconSource != .appleReference {
             Divider()
+                .padding(.horizontal, 20)
                 .padding(.top, 4)
 
             groupHeader("Background")
@@ -216,8 +221,10 @@ struct SidebarView: View {
 
     private func groupHeader(_ title: String) -> some View {
         HStack {
-            Text(title)
-                .font(.title3)
+            Text(title.uppercased())
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
             Spacer()
         }
         .padding(.horizontal, 20)

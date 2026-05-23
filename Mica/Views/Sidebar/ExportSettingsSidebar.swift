@@ -64,7 +64,7 @@ struct ExportSettingsSidebar: View {
 
             // MARK: - Export Button
             Button(action: { showExportDialog = true }) {
-                Label("Export PNG", systemImage: "square.and.arrow.up")
+                Label("Export", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)

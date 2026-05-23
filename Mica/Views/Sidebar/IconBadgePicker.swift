@@ -10,7 +10,7 @@ enum IconOrBadge: Int, CaseIterable, Identifiable {
 
     var systemImageName: String {
         switch self {
-        case .icon: "checkmark.app.fill"
+        case .icon: "checkmark.app"
         case .badge: "app.badge.checkmark"
         }
     }
@@ -40,7 +40,7 @@ struct IconBadgePicker: View {
                     VStack(spacing: 2) {
                         Image(systemName: segment.systemImageName)
                             .font(.system(size: 28))
-                            .symbolRenderingMode(.monochrome)
+                            .symbolRenderingMode(.hierarchical)
                             .frame(width: 36, height: 28)
                         Text(segment.label)
                             .font(.caption)
@@ -49,19 +49,19 @@ struct IconBadgePicker: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
+//                        RoundedRectangle(cornerRadius: 12)
+                        Capsule()
                             .fill(selection == segment
-                                  ? Color.accentColor.opacity(0.8)
-                                  : Color.clear)
+                                  ? Color.accentColor
+                                  : Color.primary.opacity(0.1))
                     )
-                    .foregroundStyle(selection == segment ? Color.white : .secondary)
+                    .foregroundStyle(selection == segment ? Color.white : .primary)
                 }
                 .buttonStyle(.borderless)
             }
         }
-        
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
     }
 }
 

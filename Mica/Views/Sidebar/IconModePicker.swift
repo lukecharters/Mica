@@ -10,8 +10,8 @@ enum IconModeSegment: Int, CaseIterable, Identifiable {
 
     var systemImageName: String {
         switch self {
-        case .custom: "slider.horizontal.2.square"
-        case .system: "command.square.fill"
+        case .custom: "slider.horizontal.3"
+        case .system: "command"
         }
     }
 
@@ -27,6 +27,7 @@ enum IconModeSegment: Int, CaseIterable, Identifiable {
 /// Selects between Custom (SwiftUI) and System (Apple reference) rendering for the active segment.
 struct IconModePicker: View {
     @Binding var isSystem: Bool
+    
 
     private var selection: IconModeSegment {
         isSystem ? .system : .custom
@@ -34,40 +35,42 @@ struct IconModePicker: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Generation Mode").font(.title)
+            Text("Icon Generation").font(.headline)
             HStack(spacing: 0) {
                 ForEach(IconModeSegment.allCases) { segment in
                     Button {
                         withAnimation(.easeInOut(duration: 0.15)) {
                             isSystem = (segment == .system)
                         }
-                    } label: {
-                        VStack(spacing: 2) {
+                    }
+                    label: {
+                        HStack(spacing: 2) {
                             Image(systemName: segment.systemImageName)
-                                .font(.system(size: 28))
+//                                .font(.system(size: 28))
                                 .symbolRenderingMode(.monochrome)
-                                .frame(width: 36, height: 28)
+//                                .frame(width: 36, height: 28)
                             Text(segment.label)
-                                .font(.caption)
+//                                .font(.body)
                                 .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
+//                            RoundedRectangle(cornerRadius: 20)
+                            Capsule()
                                 .fill(selection == segment
-                                      ? Color.accentColor.opacity(0.8)
-                                      : Color.clear)
+                                      ? Color.accentColor
+                                      : Color.primary.opacity(0.1))
                         )
-                        .foregroundStyle(selection == segment ? Color.white : .secondary)
+                        .foregroundStyle(selection == segment ? Color.white : .primary)
                     }
                     .buttonStyle(.borderless)
                 }
             }
-            
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
     }
 }
 

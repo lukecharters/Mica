@@ -37,7 +37,7 @@ struct PreviewControls: View {
 
             Divider()
 
-            Toggle("2x Retina", isOn: $iconSettings.exportRetinaSize)
+            Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
         } label: {
             HStack(spacing: 4) {
                 Text(sizeLabel)

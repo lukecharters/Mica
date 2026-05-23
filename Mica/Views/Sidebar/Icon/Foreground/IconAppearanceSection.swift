@@ -41,7 +41,7 @@ struct IconAppearanceSection: View {
         }
         .pickerStyle(.menu)
 
-        Picker("Background", selection: $appexEnclosureColor) {
+        Picker("Background Color", selection: $appexEnclosureColor) {
             ForEach(AppexEnclosureColor.allCases) { color in
                 HStack(spacing: 6) {
                     Circle()
