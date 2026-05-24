@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+CLI_SOURCE="/Applications/Mica.app/Contents/MacOS/mica-cli"
+SYMLINK_DIR="/usr/local/bin"
+SYMLINK_PATH="${SYMLINK_DIR}/mica-cli"
+
+mkdir -p "$SYMLINK_DIR"
+ln -sf "$CLI_SOURCE" "$SYMLINK_PATH"
+
+exit 0

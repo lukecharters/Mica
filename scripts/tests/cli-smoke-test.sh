@@ -11,9 +11,9 @@ set -o pipefail
 
 # ---- configuration -----------------------------------------------------------
 
-readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-readonly FIXTURES_DIR="${PROJECT_ROOT}/scripts/fixtures"
-readonly OUTPUT_ROOT="${PROJECT_ROOT}/scripts/smoke-output"
+readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+readonly FIXTURES_DIR="${PROJECT_ROOT}/scripts/tests/fixtures"
+readonly OUTPUT_ROOT="${PROJECT_ROOT}/scripts/tests/smoke-output"
 readonly FIXTURE_SYMBOL="${FIXTURES_DIR}/test-symbol.png"
 readonly FIXTURE_BACKGROUND="${FIXTURES_DIR}/test-background.png"
 readonly SCHEME="mica-cli"
