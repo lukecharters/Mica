@@ -166,7 +166,7 @@ private struct GroupHeaderRow: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.accentColor : Color.clear)
+                .fill(isSelected ? Color.accentColor.opacity(0.6) : Color.secondary.opacity(0.1))
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
@@ -251,9 +251,9 @@ private struct GroupModePicker: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(
-                Capsule().fill(active ? Color.accentColor : Color.clear)
+                Capsule().fill(active ? Color.accentColor : Color.secondary.opacity(0.3))
             )
-            .foregroundStyle(active ? Color.white : (isSelected ? Color.white.opacity(0.9) : .primary))
+            .foregroundStyle(active ? Color.primary : (isSelected ? Color.white : .primary))
         }
         .buttonStyle(.plain)
         .help(label)
@@ -324,7 +324,7 @@ private struct LayerRow: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? Color.accentColor : Color.clear)
+                .fill(isSelected ? Color.accentColor.opacity(0.8) : Color.primary.opacity(0.1))
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
@@ -370,7 +370,7 @@ private struct LayerThumbnail: View {
     let badgeAppexSymbolColor: AppexEnclosureColor
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(Color(.controlBackgroundColor))
             .overlay {
                 content.padding(3)
@@ -379,7 +379,7 @@ private struct LayerThumbnail: View {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .stroke(Color.secondary.opacity(0.25), lineWidth: 0.5)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     @ViewBuilder
@@ -521,7 +521,6 @@ private struct BadgeBackgroundThumb: View {
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
-                .clipShape(Circle())
         } else {
             Circle()
                 .fill(badgeBackgroundStyle)
