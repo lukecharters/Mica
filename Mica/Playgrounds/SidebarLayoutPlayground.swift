@@ -870,7 +870,51 @@ private struct MockBgAppearanceControls: View {
 
 // MARK: - Option I: 2-Segment Custom Picker + ScrollView with Stacked Forms
 
-// IconOrBadge and IconBadgePicker are now defined in Views/Sidebar/IconBadgePicker.swift
+// IconBadgePicker / IconOrBadge originally lived in Views/Sidebar/IconBadgeSwitch.swift.
+// That file was removed when the production sidebar moved to the LayerSidebar
+// hierarchy; keeping these locally so this playground continues to build.
+private enum IconOrBadge: Int, CaseIterable, Identifiable {
+    case icon = 0
+    case badge = 1
+    var id: Int { rawValue }
+    var systemImageName: String { self == .icon ? "app.fill" : "app.badge" }
+    var label: String { self == .icon ? "Icon" : "Badge" }
+}
+
+private struct IconBadgePicker: View {
+    @Binding var selection: IconOrBadge
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(IconOrBadge.allCases) { segment in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { selection = segment }
+                } label: {
+                    VStack(spacing: 2) {
+                        Image(systemName: segment.systemImageName)
+                            .font(.system(size: 28))
+                            .foregroundStyle(selection == segment ? Color.white : .secondary)
+                            .symbolRenderingMode(.hierarchical)
+                            .frame(width: 36, height: 28)
+                        Text(segment.label)
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(selection == segment ? Color.accentColor : Color.primary.opacity(0.1))
+                    )
+                    .foregroundStyle(selection == segment ? Color.white : .primary)
+                }
+                .buttonStyle(.borderless)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
+    }
+}
 
 private struct OptionIView: View {
     @State private var selectedSegment: IconOrBadge = .icon

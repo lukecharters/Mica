@@ -112,6 +112,11 @@ private struct ButtonsSection: View {
                     Button("Small") {}.controlSize(.small)
                     Button("Regular") {}.controlSize(.regular)
                     Button("Large") {}.controlSize(.large)
+                    Button("Extra Large") {}.controlSize(.extraLarge)
+                    Button{} label: {
+                        Label("System", systemImage: "command")
+                    }
+                    .controlSize(.extraLarge)
                 }
                 .buttonStyle(.borderedProminent)
             }

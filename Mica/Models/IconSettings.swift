@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct IconSettings: Equatable {
-    var symbolName: String = "folder.fill.badge.plus"
+    var symbolName: String = "command"
     var baseColor: Color = .blue
     var enableBackgroundGradient: Bool = true
     var useCustomColors: Bool = false
@@ -33,7 +33,6 @@ struct IconSettings: Equatable {
     var paletteSymbolTertiaryColor: Color = .yellow
     
     // Badge settings
-    var showBadge: Bool = false
     var badgePosition: BadgePosition = .bottomRight
     var badgeSymbolName: String = "gearshape.fill"
     var badgeUseCustomColors: Bool = false
@@ -77,6 +76,81 @@ struct IconSettings: Equatable {
     var badgeImportedBackground: ImportedImage? = nil
     var badgeImportedBackgroundPaddingCompensation: Bool = false
     var badgeImportedBackgroundScale: Double = 1.0
+
+    // Per-group generation mode. Icon and Badge are independent — e.g. Custom icon
+    // with a System (Apple Reference) badge, or vice versa.
+    var iconGenerationMode: GenerationMode = .swiftUI
+
+    /// Badge generation mode derived from `badgeIconSource`. Setting `.appleReference`
+    /// locks the badge source to `.appleReference`; setting `.swiftUI` falls back to
+    /// `.sfSymbol` when needed. The LayerSidebar keeps a separate UI-state memory of
+    /// the previous non-system source so the user's pick is restored on round-trip.
+    var badgeGenerationMode: GenerationMode {
+        get { badgeIconSource == .appleReference ? .appleReference : .swiftUI }
+        set {
+            switch newValue {
+            case .appleReference:
+                badgeIconSource = .appleReference
+            case .swiftUI:
+                if badgeIconSource == .appleReference {
+                    badgeIconSource = .sfSymbol
+                }
+            }
+        }
+    }
+
+    // Per-layer visibility (driven by the eye toggles in the layer sidebar).
+    // `showBadge` is computed from these so existing call sites still work.
+    var iconForegroundHidden: Bool = false
+    var iconBackgroundHidden: Bool = false
+    var badgeForegroundHidden: Bool = true
+    var badgeBackgroundHidden: Bool = true
+
+    /// True when at least one badge layer is visible. Setting this updates both
+    /// `badgeForegroundHidden` and `badgeBackgroundHidden` together.
+    var showBadge: Bool {
+        get { !badgeForegroundHidden || !badgeBackgroundHidden }
+        set {
+            badgeForegroundHidden = !newValue
+            badgeBackgroundHidden = !newValue
+        }
+    }
+
+    /// Group-level visibility for the Icon (both layers). Setting it mirrors the
+    /// value into both `iconForegroundHidden` and `iconBackgroundHidden`.
+    var iconHidden: Bool {
+        get { iconForegroundHidden && iconBackgroundHidden }
+        set {
+            iconForegroundHidden = newValue
+            iconBackgroundHidden = newValue
+        }
+    }
+
+    /// Group-level visibility for the Badge (both layers). Inverse of `showBadge`.
+    var badgeHidden: Bool {
+        get { badgeForegroundHidden && badgeBackgroundHidden }
+        set {
+            badgeForegroundHidden = newValue
+            badgeBackgroundHidden = newValue
+        }
+    }
+
+    /// Tri-state visibility for use in group header eye toggles.
+    func iconVisibility() -> LayerGroupVisibility {
+        switch (iconForegroundHidden, iconBackgroundHidden) {
+        case (true, true):   return .off
+        case (false, false): return .on
+        default:             return .mixed
+        }
+    }
+
+    func badgeVisibility() -> LayerGroupVisibility {
+        switch (badgeForegroundHidden, badgeBackgroundHidden) {
+        case (true, true):   return .off
+        case (false, false): return .on
+        default:             return .mixed
+        }
+    }
 
     var gradientColors: [Color] {
         [customPrimaryColor, customSecondaryColor]
@@ -219,6 +293,13 @@ enum SymbolWeight: String, CaseIterable, Identifiable {
         case .black:      return .black
         }
     }
+}
+
+/// Tri-state used by group header eye toggles where children may disagree.
+enum LayerGroupVisibility {
+    case off    // all child layers hidden
+    case mixed  // some children hidden, some visible
+    case on     // all child layers visible
 }
 
 extension IconSettings {

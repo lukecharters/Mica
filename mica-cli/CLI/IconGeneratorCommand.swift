@@ -83,7 +83,7 @@ struct GenerationOptions: ParsableArguments {
     @Option(
         name: .long,
         help: ArgumentHelp(
-            "Generation mode",
+            "Generation mode (deprecated alias — sets both --icon-mode and --badge-mode)",
             discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
             valueName: "mode"
         ),
@@ -95,7 +95,47 @@ struct GenerationOptions: ParsableArguments {
             return mode.lowercased()
         }
     )
-    var generationMode: String = "custom"
+    var generationMode: String?
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Generation mode for the icon",
+            discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
+            valueName: "mode"
+        ),
+        transform: { mode in
+            let valid = ["custom", "apple-reference"]
+            guard valid.contains(mode.lowercased()) else {
+                throw ValidationError("Icon mode must be one of: \(valid.joined(separator: ", "))")
+            }
+            return mode.lowercased()
+        }
+    )
+    var iconMode: String?
+
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Generation mode for the badge",
+            discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
+            valueName: "mode"
+        ),
+        transform: { mode in
+            let valid = ["custom", "apple-reference"]
+            guard valid.contains(mode.lowercased()) else {
+                throw ValidationError("Badge mode must be one of: \(valid.joined(separator: ", "))")
+            }
+            return mode.lowercased()
+        }
+    )
+    var badgeMode: String?
+
+    /// Resolved icon mode: explicit `--icon-mode` wins, then `--generation-mode`, default custom.
+    var resolvedIconMode: String { iconMode ?? generationMode ?? "custom" }
+
+    /// Resolved badge mode: explicit `--badge-mode` wins, then `--generation-mode`, default custom.
+    var resolvedBadgeMode: String { badgeMode ?? generationMode ?? "custom" }
 
     @Option(
         name: .long,

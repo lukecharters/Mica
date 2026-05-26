@@ -10,8 +10,13 @@ final class IconViewModel: ObservableObject {
     @Published var exportPath: URL? = nil
     @Published var testingMode: Bool = false
 
-    // Generation mode
-    @Published var generationMode: GenerationMode = .swiftUI
+    // Generation mode is now per-group on `iconSettings` (iconGenerationMode +
+    // badgeGenerationMode). A computed convenience for any code that still wants
+    // a single "are we in Apple Reference?" answer for the icon.
+    var generationMode: GenerationMode {
+        get { iconSettings.iconGenerationMode }
+        set { iconSettings.iconGenerationMode = newValue }
+    }
     @Published var appexEnclosureColor: AppexEnclosureColor = .blue
     @Published var appexSymbolColor: AppexEnclosureColor = .white
     @Published var appexRenderedImage: NSImage? = nil
@@ -58,7 +63,7 @@ final class IconViewModel: ObservableObject {
 
     struct BadgeAppexGenerationKey: Equatable {
         let showBadge: Bool
-        let badgeIconSource: IconSource
+        let badgeGenerationMode: GenerationMode
         let symbolName: String
         let enclosureColor: AppexEnclosureColor
         let symbolColor: AppexEnclosureColor
@@ -67,7 +72,7 @@ final class IconViewModel: ObservableObject {
     var badgeAppexGenerationKey: BadgeAppexGenerationKey {
         BadgeAppexGenerationKey(
             showBadge: iconSettings.showBadge,
-            badgeIconSource: iconSettings.badgeIconSource,
+            badgeGenerationMode: iconSettings.badgeGenerationMode,
             symbolName: iconSettings.badgeSymbolName,
             enclosureColor: badgeAppexEnclosureColor,
             symbolColor: badgeAppexSymbolColor

@@ -36,12 +36,12 @@ class IconGeneratorCLI {
             currentPhase = .rendering
             let image: NSImage
 
-            if command.generation.generationMode == "apple-reference" {
+            if command.generation.resolvedIconMode == "apple-reference" {
                 image = try await renderAppleReference(command: command, settings: settings)
             } else {
                 // Load badge appex image if badge uses apple-reference source
                 var badgeAppexImage: NSImage? = nil
-                if settings.showBadge && command.badge.badgeIconSource == "apple-reference" {
+                if settings.showBadge && settings.badgeIconSource == .appleReference {
                     badgeAppexImage = try renderAppexIcon(
                         symbolName: settings.badgeSymbolName,
                         enclosureColor: command.badge.badgeAppexEnclosureColor,
@@ -59,7 +59,7 @@ class IconGeneratorCLI {
 
             // Phase 5: Report
             currentPhase = .complete
-            reportSuccess(outputURL: outputURL, settings: settings, generationMode: command.generation.generationMode)
+            reportSuccess(outputURL: outputURL, settings: settings, generationMode: command.generation.resolvedIconMode)
 
         } catch let error as CLIError {
             handleCLIError(error, phase: currentPhase)
@@ -94,7 +94,7 @@ class IconGeneratorCLI {
         // If badge is present, composite via renderAppexWithBadge
         if settings.showBadge {
             var badgeAppexImage: NSImage? = nil
-            if command.badge.badgeIconSource == "apple-reference" {
+            if settings.badgeIconSource == .appleReference {
                 badgeAppexImage = try renderAppexIcon(
                     symbolName: settings.badgeSymbolName,
                     enclosureColor: command.badge.badgeAppexEnclosureColor,
@@ -370,6 +370,14 @@ class IconGeneratorCLI {
                     settings.badgeIconSource = .appleReference
                 default:
                     settings.badgeIconSource = .sfSymbol
+                }
+
+                // Per-group generation modes. `--icon-mode` / `--badge-mode` win
+                // over the legacy `--generation-mode`; --badge-mode also overrides
+                // an explicit --badge-source value.
+                settings.iconGenerationMode = command.generation.resolvedIconMode == "apple-reference" ? .appleReference : .swiftUI
+                if command.generation.resolvedBadgeMode == "apple-reference" {
+                    settings.badgeIconSource = .appleReference
                 }
 
                 // Badge imported background

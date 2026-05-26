@@ -35,7 +35,7 @@ struct IconModePicker: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Icon Generation").font(.headline)
+            Text("Icon Generation Mode").font(.headline)
             HStack(spacing: 0) {
                 ForEach(IconModeSegment.allCases) { segment in
                     Button {

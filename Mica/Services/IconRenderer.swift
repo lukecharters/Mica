@@ -284,6 +284,32 @@ struct IconContentView: View {
 
     var body: some View {
         ZStack {
+            if !settings.iconBackgroundHidden {
+                backgroundLayer
+            }
+
+            // Icon content (SF Symbol or custom image) — hidden when background is an imported image,
+            // or when the foreground layer is explicitly hidden via the layer sidebar's eye toggle.
+            if !settings.iconForegroundHidden, settings.backgroundMode != .importedImage {
+                iconContent
+                    .shadow(
+                        color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                        radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
+                        y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+                    )
+            }
+
+            if settings.showBadge {
+                BadgeView(settings: settings, badgeSize: badgeSize, badgeAppexImage: badgeAppexImage)
+                    .offset(badgeOffset(for: settings.badgePosition))
+            }
+        }
+        .frame(width: totalCanvasSize, height: totalCanvasSize)
+    }
+
+    @ViewBuilder
+    private var backgroundLayer: some View {
+        ZStack {
             switch settings.backgroundMode {
             case .preRendered:
                 Image(settings.preRenderedAssetName)
@@ -349,24 +375,7 @@ struct IconContentView: View {
                         )
                 }
             }
-
-            // Icon content (SF Symbol or custom image) — hidden when background is an imported image
-            if settings.backgroundMode != .importedImage {
-                iconContent
-                    .shadow(
-                        color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                        radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-                        y: settings.enableSymbolShadow ? symbolShadowOffset : 0
-                    )
-            }
-
-            // Badge
-            if settings.showBadge {
-                BadgeView(settings: settings, badgeSize: badgeSize, badgeAppexImage: badgeAppexImage)
-                    .offset(badgeOffset(for: settings.badgePosition))
-            }
         }
-        .frame(width: totalCanvasSize, height: totalCanvasSize)
     }
 
     @ViewBuilder
@@ -483,7 +492,7 @@ struct BadgeView: View {
         } else {
             // Existing rendering for SF Symbol and Imported modes
             ZStack {
-                if settings.badgeUseImportedBackground {
+                if !settings.badgeBackgroundHidden, settings.badgeUseImportedBackground {
                     if let nsImage = settings.badgeImportedBackground?.nsImage {
                         let effectiveScale = settings.badgeImportedBackgroundScale
                             * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
@@ -502,7 +511,7 @@ struct BadgeView: View {
                                 y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
                             )
                     }
-                } else if settings.badgeUseCustomColors {
+                } else if !settings.badgeBackgroundHidden, settings.badgeUseCustomColors {
                     Circle()
                         .fill(
                             settings.badgeEnableBackgroundGradient
@@ -518,7 +527,7 @@ struct BadgeView: View {
                             radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
                             y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
                         )
-                } else {
+                } else if !settings.badgeBackgroundHidden {
                     Circle()
                         .fill(settings.badgeEnableBackgroundGradient ? AnyShapeStyle(settings.badgeBaseColor.gradient) : AnyShapeStyle(settings.badgeBaseColor))
                         .shadow(
@@ -528,8 +537,10 @@ struct BadgeView: View {
                         )
                 }
 
-                // Badge symbol — hidden when background is an imported image
-                if !settings.badgeUseImportedBackground {
+                // Badge symbol — gated on the foreground visibility toggle, and (preserving the old
+                // behavior) suppressed when the badge background is an imported image that is itself visible.
+                if !settings.badgeForegroundHidden,
+                   settings.badgeBackgroundHidden || !settings.badgeUseImportedBackground {
                     badgeContent
                         .shadow(
                             color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,

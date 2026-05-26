@@ -107,7 +107,7 @@ struct IconViewModelTests {
 
         let key = vm.badgeAppexGenerationKey
         #expect(key.showBadge == true)
-        #expect(key.badgeIconSource == .customImage)
+        #expect(key.badgeGenerationMode == .swiftUI)
         #expect(key.symbolName == "plus.circle")
         #expect(key.enclosureColor == .red)
         #expect(key.symbolColor == .black)
@@ -116,10 +116,10 @@ struct IconViewModelTests {
     @Test("BadgeAppexGenerationKey: identical inputs produce equal keys")
     func badgeAppexGenerationKey_equal_whenIdentical() {
         let a = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         let b = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         #expect(a == b)
     }
@@ -127,21 +127,21 @@ struct IconViewModelTests {
     @Test("BadgeAppexGenerationKey: differing showBadge breaks equality")
     func badgeAppexGenerationKey_inequal_differentShowBadge() {
         let a = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         let b = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: false, badgeIconSource: .sfSymbol,
+            showBadge: false, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         #expect(a != b)
     }
 
-    @Test("BadgeAppexGenerationKey: differing badge icon source breaks equality")
+    @Test("BadgeAppexGenerationKey: differing badge mode breaks equality")
     func badgeAppexGenerationKey_inequal_differentBadgeIconSource() {
         let a = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         let b = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .customImage,
+            showBadge: true, badgeGenerationMode: .appleReference,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         #expect(a != b)
     }
@@ -149,10 +149,10 @@ struct IconViewModelTests {
     @Test("BadgeAppexGenerationKey: differing symbol name breaks equality")
     func badgeAppexGenerationKey_inequal_differentSymbolName() {
         let a = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         let b = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "bell.fill", enclosureColor: .blue, symbolColor: .white)
         #expect(a != b)
     }
@@ -160,10 +160,10 @@ struct IconViewModelTests {
     @Test("BadgeAppexGenerationKey: differing enclosure color breaks equality")
     func badgeAppexGenerationKey_inequal_differentEnclosureColor() {
         let a = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         let b = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .green, symbolColor: .white)
         #expect(a != b)
     }
@@ -171,10 +171,10 @@ struct IconViewModelTests {
     @Test("BadgeAppexGenerationKey: differing symbol color breaks equality")
     func badgeAppexGenerationKey_inequal_differentSymbolColor() {
         let a = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .white)
         let b = IconViewModel.BadgeAppexGenerationKey(
-            showBadge: true, badgeIconSource: .sfSymbol,
+            showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .yellow)
         #expect(a != b)
     }

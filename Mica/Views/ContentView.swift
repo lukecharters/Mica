@@ -21,8 +21,8 @@ struct ContentView: View {
     init() {}
 
     init(viewModel: IconViewModel, showInspector: Bool = true) {
+        _ = showInspector // kept for source compatibility with existing previews
         _viewModel = StateObject(wrappedValue: viewModel)
-        _showInspector = State(initialValue: showInspector)
     }
 
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
@@ -30,29 +30,31 @@ struct ContentView: View {
     private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
 
     @State private var zoomLevel: Double = 1.0
-    @State private var showInspector: Bool = true
+    @State private var selection: LayerSelection = .layer(.icon, .foreground)
     @State private var appexService = AppexReferenceService()
+    @State private var showLayerSidebar: Bool = true
+    @State private var showInspector: Bool = true
+    @State private var inspectorTab: InspectorTab = .controls
 
     var body: some View {
         HSplitView {
-            // Left: Sidebar controls
-            SidebarView(
-                iconSettings: $viewModel.iconSettings,
-                generationMode: $viewModel.generationMode,
-                appexEnclosureColor: $viewModel.appexEnclosureColor,
-                appexSymbolColor: $viewModel.appexSymbolColor,
-                badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
-                badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
-                colorOptions: colorOptions
-            )
-            .frame(minWidth: 350, idealWidth: 420, maxWidth: 500)
+            if showLayerSidebar {
+                LayerSidebar(
+                    iconSettings: $viewModel.iconSettings,
+                    selection: $selection,
+                    appexEnclosureColor: viewModel.appexEnclosureColor,
+                    appexSymbolColor: viewModel.appexSymbolColor,
+                    badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
+                    badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
+                )
+                .frame(minWidth: 220, idealWidth: 280, maxWidth: 340)
+            }
 
-            // Center: Preview pane with overlay controls
-            if viewModel.generationMode == .swiftUI {
+            if viewModel.iconSettings.iconGenerationMode == .swiftUI {
                 previewPane
                     .task(id: viewModel.badgeAppexGenerationKey) {
                         guard viewModel.iconSettings.showBadge,
-                              viewModel.iconSettings.badgeIconSource == .appleReference else {
+                              viewModel.iconSettings.badgeGenerationMode == .appleReference else {
                             return
                         }
                         try? await Task.sleep(for: .milliseconds(400))
@@ -63,22 +65,54 @@ struct ContentView: View {
                 AppexPreviewPane(viewModel: viewModel, appexService: appexService)
             }
 
-            // Right: Export settings sidebar (inspector)
             if showInspector {
-                ExportSettingsSidebar(
+                InspectorPanel(
                     iconSettings: $viewModel.iconSettings,
+                    appexEnclosureColor: $viewModel.appexEnclosureColor,
+                    appexSymbolColor: $viewModel.appexSymbolColor,
+                    badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
+                    badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
                     showExportDialog: $viewModel.showExportDialog,
-                    generationMode: viewModel.generationMode,
+                    selection: selection,
+                    tab: inspectorTab,
+                    colorOptions: colorOptions,
                     appexHasImage: viewModel.appexRenderedImage != nil
                 )
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigation) {
                 Button {
-                    withAnimation {
-                        showInspector.toggle()
-                    }
+                    withAnimation { showLayerSidebar.toggle() }
+                } label: {
+                    Image(systemName: "sidebar.left")
+                }
+                .help("Toggle Layer Sidebar")
+            }
+            ToolbarItemGroup(placement: .automatic) {
+                Button {
+                    if !showInspector { showInspector = true }
+                    inspectorTab = .controls
+                } label: {
+                    Image(systemName: InspectorTab.controls.systemImage)
+                        .symbolVariant(showInspector && inspectorTab == .controls ? .fill : .none)
+                }
+                .help("Layer Controls")
+                
+                Button {
+                    if !showInspector { showInspector = true }
+                    inspectorTab = .export
+                } label: {
+                    Image(systemName: InspectorTab.export.systemImage)
+                }
+                .help("Export")
+            }
+            if #available(macOS 26.0, *) {
+                ToolbarSpacer(.fixed)
+            }
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    withAnimation { showInspector.toggle() }
                 } label: {
                     Image(systemName: "sidebar.right")
                 }
@@ -88,7 +122,7 @@ struct ContentView: View {
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: viewModel.generationMode == .appleReference
+            document: viewModel.iconSettings.iconGenerationMode == .appleReference
                 ? IconDocument(appexExport: .init(
                     symbolName: viewModel.iconSettings.symbolName,
                     enclosureColor: viewModel.appexEnclosureColor,
@@ -101,7 +135,7 @@ struct ContentView: View {
                   badgeAppexImage: viewModel.badgeAppexRenderedImage)
                 : IconDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
             contentType: .png,
-            defaultFilename: viewModel.generationMode == .appleReference
+            defaultFilename: viewModel.iconSettings.iconGenerationMode == .appleReference
                 ? "\(viewModel.iconSettings.symbolName)-apple-reference"
                 : "CustomIcon"
         ) { result in
@@ -319,7 +353,7 @@ struct ContentView_Previews: PreviewProvider {
 
     @MainActor private static var customVM: IconViewModel {
         let vm = IconViewModel()
-        vm.generationMode = .appleReference
+        vm.iconSettings.iconGenerationMode = .appleReference
         vm.iconSettings.symbolName = "gearshape.fill"
         vm.iconSettings.useCustomColors = true
         vm.iconSettings.customPrimaryColor = .blue
