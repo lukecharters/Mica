@@ -15,21 +15,27 @@ struct LayerSidebar: View {
     let badgeAppexSymbolColor: AppexEnclosureColor
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                groupSection(.icon)
-                Divider().padding(.horizontal, 12)
-                groupSection(.badge)
-            }
-            .padding(.vertical, 12)
+        List(selection: selectionBinding) {
+            groupSection(.icon)
+            groupSection(.badge)
         }
-        .background(Color(.windowBackgroundColor))
+        .listStyle(.sidebar)
         .onChange(of: iconSettings.iconGenerationMode) { _, _ in
             migrateSelection(group: .icon)
         }
         .onChange(of: iconSettings.badgeIconSource) { _, _ in
             migrateSelection(group: .badge)
         }
+    }
+
+    /// `List` single-selection wants a `Binding<LayerSelection?>`. Bridge from the
+    /// non-optional binding and ignore nils so the sidebar always keeps a selection
+    /// (clicking empty space never deselects).
+    private var selectionBinding: Binding<LayerSelection?> {
+        Binding(
+            get: { selection },
+            set: { if let new = $0 { selection = new } }
+        )
     }
 
     /// When a group switches into System mode, any selected child layer collapses
@@ -43,34 +49,28 @@ struct LayerSidebar: View {
 
     @ViewBuilder
     private func groupSection(_ group: IconLayerGroup) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        Section {
             GroupHeaderRow(
                 group: group,
-                isSelected: selection == .group(group),
                 visibility: visibility(for: group),
-                visibilityBinding: groupVisibilityBinding(for: group),
-                onSelect: { selection = .group(group) }
+                visibilityBinding: groupVisibilityBinding(for: group)
             )
-            .padding(.horizontal, 8)
+            .tag(LayerSelection.group(group))
 
             if !isSystem(group) {
-                VStack(spacing: 2) {
-                    ForEach(LayerRole.allCases) { role in
-                        LayerRow(
-                            group: group,
-                            role: role,
-                            iconSettings: $iconSettings,
-                            appexEnclosureColor: appexEnclosureColor,
-                            appexSymbolColor: appexSymbolColor,
-                            badgeAppexEnclosureColor: badgeAppexEnclosureColor,
-                            badgeAppexSymbolColor: badgeAppexSymbolColor,
-                            isSelected: selection == .layer(group, role),
-                            onSelect: { selection = .layer(group, role) }
-                        )
-                    }
+                ForEach(LayerRole.allCases) { role in
+                    LayerRow(
+                        group: group,
+                        role: role,
+                        iconSettings: $iconSettings,
+                        appexEnclosureColor: appexEnclosureColor,
+                        appexSymbolColor: appexSymbolColor,
+                        badgeAppexEnclosureColor: badgeAppexEnclosureColor,
+                        badgeAppexSymbolColor: badgeAppexSymbolColor
+                    )
+                    .tag(LayerSelection.layer(group, role))
+                    .padding(.leading, 12) // indent children under header
                 }
-                .padding(.horizontal, 8)
-                .padding(.leading, 14) // indent children under header
             }
         }
     }
@@ -114,10 +114,8 @@ struct LayerSidebar: View {
 
 private struct GroupHeaderRow: View {
     let group: IconLayerGroup
-    let isSelected: Bool
     let visibility: LayerGroupVisibility
     let visibilityBinding: Binding<Bool>
-    let onSelect: () -> Void
 
     private var iconName: String {
         switch group {
@@ -129,27 +127,15 @@ private struct GroupHeaderRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
-                .font(.system(size: 28, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: 36, height: 36)
-                .contentShape(Rectangle())
+                .font(.system(size: 18, weight: .medium))
+                .frame(width: 24, height: 24)
 
             Text(group.label)
                 .font(.headline)
-                .foregroundStyle(isSelected ? Color.white : .primary)
-
 
             Spacer(minLength: 8)
-            GroupVisibilityToggle(visibility: visibility, binding: visibilityBinding, isSelected: isSelected)
+            GroupVisibilityToggle(visibility: visibility, binding: visibilityBinding)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
-        )
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
     }
 }
 
@@ -158,7 +144,6 @@ private struct GroupHeaderRow: View {
 private struct GroupVisibilityToggle: View {
     let visibility: LayerGroupVisibility
     let binding: Binding<Bool>
-    let isSelected: Bool
 
     var body: some View {
         Button {
@@ -166,7 +151,7 @@ private struct GroupVisibilityToggle: View {
         } label: {
             Image(systemName: symbolName)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(tintColor)
+                .foregroundStyle(visibility == .off ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
         }
@@ -179,14 +164,6 @@ private struct GroupVisibilityToggle: View {
         case .on:    return "eye.fill"
         case .off:   return "eye.slash"
         case .mixed: return "eye"
-        }
-    }
-
-    private var tintColor: Color {
-        if isSelected {
-            return visibility == .off ? .white.opacity(0.6) : .white
-        } else {
-            return visibility == .off ? .secondary : .primary
         }
     }
 
@@ -209,8 +186,6 @@ private struct LayerRow: View {
     let appexSymbolColor: AppexEnclosureColor
     let badgeAppexEnclosureColor: AppexEnclosureColor
     let badgeAppexSymbolColor: AppexEnclosureColor
-    let isSelected: Bool
-    let onSelect: () -> Void
 
     private var visibility: Binding<Bool> {
         switch (group, role) {
@@ -252,27 +227,17 @@ private struct LayerRow: View {
 
             Text(role.label)
                 .font(.body)
-                .foregroundStyle(isSelected ? Color.white : .primary)
                 .lineLimit(1)
 
             Spacer(minLength: 0)
 
-            LayerVisibilityToggle(isVisible: visibility, isSelected: isSelected)
+            LayerVisibilityToggle(isVisible: visibility)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
-        )
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
     }
 }
 
 private struct LayerVisibilityToggle: View {
     @Binding var isVisible: Bool
-    let isSelected: Bool
 
     var body: some View {
         Button {
@@ -280,20 +245,12 @@ private struct LayerVisibilityToggle: View {
         } label: {
             Image(systemName: isVisible ? "eye" : "eye.slash")
                 .font(.system(size: 13))
-                .foregroundStyle(tintColor)
+                .foregroundStyle(isVisible ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(isVisible ? "Hide layer" : "Show layer")
-    }
-
-    private var tintColor: Color {
-        if isSelected {
-            return isVisible ? .white : .white.opacity(0.6)
-        } else {
-            return isVisible ? .primary : .secondary
-        }
     }
 }
 
