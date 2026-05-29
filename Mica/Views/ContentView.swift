@@ -89,6 +89,15 @@ struct ContentView: View {
                 }
                 .help("Toggle Layer Sidebar")
             }
+            if #available(macOS 26.0, *) {
+                ToolbarSpacer(.fixed)
+            }
+            if viewModel.iconSettings.iconGenerationMode == .swiftUI {
+                ToolbarItemGroup(placement: .principal) {
+                    ExportSizeMenu(iconSettings: $viewModel.iconSettings)
+                    ZoomMenu(zoomLevel: $zoomLevel)
+                }
+            }
             ToolbarItemGroup(placement: .automatic) {
                 Button {
                     if !showInspector { showInspector = true }
@@ -151,33 +160,24 @@ struct ContentView: View {
     // MARK: - Preview Pane
 
     private var previewPane: some View {
-        ZStack(alignment: .topTrailing) {
-            // Scrollable preview area
-            ScrollView([.horizontal, .vertical]) {
-                VStack {
-                    Spacer(minLength: 60) // Space for controls overlay
+        // Size + zoom controls live in the window toolbar (see `.toolbar`).
+        ScrollView([.horizontal, .vertical]) {
+            VStack {
+                Spacer(minLength: 0)
 
-                    ScaledIconPreview(
-                        settings: $viewModel.iconSettings,
-                        displaySize: previewDisplaySize,
-                        badgeAppexImage: viewModel.badgeAppexRenderedImage
-                    )
-                    .padding()
+                ScaledIconPreview(
+                    settings: $viewModel.iconSettings,
+                    displaySize: previewDisplaySize,
+                    badgeAppexImage: viewModel.badgeAppexRenderedImage
+                )
+                .padding()
 
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.windowBackgroundColor))
-
-            // Overlay controls (top-right)
-            PreviewControls(
-                iconSettings: $viewModel.iconSettings,
-                zoomLevel: $zoomLevel
-            )
-            .padding(12)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.windowBackgroundColor))
     }
 
     /// Calculates the preview display size based on zoom level

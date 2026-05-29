@@ -2,9 +2,10 @@
 import SwiftUI
 
 /// Left sidebar: two selectable groups (Icon, Badge), each with a tri-state
-/// visibility toggle and its own generation-mode picker. Each group expands into
-/// Foreground / Background child layers in Custom mode; in System mode the group
-/// header is the only selectable target for that group.
+/// visibility toggle. Each group expands into Foreground / Background child layers
+/// in Custom mode; in System mode the group header is the only selectable target
+/// for that group. The Custom/System generation-mode picker lives in the group's
+/// inspector on the right (see `GroupModePicker`).
 struct LayerSidebar: View {
     @Binding var iconSettings: IconSettings
     @Binding var selection: LayerSelection
@@ -13,13 +14,9 @@ struct LayerSidebar: View {
     let badgeAppexEnclosureColor: AppexEnclosureColor
     let badgeAppexSymbolColor: AppexEnclosureColor
 
-    /// Remembers the badge's previously-picked non-system source so toggling
-    /// System → Custom restores the user's choice instead of forcing `.sfSymbol`.
-    @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
-
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 groupSection(.icon)
                 Divider().padding(.horizontal, 12)
                 groupSection(.badge)
@@ -30,10 +27,7 @@ struct LayerSidebar: View {
         .onChange(of: iconSettings.iconGenerationMode) { _, _ in
             migrateSelection(group: .icon)
         }
-        .onChange(of: iconSettings.badgeIconSource) { oldValue, newValue in
-            if newValue != .appleReference {
-                lastNonSystemBadgeSource = newValue
-            }
+        .onChange(of: iconSettings.badgeIconSource) { _, _ in
             migrateSelection(group: .badge)
         }
     }
@@ -49,13 +43,12 @@ struct LayerSidebar: View {
 
     @ViewBuilder
     private func groupSection(_ group: IconLayerGroup) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             GroupHeaderRow(
                 group: group,
                 isSelected: selection == .group(group),
                 visibility: visibility(for: group),
                 visibilityBinding: groupVisibilityBinding(for: group),
-                modeBinding: modeBinding(for: group),
                 onSelect: { selection = .group(group) }
             )
             .padding(.horizontal, 8)
@@ -115,29 +108,6 @@ struct LayerSidebar: View {
         }
     }
 
-    private func modeBinding(for group: IconLayerGroup) -> Binding<Bool> {
-        switch group {
-        case .icon:
-            return Binding(
-                get: { iconSettings.iconGenerationMode == .appleReference },
-                set: { iconSettings.iconGenerationMode = $0 ? .appleReference : .swiftUI }
-            )
-        case .badge:
-            return Binding(
-                get: { iconSettings.badgeGenerationMode == .appleReference },
-                set: { newValue in
-                    if newValue {
-                        if iconSettings.badgeIconSource != .appleReference {
-                            lastNonSystemBadgeSource = iconSettings.badgeIconSource
-                        }
-                        iconSettings.badgeIconSource = .appleReference
-                    } else {
-                        iconSettings.badgeIconSource = lastNonSystemBadgeSource
-                    }
-                }
-            )
-        }
-    }
 }
 
 // MARK: - Group header row
@@ -147,26 +117,36 @@ private struct GroupHeaderRow: View {
     let isSelected: Bool
     let visibility: LayerGroupVisibility
     let visibilityBinding: Binding<Bool>
-    let modeBinding: Binding<Bool>
     let onSelect: () -> Void
+
+    private var iconName: String {
+        switch group {
+        case .icon:  return "app.fill"
+        case .badge: return "app.badge.fill"
+        }
+    }
 
     var body: some View {
         HStack(spacing: 8) {
-            GroupVisibilityToggle(visibility: visibility, binding: visibilityBinding, isSelected: isSelected)
+            Image(systemName: iconName)
+                .font(.system(size: 28, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
 
             Text(group.label)
                 .font(.headline)
                 .foregroundStyle(isSelected ? Color.white : .primary)
 
-            Spacer(minLength: 8)
 
-            GroupModePicker(isSystem: modeBinding, isSelected: isSelected)
+            Spacer(minLength: 8)
+            GroupVisibilityToggle(visibility: visibility, binding: visibilityBinding, isSelected: isSelected)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? Color.accentColor.opacity(0.6) : Color.secondary.opacity(0.1))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
@@ -216,47 +196,6 @@ private struct GroupVisibilityToggle: View {
         case .off:   return "Show layers"
         case .mixed: return "Hide layers (currently mixed)"
         }
-    }
-}
-
-/// Compact two-state segmented control: Custom vs System for a single group.
-private struct GroupModePicker: View {
-    @Binding var isSystem: Bool
-    let isSelected: Bool
-
-    var body: some View {
-        HStack(spacing: 2) {
-            segment(label: "Custom", systemImage: "slider.horizontal.3", active: !isSystem) {
-                isSystem = false
-            }
-            segment(label: "System", systemImage: "command", active: isSystem) {
-                isSystem = true
-            }
-        }
-        .padding(2)
-        .background(
-            Capsule().fill(Color.primary.opacity(0.08))
-        )
-    }
-
-    @ViewBuilder
-    private func segment(label: String, systemImage: String, active: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 3) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 9, weight: .medium))
-                Text(label)
-                    .font(.caption2)
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(
-                Capsule().fill(active ? Color.accentColor : Color.secondary.opacity(0.3))
-            )
-            .foregroundStyle(active ? Color.primary : (isSelected ? Color.white : .primary))
-        }
-        .buttonStyle(.plain)
-        .help(label)
     }
 }
 
@@ -323,8 +262,8 @@ private struct LayerRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? Color.accentColor.opacity(0.8) : Color.primary.opacity(0.1))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
@@ -376,7 +315,7 @@ private struct LayerThumbnail: View {
                 content.padding(3)
             }
             .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(Color.secondary.opacity(0.25), lineWidth: 0.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

@@ -61,6 +61,14 @@ struct LayerControls: View {
         iconSettings.badgeGenerationMode == .appleReference
     }
 
+    /// Drives the icon group's Custom/System picker.
+    private var iconModeBinding: Binding<Bool> {
+        Binding(
+            get: { iconSettings.iconGenerationMode == .appleReference },
+            set: { iconSettings.iconGenerationMode = $0 ? .appleReference : .swiftUI }
+        )
+    }
+
     // MARK: - Icon group (header selected)
 
     @ViewBuilder
@@ -68,35 +76,42 @@ struct LayerControls: View {
         // In System mode the group is the only selectable target for the icon, so
         // expose the appex Source + Appearance directly. In Custom mode, prompt
         // the user to pick a child layer.
-        if isIconAppleReference {
-            Form {
-                Section("Source", isExpanded: $iconSourceExpanded) {
-                    IconSourceSection(
-                        iconSettings: $iconSettings,
-                        isSystem: true
-                    )
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            GroupModePicker(isSystem: iconModeBinding)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
 
-                Section("Appearance", isExpanded: $iconAppearanceExpanded) {
-                    IconAppearanceSection(
-                        iconSettings: $iconSettings,
-                        colorOptions: colorOptions,
-                        isAppleReference: true,
-                        appexSymbolColor: $appexSymbolColor,
-                        appexEnclosureColor: $appexEnclosureColor
-                    )
+            if isIconAppleReference {
+                Form {
+                    Section("Source", isExpanded: $iconSourceExpanded) {
+                        IconSourceSection(
+                            iconSettings: $iconSettings,
+                            isSystem: true
+                        )
+                    }
+
+                    Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+                        IconAppearanceSection(
+                            iconSettings: $iconSettings,
+                            colorOptions: colorOptions,
+                            isAppleReference: true,
+                            appexSymbolColor: $appexSymbolColor,
+                            appexEnclosureColor: $appexEnclosureColor
+                        )
+                    }
                 }
+                .formStyle(GroupedFormStyle())
+                .scrollDisabled(true)
+                .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ContentUnavailableView(
+                    "Select a Layer",
+                    systemImage: "square.stack.3d.up",
+                    description: Text("Pick Foreground or Background to edit the icon's source and appearance.")
+                )
+                .padding(.top, 24)
             }
-            .formStyle(GroupedFormStyle())
-            .scrollDisabled(true)
-            .fixedSize(horizontal: false, vertical: true)
-        } else {
-            ContentUnavailableView(
-                "Select a Layer",
-                systemImage: "square.stack.3d.up",
-                description: Text("Pick Foreground or Background to edit the icon's source and appearance.")
-            )
-            .padding(.top, 24)
         }
     }
 

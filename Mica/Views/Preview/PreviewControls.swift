@@ -1,25 +1,12 @@
 // Views/Preview/PreviewControls.swift
 import SwiftUI
 
-struct PreviewControls: View {
+/// Export-size menu, shown in the window toolbar (Icon Composer style). Picks the
+/// export point size and toggles 2x (Retina).
+struct ExportSizeMenu: View {
     @Binding var iconSettings: IconSettings
-    @Binding var zoomLevel: Double
-
-    private let zoomLevels: [Double] = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 8.0]
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Size display (shows export dimensions)
-            sizeControl
-
-            // Zoom control
-            zoomControl
-        }
-        .padding(8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var sizeControl: some View {
         Menu {
             ForEach([16, 32, 64, 128, 256, 512, 1024], id: \.self) { size in
                 Button {
@@ -50,6 +37,7 @@ struct PreviewControls: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
+        .help("Export size")
     }
 
     private var sizeLabel: String {
@@ -60,8 +48,15 @@ struct PreviewControls: View {
             return "\(size)pt"
         }
     }
+}
 
-    private var zoomControl: some View {
+/// Zoom-level menu for the SwiftUI preview, shown in the window toolbar.
+struct ZoomMenu: View {
+    @Binding var zoomLevel: Double
+
+    private let zoomLevels: [Double] = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 8.0]
+
+    var body: some View {
         Menu {
             ForEach(zoomLevels, id: \.self) { level in
                 Button {
@@ -82,6 +77,7 @@ struct PreviewControls: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
+        .help("Preview zoom")
     }
 
     private var zoomLabel: String {
@@ -95,6 +91,9 @@ struct PreviewControls: View {
 #Preview {
     @Previewable @State var settings = IconSettings()
     @Previewable @State var zoomLevel: Double = 1.0
-    PreviewControls(iconSettings: $settings, zoomLevel: $zoomLevel)
-        .padding()
+    HStack {
+        ExportSizeMenu(iconSettings: $settings)
+        ZoomMenu(zoomLevel: $zoomLevel)
+    }
+    .padding()
 }

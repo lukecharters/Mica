@@ -15,39 +15,79 @@ struct BadgeGroupInspector: View {
     @AppStorage("sidebar.badgeSource.expanded") private var badgeSourceExpanded = true
     @AppStorage("sidebar.badgeAppearance.expanded") private var badgeAppearanceExpanded = true
 
+    /// Remembers the badge's previously-picked non-system source so toggling
+    /// System → Custom restores the user's choice instead of forcing `.sfSymbol`.
+    @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
+
     private var isAppleReference: Bool {
         iconSettings.badgeGenerationMode == .appleReference
     }
 
-    var body: some View {
-        Form {
-            if isAppleReference {
-                Section("Source", isExpanded: $badgeSourceExpanded) {
-                    BadgeSourceSection(
-                        iconSettings: $iconSettings,
-                        isSystem: true
-                    )
+    /// Drives the badge group's Custom/System picker. The badge's mode is derived
+    /// from its `badgeIconSource` (`.appleReference` == System), so toggling swaps
+    /// the source and restores the prior custom choice on the way back.
+    private var badgeModeBinding: Binding<Bool> {
+        Binding(
+            get: { iconSettings.badgeGenerationMode == .appleReference },
+            set: { newValue in
+                if newValue {
+                    if iconSettings.badgeIconSource != .appleReference {
+                        lastNonSystemBadgeSource = iconSettings.badgeIconSource
+                    }
+                    iconSettings.badgeIconSource = .appleReference
+                } else {
+                    iconSettings.badgeIconSource = lastNonSystemBadgeSource
                 }
+            }
+        )
+    }
 
-                if let symbolColor = badgeAppexSymbolColor, let enclosureColor = badgeAppexEnclosureColor {
-                    Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
-                        BadgeAppearanceSection(
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            GroupModePicker(isSystem: badgeModeBinding)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
+
+            Form {
+                if isAppleReference {
+                    Section("Source", isExpanded: $badgeSourceExpanded) {
+                        BadgeSourceSection(
                             iconSettings: $iconSettings,
-                            colorOptions: colorOptions,
-                            badgeAppexSymbolColor: symbolColor,
-                            badgeAppexEnclosureColor: enclosureColor
+                            isSystem: true
                         )
                     }
+
+                    if let symbolColor = badgeAppexSymbolColor, let enclosureColor = badgeAppexEnclosureColor {
+                        Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
+                            BadgeAppearanceSection(
+                                iconSettings: $iconSettings,
+                                colorOptions: colorOptions,
+                                badgeAppexSymbolColor: symbolColor,
+                                badgeAppexEnclosureColor: enclosureColor
+                            )
+                        }
+                    }
+                }
+
+                Section("Layout", isExpanded: $badgeGroupLayoutExpanded) {
+                    BadgeGroupLayoutSection(iconSettings: $iconSettings)
                 }
             }
-
-            Section("Layout", isExpanded: $badgeGroupLayoutExpanded) {
-                BadgeGroupLayoutSection(iconSettings: $iconSettings)
+            .formStyle(GroupedFormStyle())
+            .scrollDisabled(true)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .onAppear {
+            if iconSettings.badgeIconSource != .appleReference {
+                lastNonSystemBadgeSource = iconSettings.badgeIconSource
             }
         }
-        .formStyle(GroupedFormStyle())
-        .scrollDisabled(true)
-        .fixedSize(horizontal: false, vertical: true)
+        .onChange(of: iconSettings.badgeIconSource) { _, newValue in
+            if newValue != .appleReference {
+                lastNonSystemBadgeSource = newValue
+            }
+        }
     }
 }
 
