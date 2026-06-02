@@ -34,6 +34,7 @@ struct BackgroundAppearanceSection: View {
             selection: $iconSettings.preRenderedColorName,
             label: HStack(spacing: 12) {
                 Circle()
+                    .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                     .fill(OptionsCatalog.color(named: iconSettings.preRenderedColorName))
                     .frame(width: 12, height: 12)
                 Text("Color")
@@ -83,6 +84,7 @@ struct BackgroundAppearanceSection: View {
                 ColorPicker(selection: $iconSettings.baseColor) {
                     HStack(spacing: 12) {
                         Circle()
+                            .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                             .fill(iconSettings.baseColor)
                             .frame(width: 12, height: 12)
                         Text("Color")
@@ -107,6 +109,7 @@ struct BackgroundAppearanceSection: View {
                     ),
                     label: HStack(spacing: 12) {
                         Circle()
+                            .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                             .fill(selectedColorOption?.color ?? Color.blue)
                             .frame(width: 12, height: 12)
                         Text("Color")

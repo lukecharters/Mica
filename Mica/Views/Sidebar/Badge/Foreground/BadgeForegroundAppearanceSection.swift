@@ -32,6 +32,7 @@ struct BadgeAppearanceSection: View {
             ForEach(AppexEnclosureColor.allCases) { color in
                 HStack(spacing: 6) {
                     Circle()
+                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                         .fill(color.previewColor)
                         .frame(width: 12, height: 12)
                     Text(color.displayName)
@@ -45,6 +46,7 @@ struct BadgeAppearanceSection: View {
             ForEach(AppexEnclosureColor.allCases) { color in
                 HStack(spacing: 6) {
                     Circle()
+                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                         .fill(color.previewColor)
                         .frame(width: 12, height: 12)
                     Text(color.displayName)

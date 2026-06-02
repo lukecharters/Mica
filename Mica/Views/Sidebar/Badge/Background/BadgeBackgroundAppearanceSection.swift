@@ -27,6 +27,7 @@ struct BadgeBackgroundAppearanceSection: View {
                     ColorPicker(selection: $iconSettings.badgeBaseColor) {
                         HStack(spacing: 12) {
                             Circle()
+                                .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                                 .fill(iconSettings.badgeBaseColor)
                                 .frame(width: 12, height: 12)
                             Text("Color")
@@ -51,6 +52,7 @@ struct BadgeBackgroundAppearanceSection: View {
                         ),
                         label: HStack(spacing: 12) {
                             Circle()
+                                .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                                 .fill(selectedColorOption?.color ?? Color.blue)
                                 .frame(width: 12, height: 12)
                             Text("Color")

@@ -12,8 +12,10 @@ struct ColorPickerWithDropdown: View {
             ColorPicker(selection: $color) {
                 HStack(spacing: 12) {
                     Circle()
+                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                         .fill(color)
                         .frame(width: 12, height: 12)
+
                     Text(label)
                 }
             }
@@ -36,6 +38,7 @@ struct ColorPickerWithDropdown: View {
                 ),
                 label: HStack(spacing: 12) {
                     Circle()
+                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
                         .fill(selectedColorOption?.color ?? color)
                         .frame(width: 12, height: 12)
                     Text(label)
