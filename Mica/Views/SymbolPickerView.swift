@@ -45,11 +45,13 @@ struct SymbolPickerView: View {
                                 Image(systemName: symbol)
                                     .font(.system(size: 30))
                                     .frame(width: 60, height: 60)
-                                    .background(selectedSymbol == symbol ? Color.blue.opacity(0.2) : Color.clear)
-                                    .cornerRadius(8)
-                                
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(selectedSymbol == symbol ? Color.accentColor : Color.clear, lineWidth: 2)
+                                    )
                                 Text(symbol)
-                                    .font(.system(size: 9))
+                                    .font(.system(size: 13, weight: .medium))
                                     .lineLimit(1)
                                     .truncationMode(.tail)
                             }
