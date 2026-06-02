@@ -30,6 +30,9 @@ struct ContentView: View {
     private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
 
     @State private var zoomLevel: Double = 1.0
+    /// Optional preview-only override of the icon's display point size, used to
+    /// simulate how the icon reads in an MDM self service portal. `nil` = export size.
+    @State private var previewPointSize: CGFloat? = nil
     @State private var selection: LayerSelection = .layer(.icon, .foreground)
     @State private var appexService = AppexReferenceService()
     @State private var showLayerSidebar: Bool = true
@@ -89,13 +92,10 @@ struct ContentView: View {
                 }
                 .help("Toggle Layer Sidebar")
             }
-            if #available(macOS 26.0, *) {
-                ToolbarSpacer(.fixed)
-            }
             if viewModel.iconSettings.iconGenerationMode == .swiftUI {
                 ToolbarItemGroup(placement: .principal) {
-                    ExportSizeMenu(iconSettings: $viewModel.iconSettings)
                     ZoomMenu(zoomLevel: $zoomLevel)
+                    PreviewSizeMenu(previewPointSize: $previewPointSize)
                 }
             }
             ToolbarItemGroup(placement: .automatic) {
@@ -186,7 +186,10 @@ struct ContentView: View {
             // "Fit" mode - use a reasonable fixed size
             return 256
         }
-        return actualExportSize * zoomLevel
+        // A selected portal preview size becomes the base that zoom scales;
+        // otherwise fall back to the export size (existing behavior).
+        let baseSize = previewPointSize ?? actualExportSize
+        return baseSize * zoomLevel
     }
 }
 

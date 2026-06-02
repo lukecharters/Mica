@@ -1,53 +1,22 @@
 // Views/Preview/PreviewControls.swift
 import SwiftUI
 
-/// Export-size menu, shown in the window toolbar (Icon Composer style). Picks the
-/// export point size and toggles 2x (Retina).
-struct ExportSizeMenu: View {
-    @Binding var iconSettings: IconSettings
+/// A named preview preset for an MDM self service portal, expressed as the point
+/// size the portal displays the icon at. Previewing at this size shows how the
+/// icon reads where users will actually see it; it does not affect export.
+struct MDMPortalPreset: Identifiable {
+    let name: String
+    let pointSize: Int
 
-    var body: some View {
-        Menu {
-            ForEach([16, 32, 64, 128, 256, 512, 1024], id: \.self) { size in
-                Button {
-                    iconSettings.exportSize = CGFloat(size)
-                } label: {
-                    HStack {
-                        Text("\(size)pt")
-                        if iconSettings.exportRetinaSize {
-                            Text("(\(size * 2)px)")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-            }
+    var id: String { name }
 
-            Divider()
-
-            Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
-        } label: {
-            HStack(spacing: 4) {
-                Text(sizeLabel)
-                    .monospacedDigit()
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .font(.system(size: 12, weight: .medium))
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .help("Export size")
-    }
-
-    private var sizeLabel: String {
-        let size = Int(iconSettings.exportSize)
-        if iconSettings.exportRetinaSize {
-            return "\(size)pt 2x"
-        } else {
-            return "\(size)pt"
-        }
-    }
+    /// Known self service portals and the point size they show icons at.
+    static let all: [MDMPortalPreset] = [
+        MDMPortalPreset(name: "Jamf Self Service+ - Catalog View", pointSize: 40),
+        MDMPortalPreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
+        MDMPortalPreset(name: "Jamf Self Service - Catalog View", pointSize: 75),
+        MDMPortalPreset(name: "Jamf Self Service - Item View", pointSize: 120)
+    ]
 }
 
 /// Zoom-level menu for the SwiftUI preview, shown in the window toolbar.
@@ -66,17 +35,8 @@ struct ZoomMenu: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
                 Text(zoomLabel)
-                    .monospacedDigit()
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .font(.system(size: 12, weight: .medium))
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
         .help("Preview zoom")
     }
 
@@ -88,12 +48,67 @@ struct ZoomMenu: View {
     }
 }
 
+/// Preview-size menu, shown in the window toolbar. Chooses the point size the
+/// preview renders the icon at — either a standard size or the size used by a
+/// specific MDM self service portal — so you can judge how the icon reads where
+/// users will see it. This is preview-only and never affects export (export size
+/// lives in `ExportSettingsSidebar`). `nil` follows the current export size.
+/// Composes with `ZoomMenu` — the chosen preview size is the base that zoom scales.
+struct PreviewSizeMenu: View {
+    @Binding var previewPointSize: CGFloat?
+
+    private let standardSizes: [Int] = [16, 32, 64, 128, 256, 512, 1024]
+
+    var body: some View {
+        Menu {
+            Button {
+                previewPointSize = nil
+            } label: {
+                Label("Match Export Size", systemImage: previewPointSize == nil ? "checkmark" : "")
+            }
+
+            Section() {
+                ForEach(standardSizes, id: \.self) { size in
+                    let pointSize = CGFloat(size)
+                    Button {
+                        previewPointSize = pointSize
+                    } label: {
+                        Label("\(size)pt", systemImage: previewPointSize == pointSize ? "checkmark" : "")
+                    }
+                }
+            }
+
+            Section() {
+                ForEach(MDMPortalPreset.all) { preset in
+                    let pointSize = CGFloat(preset.pointSize)
+                    Button {
+                        previewPointSize = pointSize
+                    } label: {
+                        Label(
+                            "\(preset.name) (\(preset.pointSize)pt)",
+                            systemImage: previewPointSize == pointSize ? "checkmark" : ""
+                        )
+                    }
+                }
+            }
+        } label: {
+            Text(sizeLabel)
+        }
+        .help("Preview size")
+    }
+
+    private var sizeLabel: String {
+        guard let previewPointSize else { return "Match Export" }
+        return "\(Int(previewPointSize))pt"
+    }
+}
+
 #Preview {
-    @Previewable @State var settings = IconSettings()
     @Previewable @State var zoomLevel: Double = 1.0
+    @Previewable @State var previewPointSize: CGFloat? = nil
     HStack {
-        ExportSizeMenu(iconSettings: $settings)
         ZoomMenu(zoomLevel: $zoomLevel)
+        PreviewSizeMenu(previewPointSize: $previewPointSize)
     }
     .padding()
 }

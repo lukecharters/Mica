@@ -15,7 +15,8 @@ struct MicaApp: App {
                 .environmentObject(appViewModel)
         }
         .defaultSize(width: 1200, height: 800)
-        .windowStyle(.titleBar)
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(after: .pasteboard) {
                 Divider()
@@ -261,5 +262,12 @@ struct MicaApp: App {
         }
         .defaultSize(width: 1100, height: 900)
         #endif
+    }
+}
+
+#Preview("With toolbar") {
+    NavigationStack {
+        ContentView()
+            .frame(width: 1200, height: 800)
     }
 }

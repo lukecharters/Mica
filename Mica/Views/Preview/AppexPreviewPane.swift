@@ -115,19 +115,8 @@ struct AppexPreviewPane: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
                 Text("\(Int(zoomLevel * 100))%")
-                    .monospacedDigit()
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            .font(.system(size: 12, weight: .medium))
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-        .padding(8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
