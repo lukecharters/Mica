@@ -161,9 +161,9 @@ private struct GroupVisibilityToggle: View {
 
     private var symbolName: String {
         switch visibility {
-        case .on:    return "eye.fill"
+        case .on:    return "eye"
         case .off:   return "eye.slash"
-        case .mixed: return "eye"
+        case .mixed: return "eye.half.closed"
         }
     }
 
@@ -267,14 +267,14 @@ private struct LayerThumbnail: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(.controlBackgroundColor))
+            .fill(Color(.clear))
             .overlay {
-                content.padding(3)
+                content.padding(4)
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.secondary.opacity(0.25), lineWidth: 0.5)
-            )
+//            .overlay(
+//                RoundedRectangle(cornerRadius: 8, style: .continuous)
+//                    .stroke(Color.secondary.opacity(0.25), lineWidth: 0.5)
+//            )
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
@@ -343,10 +343,10 @@ private struct IconBackgroundThumb: View {
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
         case .custom:
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(customBackgroundStyle)
 
         case .importedImage:
@@ -444,8 +444,8 @@ private struct SymbolThumb: View {
 
     var body: some View {
         let image = Image(systemName: name)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
+            .font(.system(size: 26))
+            
 
         switch renderingMode {
         case .monochrome, .multicolor:
