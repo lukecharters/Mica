@@ -127,11 +127,11 @@ private struct GroupHeaderRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
-                .font(.system(size: 18, weight: .medium))
-                .frame(width: 24, height: 24)
+                .font(.system(size: 26, weight: .medium))
+                .frame(width: 36, height: 36)
 
             Text(group.label)
-                .font(.headline)
+                .font(.system(size: 13, weight: .medium))
 
             Spacer(minLength: 8)
             GroupVisibilityToggle(visibility: visibility, binding: visibilityBinding)

@@ -5,16 +5,15 @@ struct AppexPreviewPane: View {
     @ObservedObject var viewModel: IconViewModel
     var appexService: AppexReferenceService
 
-    @State private var zoomLevel: Double = 1.0
-
-    private let zoomLevels: [Double] = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0]
+    /// Display zoom, owned by `ContentView` and driven by the toolbar's `ZoomMenu`.
+    @Binding var zoomLevel: Double
+    /// Preview-only override of the icon's display point size (MDM portal sizes,
+    /// etc.); `nil` follows the export size. Owned by `ContentView`, driven by the
+    /// toolbar's `PreviewSizeMenu`.
+    @Binding var previewPointSize: CGFloat?
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            previewContent
-            zoomControl
-                .padding(12)
-        }
+        previewContent
         .task(id: viewModel.appexGenerationKey) {
             // Debounce: cancel and restart on every change; 400ms wait before firing.
             try? await Task.sleep(for: .milliseconds(400))
@@ -48,7 +47,7 @@ struct AppexPreviewPane: View {
 
     @ViewBuilder
     private var iconContent: some View {
-        let size = 512 * zoomLevel
+        let size = (previewPointSize ?? viewModel.iconSettings.exportSize) * zoomLevel
         if viewModel.appexIsGenerating {
             VStack(spacing: 12) {
                 ProgressView()
@@ -107,23 +106,16 @@ struct AppexPreviewPane: View {
         }
     }
 
-    private var zoomControl: some View {
-        Menu {
-            ForEach(zoomLevels, id: \.self) { level in
-                Button { zoomLevel = level } label: {
-                    Text("\(Int(level * 100))%")
-                }
-            }
-        } label: {
-                Text("\(Int(zoomLevel * 100))%")
-        }
-    }
 }
 
 #Preview {
+    @Previewable @State var zoomLevel: Double = 1.0
+    @Previewable @State var previewPointSize: CGFloat? = nil
     AppexPreviewPane(
         viewModel: IconViewModel(),
-        appexService: AppexReferenceService()
+        appexService: AppexReferenceService(),
+        zoomLevel: $zoomLevel,
+        previewPointSize: $previewPointSize
     )
     .frame(width: 600, height: 600)
 }

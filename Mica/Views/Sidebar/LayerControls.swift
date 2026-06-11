@@ -39,6 +39,14 @@ struct LayerControls: View {
                         badgeAppexSymbolColor: $badgeAppexSymbolColor,
                         badgeAppexEnclosureColor: $badgeAppexEnclosureColor
                     )
+                    if !isBadgeAppleReference {
+                        // Custom mode: surface the Foreground + Background children
+                        // inline beneath the group-level layout controls.
+                        layerSectionHeader(LayerRole.foreground.label)
+                        badgeForegroundControls
+                        layerSectionHeader(LayerRole.background.label)
+                        badgeBackgroundControls
+                    }
                 case .layer(.icon, .foreground):
                     iconForegroundControls
                 case .layer(.icon, .background):
@@ -105,14 +113,27 @@ struct LayerControls: View {
                 .scrollDisabled(true)
                 .fixedSize(horizontal: false, vertical: true)
             } else {
-                ContentUnavailableView(
-                    "Select a Layer",
-                    systemImage: "square.stack.3d.up",
-                    description: Text("Pick Foreground or Background to edit the icon's source and appearance.")
-                )
-                .padding(.top, 24)
+                // Custom mode: the group has Foreground + Background children. Show
+                // both children's controls inline so the group header is a combined
+                // editor in addition to being individually selectable in the sidebar.
+                layerSectionHeader(LayerRole.foreground.label)
+                iconForegroundControls
+                layerSectionHeader(LayerRole.background.label)
+                iconBackgroundControls
             }
         }
+    }
+
+    /// Header delineating a child layer's controls when both are shown together
+    /// under a selected group header.
+    @ViewBuilder
+    private func layerSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.title3.weight(.semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 2)
     }
 
     // MARK: - Icon Foreground (Custom mode)

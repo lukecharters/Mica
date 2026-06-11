@@ -33,7 +33,7 @@ struct ContentView: View {
     /// Optional preview-only override of the icon's display point size, used to
     /// simulate how the icon reads in an MDM self service portal. `nil` = export size.
     @State private var previewPointSize: CGFloat? = nil
-    @State private var selection: LayerSelection = .layer(.icon, .foreground)
+    @State private var selection: LayerSelection = .group(.icon)
     @State private var appexService = AppexReferenceService()
     @State private var showLayerSidebar: Bool = true
     @State private var showInspector: Bool = true
@@ -65,7 +65,12 @@ struct ContentView: View {
                         await viewModel.generateBadgeAppexIcon(service: appexService)
                     }
             } else {
-                AppexPreviewPane(viewModel: viewModel, appexService: appexService)
+                AppexPreviewPane(
+                    viewModel: viewModel,
+                    appexService: appexService,
+                    zoomLevel: $zoomLevel,
+                    previewPointSize: $previewPointSize
+                )
             }
 
             if showInspector {
@@ -92,11 +97,9 @@ struct ContentView: View {
                 }
                 .help("Toggle Layer Sidebar")
             }
-            if viewModel.iconSettings.iconGenerationMode == .swiftUI {
-                ToolbarItemGroup(placement: .principal) {
-                    ZoomMenu(zoomLevel: $zoomLevel)
-                    PreviewSizeMenu(previewPointSize: $previewPointSize)
-                }
+            ToolbarItemGroup(placement: .principal) {
+                ZoomMenu(zoomLevel: $zoomLevel)
+                PreviewSizeMenu(previewPointSize: $previewPointSize)
             }
             ToolbarItemGroup(placement: .automatic) {
                 Button {
