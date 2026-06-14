@@ -3,82 +3,99 @@ import SwiftUI
 
 struct SymbolPickerView: View {
     @Binding var selectedSymbol: String
-    @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
-    
-    // A subset of SF Symbols that work well for this application
-    let symbols = [
-        "gearshape.fill", "wifi", "airplane", "bell.fill", "lock.fill", "key.fill",
-        "person.fill", "cloud.fill", "sun.max.fill", "moon.fill", "star.fill",
-        "heart.fill", "house.fill", "network", "display", "keyboard", "phone.fill",
-        "envelope.fill", "paperplane.fill", "tray.fill", "folder.fill", "doc.fill",
-        "book.fill", "bookmark.fill", "tag.fill", "cart.fill", "bag.fill",
-        "creditcard.fill", "clock.fill", "calendar", "gamecontroller.fill",
-        "headphones", "tv.fill", "music.note", "mic.fill", "camera.fill",
-        "photo.fill", "scissors", "paintbrush.fill", "hammer.fill", "wrench.fill",
-        "link", "magnifyingglass", "location.fill", "map.fill", "car.fill",
-        "bus.fill", "bicycle", "pawprint.fill", "leaf.fill", "flame.fill"
-    ]
-    
-    var filteredSymbols: [String] {
-        if searchText.isEmpty {
-            return symbols
-        } else {
-            return symbols.filter { $0.localizedCaseInsensitiveContains(searchText) }
-        }
+
+    /// Every SF Symbol shipped in `sf_symbols.txt`, loaded once and cached.
+    private static let allSymbols: [String] = {
+        guard let url = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
+              let contents = try? String(contentsOf: url, encoding: .utf8)
+        else { return [] }
+        return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
+    }()
+
+    private var filteredSymbols: [String] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return Self.allSymbols }
+        return Self.allSymbols.filter { $0.localizedCaseInsensitiveContains(query) }
     }
-    
+
+    private let columns = [GridItem(.adaptive(minimum: 88), spacing: 12)]
+
     var body: some View {
-        VStack {
-            TextField("Search symbols", text: $searchText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
+        VStack(spacing: 0) {
+            header
+
+            Divider()
+
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))]) {
+                LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(filteredSymbols, id: \.self) { symbol in
-                        Button(action: {
+                        Button {
                             selectedSymbol = symbol
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            VStack {
-                                Image(systemName: symbol)
-                                    .font(.system(size: 30))
-                                    .frame(width: 60, height: 60)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(selectedSymbol == symbol ? Color.accentColor : Color.clear, lineWidth: 2)
-                                    )
-                                Text(symbol)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                            }
-                            .padding(.vertical, 8)
+                            dismiss()
+                        } label: {
+                            symbolCell(symbol)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding()
             }
-            
-            HStack {
-                Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
+            .overlay {
+                if filteredSymbols.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
                 }
-                .keyboardShortcut(.escape, modifiers: [])
-                
-                Spacer()
-                
-                Button("Select") {
-                    presentationMode.wrappedValue.dismiss()
-                }
-                .keyboardShortcut(.return, modifiers: [])
             }
-            .padding()
         }
-        .frame(width: 600, height: 400)
+        .frame(width: 640, height: 460)
+    }
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search symbols", text: $searchText)
+                .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 12)
+            Button("Done") { dismiss() }
+                .keyboardShortcut(.defaultAction)
+        }
+        .padding()
+    }
+
+    @ViewBuilder
+    private func symbolCell(_ symbol: String) -> some View {
+        let isSelected = symbol == selectedSymbol
+        VStack(spacing: 6) {
+            Image(systemName: symbol)
+                .font(.system(size: 26))
+                .frame(width: 56, height: 56)
+                .background(
+                    isSelected ? Color.accentColor.opacity(0.15)
+                               : Color(nsColor: .controlBackgroundColor)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                )
+            Text(symbol)
+                .font(.caption2)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: 80)
+        }
+        .help(symbol)
     }
 }
 

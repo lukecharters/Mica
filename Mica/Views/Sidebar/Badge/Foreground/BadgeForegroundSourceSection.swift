@@ -5,7 +5,7 @@ struct BadgeSourceSection: View {
     @Binding var iconSettings: IconSettings
     let isSystem: Bool
 
-    @State private var showSymbolNameHelp = false
+    @State private var showSymbolPicker = false
 
     /// Source selection within Custom mode (SF Symbol vs Imported image).
     private enum SourceType: String, CaseIterable, Identifiable {
@@ -36,19 +36,7 @@ struct BadgeSourceSection: View {
 
     var body: some View {
         if isSystem {
-            HStack(spacing: 8) {
-                TextField("Symbol", text: $iconSettings.badgeSymbolName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                Button(action: { showSymbolNameHelp.toggle() }) {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(BorderlessButtonStyle())
-                .popover(isPresented: $showSymbolNameHelp) {
-                    Text("Enter the name of any SF Symbol. \nDownload Apple's SF Symbols app to see a list of all available symbols.")
-                        .padding()
-                        .multilineTextAlignment(.leading)
-                }
-            }
+            symbolField
         } else {
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in
@@ -60,13 +48,27 @@ struct BadgeSourceSection: View {
 
             switch sourceType.wrappedValue {
             case .sfSymbol:
-                TextField("Symbol", text: $iconSettings.badgeSymbolName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
+                symbolField
 
             case .imported:
                 ImageImportControls(importedImage: $iconSettings.badgeImportedImage)
             }
+        }
+    }
+
+    /// SF Symbol name field with a button that opens the full symbol browser.
+    private var symbolField: some View {
+        HStack(spacing: 8) {
+            TextField("Symbol", text: $iconSettings.badgeSymbolName)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
+            Button(action: { showSymbolPicker = true }) {
+                Image(systemName: "square.grid.2x2.fill")
+            }
+            .help("Browse SF Symbols")
+        }
+        .sheet(isPresented: $showSymbolPicker) {
+            SymbolPickerView(selectedSymbol: $iconSettings.badgeSymbolName)
         }
     }
 }
