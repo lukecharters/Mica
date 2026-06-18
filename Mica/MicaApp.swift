@@ -78,7 +78,7 @@ struct MicaApp: App {
                 .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
             }
-            CommandGroup(after: .saveItem) {
+            CommandGroup(before: .saveItem) {
                 Divider()
                 Button("Import as Icon Background…") {
                     guard var settings = iconSettings else { return }
@@ -157,10 +157,12 @@ struct MicaApp: App {
                     }
                 }
                 .disabled(iconSettings == nil)
+                Divider()
             }
 
             #if DEBUG
             CommandGroup(after: .newItem) {
+                Divider()
                 Button("Calibration Playground") {
                     openWindow(id: "calibration")
                 }
