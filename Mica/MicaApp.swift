@@ -192,16 +192,6 @@ struct MicaApp: App {
                     openWindow(id: "shadow-comparison")
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
-
-                Button("SwiftUI Controls Gallery") {
-                    openWindow(id: "controls-gallery")
-                }
-                .keyboardShortcut("G", modifiers: [.command, .shift])
-
-                Button("View Layouts Gallery") {
-                    openWindow(id: "layouts-gallery")
-                }
-                .keyboardShortcut("V", modifiers: [.command, .shift])
             }
             #endif
             #if DEBUG
@@ -253,16 +243,6 @@ struct MicaApp: App {
             ShadowComparisonPlayground()
         }
         .defaultSize(width: 1400, height: 900)
-
-        Window("SwiftUI Controls Gallery", id: "controls-gallery") {
-            SwiftUIControlsGalleryPlayground()
-        }
-        .defaultSize(width: 1000, height: 900)
-
-        Window("View Layouts Gallery", id: "layouts-gallery") {
-            ViewLayoutsGalleryPlayground()
-        }
-        .defaultSize(width: 1100, height: 900)
         #endif
     }
 }

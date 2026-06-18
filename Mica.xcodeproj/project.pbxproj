@@ -107,7 +107,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Playgrounds/liquid-glass.swift",
-				Playgrounds/LiquidGlassTestGrid.swift,
 			);
 			target = 8C71CC982DBDDDD2006FB320 /* Mica */;
 		};
