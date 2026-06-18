@@ -68,7 +68,7 @@ struct BadgeAppearanceSection: View {
                 Text(mode.rawValue).tag(mode)
             }
         }
-        .pickerStyle(.segmented)
+        .pickerStyle(.inline)
 
         badgeSymbolColorControls
 

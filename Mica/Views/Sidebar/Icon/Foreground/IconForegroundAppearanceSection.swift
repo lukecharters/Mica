@@ -69,7 +69,7 @@ struct IconAppearanceSection: View {
                 Text(mode.rawValue).tag(mode)
             }
         }
-        .pickerStyle(.segmented)
+        .pickerStyle(.inline)
 
         symbolColorControls
 
