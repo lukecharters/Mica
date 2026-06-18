@@ -67,7 +67,7 @@ struct ImageImportLayoutControls: View {
                 get: { !paddingCompensation },
                 set: { paddingCompensation = !$0 }
             ))
-            .help("Keep existing macOS icon padding and shadow. Turn off to scale up and fill the chiclet.")
+            .help("Keep existing macOS icon padding and shadow. Turn off to scale up and fill the frame.")
         }
 
         Slider(value: $imageScale,
