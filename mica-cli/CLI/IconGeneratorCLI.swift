@@ -280,7 +280,7 @@ class IconGeneratorCLI {
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                     settings.importedBackground = try ImageImportService.importFromURL(url)
                     settings.importedBackgroundScale = command.background.importedBackgroundScale
-                    settings.importedBackgroundPaddingCompensation = command.background.importedBackgroundPaddingCompensation
+                    settings.importedBackgroundPaddingCompensation = command.background.effectivePaddingCompensation
                 }
             default:
                 settings.backgroundMode = .custom
@@ -317,7 +317,7 @@ class IconGeneratorCLI {
             settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.symbol.paletteTertiary)
 
             // Symbol style
-            settings.enableSymbolShadow = !command.symbol.noSymbolShadow
+            settings.enableSymbolShadow = command.symbol.symbolShadow ?? (command.generation.iconSource == "image" ? false : true)
             settings.symbolWeight = try parseSymbolWeight(command.symbol.symbolWeight)
             settings.manualSymbolScale = command.symbol.symbolScale
             settings.symbolColorRenderingMode = try parseSymbolColorRendering(command.symbol.symbolColorRendering)
@@ -342,8 +342,8 @@ class IconGeneratorCLI {
                     settings.badgeCustomSecondaryColor = try ColorParser.parse(command.badge.badgeSecondary)
                 }
                 settings.badgeEnableBackgroundGradient = !command.badge.badgeNoGradient
-                settings.badgeEnableBackgroundShadow = !command.badge.badgeNoBackgroundShadow
-                settings.badgeEnableSymbolShadow = !command.badge.badgeNoSymbolShadow
+                settings.badgeEnableBackgroundShadow = command.badge.badgeBackgroundShadow ?? (command.badge.badgeImportedBackground != nil ? false : true)
+                settings.badgeEnableSymbolShadow = command.badge.badgeSymbolShadow ?? (command.badge.badgeIconSource == "image" ? false : true)
 
                 // Badge symbol rendering
                 settings.badgeSymbolRenderingMode = try parseRenderingMode(command.badge.badgeRendering)
@@ -384,7 +384,7 @@ class IconGeneratorCLI {
                     settings.badgeUseImportedBackground = true
                     settings.badgeImportedBackground = try ImageImportService.importFromURL(url)
                     settings.badgeImportedBackgroundScale = command.badge.badgeImportedBackgroundScale
-                    settings.badgeImportedBackgroundPaddingCompensation = command.badge.badgeImportedBackgroundPaddingCompensation
+                    settings.badgeImportedBackgroundPaddingCompensation = command.badge.effectiveBadgePaddingCompensation
                 }
             }
 

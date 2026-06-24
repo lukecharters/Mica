@@ -313,17 +313,9 @@ struct ScaledIconPreview: View {
                     Task { @MainActor in
                         do {
                             let imported = try ImageImportService.importFromURL(url)
-                            if imported.isAppIcon {
-                                // App/appex icons → replace background (full icon with padding)
-                                settings.importedBackground = imported
-                                settings.importedBackgroundPaddingCompensation = true
-                                settings.backgroundMode = .importedImage
-                            } else {
-                                // Regular images → replace background without padding compensation
-                                settings.importedBackground = imported
-                                settings.importedBackgroundPaddingCompensation = false
-                                settings.backgroundMode = .importedImage
-                            }
+                            // Dropped files → icon background, padding compensation on
+                            // (fill the frame) and shadow off by default.
+                            settings.applyImportedIconBackground(imported)
                         } catch {
                             print("Drop import failed: \(error.localizedDescription)")
                         }

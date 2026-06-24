@@ -314,3 +314,44 @@ extension IconSettings {
         (Self.minExportSize...Self.maxExportSize).contains(exportSize)
     }
 }
+
+// MARK: - Imported image defaults
+//
+// When an image is imported into any of the four image slots we default the
+// "Icon Padding" compensation (where the toggle exists — the two background
+// slots) to off, scaling the image up to fill the frame, and turn off the
+// imported-image drop shadow. These are import-time defaults the user can still
+// change afterwards; SF Symbol shadows are unaffected because they default from
+// the struct, not from these helpers. Centralised here so every entry point
+// (menu, paste, drag, sidebar, CLI) stays consistent.
+extension IconSettings {
+    /// Apply an image as the icon foreground (custom symbol image).
+    mutating func applyImportedIconForeground(_ image: ImportedImage) {
+        importedImage = image
+        iconSource = .customImage
+        enableSymbolShadow = false
+    }
+
+    /// Apply an image as the icon background.
+    mutating func applyImportedIconBackground(_ image: ImportedImage) {
+        importedBackground = image
+        backgroundMode = .importedImage
+        importedBackgroundPaddingCompensation = true // "Icon Padding" off → fill frame
+        backgroundShadowStyle = .off
+    }
+
+    /// Apply an image as the badge foreground (custom badge symbol image).
+    mutating func applyImportedBadgeForeground(_ image: ImportedImage) {
+        badgeImportedImage = image
+        badgeIconSource = .customImage
+        badgeEnableSymbolShadow = false
+    }
+
+    /// Apply an image as the badge background.
+    mutating func applyImportedBadgeBackground(_ image: ImportedImage) {
+        badgeImportedBackground = image
+        badgeUseImportedBackground = true
+        badgeImportedBackgroundPaddingCompensation = true // "Icon Padding" off → fill frame
+        badgeEnableBackgroundShadow = false
+    }
+}

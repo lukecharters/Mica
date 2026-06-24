@@ -248,9 +248,11 @@ struct BackgroundOptions: ParsableArguments {
     )
     var cornerRadius: String = "macos26"
 
+    // Optional (nil = unspecified) so imported image backgrounds can default to
+    // no shadow while still honouring an explicit `--background-shadow-style`.
     @Option(
         name: .long,
-        help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default)", valueName: "style"),
+        help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default: off for imported backgrounds, macos26 otherwise)", valueName: "style"),
         transform: { style in
             guard ["off", "macos11", "macos26"].contains(style.lowercased()) else {
                 throw ValidationError("Background shadow style must be 'off', 'macos11', or 'macos26'")
@@ -258,7 +260,7 @@ struct BackgroundOptions: ParsableArguments {
             return style.lowercased()
         }
     )
-    var backgroundShadowStyle: String = "macos26"
+    var backgroundShadowStyle: String?
 
     @Flag(name: .long, help: .hidden) // deprecated alias for --background-shadow-style off
     var noBackgroundShadow: Bool = false
@@ -273,11 +275,25 @@ struct BackgroundOptions: ParsableArguments {
     )
     var importedBackgroundScale: Double = 1.0
 
-    @Flag(name: .long, help: "Enable padding compensation for app icon backgrounds")
-    var importedBackgroundPaddingCompensation: Bool = false
+    // Inverted optional: imported backgrounds fill the frame (compensation on) by
+    // default; `--no-imported-background-padding-compensation` keeps the padding.
+    @Flag(name: .long, inversion: .prefixedNo,
+          help: "Padding compensation for imported app icon backgrounds (default: on — scales up to fill the frame)")
+    var importedBackgroundPaddingCompensation: Bool?
 
+    /// Resolved background shadow style. The deprecated `--no-background-shadow`
+    /// wins; then an explicit `--background-shadow-style`; otherwise imported
+    /// image backgrounds default to no shadow and everything else to macOS 26.
     var effectiveShadowStyle: String {
-        noBackgroundShadow ? "off" : backgroundShadowStyle
+        if noBackgroundShadow { return "off" }
+        if let explicit = backgroundShadowStyle { return explicit }
+        return backgroundMode == "image" ? "off" : "macos26"
+    }
+
+    /// Resolved padding compensation for an imported background — on unless the
+    /// user explicitly opted out.
+    var effectivePaddingCompensation: Bool {
+        importedBackgroundPaddingCompensation ?? true
     }
 }
 
@@ -315,8 +331,12 @@ struct SymbolOptions: ParsableArguments {
     @Option(name: .long, help: ArgumentHelp("Tertiary color (palette mode, supports opacity e.g. 'white:0.26')", valueName: "color"))
     var paletteTertiary: String = "white:0.26"
 
-    @Flag(name: .long, help: "Disable symbol shadow")
-    var noSymbolShadow: Bool = false
+    // Inverted optional: nil = unspecified, so the effective value can default
+    // based on the icon source (off for imported images, on for SF Symbols).
+    // `--no-symbol-shadow` is preserved; `--symbol-shadow` forces it back on.
+    @Flag(name: .long, inversion: .prefixedNo,
+          help: "Symbol shadow (default: off for imported images, on for SF Symbols)")
+    var symbolShadow: Bool?
 
     @Option(
         name: .long,
@@ -468,11 +488,16 @@ struct BadgeOptions: ParsableArguments {
     @Flag(name: .long, help: "Disable badge background gradient")
     var badgeNoGradient: Bool = false
 
-    @Flag(name: .long, help: "Disable badge background shadow")
-    var badgeNoBackgroundShadow: Bool = false
+    // Inverted optionals (nil = unspecified) so imported badge images default to
+    // no shadow while `--badge-background-shadow` / `--badge-symbol-shadow` force
+    // them back on. `--badge-no-…-shadow` forms are preserved.
+    @Flag(name: .long, inversion: .prefixedNo,
+          help: "Badge background shadow (default: off for imported badge backgrounds, on otherwise)")
+    var badgeBackgroundShadow: Bool?
 
-    @Flag(name: .long, help: "Disable badge symbol shadow")
-    var badgeNoSymbolShadow: Bool = false
+    @Flag(name: .long, inversion: .prefixedNo,
+          help: "Badge symbol shadow (default: off for imported images, on for SF Symbols)")
+    var badgeSymbolShadow: Bool?
 
     // Badge icon source
     @Option(
@@ -524,8 +549,15 @@ struct BadgeOptions: ParsableArguments {
     )
     var badgeImportedBackgroundScale: Double = 1.0
 
-    @Flag(name: .long, help: "Enable padding compensation for badge background app icons")
-    var badgeImportedBackgroundPaddingCompensation: Bool = false
+    // Inverted optional: imported badge backgrounds fill the frame by default.
+    @Flag(name: .long, inversion: .prefixedNo,
+          help: "Padding compensation for imported badge backgrounds (default: on — scales up to fill the frame)")
+    var badgeImportedBackgroundPaddingCompensation: Bool?
+
+    /// Resolved padding compensation for an imported badge background.
+    var effectiveBadgePaddingCompensation: Bool {
+        badgeImportedBackgroundPaddingCompensation ?? true
+    }
 }
 
 // MARK: - Main Command

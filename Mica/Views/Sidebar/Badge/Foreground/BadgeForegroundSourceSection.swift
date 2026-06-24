@@ -51,7 +51,10 @@ struct BadgeSourceSection: View {
                 symbolField
 
             case .imported:
-                ImageImportControls(importedImage: $iconSettings.badgeImportedImage)
+                ImageImportControls(
+                    importedImage: $iconSettings.badgeImportedImage,
+                    onImport: { iconSettings.applyImportedBadgeForeground($0) }
+                )
             }
         }
     }

@@ -24,9 +24,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.importedBackground = imported
-                        settings.importedBackgroundPaddingCompensation = imported.isAppIcon
-                        settings.backgroundMode = .importedImage
+                        settings.applyImportedIconBackground(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -39,8 +37,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.importedImage = imported
-                        settings.iconSource = .customImage
+                        settings.applyImportedIconForeground(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -53,9 +50,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.badgeImportedBackground = imported
-                        settings.badgeImportedBackgroundPaddingCompensation = imported.isAppIcon
-                        settings.badgeUseImportedBackground = true
+                        settings.applyImportedBadgeBackground(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -68,8 +63,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.badgeImportedImage = imported
-                        settings.badgeIconSource = .customImage
+                        settings.applyImportedBadgeForeground(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -90,9 +84,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.importedBackground = imported
-                        settings.importedBackgroundPaddingCompensation = imported.isAppIcon
-                        settings.backgroundMode = .importedImage
+                        settings.applyImportedIconBackground(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -110,8 +102,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.importedImage = imported
-                        settings.iconSource = .customImage
+                        settings.applyImportedIconForeground(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -129,9 +120,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.badgeImportedBackground = imported
-                        settings.badgeImportedBackgroundPaddingCompensation = imported.isAppIcon
-                        settings.badgeUseImportedBackground = true
+                        settings.applyImportedBadgeBackground(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -149,8 +138,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.badgeImportedImage = imported
-                        settings.badgeIconSource = .customImage
+                        settings.applyImportedBadgeForeground(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()

@@ -15,11 +15,7 @@ struct BadgeBackgroundSourceSection: View {
         if iconSettings.badgeUseImportedBackground {
             ImageImportControls(
                 importedImage: $iconSettings.badgeImportedBackground,
-                onImport: { imported in
-                    if imported.isAppIcon {
-                        iconSettings.badgeImportedBackgroundPaddingCompensation = true
-                    }
-                }
+                onImport: { iconSettings.applyImportedBadgeBackground($0) }
             )
         }
     }

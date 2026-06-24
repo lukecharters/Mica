@@ -51,7 +51,10 @@ struct IconSourceSection: View {
                 symbolField
 
             case .imported:
-                ImageImportControls(importedImage: $iconSettings.importedImage)
+                ImageImportControls(
+                    importedImage: $iconSettings.importedImage,
+                    onImport: { iconSettings.applyImportedIconForeground($0) }
+                )
             }
         }
     }

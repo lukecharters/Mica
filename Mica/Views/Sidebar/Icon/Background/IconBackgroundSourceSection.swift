@@ -16,11 +16,7 @@ struct BackgroundSourceSection: View {
         if iconSettings.backgroundMode == .importedImage {
             ImageImportControls(
                 importedImage: $iconSettings.importedBackground,
-                onImport: { imported in
-                    if imported.isAppIcon {
-                        iconSettings.importedBackgroundPaddingCompensation = true
-                    }
-                }
+                onImport: { iconSettings.applyImportedIconBackground($0) }
             )
         }
     }
