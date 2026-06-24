@@ -7,6 +7,9 @@ import SwiftUI
 /// appex badge are surfaced here too.
 struct BadgeGroupInspector: View {
     @Binding var iconSettings: IconSettings
+    /// Custom/System picker binding, owned by `LayerControls` so the same restore
+    /// state is shared with the badge child-layer inspectors.
+    @Binding var badgeMode: Bool
     var colorOptions: [(name: String, color: Color)] = []
     var badgeAppexSymbolColor: Binding<AppexColor>? = nil
     var badgeAppexEnclosureColor: Binding<AppexColor>? = nil
@@ -15,36 +18,13 @@ struct BadgeGroupInspector: View {
     @AppStorage("sidebar.badgeSource.expanded") private var badgeSourceExpanded = true
     @AppStorage("sidebar.badgeAppearance.expanded") private var badgeAppearanceExpanded = true
 
-    /// Remembers the badge's previously-picked non-system source so toggling
-    /// System → Custom restores the user's choice instead of forcing `.sfSymbol`.
-    @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
-
     private var isAppleReference: Bool {
         iconSettings.badgeGenerationMode == .appleReference
     }
 
-    /// Drives the badge group's Custom/System picker. The badge's mode is derived
-    /// from its `badgeIconSource` (`.appleReference` == System), so toggling swaps
-    /// the source and restores the prior custom choice on the way back.
-    private var badgeModeBinding: Binding<Bool> {
-        Binding(
-            get: { iconSettings.badgeGenerationMode == .appleReference },
-            set: { newValue in
-                if newValue {
-                    if iconSettings.badgeIconSource != .appleReference {
-                        lastNonSystemBadgeSource = iconSettings.badgeIconSource
-                    }
-                    iconSettings.badgeIconSource = .appleReference
-                } else {
-                    iconSettings.badgeIconSource = lastNonSystemBadgeSource
-                }
-            }
-        )
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            GroupModePicker(isSystem: badgeModeBinding)
+            GroupModePicker(isSystem: $badgeMode)
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
                 .padding(.bottom, 8)
@@ -77,16 +57,6 @@ struct BadgeGroupInspector: View {
             .formStyle(GroupedFormStyle())
             .scrollDisabled(true)
             .fixedSize(horizontal: false, vertical: true)
-        }
-        .onAppear {
-            if iconSettings.badgeIconSource != .appleReference {
-                lastNonSystemBadgeSource = iconSettings.badgeIconSource
-            }
-        }
-        .onChange(of: iconSettings.badgeIconSource) { _, newValue in
-            if newValue != .appleReference {
-                lastNonSystemBadgeSource = newValue
-            }
         }
     }
 }
@@ -146,7 +116,8 @@ struct BadgeGroupLayoutSection: View {
 
 #Preview {
     @Previewable @State var settings = IconSettings()
-    BadgeGroupInspector(iconSettings: $settings)
+    @Previewable @State var badgeMode = false
+    BadgeGroupInspector(iconSettings: $settings, badgeMode: $badgeMode)
         .frame(width: 380)
         .padding()
 }

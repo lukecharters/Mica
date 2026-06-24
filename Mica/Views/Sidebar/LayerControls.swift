@@ -26,6 +26,13 @@ struct LayerControls: View {
     @AppStorage("sidebar.badgeBackgroundLayout.expanded") private var badgeBackgroundLayoutExpanded = true
     @AppStorage("sidebar.badgeBackgroundAppearance.expanded") private var badgeBackgroundAppearanceExpanded = true
 
+    /// Remembers the badge's previously-picked non-system source so toggling
+    /// System → Custom restores the user's choice instead of forcing `.sfSymbol`.
+    /// Owned here (rather than in `BadgeGroupInspector`) because `LayerControls`
+    /// stays mounted across every layer selection, so the tracked value never goes
+    /// stale when the user toggles the mode from a child-layer inspector.
+    @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -35,6 +42,7 @@ struct LayerControls: View {
                 case .group(.badge):
                     BadgeGroupInspector(
                         iconSettings: $iconSettings,
+                        badgeMode: badgeModeBinding,
                         colorOptions: colorOptions,
                         badgeAppexSymbolColor: $badgeAppexSymbolColor,
                         badgeAppexEnclosureColor: $badgeAppexEnclosureColor
@@ -48,16 +56,43 @@ struct LayerControls: View {
                         badgeBackgroundControls
                     }
                 case .layer(.icon, .foreground):
-                    iconForegroundControls
+                    layerWithModePicker(iconModeBinding) { iconForegroundControls }
                 case .layer(.icon, .background):
-                    iconBackgroundControls
+                    layerWithModePicker(iconModeBinding) { iconBackgroundControls }
                 case .layer(.badge, .foreground):
-                    badgeForegroundControls
+                    layerWithModePicker(badgeModeBinding) { badgeForegroundControls }
                 case .layer(.badge, .background):
-                    badgeBackgroundControls
+                    layerWithModePicker(badgeModeBinding) { badgeBackgroundControls }
                 }
             }
             .id(selection)
+        }
+        .onAppear {
+            if iconSettings.badgeIconSource != .appleReference {
+                lastNonSystemBadgeSource = iconSettings.badgeIconSource
+            }
+        }
+        .onChange(of: iconSettings.badgeIconSource) { _, newValue in
+            if newValue != .appleReference {
+                lastNonSystemBadgeSource = newValue
+            }
+        }
+    }
+
+    /// Wraps a child layer's controls with the parent group's Custom/System picker
+    /// at the top, so the generation mode can be switched without first navigating
+    /// back to the group header.
+    @ViewBuilder
+    private func layerWithModePicker<Content: View>(
+        _ mode: Binding<Bool>,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            GroupModePicker(isSystem: mode)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
+            content()
         }
     }
 
@@ -74,6 +109,25 @@ struct LayerControls: View {
         Binding(
             get: { iconSettings.iconGenerationMode == .appleReference },
             set: { iconSettings.iconGenerationMode = $0 ? .appleReference : .swiftUI }
+        )
+    }
+
+    /// Drives the badge group's Custom/System picker. The badge's mode is derived
+    /// from its `badgeIconSource` (`.appleReference` == System), so toggling swaps
+    /// the source and restores the prior custom choice on the way back.
+    private var badgeModeBinding: Binding<Bool> {
+        Binding(
+            get: { iconSettings.badgeGenerationMode == .appleReference },
+            set: { newValue in
+                if newValue {
+                    if iconSettings.badgeIconSource != .appleReference {
+                        lastNonSystemBadgeSource = iconSettings.badgeIconSource
+                    }
+                    iconSettings.badgeIconSource = .appleReference
+                } else {
+                    iconSettings.badgeIconSource = lastNonSystemBadgeSource
+                }
+            }
         )
     }
 
