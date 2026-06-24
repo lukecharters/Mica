@@ -56,10 +56,6 @@ struct IconAppearanceSection: View {
             }
         }
         .pickerStyle(.menu)
-
-        Label("Rendered by Apple's system icon pipeline.", systemImage: "apple.logo")
-            .font(.caption)
-            .foregroundStyle(.secondary)
     }
 
     @ViewBuilder
