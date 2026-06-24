@@ -5,10 +5,10 @@ import SwiftUI
 /// The tab is owned by the parent (ContentView) so the window toolbar can drive it.
 struct InspectorPanel: View {
     @Binding var iconSettings: IconSettings
-    @Binding var appexEnclosureColor: AppexEnclosureColor
-    @Binding var appexSymbolColor: AppexEnclosureColor
-    @Binding var badgeAppexEnclosureColor: AppexEnclosureColor
-    @Binding var badgeAppexSymbolColor: AppexEnclosureColor
+    @Binding var appexEnclosureColor: AppexColor
+    @Binding var appexSymbolColor: AppexColor
+    @Binding var badgeAppexEnclosureColor: AppexColor
+    @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var showExportDialog: Bool
     let selection: LayerSelection
     let tab: InspectorTab

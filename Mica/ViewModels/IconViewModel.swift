@@ -17,15 +17,15 @@ final class IconViewModel: ObservableObject {
         get { iconSettings.iconGenerationMode }
         set { iconSettings.iconGenerationMode = newValue }
     }
-    @Published var appexEnclosureColor: AppexEnclosureColor = .blue
-    @Published var appexSymbolColor: AppexEnclosureColor = .white
+    @Published var appexEnclosureColor: AppexColor = .blue
+    @Published var appexSymbolColor: AppexColor = .white
     @Published var appexRenderedImage: NSImage? = nil
     @Published var appexIsGenerating: Bool = false
     @Published var appexError: String? = nil
 
     // Badge appex state
-    @Published var badgeAppexEnclosureColor: AppexEnclosureColor = .blue
-    @Published var badgeAppexSymbolColor: AppexEnclosureColor = .white
+    @Published var badgeAppexEnclosureColor: AppexColor = .blue
+    @Published var badgeAppexSymbolColor: AppexColor = .white
     @Published var badgeAppexRenderedImage: NSImage? = nil
     @Published var badgeAppexIsGenerating: Bool = false
     @Published var badgeAppexError: String? = nil
@@ -37,8 +37,8 @@ final class IconViewModel: ObservableObject {
 
     struct AppexGenerationKey: Equatable {
         let symbolName: String
-        let enclosureColor: AppexEnclosureColor
-        let symbolColor: AppexEnclosureColor
+        let enclosureColor: AppexColor
+        let symbolColor: AppexColor
     }
 
     var appexGenerationKey: AppexGenerationKey {
@@ -51,8 +51,8 @@ final class IconViewModel: ObservableObject {
         do {
             appexRenderedImage = try await service.referenceIcon(
                 for: iconSettings.symbolName,
-                enclosureColor: appexEnclosureColor,
-                symbolColor: appexSymbolColor
+                enclosureColor: appexEnclosureColor.plistValue,
+                symbolColor: appexSymbolColor.plistValue
             )
         } catch {
             appexError = error.localizedDescription
@@ -65,8 +65,8 @@ final class IconViewModel: ObservableObject {
         let showBadge: Bool
         let badgeGenerationMode: GenerationMode
         let symbolName: String
-        let enclosureColor: AppexEnclosureColor
-        let symbolColor: AppexEnclosureColor
+        let enclosureColor: AppexColor
+        let symbolColor: AppexColor
     }
 
     var badgeAppexGenerationKey: BadgeAppexGenerationKey {
@@ -85,8 +85,8 @@ final class IconViewModel: ObservableObject {
         do {
             badgeAppexRenderedImage = try await service.referenceIcon(
                 for: iconSettings.badgeSymbolName,
-                enclosureColor: badgeAppexEnclosureColor,
-                symbolColor: badgeAppexSymbolColor
+                enclosureColor: badgeAppexEnclosureColor.plistValue,
+                symbolColor: badgeAppexSymbolColor.plistValue
             )
         } catch {
             badgeAppexError = error.localizedDescription

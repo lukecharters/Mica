@@ -113,6 +113,7 @@
 		8C886B372EBDFFFD00753351 /* Exceptions for "Mica" folder in "mica-cli" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Models/AppexColor.swift,
 				Models/AppexEnclosureColor.swift,
 				Models/FamilyCalibration.swift,
 				Models/GenerationMode.swift,

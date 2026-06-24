@@ -8,8 +8,8 @@ import SwiftUI
 struct BadgeGroupInspector: View {
     @Binding var iconSettings: IconSettings
     var colorOptions: [(name: String, color: Color)] = []
-    var badgeAppexSymbolColor: Binding<AppexEnclosureColor>? = nil
-    var badgeAppexEnclosureColor: Binding<AppexEnclosureColor>? = nil
+    var badgeAppexSymbolColor: Binding<AppexColor>? = nil
+    var badgeAppexEnclosureColor: Binding<AppexColor>? = nil
 
     @AppStorage("sidebar.badgeGroupLayout.expanded") private var badgeGroupLayoutExpanded = true
     @AppStorage("sidebar.badgeSource.expanded") private var badgeSourceExpanded = true

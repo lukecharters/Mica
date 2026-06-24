@@ -105,8 +105,8 @@ struct IconDocumentTests {
     func init_appexExport_storesParams() throws {
         let params = IconDocument.AppexExportParams(
             symbolName: "gear",
-            enclosureColor: .green,
-            symbolColor: .white,
+            enclosureColor: "green",
+            symbolColor: "white",
             pointSize: 256,
             scaleFactor: 2,
             colorSpace: .displayP3
@@ -120,8 +120,8 @@ struct IconDocumentTests {
         let stored = try #require(doc.appexExportParams,
                                    "appexExportParams must be populated after appexExport init")
         #expect(stored.symbolName == "gear")
-        #expect(stored.enclosureColor == .green)
-        #expect(stored.symbolColor == .white)
+        #expect(stored.enclosureColor == "green")
+        #expect(stored.symbolColor == "white")
         #expect(stored.pointSize == 256)
         #expect(stored.scaleFactor == 2)
         #expect(stored.colorSpace == .displayP3)
@@ -135,8 +135,8 @@ struct IconDocumentTests {
     func init_appexExport_defaultSettings() throws {
         let params = IconDocument.AppexExportParams(
             symbolName: "gear",
-            enclosureColor: .blue,
-            symbolColor: .white,
+            enclosureColor: "blue",
+            symbolColor: "white",
             pointSize: 256,
             scaleFactor: 1,
             colorSpace: .sRGB

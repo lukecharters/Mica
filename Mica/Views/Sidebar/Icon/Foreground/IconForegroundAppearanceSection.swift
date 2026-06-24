@@ -7,8 +7,8 @@ struct IconAppearanceSection: View {
     var isAppleReference: Bool = false
 
     // Apple Reference bindings (only used when isAppleReference == true)
-    @Binding var appexSymbolColor: AppexEnclosureColor
-    @Binding var appexEnclosureColor: AppexEnclosureColor
+    @Binding var appexSymbolColor: AppexColor
+    @Binding var appexEnclosureColor: AppexColor
 
     @State private var useCustomSymbolColor = false
     @State private var useCustomHierarchicalColor = false
@@ -28,34 +28,8 @@ struct IconAppearanceSection: View {
 
     @ViewBuilder
     private var appleReferenceControls: some View {
-        Picker("Symbol Color", selection: $appexSymbolColor) {
-            ForEach(AppexEnclosureColor.allCases) { color in
-                HStack(spacing: 6) {
-                    Circle()
-                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                        .fill(color.previewColor)
-                        .frame(width: 12, height: 12)
-                    Text(color.displayName)
-                    
-                }
-                .tag(color)
-            }
-        }
-        .pickerStyle(.menu)
-
-        Picker("Background Color", selection: $appexEnclosureColor) {
-            ForEach(AppexEnclosureColor.allCases) { color in
-                HStack(spacing: 6) {
-                    Circle()
-                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                        .fill(color.previewColor)
-                        .frame(width: 12, height: 12)
-                    Text(color.displayName)
-                }
-                .tag(color)
-            }
-        }
-        .pickerStyle(.menu)
+        AppexColorPickerRow(label: "Symbol Color", selection: $appexSymbolColor)
+        AppexColorPickerRow(label: "Background Color", selection: $appexEnclosureColor)
     }
 
     @ViewBuilder
@@ -135,8 +109,8 @@ struct IconAppearanceSection: View {
 
 #Preview {
     @Previewable @State var settings = IconSettings()
-    @Previewable @State var symbolColor: AppexEnclosureColor = .white
-    @Previewable @State var enclosureColor: AppexEnclosureColor = .blue
+    @Previewable @State var symbolColor: AppexColor = .white
+    @Previewable @State var enclosureColor: AppexColor = .blue
     Form {
         Section("Appearance") {
             IconAppearanceSection(

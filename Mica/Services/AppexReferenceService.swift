@@ -19,14 +19,16 @@ class AppexReferenceService {
 
     private struct CacheKey: Hashable {
         let symbolName: String
-        let enclosureColor: AppexEnclosureColor
-        let symbolColor: AppexEnclosureColor
+        let enclosureColor: String
+        let symbolColor: String
     }
 
     // MARK: - Public API
 
-    /// Generate or return cached reference icon at 512pt @2x
-    func referenceIcon(for symbolName: String, enclosureColor: AppexEnclosureColor = .blue, symbolColor: AppexEnclosureColor = .white) async throws -> NSImage {
+    /// Generate or return cached reference icon at 512pt @2x.
+    /// `enclosureColor` / `symbolColor` are the strings written to the appex
+    /// `Info.plist` — either a named token (`"blue"`) or an `"r,g,b,a"` string.
+    func referenceIcon(for symbolName: String, enclosureColor: String = "blue", symbolColor: String = "white") async throws -> NSImage {
         let key = CacheKey(symbolName: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
         if let cached = cache[key] { return cached }
 
@@ -39,7 +41,7 @@ class AppexReferenceService {
     }
 
     /// Pre-fetch next N symbols in background
-    func prefetch(_ symbolNames: [String], enclosureColor: AppexEnclosureColor = .blue, symbolColor: AppexEnclosureColor = .white) {
+    func prefetch(_ symbolNames: [String], enclosureColor: String = "blue", symbolColor: String = "white") {
         for name in symbolNames {
             let key = CacheKey(symbolName: name, enclosureColor: enclosureColor, symbolColor: symbolColor)
             guard cache[key] == nil else { continue }
@@ -56,7 +58,7 @@ class AppexReferenceService {
     /// Copy .appex to a unique temp path, configure, render, and clean up.
     /// Each render gets its own UUID-named bundle so LaunchServices never serves a stale icon.
     /// Blocking file I/O is dispatched to a background thread via Task.detached.
-    private func generateIcon(for symbolName: String, enclosureColor: AppexEnclosureColor, symbolColor: AppexEnclosureColor) async throws -> NSImage {
+    private func generateIcon(for symbolName: String, enclosureColor: String, symbolColor: String) async throws -> NSImage {
         let sourceBundlePath = self.sourceBundlePath
         let task = Task.detached(priority: .userInitiated) {
             try AppexReferenceService.generateIconSync(
@@ -71,8 +73,8 @@ class AppexReferenceService {
 
     private nonisolated static func generateIconSync(
         symbolName: String,
-        enclosureColor: AppexEnclosureColor,
-        symbolColor: AppexEnclosureColor,
+        enclosureColor: String,
+        symbolColor: String,
         sourceBundlePath: String,
         pointSize: CGFloat = 512,
         scaleFactor: Int = 2,
@@ -101,8 +103,8 @@ class AppexReferenceService {
     /// Bypasses the preview cache — use for file export only.
     nonisolated static func renderForExport(
         symbolName: String,
-        enclosureColor: AppexEnclosureColor,
-        symbolColor: AppexEnclosureColor,
+        enclosureColor: String,
+        symbolColor: String,
         pointSize: CGFloat,
         scaleFactor: Int,
         colorSpace: ExportColorSpace
@@ -121,7 +123,7 @@ class AppexReferenceService {
 
     // MARK: - Plist Configuration
 
-    private nonisolated static func configurePlist(at bundleURL: URL, symbolName: String, enclosureColor: AppexEnclosureColor, symbolColor: AppexEnclosureColor) throws {
+    private nonisolated static func configurePlist(at bundleURL: URL, symbolName: String, enclosureColor: String, symbolColor: String) throws {
         let plistURL = bundleURL.appendingPathComponent("Contents/Info.plist", isDirectory: false)
 
         let data = try Data(contentsOf: plistURL)
@@ -133,8 +135,8 @@ class AppexReferenceService {
         }
 
         graphicConfig["ISSymbolName"] = symbolName
-        graphicConfig["ISEnclosureColor"] = enclosureColor.rawValue
-        graphicConfig["ISSymbolColor"] = symbolColor.rawValue
+        graphicConfig["ISEnclosureColor"] = enclosureColor
+        graphicConfig["ISSymbolColor"] = symbolColor
 
         bundleIcons["ISGraphicIconConfiguration"] = graphicConfig
         plist["CFBundleIcons"] = bundleIcons

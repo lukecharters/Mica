@@ -6,10 +6,10 @@ import SwiftUI
 struct LayerControls: View {
     let selection: LayerSelection
     @Binding var iconSettings: IconSettings
-    @Binding var appexEnclosureColor: AppexEnclosureColor
-    @Binding var appexSymbolColor: AppexEnclosureColor
-    @Binding var badgeAppexEnclosureColor: AppexEnclosureColor
-    @Binding var badgeAppexSymbolColor: AppexEnclosureColor
+    @Binding var appexEnclosureColor: AppexColor
+    @Binding var appexSymbolColor: AppexColor
+    @Binding var badgeAppexEnclosureColor: AppexColor
+    @Binding var badgeAppexSymbolColor: AppexColor
     let colorOptions: [(name: String, color: Color)]
 
     // Persisted section expand/collapse state.

@@ -128,8 +128,8 @@ struct AppexRenderingStructuralTests {
         let scaleFactor = 2
         let image = try AppexReferenceService.renderForExport(
             symbolName: "star.fill",
-            enclosureColor: .blue,
-            symbolColor: .white,
+            enclosureColor: "blue",
+            symbolColor: "white",
             pointSize: pointSize,
             scaleFactor: scaleFactor,
             colorSpace: .displayP3

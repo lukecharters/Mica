@@ -13,8 +13,9 @@ struct IconDocument: FileDocument {
 
     struct AppexExportParams {
         let symbolName: String
-        let enclosureColor: AppexEnclosureColor
-        let symbolColor: AppexEnclosureColor
+        /// Plist colour value — a named token (`"blue"`) or an `"r,g,b,a"` string.
+        let enclosureColor: String
+        let symbolColor: String
         let pointSize: CGFloat
         let scaleFactor: Int
         let colorSpace: ExportColorSpace

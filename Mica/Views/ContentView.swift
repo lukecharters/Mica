@@ -137,8 +137,8 @@ struct ContentView: View {
             document: viewModel.iconSettings.iconGenerationMode == .appleReference
                 ? IconDocument(appexExport: .init(
                     symbolName: viewModel.iconSettings.symbolName,
-                    enclosureColor: viewModel.appexEnclosureColor,
-                    symbolColor: viewModel.appexSymbolColor,
+                    enclosureColor: viewModel.appexEnclosureColor.plistValue,
+                    symbolColor: viewModel.appexSymbolColor.plistValue,
                     pointSize: viewModel.iconSettings.exportSize,
                     scaleFactor: viewModel.iconSettings.exportRetinaSize ? 2 : 1,
                     colorSpace: viewModel.iconSettings.exportColorSpace

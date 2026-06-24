@@ -84,8 +84,8 @@ class IconGeneratorCLI {
         let scaleFactor = settings.exportRetinaSize ? 2 : 1
         let appexImage = try AppexReferenceService.renderForExport(
             symbolName: command.symbolName,
-            enclosureColor: parseAppexColor(command.generation.appexEnclosureColor),
-            symbolColor: parseAppexColor(command.generation.appexSymbolColor),
+            enclosureColor: command.generation.appexEnclosureColor,
+            symbolColor: command.generation.appexSymbolColor,
             pointSize: settings.exportSize,
             scaleFactor: scaleFactor,
             colorSpace: settings.exportColorSpace
@@ -117,22 +117,20 @@ class IconGeneratorCLI {
         return appexImage
     }
 
+    /// `enclosureColor` / `symbolColor` are already-resolved plist values
+    /// (named token or `r,g,b,a` string) produced by the argument transforms.
     private func renderAppexIcon(symbolName: String, enclosureColor: String, symbolColor: String, settings: IconSettings) throws -> NSImage {
         let scaleFactor = settings.exportRetinaSize ? 2 : 1
         return try AppexReferenceService.renderForExport(
             symbolName: symbolName,
-            enclosureColor: parseAppexColor(enclosureColor),
-            symbolColor: parseAppexColor(symbolColor),
+            enclosureColor: enclosureColor,
+            symbolColor: symbolColor,
             pointSize: settings.exportSize,
             scaleFactor: scaleFactor,
             colorSpace: settings.exportColorSpace
         )
     }
 
-    private func parseAppexColor(_ input: String) -> AppexEnclosureColor {
-        AppexEnclosureColor(rawValue: input) ?? .blue
-    }
-    
     // MARK: - Enhanced Validation
     
     private func performEnhancedValidation(_ command: IconGeneratorCommand) async throws {

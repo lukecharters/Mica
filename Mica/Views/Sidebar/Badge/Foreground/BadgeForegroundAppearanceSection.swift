@@ -6,8 +6,8 @@ struct BadgeAppearanceSection: View {
     let colorOptions: [(name: String, color: Color)]
 
     // Apple Reference bindings (only used when badgeIconSource == .appleReference)
-    @Binding var badgeAppexSymbolColor: AppexEnclosureColor
-    @Binding var badgeAppexEnclosureColor: AppexEnclosureColor
+    @Binding var badgeAppexSymbolColor: AppexColor
+    @Binding var badgeAppexEnclosureColor: AppexColor
 
     @State private var useCustomBadgeSymbolColor = false
     @State private var useCustomBadgeHierarchicalColor = false
@@ -28,33 +28,8 @@ struct BadgeAppearanceSection: View {
 
     @ViewBuilder
     private var appleReferenceControls: some View {
-        Picker("Symbol Color", selection: $badgeAppexSymbolColor) {
-            ForEach(AppexEnclosureColor.allCases) { color in
-                HStack(spacing: 6) {
-                    Circle()
-                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                        .fill(color.previewColor)
-                        .frame(width: 12, height: 12)
-                    Text(color.displayName)
-                }
-                .tag(color)
-            }
-        }
-        .pickerStyle(.menu)
-
-        Picker("Background", selection: $badgeAppexEnclosureColor) {
-            ForEach(AppexEnclosureColor.allCases) { color in
-                HStack(spacing: 6) {
-                    Circle()
-                        .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                        .fill(color.previewColor)
-                        .frame(width: 12, height: 12)
-                    Text(color.displayName)
-                }
-                .tag(color)
-            }
-        }
-        .pickerStyle(.menu)
+        AppexColorPickerRow(label: "Symbol Color", selection: $badgeAppexSymbolColor)
+        AppexColorPickerRow(label: "Background", selection: $badgeAppexEnclosureColor)
     }
 
     @ViewBuilder
@@ -134,8 +109,8 @@ struct BadgeAppearanceSection: View {
 
 #Preview {
     @Previewable @State var settings = IconSettings()
-    @Previewable @State var badgeSymbolColor: AppexEnclosureColor = .white
-    @Previewable @State var badgeEnclosureColor: AppexEnclosureColor = .blue
+    @Previewable @State var badgeSymbolColor: AppexColor = .white
+    @Previewable @State var badgeEnclosureColor: AppexColor = .blue
     Form {
         Section("Appearance") {
             BadgeAppearanceSection(

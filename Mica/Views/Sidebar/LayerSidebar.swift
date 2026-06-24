@@ -9,10 +9,10 @@ import SwiftUI
 struct LayerSidebar: View {
     @Binding var iconSettings: IconSettings
     @Binding var selection: LayerSelection
-    let appexEnclosureColor: AppexEnclosureColor
-    let appexSymbolColor: AppexEnclosureColor
-    let badgeAppexEnclosureColor: AppexEnclosureColor
-    let badgeAppexSymbolColor: AppexEnclosureColor
+    let appexEnclosureColor: AppexColor
+    let appexSymbolColor: AppexColor
+    let badgeAppexEnclosureColor: AppexColor
+    let badgeAppexSymbolColor: AppexColor
 
     var body: some View {
         List(selection: selectionBinding) {
@@ -182,10 +182,10 @@ private struct LayerRow: View {
     let group: IconLayerGroup
     let role: LayerRole
     @Binding var iconSettings: IconSettings
-    let appexEnclosureColor: AppexEnclosureColor
-    let appexSymbolColor: AppexEnclosureColor
-    let badgeAppexEnclosureColor: AppexEnclosureColor
-    let badgeAppexSymbolColor: AppexEnclosureColor
+    let appexEnclosureColor: AppexColor
+    let appexSymbolColor: AppexColor
+    let badgeAppexEnclosureColor: AppexColor
+    let badgeAppexSymbolColor: AppexColor
 
     private var visibility: Binding<Bool> {
         switch (group, role) {
@@ -260,10 +260,10 @@ private struct LayerThumbnail: View {
     let group: IconLayerGroup
     let role: LayerRole
     let settings: IconSettings
-    let appexEnclosureColor: AppexEnclosureColor
-    let appexSymbolColor: AppexEnclosureColor
-    let badgeAppexEnclosureColor: AppexEnclosureColor
-    let badgeAppexSymbolColor: AppexEnclosureColor
+    let appexEnclosureColor: AppexColor
+    let appexSymbolColor: AppexColor
+    let badgeAppexEnclosureColor: AppexColor
+    let badgeAppexSymbolColor: AppexColor
 
     var body: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)

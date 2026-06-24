@@ -7,6 +7,17 @@ private let validRenderingModes = ["monochrome", "hierarchical", "multicolor", "
 private let validSymbolWeights = ["auto", "ultralight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"]
 private let validAppexColors = ["black", "blue", "brown", "cyan", "gray", "green", "indigo", "orange", "pink", "purple", "red", "teal", "white", "yellow"]
 
+/// Resolve an appex colour argument to the plist value stored on the command.
+/// Accepts a named token, an `r,g,b,a` value (0–1 or 0–255), or a hex colour.
+/// Throws a `ValidationError` (nicely surfaced by ArgumentParser) on failure.
+private func resolveAppexColorArg(_ input: String, role: String) throws -> String {
+    do {
+        return try AppexColor.plistValue(fromCLIString: input)
+    } catch {
+        throw ValidationError("\(role) is invalid: '\(input)'. Use a named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736).")
+    }
+}
+
 private func validateScale(_ scale: String, name: String) throws -> Double {
     guard let value = Double(scale) else {
         throw ValidationError("\(name) must be a number.")
@@ -171,15 +182,10 @@ struct GenerationOptions: ParsableArguments {
         name: .long,
         help: ArgumentHelp(
             "Appex enclosure (background) color for Apple Reference mode",
-            discussion: "Options: \(validAppexColors.joined(separator: ", "))",
+            discussion: "A named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736)",
             valueName: "color"
         ),
-        transform: { color in
-            guard validAppexColors.contains(color.lowercased()) else {
-                throw ValidationError("Appex enclosure color must be one of: \(validAppexColors.joined(separator: ", "))")
-            }
-            return color.lowercased()
-        }
+        transform: { try resolveAppexColorArg($0, role: "Appex enclosure color") }
     )
     var appexEnclosureColor: String = "blue"
 
@@ -187,15 +193,10 @@ struct GenerationOptions: ParsableArguments {
         name: .long,
         help: ArgumentHelp(
             "Appex symbol color for Apple Reference mode",
-            discussion: "Options: \(validAppexColors.joined(separator: ", "))",
+            discussion: "A named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736)",
             valueName: "color"
         ),
-        transform: { color in
-            guard validAppexColors.contains(color.lowercased()) else {
-                throw ValidationError("Appex symbol color must be one of: \(validAppexColors.joined(separator: ", "))")
-            }
-            return color.lowercased()
-        }
+        transform: { try resolveAppexColorArg($0, role: "Appex symbol color") }
     )
     var appexSymbolColor: String = "white"
 }
@@ -500,25 +501,15 @@ struct BadgeOptions: ParsableArguments {
     // Badge appex colors
     @Option(
         name: .long,
-        help: ArgumentHelp("Badge appex enclosure color (Apple Reference badge)", valueName: "color"),
-        transform: { color in
-            guard validAppexColors.contains(color.lowercased()) else {
-                throw ValidationError("Badge appex enclosure color must be one of: \(validAppexColors.joined(separator: ", "))")
-            }
-            return color.lowercased()
-        }
+        help: ArgumentHelp("Badge appex enclosure color (Apple Reference badge): named, r,g,b,a (0–1), or hex", valueName: "color"),
+        transform: { try resolveAppexColorArg($0, role: "Badge appex enclosure color") }
     )
     var badgeAppexEnclosureColor: String = "blue"
 
     @Option(
         name: .long,
-        help: ArgumentHelp("Badge appex symbol color (Apple Reference badge)", valueName: "color"),
-        transform: { color in
-            guard validAppexColors.contains(color.lowercased()) else {
-                throw ValidationError("Badge appex symbol color must be one of: \(validAppexColors.joined(separator: ", "))")
-            }
-            return color.lowercased()
-        }
+        help: ArgumentHelp("Badge appex symbol color (Apple Reference badge): named, r,g,b,a (0–1), or hex", valueName: "color"),
+        transform: { try resolveAppexColorArg($0, role: "Badge appex symbol color") }
     )
     var badgeAppexSymbolColor: String = "white"
 
