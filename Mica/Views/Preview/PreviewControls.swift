@@ -14,8 +14,8 @@ struct MDMPortalPreset: Identifiable {
     static let all: [MDMPortalPreset] = [
         MDMPortalPreset(name: "Jamf Self Service+ - Catalog View", pointSize: 40),
         MDMPortalPreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
-        MDMPortalPreset(name: "Jamf Self Service - Catalog View", pointSize: 75),
-        MDMPortalPreset(name: "Jamf Self Service - Item View", pointSize: 120)
+        MDMPortalPreset(name: "Jamf Self Service classic - Catalog View", pointSize: 75),
+        MDMPortalPreset(name: "Jamf Self Service classic - Item View", pointSize: 120)
     ]
 }
 
