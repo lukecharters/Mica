@@ -16,6 +16,7 @@ struct MicaApp: App {
         }
         .defaultSize(width: 1200, height: 800)
         .windowStyle(.hiddenTitleBar)
+        .windowToolbarLabelStyle(fixed: .titleAndIcon)
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(after: .pasteboard) {

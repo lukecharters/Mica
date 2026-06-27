@@ -44,9 +44,11 @@ struct InspectorPanel: View {
 
 // MARK: - Tab
 
-enum InspectorTab: Hashable {
+enum InspectorTab: Hashable, CaseIterable, Identifiable {
     case controls
     case export
+
+    var id: Self { self }
 
     var systemImage: String {
         switch self {

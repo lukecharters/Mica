@@ -93,7 +93,7 @@ struct ContentView: View {
                 Button {
                     withAnimation { showLayerSidebar.toggle() }
                 } label: {
-                    Image(systemName: "sidebar.left")
+                    Label("Show Sidebar", systemImage: "sidebar.left")
                 }
                 .help("Toggle Layer Sidebar")
             }
@@ -101,23 +101,24 @@ struct ContentView: View {
                 ZoomMenu(zoomLevel: $zoomLevel)
                 PreviewSizeMenu(previewPointSize: $previewPointSize)
             }
-            ToolbarItemGroup(placement: .automatic) {
-                Button {
-                    if !showInspector { showInspector = true }
-                    inspectorTab = .controls
-                } label: {
-                    Image(systemName: InspectorTab.controls.systemImage)
-                        .symbolVariant(showInspector && inspectorTab == .controls ? .fill : .none)
+            ToolbarItemGroup(placement: .principal) {
+                Text("Icon Generation Mode")
+                    .padding(8)
+            }
+
+            ToolbarItem(placement: .automatic) {
+                Picker("Styling/Export", selection: $inspectorTab) {
+                    Label("Controls", systemImage: InspectorTab.controls.systemImage)
+                        .tag(InspectorTab.controls)
+                    Label("Export", systemImage: InspectorTab.export.systemImage)
+                        .tag(InspectorTab.export)
                 }
-                .help("Layer Controls")
-                
-                Button {
-                    if !showInspector { showInspector = true }
-                    inspectorTab = .export
-                } label: {
-                    Image(systemName: InspectorTab.export.systemImage)
+                .pickerStyle(.segmented)
+                .help("Inspector tab")
+                // Selecting a tab reveals the inspector if it's hidden.
+                .onChange(of: inspectorTab) {
+                    if !showInspector { withAnimation { showInspector = true } }
                 }
-                .help("Export")
             }
             if #available(macOS 26.0, *) {
                 ToolbarSpacer(.fixed)
@@ -126,7 +127,7 @@ struct ContentView: View {
                 Button {
                     withAnimation { showInspector.toggle() }
                 } label: {
-                    Image(systemName: "sidebar.right")
+                    Label("Show Inspector", systemImage: "sidebar.right")
                 }
                 .help("Toggle Inspector")
             }
