@@ -607,8 +607,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
 
             High-resolution export:
               mica-cli app.fill --size 1024 --retina --color-space displayP3
-            """,
-        version: "1.0.0"
+            """
     )
 
     @Argument(
