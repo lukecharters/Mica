@@ -21,7 +21,7 @@ struct IconSettingsTests {
     @Test("Defaults match the shipped initial configuration")
     func defaults_areStable() {
         let s = IconSettings()
-        #expect(s.symbolName == "folder.fill.badge.plus")
+        #expect(s.symbolName == "command")
         #expect(s.exportSize == 512)
         #expect(s.exportRetinaSize == false)
         #expect(s.symbolRenderingMode == .monochrome)
@@ -118,7 +118,7 @@ struct IconSettingsTests {
 
         a = IconSettings()
         b = IconSettings()
-        b.exportSize = 512
+        b.exportSize = 256  // differ from the default (512) so equality breaks
         #expect(a != b)
 
         a = IconSettings()

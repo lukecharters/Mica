@@ -11,7 +11,7 @@ struct AppViewModelTests {
     @Test("Fresh AppViewModel exposes a default IconViewModel")
     func fresh_hasDefaultIconVM() {
         let app = AppViewModel()
-        #expect(app.iconVM.iconSettings.symbolName == "folder.fill.badge.plus")
+        #expect(app.iconVM.iconSettings.symbolName == "command")
         #expect(app.iconVM.generationMode == .swiftUI)
         #expect(app.iconVM.appexEnclosureColor == .blue)
         #expect(app.iconVM.appexSymbolColor == .white)

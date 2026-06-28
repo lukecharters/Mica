@@ -23,11 +23,11 @@ struct IconSettingsValidationTests {
         #expect(maxSize == 1024)
     }
     
-    @Test("Default size constant is 256")
+    @Test("Default size constant is 512")
     func default_size_constant() {
-        // Verify defaultExportSize = 256
+        // Verify defaultExportSize = 512
         let defaultSize = IconSettings.defaultExportSize
-        #expect(defaultSize == 256)
+        #expect(defaultSize == 512)
     }
     
     @Test("isExportSizeValid returns true for valid range")
@@ -117,7 +117,7 @@ struct IconSettingsValidationTests {
         // Verify default initialization uses defaultExportSize
         let settings = IconSettings()
         #expect(settings.exportSize == IconSettings.defaultExportSize, "Should initialize with default size")
-        #expect(settings.exportSize == 256, "Default size should be 256")
+        #expect(settings.exportSize == 512, "Default size should be 512")
         #expect(settings.isExportSizeValid == true, "Default size should be valid")
     }
     
@@ -133,7 +133,7 @@ struct IconSettingsValidationTests {
         #expect(min < max, "Minimum should be less than maximum")
         
         // Verify specific values
-        #expect(min == 16 && def == 256 && max == 1024, "Constants should have expected values")
+        #expect(min == 16 && def == 512 && max == 1024, "Constants should have expected values")
     }
     
     @Test("Boundary values are inclusive")
