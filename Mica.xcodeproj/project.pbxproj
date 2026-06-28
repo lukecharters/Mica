@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8C2136062F920062001C769A /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C2136052F920062001C769A /* ArgumentParser */; };
-		8C2137A12F921790001C769A /* mica-cli in Embed mica-cli */ = {isa = PBXBuildFile; fileRef = 8C3148C92E61E39F00C7A0A9 /* mica-cli */; };
+		8C2137A12F921790001C769A /* mica-cli in Embed mica-cli */ = {isa = PBXBuildFile; fileRef = 8C3148C92E61E39F00C7A0A9 /* mica-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		8C27BE2C2F95085F00C00DCA /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 8C27BE2B2F95085F00C00DCA /* SnapshotTesting */; };
 		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
 		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
@@ -372,7 +372,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					8C3148C82E61E39F00C7A0A9 = {
 						CreatedOnToolsVersion = 26.0;
@@ -621,7 +621,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -721,7 +721,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.mica;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -768,7 +768,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.mica;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
