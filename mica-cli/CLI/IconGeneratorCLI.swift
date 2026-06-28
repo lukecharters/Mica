@@ -39,16 +39,17 @@ class IconGeneratorCLI {
             if command.generation.resolvedIconMode == "apple-reference" {
                 image = try await renderAppleReference(command: command, settings: settings)
             } else {
-                // Load badge appex image if badge uses apple-reference source
-                var badgeAppexImage: NSImage? = nil
-                if settings.showBadge && settings.badgeIconSource == .appleReference {
-                    badgeAppexImage = try renderAppexIcon(
+                // Load badge appex image if badge uses apple-reference source.
+                // `let` keeps this in a disconnected region so it can be sent
+                // into the @MainActor render task (NSImage is non-Sendable).
+                let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .appleReference)
+                    ? try renderAppexIcon(
                         symbolName: settings.badgeSymbolName,
                         enclosureColor: command.badge.badgeAppexEnclosureColor,
                         symbolColor: command.badge.badgeAppexSymbolColor,
                         settings: settings
                     )
-                }
+                    : nil
                 image = try await renderIconWithErrorHandling(settings: settings, badgeAppexImage: badgeAppexImage)
             }
 
@@ -93,15 +94,16 @@ class IconGeneratorCLI {
 
         // If badge is present, composite via renderAppexWithBadge
         if settings.showBadge {
-            var badgeAppexImage: NSImage? = nil
-            if settings.badgeIconSource == .appleReference {
-                badgeAppexImage = try renderAppexIcon(
+            // `let` keeps this in a disconnected region so it can be sent
+            // into the @MainActor render task (NSImage is non-Sendable).
+            let badgeAppexImage: NSImage? = settings.badgeIconSource == .appleReference
+                ? try renderAppexIcon(
                     symbolName: settings.badgeSymbolName,
                     enclosureColor: command.badge.badgeAppexEnclosureColor,
                     symbolColor: command.badge.badgeAppexSymbolColor,
                     settings: settings
                 )
-            }
+                : nil
             return try await withCheckedThrowingContinuation { continuation in
                 Task { @MainActor in
                     let composited = IconRenderer.renderAppexWithBadge(
@@ -399,22 +401,22 @@ class IconGeneratorCLI {
     
     // MARK: - Enhanced Rendering
     
-    private func renderIconWithErrorHandling(settings: IconSettings, badgeAppexImage: NSImage? = nil) async throws -> NSImage {
-        return try await withCheckedThrowingContinuation { continuation in
-            Task { @MainActor in
-                let image = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: badgeAppexImage)
+    // Rendering is genuinely main-actor-bound (IconRenderer.renderIconSafely
+    // drives SwiftUI's ImageRenderer), so this hops to the main actor directly
+    // rather than bridging through a continuation + detached Task. The caller
+    // awaits the actor hop; `sending` transfers ownership of the non-Sendable
+    // badge image across the isolation boundary.
+    @MainActor
+    private func renderIconWithErrorHandling(settings: IconSettings, badgeAppexImage: sending NSImage? = nil) throws -> NSImage {
+        let image = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: badgeAppexImage)
 
-                guard image.size.width > 0 && image.size.height > 0 else {
-                    continuation.resume(throwing: CLIError.renderingError("Generated image has invalid dimensions"))
-                    return
-                }
-                guard image.cgImage(forProposedRect: nil, context: nil, hints: nil) != nil else {
-                    continuation.resume(throwing: CLIError.renderingError("Failed to generate valid image content"))
-                    return
-                }
-                continuation.resume(returning: image)
-            }
+        guard image.size.width > 0 && image.size.height > 0 else {
+            throw CLIError.renderingError("Generated image has invalid dimensions")
         }
+        guard image.cgImage(forProposedRect: nil, context: nil, hints: nil) != nil else {
+            throw CLIError.renderingError("Failed to generate valid image content")
+        }
+        return image
     }
     
     // MARK: - Enhanced File Operations

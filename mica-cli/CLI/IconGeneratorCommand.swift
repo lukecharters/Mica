@@ -563,7 +563,7 @@ struct BadgeOptions: ParsableArguments {
 // MARK: - Main Command
 
 struct IconGeneratorCommand: AsyncParsableCommand {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         commandName: "generate",
         abstract: "Generate customized macOS app icons using SF Symbols",
         usage: """
