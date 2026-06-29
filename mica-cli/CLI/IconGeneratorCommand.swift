@@ -91,114 +91,56 @@ struct ExportOptions: ParsableArguments {
 // MARK: - Generation Options
 
 struct GenerationOptions: ParsableArguments {
+    // Generation mode is taken in user-facing `mica`/`system` terms and stored
+    // canonically as `custom`/`apple-reference` so the downstream settings
+    // builder (which switches on `apple-reference`) stays unchanged.
     @Option(
-        name: .long,
+        name: .customLong("icon-generation-mode"),
         help: ArgumentHelp(
-            "Generation mode (deprecated alias — sets both --icon-mode and --badge-mode)",
-            discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
-            valueName: "mode"
+            "How the icon is rendered: mica (SwiftUI, default) or system (Apple appex rendering)",
+            valueName: "mica|system"
         ),
-        transform: { mode in
-            let valid = ["custom", "apple-reference"]
-            guard valid.contains(mode.lowercased()) else {
-                throw ValidationError("Generation mode must be one of: \(valid.joined(separator: ", "))")
-            }
-            return mode.lowercased()
-        }
+        transform: { try canonicalGenerationMode($0, role: "Icon") }
     )
-    var generationMode: String?
+    var iconGenerationMode: String = "custom"
 
     @Option(
-        name: .long,
+        name: .customLong("badge-generation-mode"),
         help: ArgumentHelp(
-            "Generation mode for the icon",
-            discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
-            valueName: "mode"
+            "How the badge is rendered: mica (SwiftUI, default) or system (Apple appex rendering)",
+            valueName: "mica|system"
         ),
-        transform: { mode in
-            let valid = ["custom", "apple-reference"]
-            guard valid.contains(mode.lowercased()) else {
-                throw ValidationError("Icon mode must be one of: \(valid.joined(separator: ", "))")
-            }
-            return mode.lowercased()
-        }
+        transform: { try canonicalGenerationMode($0, role: "Badge") }
     )
-    var iconMode: String?
+    var badgeGenerationMode: String = "custom"
+
+    /// Canonical icon mode (`custom` / `apple-reference`).
+    var resolvedIconMode: String { iconGenerationMode }
+
+    /// Canonical badge mode (`custom` / `apple-reference`).
+    var resolvedBadgeMode: String { badgeGenerationMode }
 
     @Option(
         name: .long,
         help: ArgumentHelp(
-            "Generation mode for the badge",
-            discussion: "Options: custom (SwiftUI rendering, default), apple-reference (system appex rendering)",
-            valueName: "mode"
-        ),
-        transform: { mode in
-            let valid = ["custom", "apple-reference"]
-            guard valid.contains(mode.lowercased()) else {
-                throw ValidationError("Badge mode must be one of: \(valid.joined(separator: ", "))")
-            }
-            return mode.lowercased()
-        }
-    )
-    var badgeMode: String?
-
-    /// Resolved icon mode: explicit `--icon-mode` wins, then `--generation-mode`, default custom.
-    var resolvedIconMode: String { iconMode ?? generationMode ?? "custom" }
-
-    /// Resolved badge mode: explicit `--badge-mode` wins, then `--generation-mode`, default custom.
-    var resolvedBadgeMode: String { badgeMode ?? generationMode ?? "custom" }
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Icon source type",
-            discussion: "Options: symbol (SF Symbol, default), image (imported file)",
-            valueName: "source"
-        ),
-        transform: { source in
-            let valid = ["symbol", "image"]
-            guard valid.contains(source.lowercased()) else {
-                throw ValidationError("Icon source must be one of: \(valid.joined(separator: ", "))")
-            }
-            return source.lowercased()
-        }
-    )
-    var iconSource: String = "symbol"
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Path to image file for icon symbol (use with --icon-source image)", valueName: "path")
-    )
-    var importedImage: String?
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Scale for imported symbol image (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Imported image scale") }
-    )
-    var importedImageScale: Double = 1.0
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Appex enclosure (background) color for Apple Reference mode",
+            "Appex enclosure (background) color for system generation mode",
             discussion: "A named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736)",
             valueName: "color"
         ),
         transform: { try resolveAppexColorArg($0, role: "Appex enclosure color") }
     )
     var appexEnclosureColor: String = "blue"
+}
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Appex symbol color for Apple Reference mode",
-            discussion: "A named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736)",
-            valueName: "color"
-        ),
-        transform: { try resolveAppexColorArg($0, role: "Appex symbol color") }
-    )
-    var appexSymbolColor: String = "white"
+/// Map the user-facing `mica`/`system` generation-mode tokens to the canonical
+/// `custom`/`apple-reference` values used throughout the settings builder.
+private func canonicalGenerationMode(_ mode: String, role: String) throws -> String {
+    switch mode.lowercased() {
+    case "mica": return "custom"
+    case "system": return "apple-reference"
+    default:
+        throw ValidationError("\(role) generation mode must be 'mica' or 'system'.")
+    }
 }
 
 // MARK: - Background Options
@@ -297,11 +239,33 @@ struct BackgroundOptions: ParsableArguments {
     }
 }
 
-// MARK: - Symbol Options
+// MARK: - Icon Foreground Options
 
-struct SymbolOptions: ParsableArguments {
+struct IconForegroundOptions: ParsableArguments {
+    // Folds the old --icon-source + --imported-image. `symbol:<name>` selects an
+    // SF Symbol; anything else is treated as an image file path. When omitted,
+    // the positional symbol-name shorthand on the command supplies the value.
     @Option(
-        name: .long,
+        name: .customLong("icon-fg"),
+        help: ArgumentHelp(
+            "Icon foreground source",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. Overrides the positional symbol-name shorthand.",
+            valueName: "symbol:NAME|path"
+        )
+    )
+    var foreground: String?
+
+    // Folds --symbol-scale + --imported-image-scale into one flag that drives
+    // whichever source (symbol or image) is active.
+    @Option(
+        name: .customLong("icon-fg-scale"),
+        help: ArgumentHelp("Foreground scale multiplier (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Icon foreground scale") }
+    )
+    var scale: Double = 1.0
+
+    @Option(
+        name: .customLong("icon-symbol-rendering"),
         help: ArgumentHelp(
             "Symbol rendering mode",
             discussion: "monochrome (default), hierarchical, multicolor, or palette",
@@ -309,37 +273,41 @@ struct SymbolOptions: ParsableArguments {
         ),
         transform: { mode in
             guard validRenderingModes.contains(mode.lowercased()) else {
-                throw ValidationError("Rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
+                throw ValidationError("Symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
             }
             return mode.lowercased()
         }
     )
-    var renderingMode: String = "monochrome"
+    var symbolRendering: String = "monochrome"
 
-    @Option(name: .long, help: ArgumentHelp("Symbol color (monochrome mode)", valueName: "color"))
-    var symbolColor: String = "white"
+    // Folds --symbol-color + --hierarchical-color + --appex-symbol-color into a
+    // single colour. Stored RAW; resolved in the settings builder by generation
+    // mode (mica → ColorParser, system → AppexColor.plistValue) since the
+    // transform can't see the chosen mode. nil → mode-appropriate default.
+    @Option(
+        name: .customLong("icon-symbol-color"),
+        help: ArgumentHelp(
+            "Symbol color (monochrome, hierarchical, and multicolor modes)",
+            discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
+            valueName: "color"
+        )
+    )
+    var symbolColor: String?
 
-    @Option(name: .long, help: ArgumentHelp("Symbol color (hierarchical mode)", valueName: "color"))
-    var hierarchicalColor: String = "white"
-
-    @Option(name: .long, help: ArgumentHelp("Primary color (palette mode)", valueName: "color"))
-    var palettePrimary: String = "white"
-
-    @Option(name: .long, help: ArgumentHelp("Secondary color (palette mode, supports opacity e.g. 'white:0.5')", valueName: "color"))
-    var paletteSecondary: String = "white:0.5"
-
-    @Option(name: .long, help: ArgumentHelp("Tertiary color (palette mode, supports opacity e.g. 'white:0.26')", valueName: "color"))
-    var paletteTertiary: String = "white:0.26"
-
-    // Inverted optional: nil = unspecified, so the effective value can default
-    // based on the icon source (off for imported images, on for SF Symbols).
-    // `--no-symbol-shadow` is preserved; `--symbol-shadow` forces it back on.
-    @Flag(name: .long, inversion: .prefixedNo,
-          help: "Symbol shadow (default: off for imported images, on for SF Symbols)")
-    var symbolShadow: Bool?
+    // Folds --palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`;
+    // c2/c3 accept a `:opacity` suffix. Validated/parsed in the builder.
+    @Option(
+        name: .customLong("icon-symbol-palette"),
+        help: ArgumentHelp(
+            "Palette colors for palette rendering",
+            discussion: "Three comma-separated colors 'c1,c2,c3'; the 2nd and 3rd accept a ':opacity' suffix (e.g. 'blue,white:0.5,white:0.26'). Default: white,white:0.5,white:0.26.",
+            valueName: "c1,c2,c3"
+        )
+    )
+    var symbolPalette: String?
 
     @Option(
-        name: .long,
+        name: .customLong("icon-symbol-weight"),
         help: ArgumentHelp("Symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
         transform: { weight in
             guard validSymbolWeights.contains(weight.lowercased()) else {
@@ -350,24 +318,26 @@ struct SymbolOptions: ParsableArguments {
     )
     var symbolWeight: String = "auto"
 
+    // Was --symbol-color-rendering flat|gradient.
     @Option(
-        name: .long,
-        help: ArgumentHelp("Symbol scale multiplier (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Symbol scale") }
+        name: .customLong("icon-symbol-gradient"),
+        help: ArgumentHelp("Symbol gradient fill: on or off (default; gradient requires macOS 26+)", valueName: "on|off")
     )
-    var symbolScale: Double = 1.0
+    var symbolGradient: ToggleState = .off
+
+    // nil = unspecified, so the effective value can default based on the source
+    // (off for imported images, on for SF Symbols).
+    @Option(
+        name: .customLong("icon-fg-shadow"),
+        help: ArgumentHelp("Foreground shadow: on or off (default: off for images, on for SF Symbols)", valueName: "on|off")
+    )
+    var shadow: ToggleState?
 
     @Option(
-        name: .long,
-        help: ArgumentHelp("Symbol color rendering: flat (default) or gradient (macOS 26+)", valueName: "mode"),
-        transform: { mode in
-            guard ["flat", "gradient"].contains(mode.lowercased()) else {
-                throw ValidationError("Symbol color rendering must be 'flat' or 'gradient'")
-            }
-            return mode.lowercased()
-        }
+        name: .customLong("icon-fg-visibility"),
+        help: ArgumentHelp("Foreground visibility: on (default) or off to hide the foreground", valueName: "on|off")
     )
-    var symbolColorRendering: String = "flat"
+    var visibility: ToggleState = .on
 }
 
 // MARK: - Badge Options
@@ -562,6 +532,13 @@ struct BadgeOptions: ParsableArguments {
 
 // MARK: - Main Command
 
+/// The resolved icon foreground after combining the positional symbol-name
+/// shorthand with an explicit `--icon-fg` value.
+enum ResolvedForeground {
+    case symbol(String)
+    case image(String)
+}
+
 struct IconGeneratorCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "generate",
@@ -569,7 +546,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         usage: """
             mica-cli [generate] <symbol-name> [<options>]
             mica-cli star.fill -o ~/Desktop/my-icon.png
-            mica-cli generate folder.fill --size 512 --retina --base-color red
+            mica-cli generate folder.fill --size 512 --icon-bg-color red
             """,
         discussion: """
             EXAMPLES (the `generate` subcommand name is optional — it is the default):
@@ -578,46 +555,36 @@ struct IconGeneratorCommand: AsyncParsableCommand {
               mica-cli star.fill
               mica-cli folder.fill -o ~/Desktop/folder-icon.png
 
-            Custom colors and rendering:
-              mica-cli shield.fill --rendering-mode hierarchical --hierarchical-color white
-              mica-cli app.fill --use-custom-colors --custom-primary "#FF6B35" --custom-secondary "#F7931E"
+            Symbol color and rendering:
+              mica-cli shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
+              mica-cli gear --icon-symbol-rendering palette --icon-symbol-palette "blue,white:0.5,white:0.26"
 
             Symbol adjustments:
-              mica-cli star.fill --symbol-weight bold --symbol-scale 1.3
-              mica-cli star.fill --corner-radius macos11 --no-gradient
+              mica-cli star.fill --icon-symbol-weight bold --icon-fg-scale 1.3
+              mica-cli star.fill --icon-symbol-gradient on --icon-fg-shadow off
 
-            Apple Reference mode:
-              mica-cli star.fill --generation-mode apple-reference \\
-                --appex-enclosure-color blue --appex-symbol-color white
+            System (Apple) generation mode:
+              mica-cli star.fill --icon-generation-mode system \\
+                --appex-enclosure-color blue --icon-symbol-color white
 
-            Imported image icon:
-              mica-cli star.fill --icon-source image --imported-image ~/my-icon.png
-
-            Imported background:
-              mica-cli star.fill --background-mode image --imported-background ~/bg.png
-
-            Badge support:
-              mica-cli star.fill --badge plus.circle --badge-position bottom-right
-              mica-cli star.fill --badge gear --badge-scale 1.3 \\
-                --badge-offset-x 0.2 --badge-offset-y -0.1
-
-            Badge with Apple Reference:
-              mica-cli star.fill --badge gear --badge-icon-source apple-reference \\
-                --badge-appex-enclosure-color red --badge-appex-symbol-color white
+            Imported image foreground:
+              mica-cli --icon-fg ~/my-icon.png --icon-fg-scale 0.9
 
             High-resolution export:
-              mica-cli app.fill --size 1024 --retina --color-space displayP3
+              mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
             """
     )
 
+    // Optional: the positional name is shorthand for `--icon-fg symbol:<name>`.
+    // Either the positional name or an explicit `--icon-fg` must be supplied.
     @Argument(
         help: ArgumentHelp(
-            "The SF Symbol name to render",
-            discussion: "Use any valid SF Symbol name (e.g., 'star.fill', 'folder.badge.plus'). When using --icon-source image, this is still required but only used for the output filename.",
+            "The SF Symbol name to render (shorthand for --icon-fg symbol:<name>)",
+            discussion: "Use any valid SF Symbol name (e.g., 'star.fill', 'folder.badge.plus'). Optional when --icon-fg is given; --icon-fg wins if both are present.",
             valueName: "symbol-name"
         )
     )
-    var symbolName: String
+    var symbolName: String?
 
     @OptionGroup(title: "Export")
     var export: ExportOptions
@@ -628,11 +595,49 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     @OptionGroup(title: "Background")
     var background: BackgroundOptions
 
-    @OptionGroup(title: "Symbol")
-    var symbol: SymbolOptions
+    @OptionGroup(title: "Icon Foreground")
+    var iconForeground: IconForegroundOptions
 
     @OptionGroup(title: "Badge")
     var badge: BadgeOptions
+
+    // MARK: - Foreground Resolution
+
+    /// Resolve the icon foreground. An explicit `--icon-fg` wins over the
+    /// positional symbol-name shorthand. A `symbol:` prefix selects an SF
+    /// Symbol; any other value is treated as an image file path.
+    func resolvedForeground() throws -> ResolvedForeground {
+        let raw: String
+        if let foreground = iconForeground.foreground {
+            raw = foreground
+        } else if let symbolName {
+            raw = "symbol:\(symbolName)"
+        } else {
+            throw ValidationError("Provide an icon foreground: a positional SF Symbol name, or --icon-fg <symbol:NAME|path>.")
+        }
+
+        if raw.lowercased().hasPrefix("symbol:") {
+            let name = String(raw.dropFirst("symbol:".count))
+            guard !name.isEmpty else {
+                throw ValidationError("--icon-fg 'symbol:' requires a symbol name, e.g. symbol:star.fill")
+            }
+            return .symbol(name)
+        }
+        return .image(raw)
+    }
+
+    /// Default output basename (no extension) derived from the resolved
+    /// foreground: the symbol name, or the image file's basename.
+    func defaultOutputBasename() -> String {
+        switch try? resolvedForeground() {
+        case .symbol(let name):
+            return name
+        case .image(let path):
+            return ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+        case .none:
+            return symbolName ?? "icon"
+        }
+    }
 
     // MARK: - Command Execution
 
@@ -666,7 +671,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     // MARK: - Validation
 
     private func performValidation() throws {
-        try validateSymbolName()
+        try validateForeground()
         try validateColorDependencies()
         try validateBadgeDependencies()
         try validateGenerationDependencies()
@@ -675,12 +680,13 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         try validateColorFormats()
     }
 
-    private func validateSymbolName() throws {
-        guard !symbolName.isEmpty else {
-            throw ValidationError("Symbol name cannot be empty")
-        }
-        guard symbolName.allSatisfy({ $0.isLetter || $0.isNumber || ".-_".contains($0) }) else {
-            throw ValidationError("Symbol name contains invalid characters. Use only letters, numbers, dots, dashes, and underscores.")
+    private func validateForeground() throws {
+        // Resolves and surfaces any "no foreground supplied" / empty-symbol errors.
+        let foreground = try resolvedForeground()
+        if case .symbol(let name) = foreground {
+            guard name.allSatisfy({ $0.isLetter || $0.isNumber || ".-_".contains($0) }) else {
+                throw ValidationError("Symbol name contains invalid characters. Use only letters, numbers, dots, dashes, and underscores.")
+            }
         }
     }
 
@@ -690,10 +696,9 @@ struct IconGeneratorCommand: AsyncParsableCommand {
                 throw ValidationError("When --use-custom-colors is enabled, provide at least one of --custom-primary or --custom-secondary")
             }
         }
-        if symbol.renderingMode == "palette" {
-            if symbol.palettePrimary.isEmpty || symbol.paletteSecondary.isEmpty || symbol.paletteTertiary.isEmpty {
-                throw ValidationError("Palette mode requires all three palette colors to be specified")
-            }
+        if iconForeground.symbolRendering == "palette", let palette = iconForeground.symbolPalette {
+            // Validate the count up front; format is checked in validateColorFormats.
+            _ = try splitPalette(palette, role: "--icon-symbol-palette")
         }
     }
 
@@ -713,17 +718,20 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     }
 
     private func validateGenerationDependencies() throws {
-        if generation.iconSource == "image" && generation.importedImage == nil {
-            throw ValidationError("--icon-source image requires --imported-image <path>")
-        }
         if background.backgroundMode == "image" && background.importedBackground == nil {
             throw ValidationError("--background-mode image requires --imported-background <path>")
         }
     }
 
     private func validateImagePaths() throws {
+        // An image foreground (`--icon-fg <path>`) must point at an existing file.
+        var foregroundImagePath: String?
+        if case .image(let path) = try resolvedForeground() {
+            foregroundImagePath = path
+        }
+
         let paths: [(String?, String)] = [
-            (generation.importedImage, "--imported-image"),
+            (foregroundImagePath, "--icon-fg"),
             (background.importedBackground, "--imported-background"),
             (badge.badgeImportedImage, "--badge-imported-image"),
             (badge.badgeImportedBackground, "--badge-imported-background"),
@@ -752,13 +760,39 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     }
 
     private func validateColorFormats() throws {
+        // The merged icon symbol color resolves differently by generation mode:
+        // mica → ColorParser; system → appex color tokens. Validate accordingly.
+        if let symbolColor = iconForeground.symbolColor {
+            if generation.resolvedIconMode == "apple-reference" {
+                _ = try resolveAppexColorArg(symbolColor, role: "--icon-symbol-color")
+            } else {
+                do {
+                    _ = try ColorParser.parse(symbolColor)
+                } catch {
+                    throw ValidationError("Invalid color format for --icon-symbol-color: '\(symbolColor)'. \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Palette colours (mica only): first is opaque, the other two allow opacity.
+        if let palette = iconForeground.symbolPalette {
+            let parts = try splitPalette(palette, role: "--icon-symbol-palette")
+            for (index, part) in parts.enumerated() {
+                do {
+                    if index == 0 {
+                        _ = try ColorParser.parse(part)
+                    } else {
+                        _ = try ColorParser.parseWithOpacity(part)
+                    }
+                } catch {
+                    throw ValidationError("Invalid color format in --icon-symbol-palette ('\(part)'). \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Background + badge colours are unchanged in this phase.
         let colorsToTest: [(String, String)] = [
             (background.baseColor, "base-color"),
-            (symbol.symbolColor, "symbol-color"),
-            (symbol.hierarchicalColor, "hierarchical-color"),
-            (symbol.palettePrimary, "palette-primary"),
-            (symbol.paletteSecondary, "palette-secondary"),
-            (symbol.paletteTertiary, "palette-tertiary"),
             (badge.badgeColor, "badge-color"),
             (badge.badgeSymbolColor, "badge-symbol-color"),
             (badge.badgePrimary, "badge-primary"),
@@ -789,4 +823,19 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             }
         }
     }
+}
+
+/// Split a `--icon-symbol-palette` value into exactly three component strings.
+/// Throws a `ValidationError` if the count isn't three or any part is empty.
+func splitPalette(_ raw: String, role: String) throws -> [String] {
+    let parts = raw
+        .split(separator: ",", omittingEmptySubsequences: false)
+        .map { $0.trimmingCharacters(in: .whitespaces) }
+    guard parts.count == 3 else {
+        throw ValidationError("\(role) requires exactly three comma-separated colors 'c1,c2,c3'. You provided \(parts.count).")
+    }
+    guard parts.allSatisfy({ !$0.isEmpty }) else {
+        throw ValidationError("\(role) colors cannot be empty. Use 'c1,c2,c3'.")
+    }
+    return parts
 }

@@ -39,19 +39,19 @@ struct ImportedImageDefaultsTests {
         #expect(try parseCommand(["star.fill", "--badge", "gear", "--no-badge-imported-background-padding-compensation"]).badge.effectiveBadgePaddingCompensation == false)
     }
 
-    @Test("Inverse symbol-shadow flags parse to a tri-state, unspecified is nil")
-    func symbolShadowFlag_triState() throws {
-        #expect(try parseCommand(["star.fill"]).symbol.symbolShadow == nil)
-        #expect(try parseCommand(["star.fill", "--no-symbol-shadow"]).symbol.symbolShadow == false)
-        #expect(try parseCommand(["star.fill", "--symbol-shadow"]).symbol.symbolShadow == true)
+    @Test("--icon-fg-shadow parses to an on|off toggle, unspecified is nil")
+    func iconForegroundShadowFlag_toggle() throws {
+        #expect(try parseCommand(["star.fill"]).iconForeground.shadow == nil)
+        #expect(try parseCommand(["star.fill", "--icon-fg-shadow", "off"]).iconForeground.shadow == .off)
+        #expect(try parseCommand(["star.fill", "--icon-fg-shadow", "on"]).iconForeground.shadow == .on)
     }
 
     // MARK: - End-to-end through buildIconSettings
 
-    @Test("Imported icon foreground turns the symbol shadow off")
+    @Test("Imported icon foreground (--icon-fg <path>) turns the symbol shadow off")
     func iconForegroundImage_shadowOff() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--icon-source", "image", "--imported-image", path])
+        let command = try parseCommand(["--icon-fg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
         #expect(settings.iconSource == .customImage)
         #expect(settings.enableSymbolShadow == false)
@@ -63,10 +63,10 @@ struct ImportedImageDefaultsTests {
         #expect(settings.enableSymbolShadow == true)
     }
 
-    @Test("--symbol-shadow forces the shadow back on for an imported image")
+    @Test("--icon-fg-shadow on forces the shadow back on for an imported image")
     func iconForegroundImage_explicitShadowOn() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--icon-source", "image", "--imported-image", path, "--symbol-shadow"])
+        let command = try parseCommand(["--icon-fg", path, "--icon-fg-shadow", "on"])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
         #expect(settings.enableSymbolShadow == true)
     }

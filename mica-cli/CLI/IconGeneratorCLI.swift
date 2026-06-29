@@ -55,7 +55,7 @@ class IconGeneratorCLI {
 
             // Phase 4: Save
             currentPhase = .saving
-            let outputURL = try resolveOutputPath(symbolName: command.symbolName, userPath: command.export.outputPath)
+            let outputURL = try resolveOutputPath(basename: command.defaultOutputBasename(), userPath: command.export.outputPath)
             try await saveImageWithValidation(image, to: outputURL, settings: settings)
 
             // Phase 5: Report
@@ -82,11 +82,24 @@ class IconGeneratorCLI {
             throw CLIError.renderingError("Apple Reference mode requires Storage.appex at \(appexPath). This file is not available on this system.")
         }
 
+        // System mode renders an SF Symbol via the appex pipeline; image
+        // foregrounds are only supported in mica mode.
+        let foregroundSymbol: String
+        switch try command.resolvedForeground() {
+        case .symbol(let name):
+            foregroundSymbol = name
+        case .image:
+            throw CLIError.configurationError("System generation mode (--icon-generation-mode system) requires an SF Symbol foreground; image foregrounds are only supported in mica mode.")
+        }
+
+        // --icon-symbol-color resolves to an appex colour token in system mode.
+        let appexSymbolColor = try AppexColor.plistValue(fromCLIString: command.iconForeground.symbolColor ?? "white")
+
         let scaleFactor = settings.exportRetinaSize ? 2 : 1
         let appexImage = try AppexReferenceService.renderForExport(
-            symbolName: command.symbolName,
+            symbolName: foregroundSymbol,
             enclosureColor: command.generation.appexEnclosureColor,
-            symbolColor: command.generation.appexSymbolColor,
+            symbolColor: appexSymbolColor,
             pointSize: settings.exportSize,
             scaleFactor: scaleFactor,
             colorSpace: settings.exportColorSpace
@@ -136,9 +149,9 @@ class IconGeneratorCLI {
     // MARK: - Enhanced Validation
     
     private func performEnhancedValidation(_ command: IconGeneratorCommand) async throws {
-        // Validate SF Symbol exists (only when using SF Symbol source)
-        if command.generation.iconSource == "symbol" {
-            try validateSFSymbolExists(command.symbolName)
+        // Validate SF Symbol exists (only when the foreground is an SF Symbol)
+        if case .symbol(let name) = try command.resolvedForeground() {
+            try validateSFSymbolExists(name)
         }
 
         // Validate badge symbol exists (only when badge uses SF Symbol source)
@@ -167,13 +180,37 @@ class IconGeneratorCLI {
     }
     
     private func validateAllColors(_ command: IconGeneratorCommand) throws {
+        let isSystemMode = command.generation.resolvedIconMode == "apple-reference"
+
+        // Merged --icon-symbol-color (mica mode only — system mode resolves via
+        // appex colour tokens, validated separately in the command layer).
+        if !isSystemMode, let symbolColor = command.iconForeground.symbolColor {
+            do {
+                _ = try ColorParser.parse(symbolColor)
+            } catch {
+                throw CLIError.invalidColorFormat("Invalid color format for --icon-symbol-color: '\(symbolColor)'. \(error.localizedDescription)")
+            }
+        }
+
+        // Palette colours (mica + palette rendering).
+        if !isSystemMode, command.iconForeground.symbolRendering == "palette", let palette = command.iconForeground.symbolPalette {
+            let parts = try splitPalette(palette, role: "--icon-symbol-palette")
+            for (index, part) in parts.enumerated() {
+                do {
+                    if index == 0 {
+                        _ = try ColorParser.parse(part)
+                    } else {
+                        _ = try ColorParser.parseWithOpacity(part)
+                    }
+                } catch {
+                    throw CLIError.invalidColorFormat("Invalid color in --icon-symbol-palette ('\(part)'). \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Background + badge colours are unchanged in this phase.
         let colorValidations: [(String, String, Bool)] = [
             (command.background.baseColor, "base-color", true),
-            (command.symbol.symbolColor, "symbol-color", true),
-            (command.symbol.hierarchicalColor, "hierarchical-color", command.symbol.renderingMode == "hierarchical"),
-            (command.symbol.palettePrimary, "palette-primary", command.symbol.renderingMode == "palette"),
-            (command.symbol.paletteSecondary, "palette-secondary", command.symbol.renderingMode == "palette"),
-            (command.symbol.paletteTertiary, "palette-tertiary", command.symbol.renderingMode == "palette"),
             (command.badge.badgeColor, "badge-color", command.badge.badge != nil),
             (command.badge.badgeSymbolColor, "badge-symbol-color", command.badge.badge != nil)
         ]
@@ -189,10 +226,10 @@ class IconGeneratorCLI {
             allValidations.append((command.badge.badgePrimary, "badge-primary", true))
             allValidations.append((command.badge.badgeSecondary, "badge-secondary", true))
         }
-        
+
         for (colorStr, paramName, shouldValidate) in allValidations {
             guard shouldValidate else { continue }
-            
+
             do {
                 if paramName.contains("secondary") || paramName.contains("tertiary") {
                     _ = try ColorParser.parseWithOpacity(colorStr)
@@ -235,17 +272,10 @@ class IconGeneratorCLI {
     }
     
     private func validateRenderingModeConsistency(_ command: IconGeneratorCommand) throws {
-        switch command.symbol.renderingMode {
-        case "palette":
-            if command.symbol.palettePrimary.isEmpty || command.symbol.paletteSecondary.isEmpty || command.symbol.paletteTertiary.isEmpty {
-                throw CLIError.configurationError("Palette rendering mode requires all three palette colors (--palette-primary, --palette-secondary, --palette-tertiary)")
-            }
-        case "hierarchical":
-            if command.symbol.hierarchicalColor.isEmpty {
-                throw CLIError.configurationError("Hierarchical rendering mode should specify --hierarchical-color")
-            }
-        default:
-            break
+        if command.iconForeground.symbolRendering == "palette",
+           let palette = command.iconForeground.symbolPalette {
+            // Enforce exactly three palette components.
+            _ = try splitPalette(palette, role: "--icon-symbol-palette")
         }
     }
     
@@ -256,22 +286,23 @@ class IconGeneratorCLI {
 
         do {
             // Export properties
-            settings.symbolName = command.symbolName
             settings.exportSize = CGFloat(command.export.size)
             settings.exportRetinaSize = command.export.retina
             settings.exportColorSpace = try parseColorSpace(command.export.colorSpace)
 
-            // Icon source
-            switch command.generation.iconSource {
-            case "image":
-                settings.iconSource = .customImage
-                if let path = command.generation.importedImage {
-                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                    settings.importedImage = try ImageImportService.importFromURL(url)
-                    settings.importedImageScale = command.generation.importedImageScale
-                }
-            default:
+            // Icon foreground source (folds --icon-fg + --icon-fg-scale)
+            switch try command.resolvedForeground() {
+            case .symbol(let name):
                 settings.iconSource = .sfSymbol
+                settings.symbolName = name
+                settings.manualSymbolScale = command.iconForeground.scale
+            case .image(let path):
+                settings.iconSource = .customImage
+                // symbolName is cosmetic for image foregrounds; use the basename.
+                settings.symbolName = command.defaultOutputBasename()
+                let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                settings.importedImage = try ImageImportService.importFromURL(url)
+                settings.importedImageScale = command.iconForeground.scale
             }
 
             // Background mode
@@ -311,18 +342,36 @@ class IconGeneratorCLI {
             settings.backgroundShadowStyle = try parseShadowStyle(command.background.effectiveShadowStyle)
 
             // Symbol rendering
-            settings.symbolRenderingMode = try parseRenderingMode(command.symbol.renderingMode)
-            settings.symbolColor = try ColorParser.parse(command.symbol.symbolColor)
-            settings.hierarchicalSymbolColor = try ColorParser.parse(command.symbol.hierarchicalColor)
-            settings.paletteSymbolPrimaryColor = try ColorParser.parse(command.symbol.palettePrimary)
-            settings.paletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(command.symbol.paletteSecondary)
-            settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.symbol.paletteTertiary)
+            settings.symbolRenderingMode = try parseRenderingMode(command.iconForeground.symbolRendering)
+
+            let isImageForeground = settings.iconSource == .customImage
+
+            // Merged --icon-symbol-color. In mica mode it drives the SwiftUI
+            // symbol/hierarchical/multicolor tint; in system mode the colour is
+            // resolved as an appex token in renderAppleReference, so the SwiftUI
+            // colour is left at its (unused) default here.
+            if command.generation.resolvedIconMode != "apple-reference" {
+                let parsed = try ColorParser.parse(command.iconForeground.symbolColor ?? "white")
+                settings.symbolColor = parsed
+                settings.hierarchicalSymbolColor = parsed
+            }
+
+            // Palette colours (folds --palette-primary/secondary/tertiary).
+            let paletteParts = try splitPalette(
+                command.iconForeground.symbolPalette ?? "white,white:0.5,white:0.26",
+                role: "--icon-symbol-palette"
+            )
+            settings.paletteSymbolPrimaryColor = try ColorParser.parse(paletteParts[0])
+            settings.paletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(paletteParts[1])
+            settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(paletteParts[2])
 
             // Symbol style
-            settings.enableSymbolShadow = command.symbol.symbolShadow ?? (command.generation.iconSource == "image" ? false : true)
-            settings.symbolWeight = try parseSymbolWeight(command.symbol.symbolWeight)
-            settings.manualSymbolScale = command.symbol.symbolScale
-            settings.symbolColorRenderingMode = try parseSymbolColorRendering(command.symbol.symbolColorRendering)
+            settings.enableSymbolShadow = command.iconForeground.shadow?.isOn ?? (isImageForeground ? false : true)
+            settings.symbolWeight = try parseSymbolWeight(command.iconForeground.symbolWeight)
+            settings.symbolColorRenderingMode = command.iconForeground.symbolGradient.isOn ? .gradient : .flat
+
+            // Foreground visibility (new --icon-fg-visibility → iconForegroundHidden)
+            settings.iconForegroundHidden = !command.iconForeground.visibility.isOn
 
             // Badge settings
             if let badgeSymbol = command.badge.badge {
@@ -421,25 +470,25 @@ class IconGeneratorCLI {
     
     // MARK: - Enhanced File Operations
     
-    private func resolveOutputPath(symbolName: String, userPath: String?) throws -> URL {
+    private func resolveOutputPath(basename: String, userPath: String?) throws -> URL {
         if let userPath = userPath {
             let url = URL(fileURLWithPath: userPath)
-            
+
             // Ensure it has .png extension
             if url.pathExtension.lowercased() != "png" {
                 throw CLIError.fileSystem("Output file must have .png extension: \(userPath)")
             }
-            
+
             return url
         }
-        
-        // Create safe filename from symbol name
-        let sanitized = symbolName
+
+        // Create safe filename from the default basename (symbol name or image basename)
+        let sanitized = basename
             .replacingOccurrences(of: ".", with: "-")
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: " ", with: "-")
             .replacingOccurrences(of: ":", with: "-")
-        
+
         return URL(fileURLWithPath: "./\(sanitized).png")
     }
     
@@ -657,8 +706,8 @@ class IconGeneratorCLI {
     }
     
     /// Expose resolveOutputPath for testing
-    func testResolveOutputPath(symbolName: String, userPath: String?) throws -> URL {
-        return try resolveOutputPath(symbolName: symbolName, userPath: userPath)
+    func testResolveOutputPath(basename: String, userPath: String?) throws -> URL {
+        return try resolveOutputPath(basename: basename, userPath: userPath)
     }
 }
 
