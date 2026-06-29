@@ -119,17 +119,6 @@ struct GenerationOptions: ParsableArguments {
 
     /// Canonical badge mode (`custom` / `apple-reference`).
     var resolvedBadgeMode: String { badgeGenerationMode }
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Appex enclosure (background) color for system generation mode",
-            discussion: "A named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736)",
-            valueName: "color"
-        ),
-        transform: { try resolveAppexColorArg($0, role: "Appex enclosure color") }
-    )
-    var appexEnclosureColor: String = "blue"
 }
 
 /// Map the user-facing `mica`/`system` generation-mode tokens to the canonical
@@ -145,41 +134,60 @@ private func canonicalGenerationMode(_ mode: String, role: String) throws -> Str
 
 // MARK: - Background Options
 
+/// Named asset colours available for `prerendered-liquid-glass` backgrounds.
+/// Matches the `background-<color>-<gradient|solid>` assets in Assets.xcassets.
+let validPreRenderedColors = [
+    "black", "blue", "brown", "cyan", "darkgray", "darkmode", "gray", "green",
+    "indigo", "lightgray", "mint", "orange", "pink", "purple", "red", "teal",
+    "white", "yellow",
+]
+
 struct BackgroundOptions: ParsableArguments {
+    // Folds the old --background-mode + --imported-background. Recognised
+    // keywords select a generated background; any other value is an image path.
     @Option(
-        name: .long,
+        name: .customLong("icon-bg"),
         help: ArgumentHelp(
-            "Background mode",
-            discussion: "Options: custom (color/gradient, default), image (imported file)",
-            valueName: "mode"
-        ),
-        transform: { mode in
-            let valid = ["custom", "image"]
-            guard valid.contains(mode.lowercased()) else {
-                throw ValidationError("Background mode must be one of: \(valid.joined(separator: ", "))")
-            }
-            return mode.lowercased()
-        }
+            "Icon background",
+            discussion: "standard (color/gradient, default), custom-gradient (two-color gradient), prerendered-liquid-glass (Liquid Glass asset), or a path to an image file.",
+            valueName: "standard|custom-gradient|prerendered-liquid-glass|path"
+        )
     )
-    var backgroundMode: String = "custom"
+    var selection: String = "standard"
 
-    @Option(name: .long, help: ArgumentHelp("Base gradient color", valueName: "color"))
-    var baseColor: String = "blue"
+    // Folds --base-color + --appex-enclosure-color. Stored RAW; resolved in the
+    // builder by generation mode + background kind. nil → blue.
+    @Option(
+        name: .customLong("icon-bg-color"),
+        help: ArgumentHelp(
+            "Background color",
+            discussion: "standard: base color (mica) or appex enclosure color (system). prerendered-liquid-glass: one of \(validPreRenderedColors.joined(separator: ", ")). Default: blue.",
+            valueName: "color"
+        )
+    )
+    var color: String?
 
-    @Flag(name: .long, help: "Enable custom gradient colors (use with --custom-primary/--custom-secondary)")
-    var useCustomColors: Bool = false
+    // Folds --use-custom-colors + --custom-primary + --custom-secondary.
+    @Option(
+        name: .customLong("icon-bg-gradient-colors"),
+        help: ArgumentHelp(
+            "Two gradient colors for custom-gradient backgrounds",
+            discussion: "Comma-separated 'c1,c2' (top,bottom).",
+            valueName: "c1,c2"
+        )
+    )
+    var gradientColors: String?
 
-    @Option(name: .long, help: ArgumentHelp("Primary (top) gradient color", valueName: "color"))
-    var customPrimary: String?
-
-    @Option(name: .long, help: ArgumentHelp("Secondary (bottom) gradient color", valueName: "color"))
-    var customSecondary: String?
-
-    @Flag(name: .long, help: "Disable background gradient (use flat color)")
-    var noGradient: Bool = false
+    // Was --no-gradient. standard: flat vs derived gradient; prerendered: picks
+    // the -solid vs -gradient asset.
+    @Option(
+        name: .customLong("icon-bg-gradient"),
+        help: ArgumentHelp("Background gradient: on (default) or off", valueName: "on|off")
+    )
+    var gradient: ToggleState = .on
 
     @Option(
-        name: .long,
+        name: .customLong("icon-bg-corner-radius"),
         help: ArgumentHelp("Corner radius: macos11 or macos26 (default)", valueName: "style"),
         transform: { style in
             guard ["macos11", "macos26"].contains(style.lowercased()) else {
@@ -190,52 +198,56 @@ struct BackgroundOptions: ParsableArguments {
     )
     var cornerRadius: String = "macos26"
 
-    // Optional (nil = unspecified) so imported image backgrounds can default to
-    // no shadow while still honouring an explicit `--background-shadow-style`.
     @Option(
-        name: .long,
-        help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default: off for imported backgrounds, macos26 otherwise)", valueName: "style"),
+        name: .customLong("icon-bg-scale"),
+        help: ArgumentHelp("Scale for an imported background image (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Icon background scale") }
+    )
+    var scale: Double = 1.0
+
+    // nil = unspecified, so image backgrounds default to no shadow and generated
+    // backgrounds to macOS 26.
+    @Option(
+        name: .customLong("icon-bg-shadow"),
+        help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default: off for image backgrounds, macos26 otherwise)", valueName: "style"),
         transform: { style in
             guard ["off", "macos11", "macos26"].contains(style.lowercased()) else {
-                throw ValidationError("Background shadow style must be 'off', 'macos11', or 'macos26'")
+                throw ValidationError("Background shadow must be 'off', 'macos11', or 'macos26'")
             }
             return style.lowercased()
         }
     )
-    var backgroundShadowStyle: String?
+    var shadow: String?
 
-    @Flag(name: .long, help: .hidden) // deprecated alias for --background-shadow-style off
-    var noBackgroundShadow: Bool = false
-
-    @Option(name: .long, help: ArgumentHelp("Path to image file for background", valueName: "path"))
-    var importedBackground: String?
+    // nil = unspecified → on (fill the frame).
+    @Option(
+        name: .customLong("icon-bg-padding"),
+        help: ArgumentHelp("Padding compensation for an imported background: on (default, fills the frame) or off", valueName: "on|off")
+    )
+    var padding: ToggleState?
 
     @Option(
-        name: .long,
-        help: ArgumentHelp("Scale for imported background (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Imported background scale") }
+        name: .customLong("icon-bg-visibility"),
+        help: ArgumentHelp("Background visibility: on (default) or off to hide the background", valueName: "on|off")
     )
-    var importedBackgroundScale: Double = 1.0
+    var visibility: ToggleState = .on
 
-    // Inverted optional: imported backgrounds fill the frame (compensation on) by
-    // default; `--no-imported-background-padding-compensation` keeps the padding.
-    @Flag(name: .long, inversion: .prefixedNo,
-          help: "Padding compensation for imported app icon backgrounds (default: on — scales up to fill the frame)")
-    var importedBackgroundPaddingCompensation: Bool?
-
-    /// Resolved background shadow style. The deprecated `--no-background-shadow`
-    /// wins; then an explicit `--background-shadow-style`; otherwise imported
-    /// image backgrounds default to no shadow and everything else to macOS 26.
-    var effectiveShadowStyle: String {
-        if noBackgroundShadow { return "off" }
-        if let explicit = backgroundShadowStyle { return explicit }
-        return backgroundMode == "image" ? "off" : "macos26"
+    /// True when `--icon-bg` is a file path rather than a generated-background keyword.
+    var isImageBackground: Bool {
+        !["standard", "custom-gradient", "prerendered-liquid-glass"].contains(selection.lowercased())
     }
 
-    /// Resolved padding compensation for an imported background — on unless the
-    /// user explicitly opted out.
+    /// Resolved background shadow style: an explicit `--icon-bg-shadow` wins;
+    /// otherwise image backgrounds default to no shadow and everything else to
+    /// macOS 26.
+    var effectiveShadowStyle: String {
+        if let shadow { return shadow }
+        return isImageBackground ? "off" : "macos26"
+    }
+
+    /// Resolved padding compensation — on unless the user explicitly opted out.
     var effectivePaddingCompensation: Bool {
-        importedBackgroundPaddingCompensation ?? true
+        padding?.isOn ?? true
     }
 }
 
@@ -539,6 +551,14 @@ enum ResolvedForeground {
     case image(String)
 }
 
+/// The resolved icon background selected by `--icon-bg`.
+enum ResolvedBackground {
+    case standard
+    case customGradient
+    case preRendered
+    case image(String)
+}
+
 struct IconGeneratorCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "generate",
@@ -563,9 +583,15 @@ struct IconGeneratorCommand: AsyncParsableCommand {
               mica-cli star.fill --icon-symbol-weight bold --icon-fg-scale 1.3
               mica-cli star.fill --icon-symbol-gradient on --icon-fg-shadow off
 
+            Backgrounds:
+              mica-cli star.fill --icon-bg-color red --icon-bg-gradient on
+              mica-cli star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
+              mica-cli star.fill --icon-bg prerendered-liquid-glass --icon-bg-color blue
+              mica-cli star.fill --icon-bg ~/bg.png --icon-bg-scale 0.9
+
             System (Apple) generation mode:
               mica-cli star.fill --icon-generation-mode system \\
-                --appex-enclosure-color blue --icon-symbol-color white
+                --icon-bg-color blue --icon-symbol-color white
 
             Imported image foreground:
               mica-cli --icon-fg ~/my-icon.png --icon-fg-scale 0.9
@@ -626,6 +652,17 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         return .image(raw)
     }
 
+    /// Resolve the icon background from `--icon-bg`. Recognised keywords select a
+    /// generated background; any other value is treated as an image file path.
+    func resolvedBackground() -> ResolvedBackground {
+        switch background.selection.lowercased() {
+        case "standard": return .standard
+        case "custom-gradient": return .customGradient
+        case "prerendered-liquid-glass": return .preRendered
+        default: return .image(background.selection)
+        }
+    }
+
     /// Default output basename (no extension) derived from the resolved
     /// foreground: the symbol name, or the image file's basename.
     func defaultOutputBasename() -> String {
@@ -674,7 +711,6 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         try validateForeground()
         try validateColorDependencies()
         try validateBadgeDependencies()
-        try validateGenerationDependencies()
         try validateImagePaths()
         try validateOutputPath()
         try validateColorFormats()
@@ -691,10 +727,8 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     }
 
     private func validateColorDependencies() throws {
-        if background.useCustomColors {
-            if background.customPrimary == nil && background.customSecondary == nil {
-                throw ValidationError("When --use-custom-colors is enabled, provide at least one of --custom-primary or --custom-secondary")
-            }
+        if case .customGradient = resolvedBackground(), background.gradientColors == nil {
+            throw ValidationError("--icon-bg custom-gradient requires --icon-bg-gradient-colors <c1,c2>.")
         }
         if iconForeground.symbolRendering == "palette", let palette = iconForeground.symbolPalette {
             // Validate the count up front; format is checked in validateColorFormats.
@@ -717,12 +751,6 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         }
     }
 
-    private func validateGenerationDependencies() throws {
-        if background.backgroundMode == "image" && background.importedBackground == nil {
-            throw ValidationError("--background-mode image requires --imported-background <path>")
-        }
-    }
-
     private func validateImagePaths() throws {
         // An image foreground (`--icon-fg <path>`) must point at an existing file.
         var foregroundImagePath: String?
@@ -730,9 +758,15 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             foregroundImagePath = path
         }
 
+        // An image background (`--icon-bg <path>`) must point at an existing file.
+        var backgroundImagePath: String?
+        if case .image(let path) = resolvedBackground() {
+            backgroundImagePath = path
+        }
+
         let paths: [(String?, String)] = [
             (foregroundImagePath, "--icon-fg"),
-            (background.importedBackground, "--imported-background"),
+            (backgroundImagePath, "--icon-bg"),
             (badge.badgeImportedImage, "--badge-imported-image"),
             (badge.badgeImportedBackground, "--badge-imported-background"),
         ]
@@ -790,9 +824,37 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             }
         }
 
-        // Background + badge colours are unchanged in this phase.
+        // Merged --icon-bg-color (folds base / appex-enclosure). Resolves by
+        // generation mode + background kind.
+        if let bgColor = background.color {
+            if generation.resolvedIconMode == "apple-reference" {
+                _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color")
+            } else if case .preRendered = resolvedBackground() {
+                guard validPreRenderedColors.contains(bgColor.lowercased()) else {
+                    throw ValidationError("--icon-bg-color for prerendered-liquid-glass must be one of: \(validPreRenderedColors.joined(separator: ", ")). You provided '\(bgColor)'.")
+                }
+            } else {
+                do {
+                    _ = try ColorParser.parse(bgColor)
+                } catch {
+                    throw ValidationError("Invalid color format for --icon-bg-color: '\(bgColor)'. \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // --icon-bg-gradient-colors (custom-gradient): exactly two colours.
+        if let gradientColors = background.gradientColors {
+            for part in try splitGradientColors(gradientColors) {
+                do {
+                    _ = try ColorParser.parse(part)
+                } catch {
+                    throw ValidationError("Invalid color in --icon-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Badge colours are unchanged in this phase.
         let colorsToTest: [(String, String)] = [
-            (background.baseColor, "base-color"),
             (badge.badgeColor, "badge-color"),
             (badge.badgeSymbolColor, "badge-symbol-color"),
             (badge.badgePrimary, "badge-primary"),
@@ -803,15 +865,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             (badge.badgePaletteTertiary, "badge-palette-tertiary"),
         ]
 
-        var allColors = colorsToTest
-        if let primary = background.customPrimary {
-            allColors.append((primary, "custom-primary"))
-        }
-        if let secondary = background.customSecondary {
-            allColors.append((secondary, "custom-secondary"))
-        }
-
-        for (colorStr, paramName) in allColors {
+        for (colorStr, paramName) in colorsToTest {
             do {
                 if paramName.contains("secondary") || paramName.contains("tertiary") {
                     _ = try ColorParser.parseWithOpacity(colorStr)
@@ -823,6 +877,21 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             }
         }
     }
+}
+
+/// Split an `--icon-bg-gradient-colors` value into exactly two component strings.
+/// Throws a `ValidationError` if the count isn't two or any part is empty.
+func splitGradientColors(_ raw: String) throws -> [String] {
+    let parts = raw
+        .split(separator: ",", omittingEmptySubsequences: false)
+        .map { $0.trimmingCharacters(in: .whitespaces) }
+    guard parts.count == 2 else {
+        throw ValidationError("--icon-bg-gradient-colors requires exactly two comma-separated colors 'c1,c2'. You provided \(parts.count).")
+    }
+    guard parts.allSatisfy({ !$0.isEmpty }) else {
+        throw ValidationError("--icon-bg-gradient-colors colors cannot be empty. Use 'c1,c2'.")
+    }
+    return parts
 }
 
 /// Split a `--icon-symbol-palette` value into exactly three component strings.

@@ -14,23 +14,23 @@ struct ImportedImageDefaultsTests {
 
     // MARK: - Resolved defaults on the parsed options (no file needed)
 
-    @Test("Background shadow defaults off for imported backgrounds, macOS 26 otherwise")
+    @Test("Background shadow defaults off for image backgrounds, macOS 26 otherwise")
     func effectiveShadowStyle_imageAware() throws {
         #expect(try parseCommand(["star.fill"]).background.effectiveShadowStyle == "macos26")
-        #expect(try parseCommand(["star.fill", "--background-mode", "image"]).background.effectiveShadowStyle == "off")
+        #expect(try parseCommand(["star.fill", "--icon-bg", "/tmp/bg.png"]).background.effectiveShadowStyle == "off")
     }
 
-    @Test("Explicit --background-shadow-style overrides the imported-background default")
+    @Test("Explicit --icon-bg-shadow overrides the image-background default")
     func effectiveShadowStyle_explicitOverride() throws {
-        let command = try parseCommand(["star.fill", "--background-mode", "image", "--background-shadow-style", "macos26"])
+        let command = try parseCommand(["star.fill", "--icon-bg", "/tmp/bg.png", "--icon-bg-shadow", "macos26"])
         #expect(command.background.effectiveShadowStyle == "macos26")
     }
 
     @Test("Background padding compensation defaults on and is opt-out")
     func effectivePaddingCompensation_default() throws {
         #expect(try parseCommand(["star.fill"]).background.effectivePaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--no-imported-background-padding-compensation"]).background.effectivePaddingCompensation == false)
-        #expect(try parseCommand(["star.fill", "--imported-background-padding-compensation"]).background.effectivePaddingCompensation == true)
+        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "off"]).background.effectivePaddingCompensation == false)
+        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "on"]).background.effectivePaddingCompensation == true)
     }
 
     @Test("Badge background padding compensation defaults on and is opt-out")
@@ -71,10 +71,10 @@ struct ImportedImageDefaultsTests {
         #expect(settings.enableSymbolShadow == true)
     }
 
-    @Test("Imported icon background fills the frame and drops its shadow")
+    @Test("Image icon background (--icon-bg <path>) fills the frame and drops its shadow")
     func iconBackgroundImage_defaults() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--background-mode", "image", "--imported-background", path])
+        let command = try parseCommand(["star.fill", "--icon-bg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
         #expect(settings.backgroundMode == .importedImage)
         #expect(settings.importedBackgroundPaddingCompensation == true)

@@ -92,13 +92,15 @@ class IconGeneratorCLI {
             throw CLIError.configurationError("System generation mode (--icon-generation-mode system) requires an SF Symbol foreground; image foregrounds are only supported in mica mode.")
         }
 
-        // --icon-symbol-color resolves to an appex colour token in system mode.
+        // In system mode --icon-symbol-color and --icon-bg-color resolve to appex
+        // colour tokens (symbol + enclosure).
         let appexSymbolColor = try AppexColor.plistValue(fromCLIString: command.iconForeground.symbolColor ?? "white")
+        let appexEnclosureColor = try AppexColor.plistValue(fromCLIString: command.background.color ?? "blue")
 
         let scaleFactor = settings.exportRetinaSize ? 2 : 1
         let appexImage = try AppexReferenceService.renderForExport(
             symbolName: foregroundSymbol,
-            enclosureColor: command.generation.appexEnclosureColor,
+            enclosureColor: appexEnclosureColor,
             symbolColor: appexSymbolColor,
             pointSize: settings.exportSize,
             scaleFactor: scaleFactor,
@@ -208,20 +210,39 @@ class IconGeneratorCLI {
             }
         }
 
-        // Background + badge colours are unchanged in this phase.
-        let colorValidations: [(String, String, Bool)] = [
-            (command.background.baseColor, "base-color", true),
+        // Merged --icon-bg-color (folds base / appex-enclosure), mode + kind aware.
+        if let bgColor = command.background.color {
+            if isSystemMode {
+                // resolved as an appex token in renderAppleReference
+            } else if case .preRendered = command.resolvedBackground() {
+                guard validPreRenderedColors.contains(bgColor.lowercased()) else {
+                    throw CLIError.invalidColorFormat("--icon-bg-color for prerendered-liquid-glass must be one of: \(validPreRenderedColors.joined(separator: ", ")). You provided '\(bgColor)'.")
+                }
+            } else {
+                do {
+                    _ = try ColorParser.parse(bgColor)
+                } catch {
+                    throw CLIError.invalidColorFormat("Invalid color format for --icon-bg-color: '\(bgColor)'. \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // --icon-bg-gradient-colors (custom-gradient): exactly two colours.
+        if let gradientColors = command.background.gradientColors {
+            for part in try splitGradientColors(gradientColors) {
+                do {
+                    _ = try ColorParser.parse(part)
+                } catch {
+                    throw CLIError.invalidColorFormat("Invalid color in --icon-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
+                }
+            }
+        }
+
+        // Badge colours are unchanged in this phase.
+        var allValidations: [(String, String, Bool)] = [
             (command.badge.badgeColor, "badge-color", command.badge.badge != nil),
             (command.badge.badgeSymbolColor, "badge-symbol-color", command.badge.badge != nil)
         ]
-
-        var allValidations = colorValidations
-        if let primary = command.background.customPrimary {
-            allValidations.append((primary, "custom-primary", command.background.useCustomColors))
-        }
-        if let secondary = command.background.customSecondary {
-            allValidations.append((secondary, "custom-secondary", command.background.useCustomColors))
-        }
         if command.badge.badgeUseCustom {
             allValidations.append((command.badge.badgePrimary, "badge-primary", true))
             allValidations.append((command.badge.badgeSecondary, "badge-secondary", true))
@@ -305,41 +326,42 @@ class IconGeneratorCLI {
                 settings.importedImageScale = command.iconForeground.scale
             }
 
-            // Background mode
-            switch command.background.backgroundMode {
-            case "image":
-                settings.backgroundMode = .importedImage
-                if let path = command.background.importedBackground {
-                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                    settings.importedBackground = try ImageImportService.importFromURL(url)
-                    settings.importedBackgroundScale = command.background.importedBackgroundScale
-                    settings.importedBackgroundPaddingCompensation = command.background.effectivePaddingCompensation
-                }
-            default:
+            // Icon background (folds --icon-bg + --icon-bg-color + gradient-colors + scale + padding)
+            switch command.resolvedBackground() {
+            case .standard:
                 settings.backgroundMode = .custom
-            }
-
-            // Background colors
-            settings.baseColor = try ColorParser.parse(command.background.baseColor)
-            settings.useCustomColors = command.background.useCustomColors
-
-            if command.background.useCustomColors {
-                if let primary = command.background.customPrimary {
-                    settings.customPrimaryColor = try ColorParser.parse(primary)
-                } else {
-                    settings.customPrimaryColor = settings.baseColor
+                settings.useCustomColors = false
+                // In system mode the enclosure colour is resolved separately in
+                // renderAppleReference, so leave the SwiftUI base colour default.
+                if command.generation.resolvedIconMode != "apple-reference" {
+                    settings.baseColor = try ColorParser.parse(command.background.color ?? "blue")
                 }
-                if let secondary = command.background.customSecondary {
-                    settings.customSecondaryColor = try ColorParser.parse(secondary)
-                } else {
-                    settings.customSecondaryColor = createDarkerColor(settings.customPrimaryColor)
-                }
+            case .customGradient:
+                settings.backgroundMode = .custom
+                settings.useCustomColors = true
+                let parts = try splitGradientColors(command.background.gradientColors ?? "blue,purple")
+                settings.customPrimaryColor = try ColorParser.parse(parts[0])
+                settings.customSecondaryColor = try ColorParser.parse(parts[1])
+                settings.baseColor = settings.customPrimaryColor
+            case .preRendered:
+                settings.backgroundMode = .preRendered
+                // preRenderedAssetName lowercases this when building the asset name.
+                settings.preRenderedColorName = command.background.color ?? "blue"
+            case .image(let path):
+                settings.backgroundMode = .importedImage
+                let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                settings.importedBackground = try ImageImportService.importFromURL(url)
+                settings.importedBackgroundScale = command.background.scale
+                settings.importedBackgroundPaddingCompensation = command.background.effectivePaddingCompensation
             }
 
             // Background style
-            settings.enableBackgroundGradient = !command.background.noGradient
+            settings.enableBackgroundGradient = command.background.gradient.isOn
             settings.cornerRadiusStyle = try parseCornerRadius(command.background.cornerRadius)
             settings.backgroundShadowStyle = try parseShadowStyle(command.background.effectiveShadowStyle)
+
+            // Background visibility (new --icon-bg-visibility → iconBackgroundHidden)
+            settings.iconBackgroundHidden = !command.background.visibility.isOn
 
             // Symbol rendering
             settings.symbolRenderingMode = try parseRenderingMode(command.iconForeground.symbolRendering)
@@ -628,20 +650,6 @@ class IconGeneratorCLI {
         default:
             throw CLIError.invalidArgument("Invalid symbol color rendering: \(input). Must be 'flat' or 'gradient'")
         }
-    }
-    
-    // MARK: - Utility Methods
-    
-    private func createDarkerColor(_ color: Color) -> Color {
-        // Convert to NSColor and create a darker version
-        let nsColor = NSColor(color)
-        let darkerColor = NSColor(
-            hue: nsColor.hueComponent,
-            saturation: nsColor.saturationComponent,
-            brightness: nsColor.brightnessComponent * 0.7,
-            alpha: nsColor.alphaComponent
-        )
-        return Color(darkerColor)
     }
     
     // MARK: - Progress and Error Reporting
