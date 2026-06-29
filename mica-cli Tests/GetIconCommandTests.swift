@@ -12,7 +12,7 @@ import ArgumentParser
         #expect(command.inputPath == "/Applications/Notes.app")
         #expect(command.outputPath == nil)
         #expect(command.size == 512)
-        #expect(command.scaleFactor == 1)
+        #expect(command.scale == .oneX)
         #expect(command.recursive == false)
         #expect(command.depth == nil)
         #expect(command.colorSpace == .displayP3)
@@ -21,20 +21,25 @@ import ArgumentParser
     @Test func parsesAllOptions() throws {
         let command = try GetIconCommand.parse([
             "/Applications",
-            "/tmp/icons",
+            "--output", "/tmp/icons",
             "--size", "256",
-            "--scalefactor", "2",
+            "--scale", "2x",
             "--recursive",
             "--depth", "0",
-            "--colorspace", "sRGB"
+            "--color-space", "sRGB"
         ])
         #expect(command.inputPath == "/Applications")
         #expect(command.outputPath == "/tmp/icons")
         #expect(command.size == 256)
-        #expect(command.scaleFactor == 2)
+        #expect(command.scale == .twoX)
         #expect(command.recursive == true)
         #expect(command.depth == 0)
         #expect(command.colorSpace == .sRGB)
+    }
+
+    @Test func parsesOutputShortFlag() throws {
+        let command = try GetIconCommand.parse(["/some/path", "-o", "/tmp/out"])
+        #expect(command.outputPath == "/tmp/out")
     }
 
     @Test func parsesShortFlags() throws {
@@ -61,9 +66,9 @@ import ArgumentParser
         }
     }
 
-    @Test func rejectsInvalidScaleFactor() {
-        #expect(throws: ValidationError.self) {
-            _ = try GetIconCommand.parse(["/some/path", "--scalefactor", "3"])
+    @Test func rejectsInvalidScale() {
+        #expect(throws: (any Error).self) {
+            _ = try GetIconCommand.parse(["/some/path", "--scale", "3x"])
         }
     }
 

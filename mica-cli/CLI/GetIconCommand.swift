@@ -3,21 +3,46 @@ import Foundation
 
 struct GetIconCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "geticon",
-        abstract: "Export icons from a file or from every item inside a directory."
+        commandName: "extract",
+        abstract: "Export icons from a file or from every item inside a directory.",
+        usage: """
+            mica-cli extract <path> [<options>]
+            mica-cli extract /Applications/Notes.app
+            mica-cli extract /Applications -o ~/Desktop/icons --recursive
+            """,
+        discussion: """
+            EXAMPLES:
+
+            Extract a single app's icon to the working directory:
+              mica-cli extract /Applications/Notes.app
+
+            Extract to a chosen directory at 2x resolution:
+              mica-cli extract /System/Applications/Calculator.app \\
+                -o ~/Desktop/icons --scale 2x
+
+            Extract every item in a directory (one level deep):
+              mica-cli extract /Applications -o ~/Desktop/icons --recursive
+
+            Recurse into nested folders up to two levels:
+              mica-cli extract ~/Projects -o ~/icons --recursive --depth 2 \\
+                --size 256 --color-space sRGB
+            """
     )
 
     @Argument(help: "Path to a file or directory")
     var inputPath: String
 
-    @Argument(help: "Destination directory for exported PNG files (defaults to working directory)")
+    @Option(
+        name: [.customShort("o"), .customLong("output")],
+        help: ArgumentHelp("Destination directory for exported PNG files (defaults to working directory)", valueName: "path")
+    )
     var outputPath: String?
 
     @Option(name: [.short, .long], help: "Icon size in pixels")
     var size: Int = 512
 
-    @Option(name: [.customLong("scalefactor")], help: "Output scale factor (1 for 1x, 2 for 2x resolution)")
-    var scaleFactor: Int = 1
+    @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x", valueName: "scale"))
+    var scale: ExportScale = .oneX
 
     @Flag(name: [.short, .long], help: "Process directory contents recursively")
     var recursive: Bool = false
@@ -25,16 +50,12 @@ struct GetIconCommand: ParsableCommand {
     @Option(name: [.customLong("depth")], help: "Maximum nested depth to process when input is a directory (0 includes only direct children)")
     var depth: Int?
 
-    @Option(name: [.customLong("colorspace")], help: "Color space to render the icon in (displayP3 or sRGB)")
+    @Option(name: .long, help: ArgumentHelp("Color space to render the icon in (displayP3 or sRGB)", valueName: "space"))
     var colorSpace: IconColorSpace = .displayP3
 
     mutating func validate() throws {
         guard size > 0 else {
             throw ValidationError("Size must be greater than 0. You provided: \(size)")
-        }
-
-        guard scaleFactor == 1 || scaleFactor == 2 else {
-            throw ValidationError("--scalefactor must be 1 or 2")
         }
 
         if let depth {
@@ -85,12 +106,12 @@ struct GetIconCommand: ParsableCommand {
     }
 
     private func exportSingleItem(at path: String, to outputDirectory: URL) throws {
-        let filename = OutputResolver.suggestedIconFilename(forItemAt: path, size: size, scaleFactor: scaleFactor)
+        let filename = OutputResolver.suggestedIconFilename(forItemAt: path, size: size, scaleFactor: scale.factor)
         let destination = outputDirectory.appendingPathComponent(filename)
         try IconExtractor.saveIcon(
             forBundleAt: path,
             size: size,
-            scaleFactor: scaleFactor,
+            scaleFactor: scale.factor,
             colorSpace: colorSpace,
             destination: destination
         )
@@ -114,7 +135,7 @@ struct GetIconCommand: ParsableCommand {
             try IconExtractor.saveIcon(
                 forBundleAt: item.path,
                 size: size,
-                scaleFactor: scaleFactor,
+                scaleFactor: scale.factor,
                 colorSpace: colorSpace,
                 destination: destination
             )
@@ -220,7 +241,7 @@ struct GetIconCommand: ParsableCommand {
             throw CLIError.fileSystem("Failed to create directory \(destinationDirectory.path): \(error.localizedDescription)")
         }
 
-        let filename = OutputResolver.suggestedIconFilename(forItemAt: itemURL.path, size: size, scaleFactor: scaleFactor)
+        let filename = OutputResolver.suggestedIconFilename(forItemAt: itemURL.path, size: size, scaleFactor: scale.factor)
         return destinationDirectory.appendingPathComponent(filename)
     }
 }
