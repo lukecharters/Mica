@@ -355,12 +355,182 @@ struct IconForegroundOptions: ParsableArguments {
 // MARK: - Badge Options
 
 struct BadgeOptions: ParsableArguments {
-    // Badge activation and position
-    @Option(name: .long, help: ArgumentHelp("Add badge with SF Symbol", valueName: "symbol"))
-    var badge: String?
+
+    // MARK: Foreground
+
+    // Presence of --badge-fg activates the badge (replaces the old --badge).
+    // `symbol:<name>` selects an SF Symbol; anything else is treated as an image
+    // file path. There is no positional shorthand for the badge.
+    @Option(
+        name: .customLong("badge-fg"),
+        help: ArgumentHelp(
+            "Badge foreground source (supplying this activates the badge)",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:plus.circle) or a path to an image file.",
+            valueName: "symbol:NAME|path"
+        )
+    )
+    var foreground: String?
+
+    // Folds the old --badge-symbol-scale + --badge-imported-image-scale into one
+    // flag that drives whichever source (symbol or image) is active.
+    @Option(
+        name: .customLong("badge-fg-scale"),
+        help: ArgumentHelp("Badge foreground scale multiplier (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Badge foreground scale") }
+    )
+    var foregroundScale: Double = 1.0
 
     @Option(
-        name: .long,
+        name: .customLong("badge-symbol-rendering"),
+        help: ArgumentHelp(
+            "Badge symbol rendering mode",
+            discussion: "monochrome (default), hierarchical, multicolor, or palette",
+            valueName: "mode"
+        ),
+        transform: { mode in
+            guard validRenderingModes.contains(mode.lowercased()) else {
+                throw ValidationError("Badge symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
+            }
+            return mode.lowercased()
+        }
+    )
+    var symbolRendering: String = "monochrome"
+
+    // Folds --badge-symbol-color + --badge-hierarchical-color + --badge-appex-symbol-color
+    // into one colour. Stored RAW; resolved in the settings builder by generation
+    // mode (mica → ColorParser, system → AppexColor.plistValue). nil → white.
+    @Option(
+        name: .customLong("badge-symbol-color"),
+        help: ArgumentHelp(
+            "Badge symbol color (monochrome, hierarchical, and multicolor modes)",
+            discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
+            valueName: "color"
+        )
+    )
+    var symbolColor: String?
+
+    // Folds --badge-palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`;
+    // c2/c3 accept a `:opacity` suffix. Validated/parsed in the builder.
+    @Option(
+        name: .customLong("badge-symbol-palette"),
+        help: ArgumentHelp(
+            "Palette colors for badge palette rendering",
+            discussion: "Three comma-separated colors 'c1,c2,c3'; the 2nd and 3rd accept a ':opacity' suffix. Default: white,white:0.5,white:0.26.",
+            valueName: "c1,c2,c3"
+        )
+    )
+    var symbolPalette: String?
+
+    @Option(
+        name: .customLong("badge-symbol-weight"),
+        help: ArgumentHelp("Badge symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
+        transform: { weight in
+            guard validSymbolWeights.contains(weight.lowercased()) else {
+                throw ValidationError("Badge symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
+            }
+            return weight.lowercased()
+        }
+    )
+    var symbolWeight: String = "auto"
+
+    // Was --badge-symbol-color-rendering flat|gradient.
+    @Option(
+        name: .customLong("badge-symbol-gradient"),
+        help: ArgumentHelp("Badge symbol gradient fill: on or off (default; gradient requires macOS 26+)", valueName: "on|off")
+    )
+    var symbolGradient: ToggleState = .off
+
+    // nil = unspecified, so the effective value can default based on the source
+    // (off for imported images, on for SF Symbols).
+    @Option(
+        name: .customLong("badge-fg-shadow"),
+        help: ArgumentHelp("Badge foreground shadow: on or off (default: off for images, on for SF Symbols)", valueName: "on|off")
+    )
+    var foregroundShadow: ToggleState?
+
+    @Option(
+        name: .customLong("badge-fg-visibility"),
+        help: ArgumentHelp("Badge foreground visibility: on (default when the badge is active) or off", valueName: "on|off")
+    )
+    var foregroundVisibility: ToggleState = .on
+
+    // MARK: Background
+
+    // Folds the old --badge-imported-background. `standard`/`custom-gradient`
+    // keywords select a generated background; any other value is an image path.
+    // The badge gets no Liquid Glass.
+    @Option(
+        name: .customLong("badge-bg"),
+        help: ArgumentHelp(
+            "Badge background",
+            discussion: "standard (color/gradient, default), custom-gradient (two-color gradient), or a path to an image file.",
+            valueName: "standard|custom-gradient|path"
+        )
+    )
+    var background: String = "standard"
+
+    // Folds --badge-color + --badge-appex-enclosure-color. Stored RAW; resolved in
+    // the builder by generation mode. nil → gray (mica) / blue (system).
+    @Option(
+        name: .customLong("badge-bg-color"),
+        help: ArgumentHelp(
+            "Badge background color",
+            discussion: "standard: base color (mica) or appex enclosure color (system). Default: gray (mica) / blue (system).",
+            valueName: "color"
+        )
+    )
+    var backgroundColor: String?
+
+    // Folds --badge-use-custom + --badge-primary + --badge-secondary.
+    @Option(
+        name: .customLong("badge-bg-gradient-colors"),
+        help: ArgumentHelp(
+            "Two gradient colors for custom-gradient badge backgrounds",
+            discussion: "Comma-separated 'c1,c2' (top,bottom).",
+            valueName: "c1,c2"
+        )
+    )
+    var backgroundGradientColors: String?
+
+    // Was --badge-no-gradient.
+    @Option(
+        name: .customLong("badge-bg-gradient"),
+        help: ArgumentHelp("Badge background gradient: on (default) or off", valueName: "on|off")
+    )
+    var backgroundGradient: ToggleState = .on
+
+    @Option(
+        name: .customLong("badge-bg-scale"),
+        help: ArgumentHelp("Scale for an imported badge background image (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Badge background scale") }
+    )
+    var backgroundScale: Double = 1.0
+
+    // nil = unspecified → off for image backgrounds, on otherwise. Unlike the icon
+    // background, badge background shadow is a plain on|off (no era styles).
+    @Option(
+        name: .customLong("badge-bg-shadow"),
+        help: ArgumentHelp("Badge background shadow: on or off (default: off for image backgrounds, on otherwise)", valueName: "on|off")
+    )
+    var backgroundShadow: ToggleState?
+
+    // nil = unspecified → on (fill the frame).
+    @Option(
+        name: .customLong("badge-bg-padding"),
+        help: ArgumentHelp("Padding compensation for an imported badge background: on (default, fills the frame) or off", valueName: "on|off")
+    )
+    var backgroundPadding: ToggleState?
+
+    @Option(
+        name: .customLong("badge-bg-visibility"),
+        help: ArgumentHelp("Badge background visibility: on (default when the badge is active) or off", valueName: "on|off")
+    )
+    var backgroundVisibility: ToggleState = .on
+
+    // MARK: Layout (unchanged)
+
+    @Option(
+        name: .customLong("badge-position"),
         help: ArgumentHelp("Badge position: top-left, top-right, bottom-left, bottom-right", valueName: "position"),
         transform: { pos in
             let valid = ["top-left", "top-right", "bottom-left", "bottom-right"]
@@ -370,175 +540,40 @@ struct BadgeOptions: ParsableArguments {
             return pos.lowercased()
         }
     )
-    var badgePosition: String = "bottom-right"
+    var position: String = "bottom-right"
 
-    // Badge layout
     @Option(
-        name: .long,
+        name: .customLong("badge-scale"),
         help: ArgumentHelp("Overall badge scale (0.3-2.0)", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge scale") }
     )
-    var badgeScale: Double = 1.0
+    var scale: Double = 1.0
 
     @Option(
-        name: .long,
-        help: ArgumentHelp("Badge symbol scale within badge (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Badge symbol scale") }
-    )
-    var badgeSymbolScale: Double = 1.0
-
-    @Option(
-        name: .long,
+        name: .customLong("badge-offset-x"),
         help: ArgumentHelp("Badge horizontal offset (-1.0 to 1.0)", valueName: "offset"),
         transform: { try validateOffset($0, name: "Badge offset X") }
     )
-    var badgeOffsetX: Double = 0.0
+    var offsetX: Double = 0.0
 
     @Option(
-        name: .long,
+        name: .customLong("badge-offset-y"),
         help: ArgumentHelp("Badge vertical offset (-1.0 to 1.0)", valueName: "offset"),
         transform: { try validateOffset($0, name: "Badge offset Y") }
     )
-    var badgeOffsetY: Double = 0.0
+    var offsetY: Double = 0.0
 
-    // Badge background colors
-    @Option(name: .long, help: ArgumentHelp("Badge base color", valueName: "color"))
-    var badgeColor: String = "gray"
+    // MARK: Derived
 
-    @Flag(name: .long, help: "Enable custom badge gradient (use with --badge-primary/--badge-secondary)")
-    var badgeUseCustom: Bool = false
+    /// True when `--badge-bg` is a file path rather than a generated-background keyword.
+    var isImageBackground: Bool {
+        !["standard", "custom-gradient"].contains(background.lowercased())
+    }
 
-    @Option(name: .long, help: ArgumentHelp("Badge primary (top) gradient color", valueName: "color"))
-    var badgePrimary: String = "white"
-
-    @Option(name: .long, help: ArgumentHelp("Badge secondary (bottom) gradient color", valueName: "color"))
-    var badgeSecondary: String = "indigo"
-
-    // Badge symbol rendering
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Badge rendering mode: monochrome, hierarchical, multicolor, palette", valueName: "mode"),
-        transform: { mode in
-            guard validRenderingModes.contains(mode.lowercased()) else {
-                throw ValidationError("Badge rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
-            }
-            return mode.lowercased()
-        }
-    )
-    var badgeRendering: String = "monochrome"
-
-    @Option(name: .long, help: ArgumentHelp("Badge symbol color (monochrome)", valueName: "color"))
-    var badgeSymbolColor: String = "white"
-
-    @Option(name: .long, help: ArgumentHelp("Badge symbol color (hierarchical)", valueName: "color"))
-    var badgeHierarchicalColor: String = "white"
-
-    @Option(name: .long, help: ArgumentHelp("Badge primary color (palette)", valueName: "color"))
-    var badgePalettePrimary: String = "white"
-
-    @Option(name: .long, help: ArgumentHelp("Badge secondary color (palette, supports opacity)", valueName: "color"))
-    var badgePaletteSecondary: String = "white:0.5"
-
-    @Option(name: .long, help: ArgumentHelp("Badge tertiary color (palette, supports opacity)", valueName: "color"))
-    var badgePaletteTertiary: String = "white:0.26"
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Badge symbol weight", valueName: "weight"),
-        transform: { weight in
-            guard validSymbolWeights.contains(weight.lowercased()) else {
-                throw ValidationError("Badge symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
-            }
-            return weight.lowercased()
-        }
-    )
-    var badgeSymbolWeight: String = "auto"
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Badge symbol color rendering: flat or gradient", valueName: "mode"),
-        transform: { mode in
-            guard ["flat", "gradient"].contains(mode.lowercased()) else {
-                throw ValidationError("Badge symbol color rendering must be 'flat' or 'gradient'")
-            }
-            return mode.lowercased()
-        }
-    )
-    var badgeSymbolColorRendering: String = "flat"
-
-    // Badge shadow/gradient toggles
-    @Flag(name: .long, help: "Disable badge background gradient")
-    var badgeNoGradient: Bool = false
-
-    // Inverted optionals (nil = unspecified) so imported badge images default to
-    // no shadow while `--badge-background-shadow` / `--badge-symbol-shadow` force
-    // them back on. `--badge-no-…-shadow` forms are preserved.
-    @Flag(name: .long, inversion: .prefixedNo,
-          help: "Badge background shadow (default: off for imported badge backgrounds, on otherwise)")
-    var badgeBackgroundShadow: Bool?
-
-    @Flag(name: .long, inversion: .prefixedNo,
-          help: "Badge symbol shadow (default: off for imported images, on for SF Symbols)")
-    var badgeSymbolShadow: Bool?
-
-    // Badge icon source
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Badge icon source: symbol (default), image, apple-reference", valueName: "source"),
-        transform: { source in
-            let valid = ["symbol", "image", "apple-reference"]
-            guard valid.contains(source.lowercased()) else {
-                throw ValidationError("Badge icon source must be one of: \(valid.joined(separator: ", "))")
-            }
-            return source.lowercased()
-        }
-    )
-    var badgeIconSource: String = "symbol"
-
-    @Option(name: .long, help: ArgumentHelp("Path to image file for badge symbol", valueName: "path"))
-    var badgeImportedImage: String?
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Scale for imported badge image (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Badge imported image scale") }
-    )
-    var badgeImportedImageScale: Double = 1.0
-
-    // Badge appex colors
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Badge appex enclosure color (Apple Reference badge): named, r,g,b,a (0–1), or hex", valueName: "color"),
-        transform: { try resolveAppexColorArg($0, role: "Badge appex enclosure color") }
-    )
-    var badgeAppexEnclosureColor: String = "blue"
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Badge appex symbol color (Apple Reference badge): named, r,g,b,a (0–1), or hex", valueName: "color"),
-        transform: { try resolveAppexColorArg($0, role: "Badge appex symbol color") }
-    )
-    var badgeAppexSymbolColor: String = "white"
-
-    // Badge imported background
-    @Option(name: .long, help: ArgumentHelp("Path to image file for badge background", valueName: "path"))
-    var badgeImportedBackground: String?
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Scale for imported badge background (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Badge imported background scale") }
-    )
-    var badgeImportedBackgroundScale: Double = 1.0
-
-    // Inverted optional: imported badge backgrounds fill the frame by default.
-    @Flag(name: .long, inversion: .prefixedNo,
-          help: "Padding compensation for imported badge backgrounds (default: on — scales up to fill the frame)")
-    var badgeImportedBackgroundPaddingCompensation: Bool?
-
-    /// Resolved padding compensation for an imported badge background.
-    var effectiveBadgePaddingCompensation: Bool {
-        badgeImportedBackgroundPaddingCompensation ?? true
+    /// Resolved padding compensation for an imported badge background — on unless
+    /// the user explicitly opted out.
+    var effectiveBackgroundPaddingCompensation: Bool {
+        backgroundPadding?.isOn ?? true
     }
 }
 
@@ -556,6 +591,20 @@ enum ResolvedBackground {
     case standard
     case customGradient
     case preRendered
+    case image(String)
+}
+
+/// The resolved badge foreground after parsing `--badge-fg`. A `symbol:` prefix
+/// selects an SF Symbol; any other value is an image file path.
+enum ResolvedBadgeForeground {
+    case symbol(String)
+    case image(String)
+}
+
+/// The resolved badge background selected by `--badge-bg` (no Liquid Glass).
+enum ResolvedBadgeBackground {
+    case standard
+    case customGradient
     case image(String)
 }
 
@@ -663,6 +712,48 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         }
     }
 
+    // MARK: - Badge Resolution
+
+    /// True when `--badge-fg` was supplied (which activates the badge).
+    var badgeIsActive: Bool { badge.foreground != nil }
+
+    /// Resolve the badge foreground. Returns `nil` when `--badge-fg` is absent
+    /// (the badge is inactive). A `symbol:` prefix selects an SF Symbol; any
+    /// other value is treated as an image file path.
+    func resolvedBadgeForeground() throws -> ResolvedBadgeForeground? {
+        guard let raw = badge.foreground else { return nil }
+        if raw.lowercased().hasPrefix("symbol:") {
+            let name = String(raw.dropFirst("symbol:".count))
+            guard !name.isEmpty else {
+                throw ValidationError("--badge-fg 'symbol:' requires a symbol name, e.g. symbol:plus.circle")
+            }
+            return .symbol(name)
+        }
+        return .image(raw)
+    }
+
+    /// Resolve the badge background from `--badge-bg`. Recognised keywords select
+    /// a generated background; any other value is treated as an image file path.
+    func resolvedBadgeBackground() -> ResolvedBadgeBackground {
+        switch badge.background.lowercased() {
+        case "standard": return .standard
+        case "custom-gradient": return .customGradient
+        default: return .image(badge.background)
+        }
+    }
+
+    /// Badge appex enclosure colour (system badge mode), resolved from the merged
+    /// `--badge-bg-color`. Defaults to blue.
+    func resolvedBadgeAppexEnclosureColor() throws -> String {
+        try resolveAppexColorArg(badge.backgroundColor ?? "blue", role: "--badge-bg-color")
+    }
+
+    /// Badge appex symbol colour (system badge mode), resolved from the merged
+    /// `--badge-symbol-color`. Defaults to white.
+    func resolvedBadgeAppexSymbolColor() throws -> String {
+        try resolveAppexColorArg(badge.symbolColor ?? "white", role: "--badge-symbol-color")
+    }
+
     /// Default output basename (no extension) derived from the resolved
     /// foreground: the symbol name, or the image file's basename.
     func defaultOutputBasename() -> String {
@@ -737,17 +828,27 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     }
 
     private func validateBadgeDependencies() throws {
-        if badge.badgeUseCustom && badge.badge == nil {
-            throw ValidationError("--badge-use-custom requires --badge to be specified")
+        // Resolves and surfaces any empty-symbol error; nil → badge inactive.
+        guard let badgeForeground = try resolvedBadgeForeground() else { return }
+
+        if case .symbol(let name) = badgeForeground {
+            guard name.allSatisfy({ $0.isLetter || $0.isNumber || ".-_".contains($0) }) else {
+                throw ValidationError("Badge symbol name contains invalid characters. Use only letters, numbers, dots, dashes, and underscores.")
+            }
         }
-        if let badgeName = badge.badge, badgeName.isEmpty {
-            throw ValidationError("Badge symbol name cannot be empty")
+
+        // System badge mode renders via the appex pipeline, which needs an SF Symbol.
+        if generation.resolvedBadgeMode == "apple-reference", case .image = badgeForeground {
+            throw ValidationError("--badge-generation-mode system requires an SF Symbol badge foreground (--badge-fg symbol:NAME); image foregrounds are only supported in mica mode.")
         }
-        if badge.badgeIconSource == "image" && badge.badgeImportedImage == nil {
-            throw ValidationError("--badge-icon-source image requires --badge-imported-image")
+
+        if case .customGradient = resolvedBadgeBackground(), badge.backgroundGradientColors == nil {
+            throw ValidationError("--badge-bg custom-gradient requires --badge-bg-gradient-colors <c1,c2>.")
         }
-        if badge.badgeImportedImage != nil && badge.badge == nil && badge.badgeIconSource != "image" {
-            throw ValidationError("--badge-imported-image requires --badge and --badge-icon-source image")
+
+        if badge.symbolRendering == "palette", let palette = badge.symbolPalette {
+            // Validate the count up front; format is checked in validateColorFormats.
+            _ = try splitPalette(palette, role: "--badge-symbol-palette")
         }
     }
 
@@ -764,11 +865,21 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             backgroundImagePath = path
         }
 
+        // Badge image foreground/background (only when the badge is active).
+        var badgeForegroundImagePath: String?
+        if case .image(let path)? = try resolvedBadgeForeground() {
+            badgeForegroundImagePath = path
+        }
+        var badgeBackgroundImagePath: String?
+        if badgeIsActive, case .image(let path) = resolvedBadgeBackground() {
+            badgeBackgroundImagePath = path
+        }
+
         let paths: [(String?, String)] = [
             (foregroundImagePath, "--icon-fg"),
             (backgroundImagePath, "--icon-bg"),
-            (badge.badgeImportedImage, "--badge-imported-image"),
-            (badge.badgeImportedBackground, "--badge-imported-background"),
+            (badgeForegroundImagePath, "--badge-fg"),
+            (badgeBackgroundImagePath, "--badge-bg"),
         ]
         for (path, name) in paths {
             guard let path = path else { continue }
@@ -853,43 +964,77 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             }
         }
 
-        // Badge colours are unchanged in this phase.
-        let colorsToTest: [(String, String)] = [
-            (badge.badgeColor, "badge-color"),
-            (badge.badgeSymbolColor, "badge-symbol-color"),
-            (badge.badgePrimary, "badge-primary"),
-            (badge.badgeSecondary, "badge-secondary"),
-            (badge.badgeHierarchicalColor, "badge-hierarchical-color"),
-            (badge.badgePalettePrimary, "badge-palette-primary"),
-            (badge.badgePaletteSecondary, "badge-palette-secondary"),
-            (badge.badgePaletteTertiary, "badge-palette-tertiary"),
-        ]
+        // Badge colours (only when the badge is active), mode-aware. The merged
+        // --badge-symbol-color / --badge-bg-color resolve differently per mode:
+        // mica → ColorParser; system → appex colour tokens.
+        if badgeIsActive {
+            let isSystemBadge = generation.resolvedBadgeMode == "apple-reference"
 
-        for (colorStr, paramName) in colorsToTest {
-            do {
-                if paramName.contains("secondary") || paramName.contains("tertiary") {
-                    _ = try ColorParser.parseWithOpacity(colorStr)
+            if let badgeSymbolColor = badge.symbolColor {
+                if isSystemBadge {
+                    _ = try resolveAppexColorArg(badgeSymbolColor, role: "--badge-symbol-color")
                 } else {
-                    _ = try ColorParser.parse(colorStr)
+                    do {
+                        _ = try ColorParser.parse(badgeSymbolColor)
+                    } catch {
+                        throw ValidationError("Invalid color format for --badge-symbol-color: '\(badgeSymbolColor)'. \(error.localizedDescription)")
+                    }
                 }
-            } catch {
-                throw ValidationError("Invalid color format for --\(paramName): '\(colorStr)'. \(error.localizedDescription)")
+            }
+
+            // Badge palette (mica only): first opaque, the other two allow opacity.
+            if let badgePalette = badge.symbolPalette {
+                let parts = try splitPalette(badgePalette, role: "--badge-symbol-palette")
+                for (index, part) in parts.enumerated() {
+                    do {
+                        if index == 0 {
+                            _ = try ColorParser.parse(part)
+                        } else {
+                            _ = try ColorParser.parseWithOpacity(part)
+                        }
+                    } catch {
+                        throw ValidationError("Invalid color format in --badge-symbol-palette ('\(part)'). \(error.localizedDescription)")
+                    }
+                }
+            }
+
+            if let badgeBgColor = badge.backgroundColor {
+                if isSystemBadge {
+                    _ = try resolveAppexColorArg(badgeBgColor, role: "--badge-bg-color")
+                } else {
+                    do {
+                        _ = try ColorParser.parse(badgeBgColor)
+                    } catch {
+                        throw ValidationError("Invalid color format for --badge-bg-color: '\(badgeBgColor)'. \(error.localizedDescription)")
+                    }
+                }
+            }
+
+            // --badge-bg-gradient-colors (custom-gradient): exactly two colours.
+            if let badgeGradientColors = badge.backgroundGradientColors {
+                for part in try splitGradientColors(badgeGradientColors, role: "--badge-bg-gradient-colors") {
+                    do {
+                        _ = try ColorParser.parse(part)
+                    } catch {
+                        throw ValidationError("Invalid color in --badge-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
 }
 
-/// Split an `--icon-bg-gradient-colors` value into exactly two component strings.
+/// Split a gradient-colors value into exactly two component strings.
 /// Throws a `ValidationError` if the count isn't two or any part is empty.
-func splitGradientColors(_ raw: String) throws -> [String] {
+func splitGradientColors(_ raw: String, role: String = "--icon-bg-gradient-colors") throws -> [String] {
     let parts = raw
         .split(separator: ",", omittingEmptySubsequences: false)
         .map { $0.trimmingCharacters(in: .whitespaces) }
     guard parts.count == 2 else {
-        throw ValidationError("--icon-bg-gradient-colors requires exactly two comma-separated colors 'c1,c2'. You provided \(parts.count).")
+        throw ValidationError("\(role) requires exactly two comma-separated colors 'c1,c2'. You provided \(parts.count).")
     }
     guard parts.allSatisfy({ !$0.isEmpty }) else {
-        throw ValidationError("--icon-bg-gradient-colors colors cannot be empty. Use 'c1,c2'.")
+        throw ValidationError("\(role) colors cannot be empty. Use 'c1,c2'.")
     }
     return parts
 }

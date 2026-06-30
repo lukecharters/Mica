@@ -35,8 +35,9 @@ struct ImportedImageDefaultsTests {
 
     @Test("Badge background padding compensation defaults on and is opt-out")
     func effectiveBadgePaddingCompensation_default() throws {
-        #expect(try parseCommand(["star.fill", "--badge", "gear"]).badge.effectiveBadgePaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--badge", "gear", "--no-badge-imported-background-padding-compensation"]).badge.effectiveBadgePaddingCompensation == false)
+        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear"]).badge.effectiveBackgroundPaddingCompensation == true)
+        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "off"]).badge.effectiveBackgroundPaddingCompensation == false)
+        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "on"]).badge.effectiveBackgroundPaddingCompensation == true)
     }
 
     @Test("--icon-fg-shadow parses to an on|off toggle, unspecified is nil")
@@ -81,19 +82,19 @@ struct ImportedImageDefaultsTests {
         #expect(settings.backgroundShadowStyle == .off)
     }
 
-    @Test("Imported badge foreground turns the badge symbol shadow off")
+    @Test("Imported badge foreground (--badge-fg <path>) turns the badge symbol shadow off")
     func badgeForegroundImage_shadowOff() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--badge", "gear", "--badge-icon-source", "image", "--badge-imported-image", path])
+        let command = try parseCommand(["star.fill", "--badge-fg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
         #expect(settings.badgeIconSource == .customImage)
         #expect(settings.badgeEnableSymbolShadow == false)
     }
 
-    @Test("Imported badge background fills the frame and drops its shadow")
+    @Test("Image badge background (--badge-bg <path>) fills the frame and drops its shadow")
     func badgeBackgroundImage_defaults() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--badge", "gear", "--badge-imported-background", path])
+        let command = try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
         #expect(settings.badgeUseImportedBackground == true)
         #expect(settings.badgeImportedBackgroundPaddingCompensation == true)

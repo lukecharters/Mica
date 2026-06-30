@@ -45,8 +45,8 @@ class IconGeneratorCLI {
                 let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .appleReference)
                     ? try renderAppexIcon(
                         symbolName: settings.badgeSymbolName,
-                        enclosureColor: command.badge.badgeAppexEnclosureColor,
-                        symbolColor: command.badge.badgeAppexSymbolColor,
+                        enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
+                        symbolColor: command.resolvedBadgeAppexSymbolColor(),
                         settings: settings
                     )
                     : nil
@@ -114,8 +114,8 @@ class IconGeneratorCLI {
             let badgeAppexImage: NSImage? = settings.badgeIconSource == .appleReference
                 ? try renderAppexIcon(
                     symbolName: settings.badgeSymbolName,
-                    enclosureColor: command.badge.badgeAppexEnclosureColor,
-                    symbolColor: command.badge.badgeAppexSymbolColor,
+                    enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
+                    symbolColor: command.resolvedBadgeAppexSymbolColor(),
                     settings: settings
                 )
                 : nil
@@ -156,9 +156,9 @@ class IconGeneratorCLI {
             try validateSFSymbolExists(name)
         }
 
-        // Validate badge symbol exists (only when badge uses SF Symbol source)
-        if let badgeName = command.badge.badge, command.badge.badgeIconSource == "symbol" {
-            try validateSFSymbolExists(badgeName)
+        // Validate badge symbol exists (only when the badge foreground is an SF Symbol)
+        if case .symbol(let name)? = try command.resolvedBadgeForeground() {
+            try validateSFSymbolExists(name)
         }
 
         // Pre-validate all color strings with context
@@ -238,29 +238,50 @@ class IconGeneratorCLI {
             }
         }
 
-        // Badge colours are unchanged in this phase.
-        var allValidations: [(String, String, Bool)] = [
-            (command.badge.badgeColor, "badge-color", command.badge.badge != nil),
-            (command.badge.badgeSymbolColor, "badge-symbol-color", command.badge.badge != nil)
-        ]
-        if command.badge.badgeUseCustom {
-            allValidations.append((command.badge.badgePrimary, "badge-primary", true))
-            allValidations.append((command.badge.badgeSecondary, "badge-secondary", true))
-        }
+        // Badge colours (only when the badge is active), mica mode. System-mode
+        // badge colours resolve via appex tokens, validated in the command layer.
+        if command.badgeIsActive {
+            let isSystemBadge = command.generation.resolvedBadgeMode == "apple-reference"
 
-        for (colorStr, paramName, shouldValidate) in allValidations {
-            guard shouldValidate else { continue }
-
-            do {
-                if paramName.contains("secondary") || paramName.contains("tertiary") {
-                    _ = try ColorParser.parseWithOpacity(colorStr)
-                } else {
-                    _ = try ColorParser.parse(colorStr)
+            if !isSystemBadge, let badgeSymbolColor = command.badge.symbolColor {
+                do {
+                    _ = try ColorParser.parse(badgeSymbolColor)
+                } catch {
+                    throw CLIError.invalidColorFormat("Invalid color format for --badge-symbol-color: '\(badgeSymbolColor)'. \(error.localizedDescription)")
                 }
-            } catch {
-                throw CLIError.invalidColorFormat(
-                    "Invalid color format for --\(paramName): '\(colorStr)'. \(error.localizedDescription)"
-                )
+            }
+
+            if !isSystemBadge, command.badge.symbolRendering == "palette", let palette = command.badge.symbolPalette {
+                let parts = try splitPalette(palette, role: "--badge-symbol-palette")
+                for (index, part) in parts.enumerated() {
+                    do {
+                        if index == 0 {
+                            _ = try ColorParser.parse(part)
+                        } else {
+                            _ = try ColorParser.parseWithOpacity(part)
+                        }
+                    } catch {
+                        throw CLIError.invalidColorFormat("Invalid color in --badge-symbol-palette ('\(part)'). \(error.localizedDescription)")
+                    }
+                }
+            }
+
+            if !isSystemBadge, let badgeBgColor = command.badge.backgroundColor {
+                do {
+                    _ = try ColorParser.parse(badgeBgColor)
+                } catch {
+                    throw CLIError.invalidColorFormat("Invalid color format for --badge-bg-color: '\(badgeBgColor)'. \(error.localizedDescription)")
+                }
+            }
+
+            if let badgeGradientColors = command.badge.backgroundGradientColors {
+                for part in try splitGradientColors(badgeGradientColors, role: "--badge-bg-gradient-colors") {
+                    do {
+                        _ = try ColorParser.parse(part)
+                    } catch {
+                        throw CLIError.invalidColorFormat("Invalid color in --badge-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
+                    }
+                }
             }
         }
     }
@@ -297,6 +318,10 @@ class IconGeneratorCLI {
            let palette = command.iconForeground.symbolPalette {
             // Enforce exactly three palette components.
             _ = try splitPalette(palette, role: "--icon-symbol-palette")
+        }
+        if command.badgeIsActive, command.badge.symbolRendering == "palette",
+           let palette = command.badge.symbolPalette {
+            _ = try splitPalette(palette, role: "--badge-symbol-palette")
         }
     }
     
@@ -395,70 +420,99 @@ class IconGeneratorCLI {
             // Foreground visibility (new --icon-fg-visibility → iconForegroundHidden)
             settings.iconForegroundHidden = !command.iconForeground.visibility.isOn
 
-            // Badge settings
-            if let badgeSymbol = command.badge.badge {
-                settings.showBadge = true
-                settings.badgeSymbolName = badgeSymbol
-                settings.badgePosition = try parseBadgePosition(command.badge.badgePosition)
+            // Icon generation mode (always set, independent of badge presence — the
+            // render path reads command.generation.resolvedIconMode directly, but
+            // keeping this in sync is correct and avoids a latent quirk).
+            settings.iconGenerationMode = command.generation.resolvedIconMode == "apple-reference" ? .appleReference : .swiftUI
 
-                // Badge layout
-                settings.badgeScale = command.badge.badgeScale
-                settings.badgeSymbolScale = command.badge.badgeSymbolScale
-                settings.badgeManualOffsetX = command.badge.badgeOffsetX
-                settings.badgeManualOffsetY = command.badge.badgeOffsetY
-
-                // Badge background
-                settings.badgeBaseColor = try ColorParser.parse(command.badge.badgeColor)
-                settings.badgeUseCustomColors = command.badge.badgeUseCustom
-                if command.badge.badgeUseCustom {
-                    settings.badgeCustomPrimaryColor = try ColorParser.parse(command.badge.badgePrimary)
-                    settings.badgeCustomSecondaryColor = try ColorParser.parse(command.badge.badgeSecondary)
-                }
-                settings.badgeEnableBackgroundGradient = !command.badge.badgeNoGradient
-                settings.badgeEnableBackgroundShadow = command.badge.badgeBackgroundShadow ?? (command.badge.badgeImportedBackground != nil ? false : true)
-                settings.badgeEnableSymbolShadow = command.badge.badgeSymbolShadow ?? (command.badge.badgeIconSource == "image" ? false : true)
-
-                // Badge symbol rendering
-                settings.badgeSymbolRenderingMode = try parseRenderingMode(command.badge.badgeRendering)
-                settings.badgeSymbolColor = try ColorParser.parse(command.badge.badgeSymbolColor)
-                settings.badgeHierarchicalSymbolColor = try ColorParser.parse(command.badge.badgeHierarchicalColor)
-                settings.badgePaletteSymbolPrimaryColor = try ColorParser.parse(command.badge.badgePalettePrimary)
-                settings.badgePaletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(command.badge.badgePaletteSecondary)
-                settings.badgePaletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(command.badge.badgePaletteTertiary)
-                settings.badgeSymbolWeight = try parseSymbolWeight(command.badge.badgeSymbolWeight)
-                settings.badgeSymbolColorRenderingMode = try parseSymbolColorRendering(command.badge.badgeSymbolColorRendering)
-
-                // Badge icon source
-                switch command.badge.badgeIconSource {
-                case "image":
-                    settings.badgeIconSource = .customImage
-                    if let path = command.badge.badgeImportedImage {
-                        let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                        settings.badgeImportedImage = try ImageImportService.importFromURL(url)
-                        settings.badgeImportedImageScale = command.badge.badgeImportedImageScale
-                    }
-                case "apple-reference":
-                    settings.badgeIconSource = .appleReference
-                default:
+            // Badge settings — gated on --badge-fg activation.
+            if let badgeForeground = try command.resolvedBadgeForeground() {
+                // Badge foreground source (folds --badge-fg + --badge-fg-scale).
+                let isBadgeImageForeground: Bool
+                switch badgeForeground {
+                case .symbol(let name):
                     settings.badgeIconSource = .sfSymbol
+                    settings.badgeSymbolName = name
+                    settings.badgeSymbolScale = command.badge.foregroundScale
+                    isBadgeImageForeground = false
+                case .image(let path):
+                    settings.badgeIconSource = .customImage
+                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                    settings.badgeImportedImage = try ImageImportService.importFromURL(url)
+                    settings.badgeImportedImageScale = command.badge.foregroundScale
+                    isBadgeImageForeground = true
                 }
 
-                // Per-group generation modes. `--icon-mode` / `--badge-mode` win
-                // over the legacy `--generation-mode`; --badge-mode also overrides
-                // an explicit --badge-source value.
-                settings.iconGenerationMode = command.generation.resolvedIconMode == "apple-reference" ? .appleReference : .swiftUI
+                // Badge background (folds --badge-bg + color + gradient-colors + scale + padding).
+                switch command.resolvedBadgeBackground() {
+                case .standard:
+                    settings.badgeUseImportedBackground = false
+                    settings.badgeUseCustomColors = false
+                    // In system mode the enclosure colour is resolved separately
+                    // via the appex pipeline, so leave the SwiftUI base default.
+                    if command.generation.resolvedBadgeMode != "apple-reference" {
+                        settings.badgeBaseColor = try ColorParser.parse(command.badge.backgroundColor ?? "gray")
+                    }
+                case .customGradient:
+                    settings.badgeUseImportedBackground = false
+                    settings.badgeUseCustomColors = true
+                    let parts = try splitGradientColors(command.badge.backgroundGradientColors ?? "white,indigo", role: "--badge-bg-gradient-colors")
+                    settings.badgeCustomPrimaryColor = try ColorParser.parse(parts[0])
+                    settings.badgeCustomSecondaryColor = try ColorParser.parse(parts[1])
+                    settings.badgeBaseColor = settings.badgeCustomPrimaryColor
+                case .image(let path):
+                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                    settings.badgeUseImportedBackground = true
+                    settings.badgeImportedBackground = try ImageImportService.importFromURL(url)
+                    settings.badgeImportedBackgroundScale = command.badge.backgroundScale
+                    settings.badgeImportedBackgroundPaddingCompensation = command.badge.effectiveBackgroundPaddingCompensation
+                }
+
+                // Badge background style.
+                settings.badgeEnableBackgroundGradient = command.badge.backgroundGradient.isOn
+                settings.badgeEnableBackgroundShadow = command.badge.backgroundShadow?.isOn ?? (command.badge.isImageBackground ? false : true)
+
+                // Badge layout.
+                settings.badgePosition = try parseBadgePosition(command.badge.position)
+                settings.badgeScale = command.badge.scale
+                settings.badgeManualOffsetX = command.badge.offsetX
+                settings.badgeManualOffsetY = command.badge.offsetY
+
+                // Badge symbol rendering.
+                settings.badgeSymbolRenderingMode = try parseRenderingMode(command.badge.symbolRendering)
+
+                // Merged --badge-symbol-color. In mica mode it drives the SwiftUI
+                // symbol/hierarchical/multicolor tint; in system mode the colour is
+                // resolved as an appex token, so the SwiftUI colour is left default.
+                if command.generation.resolvedBadgeMode != "apple-reference" {
+                    let parsed = try ColorParser.parse(command.badge.symbolColor ?? "white")
+                    settings.badgeSymbolColor = parsed
+                    settings.badgeHierarchicalSymbolColor = parsed
+                }
+
+                // Badge palette (folds --badge-palette-primary/secondary/tertiary).
+                let badgePaletteParts = try splitPalette(
+                    command.badge.symbolPalette ?? "white,white:0.5,white:0.26",
+                    role: "--badge-symbol-palette"
+                )
+                settings.badgePaletteSymbolPrimaryColor = try ColorParser.parse(badgePaletteParts[0])
+                settings.badgePaletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[1])
+                settings.badgePaletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[2])
+
+                settings.badgeSymbolWeight = try parseSymbolWeight(command.badge.symbolWeight)
+                settings.badgeSymbolColorRenderingMode = command.badge.symbolGradient.isOn ? .gradient : .flat
+
+                // Badge foreground shadow (off for images, on for SF Symbols by default).
+                settings.badgeEnableSymbolShadow = command.badge.foregroundShadow?.isOn ?? (isBadgeImageForeground ? false : true)
+
+                // Badge generation mode (system → appex pipeline).
                 if command.generation.resolvedBadgeMode == "apple-reference" {
                     settings.badgeIconSource = .appleReference
                 }
 
-                // Badge imported background
-                if let path = command.badge.badgeImportedBackground {
-                    let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                    settings.badgeUseImportedBackground = true
-                    settings.badgeImportedBackground = try ImageImportService.importFromURL(url)
-                    settings.badgeImportedBackgroundScale = command.badge.badgeImportedBackgroundScale
-                    settings.badgeImportedBackgroundPaddingCompensation = command.badge.effectiveBadgePaddingCompensation
-                }
+                // Badge layer visibility (default on when the badge is active).
+                settings.badgeForegroundHidden = !command.badge.foregroundVisibility.isOn
+                settings.badgeBackgroundHidden = !command.badge.backgroundVisibility.isOn
             }
 
         } catch let error as ColorParseError {
@@ -643,15 +697,6 @@ class IconGeneratorCLI {
         }
     }
 
-    private func parseSymbolColorRendering(_ input: String) throws -> SymbolColorRenderingMode {
-        switch input.lowercased() {
-        case "flat": return .flat
-        case "gradient": return .gradient
-        default:
-            throw CLIError.invalidArgument("Invalid symbol color rendering: \(input). Must be 'flat' or 'gradient'")
-        }
-    }
-    
     // MARK: - Progress and Error Reporting
     
     private func reportSuccess(outputURL: URL, settings: IconSettings, generationMode: String = "custom") {
@@ -671,7 +716,14 @@ class IconGeneratorCLI {
         print("  File size: \(fileSize)")
 
         if settings.showBadge {
-            print("  Badge: \(settings.badgeSymbolName)")
+            switch settings.badgeIconSource {
+            case .sfSymbol:
+                print("  Badge: \(settings.badgeSymbolName)")
+            case .customImage:
+                print("  Badge: (imported image)")
+            case .appleReference:
+                print("  Badge: \(settings.badgeSymbolName) (Apple Reference)")
+            }
         }
     }
     
