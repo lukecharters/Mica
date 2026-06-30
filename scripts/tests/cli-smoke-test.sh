@@ -2,9 +2,13 @@
 #
 # CLI smoke-test for mica-cli.
 # Exercises every non-default argument value (happy path) plus a fixed set of
-# invalid-input cases (negative path). Produces per-case PNGs in a timestamped
-# output directory and a README.txt summary. See
-# docs/superpowers/specs/2026-04-17-cli-smoke-test-design.md for the design.
+# invalid-input cases (negative path), across the redesigned flag surface:
+#   - generate (default subcommand): --icon-fg…/--icon-bg…, --badge-fg…/--badge-bg…,
+#     --icon-generation-mode/--badge-generation-mode, --scale, --color-space,
+#     and the --json/-q/-v output modes.
+#   - extract subcommand: <path> -o <dir> [--size --scale --color-space --recursive --depth].
+# Produces per-case PNGs in a timestamped output directory and a README.txt summary.
+# See docs/superpowers/specs/2026-04-17-cli-smoke-test-design.md for the original design.
 
 set -u
 set -o pipefail
@@ -14,8 +18,8 @@ set -o pipefail
 readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 readonly FIXTURES_DIR="${PROJECT_ROOT}/scripts/tests/fixtures"
 readonly OUTPUT_ROOT="${PROJECT_ROOT}/scripts/tests/smoke-output"
-readonly FIXTURE_SYMBOL="${FIXTURES_DIR}/test-symbol.png"
-readonly FIXTURE_BACKGROUND="${FIXTURES_DIR}/test-background.png"
+readonly FIXTURE_SYMBOL="${FIXTURES_DIR}/test-symbol-2.png"
+readonly FIXTURE_BACKGROUND="${FIXTURES_DIR}/test-background-2.png"
 readonly SCHEME="mica-cli"
 readonly XCODE_PROJECT="${PROJECT_ROOT}/Mica.xcodeproj"
 
@@ -30,107 +34,155 @@ HAPPY_PASS=0
 HAPPY_FAIL=0
 NEG_PASS=0
 NEG_FAIL=0
-GETICON_INDEX=0
-GETICON_PASS=0
-GETICON_FAIL=0
+EXTRACT_INDEX=0
+EXTRACT_PASS=0
+EXTRACT_FAIL=0
+
+# Filled by expand_fixtures() — fixture-placeholder-expanded argument list.
+EXPANDED_ARGS=()
 
 # ---- case data ---------------------------------------------------------------
-# Populated in later tasks.
+# Entry format: slug|symbol[|arg1|arg2|...]
+# Use $SYMBOL_FIXTURE / $BACKGROUND_FIXTURE placeholders for fixture image paths.
 HAPPY_CASES=(
     # ---- baseline ----
     "baseline|star.fill"
 
     # ---- Export ----
     "size-1024|star.fill|--size|1024"
-    "retina|star.fill|--retina"
+    "scale-2x|star.fill|--scale|2x"
     "color-space-display-p3|star.fill|--color-space|displayP3"
+    "color-space-srgb|star.fill|--color-space|sRGB"
 
-    # ---- Generation ----
-    "generation-mode-apple-reference|star.fill|--generation-mode|apple-reference"
-    "icon-source-image|folder.fill|--icon-source|image|--imported-image|\$SYMBOL_FIXTURE"
-    "imported-image-scale|folder.fill|--icon-source|image|--imported-image|\$SYMBOL_FIXTURE|--imported-image-scale|1.5"
-    "appex-enclosure-color-red|star.fill|--generation-mode|apple-reference|--appex-enclosure-color|red"
-    "appex-symbol-color-yellow|star.fill|--generation-mode|apple-reference|--appex-symbol-color|yellow"
+    # ---- Generation modes ----
+    "icon-generation-mode-system|star.fill|--icon-generation-mode|system|--icon-bg-color|blue|--icon-symbol-color|white"
+    "badge-generation-mode-system|star.fill|--badge-fg|symbol:gear|--badge-generation-mode|system|--badge-bg-color|red|--badge-symbol-color|white"
 
-    # ---- Background ----
-    "background-mode-image|star.fill|--background-mode|image|--imported-background|\$BACKGROUND_FIXTURE"
-    "base-color-red|star.fill|--base-color|red"
-    "use-custom-colors|star.fill|--use-custom-colors|--custom-primary|#FF6B35|--custom-secondary|#F7931E"
-    "no-gradient|star.fill|--no-gradient"
-    "corner-radius-macos11|star.fill|--corner-radius|macos11"
-    "background-shadow-off|star.fill|--background-shadow-style|off"
-    "background-shadow-macos11|star.fill|--background-shadow-style|macos11"
-    "imported-background-scale|star.fill|--background-mode|image|--imported-background|\$BACKGROUND_FIXTURE|--imported-background-scale|1.3"
-    "imported-background-padding-compensation|star.fill|--background-mode|image|--imported-background|\$BACKGROUND_FIXTURE|--imported-background-padding-compensation"
+    # ---- Icon background ----
+    "icon-bg-color-red|star.fill|--icon-bg-color|red"
+    "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
+    "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
+    "icon-bg-prerendered-liquid-glass|star.fill|--icon-bg|prerendered-liquid-glass|--icon-bg-color|blue"
+    "icon-bg-image|star.fill|--icon-bg|\$BACKGROUND_FIXTURE"
+    "icon-bg-image-scale|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-scale|1.3"
+    "icon-bg-image-padding-on|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|on"
+    "icon-bg-image-padding-off|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|off"
+    "icon-bg-corner-radius-macos11|star.fill|--icon-bg-corner-radius|macos11"
+    "icon-bg-shadow-off|star.fill|--icon-bg-shadow|off"
+    "icon-bg-shadow-macos11|star.fill|--icon-bg-shadow|macos11"
+    "icon-bg-visibility-off|star.fill|--icon-bg-visibility|off"
 
-    # ---- Symbol ----
-    "rendering-mode-hierarchical|shield.fill|--rendering-mode|hierarchical"
-    "rendering-mode-multicolor|star.fill|--rendering-mode|multicolor"
-    "rendering-mode-palette|shield.fill|--rendering-mode|palette|--palette-primary|red|--palette-secondary|blue:0.6|--palette-tertiary|green:0.3"
-    "symbol-color-yellow|star.fill|--symbol-color|yellow"
-    "hierarchical-color-cyan|shield.fill|--rendering-mode|hierarchical|--hierarchical-color|cyan"
-    "no-symbol-shadow|star.fill|--no-symbol-shadow"
-    "symbol-weight-bold|star.fill|--symbol-weight|bold"
-    "symbol-scale-1-3|star.fill|--symbol-scale|1.3"
-    "symbol-color-rendering-gradient|star.fill|--symbol-color-rendering|gradient"
+    # ---- Icon foreground ----
+    "icon-fg-symbol-explicit|star.fill|--icon-fg|symbol:heart.fill"
+    "icon-fg-image|star.fill|--icon-fg|\$SYMBOL_FIXTURE"
+    "icon-fg-image-scale|star.fill|--icon-fg|\$SYMBOL_FIXTURE|--icon-fg-scale|0.9"
+    "icon-fg-scale|star.fill|--icon-fg-scale|1.3"
+    "icon-symbol-rendering-hierarchical|shield.fill|--icon-symbol-rendering|hierarchical"
+    "icon-symbol-rendering-multicolor|star.fill|--icon-symbol-rendering|multicolor"
+    "icon-symbol-rendering-palette|person.3.sequence.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|blue,white:0.5,white:0.26"
+    "icon-symbol-color-yellow|star.fill|--icon-symbol-color|yellow"
+    "icon-symbol-weight-bold|star.fill|--icon-symbol-weight|bold"
+    "icon-symbol-gradient-on|star.fill|--icon-symbol-gradient|on"
+    "icon-fg-shadow-off|star.fill|--icon-fg-shadow|off"
+    "icon-fg-visibility-off|star.fill|--icon-fg-visibility|off"
 
-    # ---- Badge ----
-    "badge-enable|star.fill|--badge|plus.circle"
-    "badge-position-top-left|star.fill|--badge|plus.circle|--badge-position|top-left"
-    "badge-position-top-right|star.fill|--badge|plus.circle|--badge-position|top-right"
-    "badge-position-bottom-left|star.fill|--badge|plus.circle|--badge-position|bottom-left"
-    "badge-scale|star.fill|--badge|plus.circle|--badge-scale|1.3"
-    "badge-symbol-scale|star.fill|--badge|plus.circle|--badge-symbol-scale|0.7"
-    "badge-offset-x|star.fill|--badge|plus.circle|--badge-offset-x|0.2"
-    "badge-offset-y|star.fill|--badge|plus.circle|--badge-offset-y=-0.1"
-    "badge-color-red|star.fill|--badge|plus.circle|--badge-color|red"
-    "badge-use-custom|star.fill|--badge|plus.circle|--badge-use-custom|--badge-primary|#00AAFF|--badge-secondary|#0055AA"
-    "badge-rendering-hierarchical|star.fill|--badge|plus.circle|--badge-rendering|hierarchical|--badge-hierarchical-color|cyan"
-    "badge-rendering-multicolor|star.fill|--badge|star.fill|--badge-rendering|multicolor"
-    "badge-rendering-palette|star.fill|--badge|plus.circle|--badge-rendering|palette|--badge-palette-primary|red|--badge-palette-secondary|blue:0.5|--badge-palette-tertiary|green:0.2"
-    "badge-symbol-color-yellow|star.fill|--badge|plus.circle|--badge-symbol-color|yellow"
-    "badge-symbol-weight-bold|star.fill|--badge|plus.circle|--badge-symbol-weight|bold"
-    "badge-symbol-color-rendering-gradient|star.fill|--badge|plus.circle|--badge-symbol-color-rendering|gradient"
-    "badge-no-gradient|star.fill|--badge|plus.circle|--badge-no-gradient"
-    "badge-no-background-shadow|star.fill|--badge|plus.circle|--badge-no-background-shadow"
-    "badge-no-symbol-shadow|star.fill|--badge|plus.circle|--badge-no-symbol-shadow"
-    "badge-icon-source-image|star.fill|--badge|placeholder|--badge-icon-source|image|--badge-imported-image|\$SYMBOL_FIXTURE"
-    "badge-icon-source-apple-reference|star.fill|--badge|gear|--badge-icon-source|apple-reference|--badge-appex-enclosure-color|red|--badge-appex-symbol-color|white"
-    "badge-imported-image-scale|star.fill|--badge|placeholder|--badge-icon-source|image|--badge-imported-image|\$SYMBOL_FIXTURE|--badge-imported-image-scale|1.2"
-    "badge-imported-background|star.fill|--badge|plus.circle|--badge-imported-background|\$BACKGROUND_FIXTURE"
-    "badge-imported-background-scale|star.fill|--badge|plus.circle|--badge-imported-background|\$BACKGROUND_FIXTURE|--badge-imported-background-scale|1.2"
-    "badge-imported-background-padding-compensation|star.fill|--badge|plus.circle|--badge-imported-background|\$BACKGROUND_FIXTURE|--badge-imported-background-padding-compensation"
+    # ---- Badge foreground (supplying --badge-fg activates the badge) ----
+    "badge-enable|star.fill|--badge-fg|symbol:plus.circle"
+    "badge-fg-image|star.fill|--badge-fg|\$SYMBOL_FIXTURE"
+    "badge-fg-scale|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-scale|1.2"
+    "badge-symbol-rendering-hierarchical|star.fill|--badge-fg|symbol:plus.circle|--badge-symbol-rendering|hierarchical|--badge-symbol-color|cyan"
+    "badge-symbol-rendering-multicolor|star.fill|--badge-fg|symbol:star.fill|--badge-symbol-rendering|multicolor"
+    "badge-symbol-rendering-palette|star.fill|--badge-fg|symbol:person.3.sequence.fill|--badge-symbol-rendering|palette|--badge-symbol-palette|red,blue:0.5,green:0.2"
+    "badge-symbol-color-yellow|star.fill|--badge-fg|symbol:plus.circle|--badge-symbol-color|yellow"
+    "badge-symbol-weight-bold|star.fill|--badge-fg|symbol:plus.circle|--badge-symbol-weight|bold"
+    "badge-symbol-gradient-on|star.fill|--badge-fg|symbol:plus.circle|--badge-symbol-gradient|on"
+    "badge-fg-shadow-off|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-shadow|off"
+    "badge-fg-visibility-off|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-visibility|off"
+
+    # ---- Badge background ----
+    "badge-bg-color-red|star.fill|--badge-fg|symbol:plus.circle|--badge-bg-color|red"
+    "badge-bg-gradient-off|star.fill|--badge-fg|symbol:plus.circle|--badge-bg-gradient|off"
+    "badge-bg-custom-gradient|star.fill|--badge-fg|symbol:gearshape.fill|--badge-bg|custom-gradient|--badge-bg-gradient-colors|red,orange"
+    "badge-bg-image|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE"
+    "badge-bg-image-scale|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE|--badge-bg-scale|1.2"
+    "badge-bg-image-padding-on|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE|--badge-bg-padding|on"
+    "badge-bg-image-padding-off|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE|--badge-bg-padding|off"
+    "badge-bg-shadow-off|star.fill|--badge-fg|symbol:plus.circle|--badge-bg-shadow|off"
+    "badge-bg-visibility-off|star.fill|--badge-fg|symbol:plus.circle|--badge-bg-visibility|off"
+
+    # ---- Badge placement ----
+    "badge-position-top-left|star.fill|--badge-fg|symbol:plus.circle|--badge-position|top-left"
+    "badge-position-top-right|star.fill|--badge-fg|symbol:plus.circle|--badge-position|top-right"
+    "badge-position-bottom-left|star.fill|--badge-fg|symbol:plus.circle|--badge-position|bottom-left"
+    "badge-position-bottom-right|star.fill|--badge-fg|symbol:plus.circle|--badge-position|bottom-right"
+    "badge-scale|star.fill|--badge-fg|symbol:plus.circle|--badge-scale|1.3"
+    "badge-offset-x|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|0.2"
+    "badge-offset-y|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-y=-0.1"
+
+    # ---- Output modes (path still written via -o; stdout suppressed by the harness) ----
+    "output-json|star.fill|--json"
+    "output-quiet|star.fill|--quiet"
+    "output-verbose|star.fill|--verbose"
 )
+
+# Negative cases. Entry format: name|expectedSubstring|symbol[|arg1|...]
+# The runner invokes `mica-cli <symbol> <args…>`; passing "extract" as the
+# "symbol" dispatches to the extract subcommand (generate is the default).
 NEGATIVE_CASES=(
+    # ---- generate ----
     "size-too-large|Size must be between|star.fill|--size|9999"
     "size-non-numeric|whole number|star.fill|--size|abc"
-    "rendering-mode-invalid|Rendering mode must be|star.fill|--rendering-mode|invalid"
-    "badge-use-custom-without-badge|--badge-use-custom requires|star.fill|--badge-use-custom"
-    "icon-source-image-without-path|requires --imported-image|star.fill|--icon-source|image"
-    "imported-image-missing|File not found|star.fill|--icon-source|image|--imported-image|/nonexistent/path.png"
-    "base-color-invalid|Invalid color format|star.fill|--base-color|not-a-color"
-    "symbol-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--symbol-scale|5.0"
-    "color-space-invalid|Color space must be|star.fill|--color-space|BGR"
-    "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge|plus.circle|--badge-offset-x|9.0"
+    "scale-invalid|is invalid for '--scale|star.fill|--scale|3x"
+    "color-space-invalid|is invalid for '--color-space|star.fill|--color-space|BGR"
+    "icon-symbol-rendering-invalid|Symbol rendering mode must be one of|star.fill|--icon-symbol-rendering|invalid"
+    "icon-symbol-weight-invalid|Symbol weight must be one of|star.fill|--icon-symbol-weight|notaweight"
+    "icon-fg-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--icon-fg-scale|5.0"
+    "icon-fg-symbol-empty|requires a symbol name|star.fill|--icon-fg|symbol:"
+    "icon-bg-color-invalid|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|not-a-color"
+    "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
+    "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
+    "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"
+    "badge-generation-system-image-fg|image foregrounds are only supported in mica mode|star.fill|--badge-fg|\$SYMBOL_FIXTURE|--badge-generation-mode|system"
+    "quiet-verbose-conflict|--quiet and --verbose cannot be used together|star.fill|--quiet|--verbose"
 
-    # ---- geticon subcommand ----
-    "geticon-bad-scalefactor|--scalefactor must be 1 or 2|geticon|/System/Applications/Calculator.app|--scalefactor|3"
-    "geticon-depth-without-recursive|--depth requires --recursive|geticon|/System/Applications|--depth|2"
-    "geticon-path-not-found|Bundle not found|geticon|/nonexistent/path.app"
-    "geticon-dir-without-recursive|Pass --recursive|geticon|/System/Applications"
+    # ---- extract subcommand ----
+    "extract-bad-scale|is invalid for '--scale|extract|/System/Applications/Calculator.app|--scale|3x"
+    "extract-depth-without-recursive|--depth requires --recursive|extract|/System/Applications|--depth|2"
+    "extract-path-not-found|Bundle not found|extract|/nonexistent/path.app"
+    "extract-dir-without-recursive|Pass --recursive|extract|/System/Applications"
 )
 
-# Happy-path cases for the `geticon` subcommand. Format differs from HAPPY_CASES
-# because geticon takes an input path (not a symbol name) and writes one or
-# more PNGs into an output directory (not via -o <file>).
+# Happy-path cases for the `extract` subcommand. Format differs from HAPPY_CASES
+# because extract takes an input path (not a symbol name) and writes one or more
+# PNGs into an output directory (via -o <dir>).
 # Entry format: slug|inputPath[|arg1|arg2|...]
-GETICON_CASES=(
-    "geticon-baseline|/System/Applications/Calculator.app"
-    "geticon-size-256|/System/Applications/Calculator.app|--size|256"
-    "geticon-retina|/System/Applications/Calculator.app|--size|128|--scalefactor|2"
-    "geticon-colorspace-sRGB|/System/Applications/Calculator.app|--colorspace|sRGB"
-    "geticon-recursive|/System/Applications/Utilities|--recursive|--depth|0|--size|128"
+EXTRACT_CASES=(
+    "extract-baseline|/System/Applications/Calculator.app"
+    "extract-size-256|/System/Applications/Calculator.app|--size|256"
+    "extract-scale-2x|/System/Applications/Calculator.app|--size|128|--scale|2x"
+    "extract-color-space-srgb|/System/Applications/Calculator.app|--color-space|sRGB"
+    "extract-color-space-display-p3|/System/Applications/Calculator.app|--color-space|displayP3"
+    "extract-recursive|/System/Applications/Utilities|--recursive|--depth|0|--size|128"
+    "extract-json|/System/Applications/Calculator.app|--json"
+    "extract-quiet|/System/Applications/Calculator.app|--quiet"
+    "extract-verbose|/System/Applications/Calculator.app|--verbose"
 )
+
+# ---- helpers -----------------------------------------------------------------
+
+# Expand $SYMBOL_FIXTURE / $BACKGROUND_FIXTURE placeholders in the given args,
+# writing the result into the global EXPANDED_ARGS array.
+expand_fixtures() {
+    EXPANDED_ARGS=()
+    local a
+    for a in "$@"; do
+        case "${a}" in
+            '$SYMBOL_FIXTURE')     EXPANDED_ARGS+=("${FIXTURE_SYMBOL}") ;;
+            '$BACKGROUND_FIXTURE') EXPANDED_ARGS+=("${FIXTURE_BACKGROUND}") ;;
+            *)                     EXPANDED_ARGS+=("${a}") ;;
+        esac
+    done
+}
 
 # ---- phase functions ---------------------------------------------------------
 
@@ -231,18 +283,9 @@ run_happy_case() {
     local stderr_file
     stderr_file="$(mktemp)"
     local exit_code=0
-    # Resolve fixture placeholders: $SYMBOL_FIXTURE, $BACKGROUND_FIXTURE.
-    local expanded=()
-    local a
-    for a in ${rest[@]+"${rest[@]}"}; do
-        case "${a}" in
-            '$SYMBOL_FIXTURE')     expanded+=("${FIXTURE_SYMBOL}") ;;
-            '$BACKGROUND_FIXTURE') expanded+=("${FIXTURE_BACKGROUND}") ;;
-            *)                     expanded+=("${a}") ;;
-        esac
-    done
+    expand_fixtures ${rest[@]+"${rest[@]}"}
 
-    "${CLI_BINARY}" "${symbol}" ${expanded[@]+"${expanded[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
+    "${CLI_BINARY}" "${symbol}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
         || exit_code=$?
 
     if [[ "${exit_code}" -eq 0 && -s "${output_file}" ]]; then
@@ -259,15 +302,15 @@ run_happy_case() {
     rm -f "${stderr_file}"
 }
 
-run_geticon_case() {
+run_extract_case() {
     local entry="$1"
     local old_ifs="${IFS}"
     IFS='|' read -ra parts <<< "${entry}"
     IFS="${old_ifs}"
 
     if [[ "${#parts[@]}" -lt 2 ]]; then
-        echo "FAIL  G???  malformed entry: ${entry}" | tee -a "${README}"
-        GETICON_FAIL=$((GETICON_FAIL + 1))
+        echo "FAIL  E???  malformed entry: ${entry}" | tee -a "${README}"
+        EXTRACT_FAIL=$((EXTRACT_FAIL + 1))
         return
     fi
 
@@ -275,14 +318,14 @@ run_geticon_case() {
     local input_path="${parts[1]}"
     local rest=("${parts[@]:2}")
 
-    GETICON_INDEX=$((GETICON_INDEX + 1))
+    EXTRACT_INDEX=$((EXTRACT_INDEX + 1))
     local index_formatted
-    printf -v index_formatted "G%03d" "${GETICON_INDEX}"
+    printf -v index_formatted "E%03d" "${EXTRACT_INDEX}"
     local case_dir="${OUTPUT_DIR}/${index_formatted}__${slug}"
     mkdir -p "${case_dir}"
 
     if [[ ! -e "${input_path}" ]]; then
-        GETICON_FAIL=$((GETICON_FAIL + 1))
+        EXTRACT_FAIL=$((EXTRACT_FAIL + 1))
         echo "FAIL  ${index_formatted}  ${slug}  missing input: ${input_path}" | tee -a "${README}"
         return
     fi
@@ -291,17 +334,17 @@ run_geticon_case() {
     stderr_file="$(mktemp)"
     local exit_code=0
 
-    "${CLI_BINARY}" geticon "${input_path}" "${case_dir}" ${rest[@]+"${rest[@]}"} 2>"${stderr_file}" >/dev/null \
+    "${CLI_BINARY}" extract "${input_path}" -o "${case_dir}" ${rest[@]+"${rest[@]}"} 2>"${stderr_file}" >/dev/null \
         || exit_code=$?
 
     local png_count
     png_count=$(find "${case_dir}" -maxdepth 2 -name "*.png" 2>/dev/null | wc -l | tr -d ' ')
 
     if [[ "${exit_code}" -eq 0 && "${png_count}" -gt 0 ]]; then
-        GETICON_PASS=$((GETICON_PASS + 1))
+        EXTRACT_PASS=$((EXTRACT_PASS + 1))
         echo "PASS  ${index_formatted}  ${slug}  (${png_count} PNG$([[ ${png_count} -eq 1 ]] || echo s))" | tee -a "${README}"
     else
-        GETICON_FAIL=$((GETICON_FAIL + 1))
+        EXTRACT_FAIL=$((EXTRACT_FAIL + 1))
         echo "FAIL  ${index_formatted}  ${slug}  exit=${exit_code}, PNGs=${png_count}" | tee -a "${README}"
         if [[ -s "${stderr_file}" ]]; then
             sed 's/^/        /' "${stderr_file}" | head -5 >> "${README}"
@@ -330,7 +373,8 @@ run_negative_case() {
 
     local output
     local exit_code=0
-    output="$("${CLI_BINARY}" "${symbol}" ${rest[@]+"${rest[@]}"} 2>&1)" || exit_code=$?
+    expand_fixtures ${rest[@]+"${rest[@]}"}
+    output="$("${CLI_BINARY}" "${symbol}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} 2>&1)" || exit_code=$?
 
     if [[ "${exit_code}" -ne 0 ]] && echo "${output}" | grep -qi -- "${expected}"; then
         NEG_PASS=$((NEG_PASS + 1))
@@ -345,8 +389,8 @@ run_negative_case() {
 print_summary() {
     local happy_total=$((HAPPY_PASS + HAPPY_FAIL))
     local neg_total=$((NEG_PASS + NEG_FAIL))
-    local geticon_total=$((GETICON_PASS + GETICON_FAIL))
-    local line="Happy: ${HAPPY_PASS}/${happy_total} | Negative: ${NEG_PASS}/${neg_total} | Geticon: ${GETICON_PASS}/${geticon_total} | Output: ${OUTPUT_DIR}"
+    local extract_total=$((EXTRACT_PASS + EXTRACT_FAIL))
+    local line="Happy: ${HAPPY_PASS}/${happy_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
 
     echo ""
     echo "============================================================"
@@ -363,7 +407,7 @@ print_summary() {
         open "${OUTPUT_DIR}"
     fi
 
-    if [[ "${HAPPY_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${GETICON_FAIL}" -ne 0 ]]; then
+    if [[ "${HAPPY_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then
         exit 1
     fi
     exit 0
@@ -378,9 +422,9 @@ main() {
         [[ -z "$entry" ]] && continue
         run_happy_case "$entry"
     done
-    for entry in "${GETICON_CASES[@]-}"; do
+    for entry in "${EXTRACT_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
-        run_geticon_case "$entry"
+        run_extract_case "$entry"
     done
     for entry in "${NEGATIVE_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
