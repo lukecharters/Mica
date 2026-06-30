@@ -210,10 +210,10 @@ struct BackgroundOptions: ParsableArguments {
     )
     var shadow: String?
 
-    // nil = unspecified → on (fill the frame).
+    // nil = unspecified → fill the frame (padding off).
     @Option(
         name: .customLong("icon-bg-padding"),
-        help: ArgumentHelp("Padding compensation for an imported background: on (default, fills the frame) or off", valueName: "on|off")
+        help: ArgumentHelp("Keep an imported background's padding: on, or off to fill the frame (default)", valueName: "on|off")
     )
     var padding: ToggleState?
 
@@ -236,9 +236,13 @@ struct BackgroundOptions: ParsableArguments {
         return isImageBackground ? "off" : "macos26"
     }
 
-    /// Resolved padding compensation — on unless the user explicitly opted out.
+    /// Resolved padding compensation. The user-facing `--icon-bg-padding` flag
+    /// mirrors the GUI "Icon Padding" toggle: `on` keeps the image's padding
+    /// (compensation off), `off` fills the frame (compensation on). Unspecified
+    /// fills the frame, matching the GUI's image-import default.
     var effectivePaddingCompensation: Bool {
-        padding?.isOn ?? true
+        guard let padding else { return true }
+        return !padding.isOn
     }
 }
 
@@ -505,10 +509,10 @@ struct BadgeOptions: ParsableArguments {
     )
     var backgroundShadow: ToggleState?
 
-    // nil = unspecified → on (fill the frame).
+    // nil = unspecified → fill the frame (padding off).
     @Option(
         name: .customLong("badge-bg-padding"),
-        help: ArgumentHelp("Padding compensation for an imported badge background: on (default, fills the frame) or off", valueName: "on|off")
+        help: ArgumentHelp("Keep an imported badge background's padding: on, or off to fill the frame (default)", valueName: "on|off")
     )
     var backgroundPadding: ToggleState?
 
@@ -561,10 +565,12 @@ struct BadgeOptions: ParsableArguments {
         !["standard", "custom-gradient"].contains(background.lowercased())
     }
 
-    /// Resolved padding compensation for an imported badge background — on unless
-    /// the user explicitly opted out.
+    /// Resolved padding compensation for an imported badge background. Mirrors the
+    /// GUI "Icon Padding" toggle: `on` keeps the image's padding (compensation off),
+    /// `off` fills the frame (compensation on). Unspecified fills the frame.
     var effectiveBackgroundPaddingCompensation: Bool {
-        backgroundPadding?.isOn ?? true
+        guard let backgroundPadding else { return true }
+        return !backgroundPadding.isOn
     }
 }
 
