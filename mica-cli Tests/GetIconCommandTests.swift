@@ -15,7 +15,7 @@ import ArgumentParser
         #expect(command.scale == .oneX)
         #expect(command.recursive == false)
         #expect(command.depth == nil)
-        #expect(command.colorSpace == .displayP3)
+        #expect(command.colorSpace == .sRGB)
     }
 
     @Test func parsesAllOptions() throws {

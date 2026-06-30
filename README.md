@@ -90,7 +90,7 @@ mica-cli my-app --icon-bg ~/bg.png
 mica-cli star.fill --icon-generation-mode system \
   --icon-bg-color blue --icon-symbol-color white
 
-# High-resolution export (Display P3 is the default color space)
+# High-resolution export (sRGB is the default; pass displayP3 for wide gamut)
 mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
 
 # Machine-readable result

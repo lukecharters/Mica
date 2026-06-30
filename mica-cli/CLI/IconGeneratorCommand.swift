@@ -75,8 +75,8 @@ struct ExportOptions: ParsableArguments {
     @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x (retina)", valueName: "scale"))
     var scale: ExportScale = .oneX
 
-    @Option(name: .long, help: ArgumentHelp("Color space to render in: displayP3 (default) or sRGB", valueName: "space"))
-    var colorSpace: IconColorSpace = .displayP3
+    @Option(name: .long, help: ArgumentHelp("Color space to render in: sRGB (default) or displayP3", valueName: "space"))
+    var colorSpace: IconColorSpace = .sRGB
 }
 
 // MARK: - Generation Options
