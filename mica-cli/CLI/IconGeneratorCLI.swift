@@ -6,72 +6,57 @@ import UniformTypeIdentifiers
 /// Enhanced CLI adapter that bridges between command arguments and the existing IconRenderer
 /// Provides comprehensive error handling, validation, and progress reporting
 class IconGeneratorCLI {
-    
-    // MARK: - Generation Progress
-    
-    enum GenerationPhase {
-        case validation
-        case settingsBuilding
-        case rendering
-        case saving
-        case complete
-    }
-    
-    private var currentPhase: GenerationPhase = .validation
-    private var isVerbose: Bool = false
-    
+
     // MARK: - Main Generation Method
-    
-    func generateIcon(from command: IconGeneratorCommand) async throws {
-        do {
-            // Phase 1: Validation
-            currentPhase = .validation
-            try await performEnhancedValidation(command)
 
-            // Phase 2: Build settings
-            currentPhase = .settingsBuilding
-            let settings = try buildIconSettings(from: command)
+    /// Render and save the icon, returning a description of the produced file.
+    /// Diagnostics go through `reporter` (verbose phase detail to stderr); the
+    /// caller is responsible for the success/error reporting and exit code.
+    func generateIcon(from command: IconGeneratorCommand, reporter: OutputReporter) async throws -> OutputFileJSON {
+        // Phase 1: Validation
+        reporter.detail("Validating…")
+        try await performEnhancedValidation(command)
 
-            // Phase 3: Render
-            currentPhase = .rendering
-            let image: NSImage
+        // Phase 2: Build settings
+        reporter.detail("Building settings…")
+        let settings = try buildIconSettings(from: command)
 
-            if command.generation.resolvedIconMode == "apple-reference" {
-                image = try await renderAppleReference(command: command, settings: settings)
-            } else {
-                // Load badge appex image if badge uses apple-reference source.
-                // `let` keeps this in a disconnected region so it can be sent
-                // into the @MainActor render task (NSImage is non-Sendable).
-                let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .appleReference)
-                    ? try renderAppexIcon(
-                        symbolName: settings.badgeSymbolName,
-                        enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
-                        symbolColor: command.resolvedBadgeAppexSymbolColor(),
-                        settings: settings
-                    )
-                    : nil
-                image = try await renderIconWithErrorHandling(settings: settings, badgeAppexImage: badgeAppexImage)
-            }
+        // Phase 3: Render
+        let image: NSImage
 
-            // Phase 4: Save
-            currentPhase = .saving
-            let outputURL = try resolveOutputPath(basename: command.defaultOutputBasename(), userPath: command.export.outputPath)
-            try await saveImageWithValidation(image, to: outputURL, settings: settings)
-
-            // Phase 5: Report
-            currentPhase = .complete
-            reportSuccess(outputURL: outputURL, settings: settings, generationMode: command.generation.resolvedIconMode)
-
-        } catch let error as CLIError {
-            handleCLIError(error, phase: currentPhase)
-            throw error
-        } catch let error as ColorParseError {
-            handleColorError(error, phase: currentPhase)
-            throw error
-        } catch {
-            handleUnexpectedError(error, phase: currentPhase)
-            throw CLIError.unexpectedError("Unexpected error during \(currentPhase): \(error.localizedDescription)")
+        if command.generation.resolvedIconMode == "apple-reference" {
+            reporter.detail("Rendering via the Apple Reference (appex) pipeline…")
+            image = try await renderAppleReference(command: command, settings: settings)
+        } else {
+            reporter.detail("Rendering…")
+            // Load badge appex image if badge uses apple-reference source.
+            // `let` keeps this in a disconnected region so it can be sent
+            // into the @MainActor render task (NSImage is non-Sendable).
+            let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .appleReference)
+                ? try renderAppexIcon(
+                    symbolName: settings.badgeSymbolName,
+                    enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
+                    symbolColor: command.resolvedBadgeAppexSymbolColor(),
+                    settings: settings
+                )
+                : nil
+            image = try await renderIconWithErrorHandling(settings: settings, badgeAppexImage: badgeAppexImage)
         }
+
+        // Phase 4: Save
+        let outputURL = try resolveOutputPath(basename: command.defaultOutputBasename(), userPath: command.export.outputPath)
+        reporter.detail("Saving to \(outputURL.path)…")
+        try await saveImageWithValidation(image, to: outputURL, settings: settings)
+
+        // Phase 5: Describe the result
+        let pixelDimension = Int(settings.exportSize) * (settings.exportRetinaSize ? 2 : 1)
+        return OutputFileJSON(
+            path: outputURL.path,
+            width: pixelDimension,
+            height: pixelDimension,
+            bytes: fileByteCount(outputURL),
+            source: command.defaultOutputBasename()
+        )
     }
 
     // MARK: - Apple Reference Rendering
@@ -697,67 +682,14 @@ class IconGeneratorCLI {
         }
     }
 
-    // MARK: - Progress and Error Reporting
-    
-    private func reportSuccess(outputURL: URL, settings: IconSettings, generationMode: String = "custom") {
-        let fileSize = getFileSize(outputURL)
-        let dimensions = settings.exportRetinaSize ?
-            "\(Int(settings.exportSize * 2))x\(Int(settings.exportSize * 2))" :
-            "\(Int(settings.exportSize))x\(Int(settings.exportSize))"
+    // MARK: - File Metadata
 
-        print("Icon generated successfully!")
-        print("  File: \(outputURL.path)")
-        print("  Size: \(dimensions) pixels")
-        if generationMode == "apple-reference" {
-            print("  Mode: Apple Reference")
-        } else {
-            print("  Rendering: \(settings.symbolRenderingMode.rawValue)")
-        }
-        print("  File size: \(fileSize)")
+    /// Size of a file in bytes, or 0 if it can't be read.
+    private func fileByteCount(_ url: URL) -> Int {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        return (attributes?[.size] as? NSNumber)?.intValue ?? 0
+    }
 
-        if settings.showBadge {
-            switch settings.badgeIconSource {
-            case .sfSymbol:
-                print("  Badge: \(settings.badgeSymbolName)")
-            case .customImage:
-                print("  Badge: (imported image)")
-            case .appleReference:
-                print("  Badge: \(settings.badgeSymbolName) (Apple Reference)")
-            }
-        }
-    }
-    
-    private func getFileSize(_ url: URL) -> String {
-        do {
-            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-            if let fileSize = attributes[.size] as? NSNumber {
-                let bytes = fileSize.intValue
-                if bytes < 1024 {
-                    return "\(bytes) bytes"
-                } else if bytes < 1024 * 1024 {
-                    return String(format: "%.1f KB", Double(bytes) / 1024.0)
-                } else {
-                    return String(format: "%.1f MB", Double(bytes) / (1024.0 * 1024.0))
-                }
-            }
-        } catch {
-            return "unknown size"
-        }
-        return "unknown size"
-    }
-    
-    private func handleCLIError(_ error: CLIError, phase: GenerationPhase) {
-        print("❌ Error during \(phase): \(error.localizedDescription)")
-    }
-    
-    private func handleColorError(_ error: ColorParseError, phase: GenerationPhase) {
-        print("❌ Color parsing error during \(phase): \(error.localizedDescription)")
-    }
-    
-    private func handleUnexpectedError(_ error: Error, phase: GenerationPhase) {
-        print("❌ Unexpected error during \(phase): \(error.localizedDescription)")
-    }
-    
     // MARK: - Testing Support Methods
     
     /// Expose buildIconSettings for testing
@@ -801,6 +733,20 @@ enum CLIError: LocalizedError {
             return "Rendering error: \(message)"
         case .unexpectedError(let message):
             return "Unexpected error: \(message)"
+        }
+    }
+
+    /// Stable token for the JSON error schema.
+    var kind: String {
+        switch self {
+        case .imageConversion: return "image"
+        case .invalidSymbol: return "symbol"
+        case .fileSystem: return "filesystem"
+        case .invalidColorFormat: return "color"
+        case .invalidArgument: return "argument"
+        case .configurationError: return "configuration"
+        case .renderingError: return "rendering"
+        case .unexpectedError: return "unexpected"
         }
     }
 }

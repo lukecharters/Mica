@@ -676,6 +676,9 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     @OptionGroup(title: "Badge")
     var badge: BadgeOptions
 
+    @OptionGroup(title: "Output")
+    var output: OutputOptions
+
     // MARK: - Foreground Resolution
 
     /// Resolve the icon foreground. An explicit `--icon-fg` wins over the
@@ -772,20 +775,44 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     func run() async throws {
         try performValidation()
 
+        let reporter = output.reporter
         let generator = IconGeneratorCLI()
 
         do {
-            try await generator.generateIcon(from: self)
+            let result = try await generator.generateIcon(from: self, reporter: reporter)
+
+            // stdout = the machine result; stderr = a concise human summary.
+            reporter.path(result.path)
+            var summary = "Generated \(result.width)×\(result.height) icon (\(humanByteCount(result.bytes)))"
+            if generation.resolvedIconMode == "apple-reference" {
+                summary += " in system mode"
+            }
+            if badgeIsActive {
+                summary += "; badge included"
+            }
+            reporter.status(summary)
+
+            if output.json {
+                print(encodeJSON(CommandResultJSON(command: "generate", outputs: [result])))
+            }
         } catch let error as ColorParseError {
-            print("Color Error: \(error.localizedDescription)")
-            throw ExitCode.validationFailure
+            try reportFailure(reporter, kind: "color", message: error.localizedDescription, exit: .validationFailure)
         } catch let error as CLIError {
-            print("Generation Error: \(error.localizedDescription)")
-            throw ExitCode.failure
+            try reportFailure(reporter, kind: error.kind, message: error.localizedDescription, exit: .failure)
         } catch {
-            print("Unexpected Error: \(error.localizedDescription)")
-            throw ExitCode.failure
+            try reportFailure(reporter, kind: "unexpected", message: error.localizedDescription, exit: .failure)
         }
+    }
+
+    /// Emit a failure (human text to stderr, or a JSON error object to stdout)
+    /// and throw the corresponding exit code. Never returns normally.
+    private func reportFailure(_ reporter: OutputReporter, kind: String, message: String, exit code: ExitCode) throws -> Never {
+        if output.json {
+            print(encodeJSON(CommandErrorJSON(command: "generate", kind: kind, message: message)))
+        } else {
+            reporter.failure("Error: \(message)")
+        }
+        throw code
     }
 
     // MARK: - Testing Support

@@ -53,6 +53,9 @@ struct GetIconCommand: ParsableCommand {
     @Option(name: .long, help: ArgumentHelp("Color space to render the icon in (displayP3 or sRGB)", valueName: "space"))
     var colorSpace: IconColorSpace = .displayP3
 
+    @OptionGroup(title: "Output")
+    var output: OutputOptions
+
     mutating func validate() throws {
         guard size > 0 else {
             throw ValidationError("Size must be greater than 0. You provided: \(size)")
@@ -69,18 +72,31 @@ struct GetIconCommand: ParsableCommand {
     }
 
     mutating func run() throws {
+        let reporter = output.reporter
         do {
-            try runExtraction()
+            let outputs = try runExtraction(reporter: reporter)
+            if output.json {
+                print(encodeJSON(CommandResultJSON(command: "extract", outputs: outputs)))
+            }
         } catch let error as CLIError {
-            print("Generation Error: \(error.localizedDescription)")
-            throw ExitCode.failure
+            try reportFailure(reporter, kind: error.kind, message: error.localizedDescription)
         } catch {
-            print("Unexpected Error: \(error.localizedDescription)")
-            throw ExitCode.failure
+            try reportFailure(reporter, kind: "unexpected", message: error.localizedDescription)
         }
     }
 
-    private func runExtraction() throws {
+    /// Emit a failure (human text to stderr, or a JSON error object to stdout)
+    /// and throw `ExitCode.failure`. Never returns normally.
+    private func reportFailure(_ reporter: OutputReporter, kind: String, message: String) throws -> Never {
+        if output.json {
+            print(encodeJSON(CommandErrorJSON(command: "extract", kind: kind, message: message)))
+        } else {
+            reporter.failure("Error: \(message)")
+        }
+        throw ExitCode.failure
+    }
+
+    private func runExtraction(reporter: OutputReporter) throws -> [OutputFileJSON] {
         let fm = FileManager.default
         let resolvedInputPath = (inputPath as NSString).expandingTildeInPath
 
@@ -99,13 +115,13 @@ struct GetIconCommand: ParsableCommand {
             guard recursive else {
                 throw CLIError.invalidArgument("Input is a directory at \(resolvedInputPath). Pass --recursive to export its contents.")
             }
-            try exportDirectory(at: resolvedInputPath, to: outputDirectory)
+            return try exportDirectory(at: resolvedInputPath, to: outputDirectory, reporter: reporter)
         } else {
-            try exportSingleItem(at: resolvedInputPath, to: outputDirectory)
+            return try exportSingleItem(at: resolvedInputPath, to: outputDirectory, reporter: reporter)
         }
     }
 
-    private func exportSingleItem(at path: String, to outputDirectory: URL) throws {
+    private func exportSingleItem(at path: String, to outputDirectory: URL, reporter: OutputReporter) throws -> [OutputFileJSON] {
         let filename = OutputResolver.suggestedIconFilename(forItemAt: path, size: size, scaleFactor: scale.factor)
         let destination = outputDirectory.appendingPathComponent(filename)
         try IconExtractor.saveIcon(
@@ -115,10 +131,13 @@ struct GetIconCommand: ParsableCommand {
             colorSpace: colorSpace,
             destination: destination
         )
-        print("Icon saved to \(destination.path)")
+        reporter.path(destination.path)
+        let descriptor = outputDescriptor(destination: destination, source: path)
+        reporter.status("Extracted 1 icon to \(outputDirectory.path)")
+        return [descriptor]
     }
 
-    private func exportDirectory(at path: String, to outputDirectory: URL) throws {
+    private func exportDirectory(at path: String, to outputDirectory: URL, reporter: OutputReporter) throws -> [OutputFileJSON] {
         let rootURL = URL(fileURLWithPath: path, isDirectory: true)
         let maxDepth = depth ?? 1
         let items = try collectItems(inDirectory: rootURL, maxDepth: maxDepth)
@@ -126,10 +145,11 @@ struct GetIconCommand: ParsableCommand {
         let filteredItems = filterItems(items, excluding: outputDirectory, relativeTo: rootURL)
 
         guard !filteredItems.isEmpty else {
-            print("No files found in \(rootURL.path)")
-            return
+            reporter.status("No files found in \(rootURL.path)")
+            return []
         }
 
+        var outputs: [OutputFileJSON] = []
         for item in filteredItems {
             let destination = try destinationURL(for: item, rootDirectory: rootURL, outputDirectory: outputDirectory)
             try IconExtractor.saveIcon(
@@ -139,12 +159,22 @@ struct GetIconCommand: ParsableCommand {
                 colorSpace: colorSpace,
                 destination: destination
             )
-            print("Icon saved to \(destination.path)")
+            reporter.path(destination.path)
+            reporter.detail("Extracted \(item.lastPathComponent)")
+            outputs.append(outputDescriptor(destination: destination, source: item.path))
         }
 
-        let count = filteredItems.count
-        let summary = "Exported \(count) icon\(count == 1 ? "" : "s") to \(outputDirectory.path)"
-        print(summary)
+        let count = outputs.count
+        reporter.status("Exported \(count) icon\(count == 1 ? "" : "s") to \(outputDirectory.path)")
+        return outputs
+    }
+
+    /// Build a JSON descriptor for a saved icon file.
+    private func outputDescriptor(destination: URL, source: String) -> OutputFileJSON {
+        let dimension = size * scale.factor
+        let attributes = try? FileManager.default.attributesOfItem(atPath: destination.path)
+        let bytes = (attributes?[.size] as? NSNumber)?.intValue ?? 0
+        return OutputFileJSON(path: destination.path, width: dimension, height: dimension, bytes: bytes, source: source)
     }
 
     private func collectItems(inDirectory rootURL: URL, maxDepth: Int) throws -> [URL] {
