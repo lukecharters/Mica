@@ -318,8 +318,8 @@ class IconGeneratorCLI {
         do {
             // Export properties
             settings.exportSize = CGFloat(command.export.size)
-            settings.exportRetinaSize = command.export.retina
-            settings.exportColorSpace = try parseColorSpace(command.export.colorSpace)
+            settings.exportRetinaSize = command.export.scale.factor == 2
+            settings.exportColorSpace = command.export.colorSpace == .displayP3 ? .displayP3 : .sRGB
 
             // Icon foreground source (folds --icon-fg + --icon-fg-scale)
             switch try command.resolvedForeground() {
@@ -614,16 +614,7 @@ class IconGeneratorCLI {
     }
     
     // MARK: - Enhanced Parsing Helpers
-    
-    private func parseColorSpace(_ input: String) throws -> ExportColorSpace {
-        switch input.lowercased() {
-        case "srgb": return .sRGB
-        case "displayp3": return .displayP3
-        default: 
-            throw CLIError.invalidArgument("Invalid color space: \(input). Must be 'sRGB' or 'displayP3'")
-        }
-    }
-    
+
     private func parseRenderingMode(_ input: String) throws -> SymbolRenderingMode {
         switch input.lowercased() {
         case "monochrome": return .monochrome

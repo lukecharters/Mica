@@ -57,6 +57,8 @@ Other installation methods coming soon.
 
 `mica-cli` shares its rendering engine with the app — all settings in the UI are available. Run `mica-cli --help` for the full list of options.
 
+Flags are grouped by layer: the icon's foreground (`--icon-fg…`) and background (`--icon-bg…`), and the badge's foreground (`--badge-fg…`) and background (`--badge-bg…`). The output file path is written to stdout and diagnostics to stderr, so `mica-cli` composes cleanly in scripts; add `--json` for a machine-readable result, or `-q`/`-v` to quiet or expand the diagnostics.
+
 #### Generating icons
 
 ```bash
@@ -64,54 +66,57 @@ Other installation methods coming soon.
 mica-cli star.fill
 
 # Choose output path, size, and background color
-mica-cli folder.fill -o ~/Desktop/folder-icon.png --size 512 --base-color red
+mica-cli folder.fill -o ~/Desktop/folder-icon.png --size 512 --icon-bg-color red
 
 # Custom gradient (hex colors supported)
-mica-cli app.fill --use-custom-colors --custom-primary "#FF6B35" --custom-secondary "#F7931E"
+mica-cli app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
 
 # Symbol styling
-mica-cli shield.fill --rendering-mode hierarchical --hierarchical-color white
-mica-cli star.fill --symbol-weight bold --symbol-scale 1.3
+mica-cli shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
+mica-cli star.fill --icon-symbol-weight bold --icon-fg-scale 1.3
 
 # Classic macOS 11–15 look, flat color
-mica-cli star.fill --corner-radius macos11 --no-gradient
+mica-cli star.fill --icon-bg-corner-radius macos11 --icon-bg-gradient off
 
-# Add a badge
-mica-cli star.fill --badge plus.circle --badge-position bottom-right
-mica-cli star.fill --badge gear --badge-scale 1.3 --badge-offset-x 0.2 --badge-offset-y -0.1
+# Add a badge (supplying --badge-fg turns the badge on)
+mica-cli star.fill --badge-fg symbol:plus.circle --badge-position bottom-right
+mica-cli star.fill --badge-fg symbol:gear --badge-scale 1.3 --badge-offset-x 0.2 --badge-offset-y -0.1
 
 # Use your own images for the foreground and/or background
-mica-cli my-app --icon-source image --imported-image ~/logo.png
-mica-cli my-app --background-mode image --imported-background ~/bg.png
+mica-cli my-app --icon-fg ~/logo.png
+mica-cli my-app --icon-bg ~/bg.png
 
-# Apple Reference mode (system-rendered)
-mica-cli star.fill --icon-mode apple-reference \
-  --appex-enclosure-color blue --appex-symbol-color white
+# System mode (rendered by macOS itself)
+mica-cli star.fill --icon-generation-mode system \
+  --icon-bg-color blue --icon-symbol-color white
 
-# High-resolution export
-mica-cli app.fill --size 1024 --retina --color-space displayP3
+# High-resolution export (Display P3 is the default color space)
+mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
+
+# Machine-readable result
+mica-cli star.fill --json
 ```
 
 Colors can be given as named colors (`blue`, `red`, `indigo`, …) or hex values (`"#FF6B35"`). Secondary and tertiary palette colors also accept an opacity suffix, e.g. `white:0.5`.
 
 #### Extracting existing icons
 
-The `geticon` subcommand exports the icon of any app, file, or folder on disk as a PNG. It also has a recursive mode to extract an entire folder of icons.
+The `extract` subcommand exports the icon of any app, file, or folder on disk as a PNG. It also has a recursive mode to extract an entire folder of icons.
 
 ```bash
 # Export one app's icon to the current directory
-mica-cli geticon /Applications/Safari.app
+mica-cli extract /Applications/Safari.app
 
 # Export every icon in /Applications at 512 px @2x
-mica-cli geticon /Applications ~/Desktop/icons --recursive --size 512 --scalefactor 2
+mica-cli extract /Applications -o ~/Desktop/icons --recursive --size 512 --scale 2x
 ```
 
 ## Known issues and limitations
 
 - Mica requires macOS 15 or later; Liquid Glass icons in system mode and SF symbol gradients require macOS 26.
 - Export is PNG only.
-- Apple Reference mode renders at the system's native size (512 pt @2x) and supports the fixed system color palette only.
-- Apple Reference mode relies on macOS's own icon rendering, so its output can change between macOS releases.
+- System mode renders at the system's native size (512 pt @2x) and supports the fixed system color palette only.
+- System mode relies on macOS's own icon rendering, so its output can change between macOS releases.
 
 ## Getting help
 

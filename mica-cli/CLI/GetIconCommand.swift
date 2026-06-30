@@ -26,6 +26,10 @@ struct GetIconCommand: ParsableCommand {
             Recurse into nested folders up to two levels:
               mica-cli extract ~/Projects -o ~/icons --recursive --depth 2 \\
                 --size 256 --color-space sRGB
+
+            Output modes (saved paths go to stdout, diagnostics to stderr):
+              mica-cli extract /Applications -o ~/icons --recursive --json
+              mica-cli extract /Applications/Notes.app -o ~/icons --quiet
             """
     )
 

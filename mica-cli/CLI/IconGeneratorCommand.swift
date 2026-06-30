@@ -72,20 +72,11 @@ struct ExportOptions: ParsableArguments {
     )
     var size: Int = 512
 
-    @Flag(name: .long, help: "Export at 2x resolution (doubles pixel dimensions)")
-    var retina: Bool = false
+    @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x (retina)", valueName: "scale"))
+    var scale: ExportScale = .oneX
 
-    @Option(
-        name: .long,
-        help: ArgumentHelp("Color space: sRGB (default) or displayP3", valueName: "space"),
-        transform: { space in
-            guard ["sRGB", "displayP3"].contains(space) else {
-                throw ValidationError("Color space must be 'sRGB' or 'displayP3'")
-            }
-            return space
-        }
-    )
-    var colorSpace: String = "sRGB"
+    @Option(name: .long, help: ArgumentHelp("Color space to render in: displayP3 (default) or sRGB", valueName: "space"))
+    var colorSpace: IconColorSpace = .displayP3
 }
 
 // MARK: - Generation Options
@@ -645,8 +636,22 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             Imported image foreground:
               mica-cli --icon-fg ~/my-icon.png --icon-fg-scale 0.9
 
+            Badges (supplying --badge-fg turns the badge on):
+              mica-cli star.fill --badge-fg symbol:plus.circle.fill --badge-position bottom-right
+              mica-cli folder.fill --badge-fg symbol:gearshape.fill \\
+                --badge-bg custom-gradient --badge-bg-gradient-colors "red,orange"
+              mica-cli star.fill --badge-fg ~/overlay.png --badge-scale 1.2 --badge-offset-x 0.1
+
             High-resolution export:
               mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
+
+            Output modes:
+              mica-cli star.fill --json            # JSON result to stdout
+              mica-cli star.fill --quiet           # only the path on stdout
+              mica-cli star.fill --verbose         # per-phase progress on stderr
+
+            The output file path is written to stdout; diagnostics go to stderr,
+            so `mica-cli star.fill -o icon.png` pipes cleanly.
             """
     )
 
