@@ -37,7 +37,9 @@ struct InspectorPanel: View {
                 )
             }
         }
-        .frame(minWidth: 280, idealWidth: 380, maxWidth: 400)
+        // Fixed width so the inspector never resizes when its content changes
+        // (Controls vs Export tab, or Custom vs System generation mode).
+        .frame(width: 380)
         .background(Color(.windowBackgroundColor))
     }
 }

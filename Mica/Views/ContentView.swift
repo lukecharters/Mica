@@ -39,8 +39,18 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
+    /// Fixed sidebar width. The inspector's fixed width lives in `InspectorPanel`.
+    private let sidebarWidth: CGFloat = 280
+    /// Shared animation for sliding the sidebar / inspector in and out.
+    private let panelAnimation: Animation = .easeInOut(duration: 0.25)
+
     var body: some View {
-        HSplitView {
+        // A plain HStack (rather than HSplitView) keeps the sidebar and inspector at
+        // fixed widths so they never resize when the other is toggled or when their
+        // content changes (generation mode / export tab). Show/hide is driven by
+        // edge `.move` transitions so each panel slides in and out from its own edge.
+        // Trade-off: the panels are no longer drag-resizable.
+        HStack(spacing: 0) {
             if showLayerSidebar {
                 LayerSidebar(
                     iconSettings: $viewModel.iconSettings,
@@ -50,28 +60,32 @@ struct ContentView: View {
                     badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
                     badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
                 )
-                .frame(minWidth: 220, idealWidth: 280, maxWidth: 340)
+                .frame(width: sidebarWidth)
+                .transition(.move(edge: .leading))
             }
 
-            if viewModel.iconSettings.iconGenerationMode == .swiftUI {
-                previewPane
-                    .task(id: viewModel.badgeAppexGenerationKey) {
-                        guard viewModel.iconSettings.showBadge,
-                              viewModel.iconSettings.badgeGenerationMode == .appleReference else {
-                            return
+            Group {
+                if viewModel.iconSettings.iconGenerationMode == .swiftUI {
+                    previewPane
+                        .task(id: viewModel.badgeAppexGenerationKey) {
+                            guard viewModel.iconSettings.showBadge,
+                                  viewModel.iconSettings.badgeGenerationMode == .appleReference else {
+                                return
+                            }
+                            try? await Task.sleep(for: .milliseconds(400))
+                            guard !Task.isCancelled else { return }
+                            await viewModel.generateBadgeAppexIcon(service: appexService)
                         }
-                        try? await Task.sleep(for: .milliseconds(400))
-                        guard !Task.isCancelled else { return }
-                        await viewModel.generateBadgeAppexIcon(service: appexService)
-                    }
-            } else {
-                AppexPreviewPane(
-                    viewModel: viewModel,
-                    appexService: appexService,
-                    zoomLevel: $zoomLevel,
-                    previewPointSize: $previewPointSize
-                )
+                } else {
+                    AppexPreviewPane(
+                        viewModel: viewModel,
+                        appexService: appexService,
+                        zoomLevel: $zoomLevel,
+                        previewPointSize: $previewPointSize
+                    )
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if showInspector {
                 InspectorPanel(
@@ -86,12 +100,13 @@ struct ContentView: View {
                     colorOptions: colorOptions,
                     appexHasImage: viewModel.appexRenderedImage != nil
                 )
+                .transition(.move(edge: .trailing))
             }
         }
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
-                    withAnimation { showLayerSidebar.toggle() }
+                    withAnimation(panelAnimation) { showLayerSidebar.toggle() }
                 } label: {
                     Label("Show Sidebar", systemImage: "sidebar.left")
                 }
@@ -117,7 +132,7 @@ struct ContentView: View {
                 .help("Inspector tab")
                 // Selecting a tab reveals the inspector if it's hidden.
                 .onChange(of: inspectorTab) {
-                    if !showInspector { withAnimation { showInspector = true } }
+                    if !showInspector { withAnimation(panelAnimation) { showInspector = true } }
                 }
             }
             if #available(macOS 26.0, *) {
@@ -125,7 +140,7 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Button {
-                    withAnimation { showInspector.toggle() }
+                    withAnimation(panelAnimation) { showInspector.toggle() }
                 } label: {
                     Label("Show Inspector", systemImage: "sidebar.right")
                 }
@@ -148,9 +163,7 @@ struct ContentView: View {
                   badgeAppexImage: viewModel.badgeAppexRenderedImage)
                 : IconDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
             contentType: .png,
-            defaultFilename: viewModel.iconSettings.iconGenerationMode == .appleReference
-                ? "\(viewModel.iconSettings.symbolName)-apple-reference"
-                : "CustomIcon"
+            defaultFilename: viewModel.iconSettings.exportBaseName
         ) { result in
             switch result {
             case .success(let url):

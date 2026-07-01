@@ -18,7 +18,7 @@ enum IconModeSegment: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .custom: "Custom"
+        case .custom: "Mica"
         case .system: "System"
         }
     }

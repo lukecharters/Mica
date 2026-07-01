@@ -167,6 +167,20 @@ struct IconSettings: Equatable {
     var finalExportSize: CGFloat {
         return exportRetinaSize ? exportSize * 2 : exportSize
     }
+
+    /// Default export filename (without extension): the imported background image's
+    /// file name when the icon uses a custom background, otherwise the SF Symbol
+    /// name, with a `-mica` suffix appended.
+    var exportBaseName: String {
+        let base: String
+        if backgroundMode == .importedImage, let imported = importedBackground {
+            base = (imported.sourceName as NSString).deletingPathExtension
+        } else {
+            base = symbolName
+        }
+        let trimmed = base.trimmingCharacters(in: .whitespaces)
+        return "\(trimmed.isEmpty ? "CustomIcon" : trimmed)-mica"
+    }
 }
 
 enum SymbolRenderingMode: String, CaseIterable, Identifiable {

@@ -123,7 +123,109 @@ private func canonicalGenerationMode(_ mode: String, role: String) throws -> Str
     }
 }
 
-// MARK: - Background Options
+
+// MARK: - Icon Foreground Options
+
+struct IconForegroundOptions: ParsableArguments {
+    // Folds the old --icon-source + --imported-image. `symbol:<name>` selects an
+    // SF Symbol; anything else is treated as an image file path. When omitted,
+    // the positional symbol-name shorthand on the command supplies the value.
+    @Option(
+        name: .customLong("icon-fg"),
+        help: ArgumentHelp(
+            "Icon foreground source",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. Overrides the positional symbol-name shorthand.",
+            valueName: "symbol:NAME|path"
+        )
+    )
+    var foreground: String?
+
+    // Folds --symbol-scale + --imported-image-scale into one flag that drives
+    // whichever source (symbol or image) is active.
+    @Option(
+        name: .customLong("icon-fg-scale"),
+        help: ArgumentHelp("Foreground scale multiplier (0.3-2.0)", valueName: "scale"),
+        transform: { try validateScale($0, name: "Icon foreground scale") }
+    )
+    var scale: Double = 1.0
+
+    @Option(
+        name: .customLong("icon-symbol-rendering"),
+        help: ArgumentHelp(
+            "Symbol rendering mode",
+            discussion: "monochrome (default), hierarchical, multicolor, or palette",
+            valueName: "mode"
+        ),
+        transform: { mode in
+            guard validRenderingModes.contains(mode.lowercased()) else {
+                throw ValidationError("Symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
+            }
+            return mode.lowercased()
+        }
+    )
+    var symbolRendering: String = "monochrome"
+
+    // Folds --symbol-color + --hierarchical-color + --appex-symbol-color into a
+    // single colour. Stored RAW; resolved in the settings builder by generation
+    // mode (mica → ColorParser, system → AppexColor.plistValue) since the
+    // transform can't see the chosen mode. nil → mode-appropriate default.
+    @Option(
+        name: .customLong("icon-symbol-color"),
+        help: ArgumentHelp(
+            "Symbol color (monochrome, hierarchical, and multicolor modes)",
+            discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
+            valueName: "color"
+        )
+    )
+    var symbolColor: String?
+
+    // Folds --palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`;
+    // c2/c3 accept a `:opacity` suffix. Validated/parsed in the builder.
+    @Option(
+        name: .customLong("icon-symbol-palette"),
+        help: ArgumentHelp(
+            "Palette colors for palette rendering",
+            discussion: "Three comma-separated colors 'c1,c2,c3'; the 2nd and 3rd accept a ':opacity' suffix (e.g. 'blue,white:0.5,white:0.26'). Default: white,white:0.5,white:0.26.",
+            valueName: "c1,c2,c3"
+        )
+    )
+    var symbolPalette: String?
+
+    @Option(
+        name: .customLong("icon-symbol-weight"),
+        help: ArgumentHelp("Symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
+        transform: { weight in
+            guard validSymbolWeights.contains(weight.lowercased()) else {
+                throw ValidationError("Symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
+            }
+            return weight.lowercased()
+        }
+    )
+    var symbolWeight: String = "auto"
+
+    // Was --symbol-color-rendering flat|gradient.
+    @Option(
+        name: .customLong("icon-symbol-gradient"),
+        help: ArgumentHelp("Symbol gradient fill: on or off (default; gradient requires macOS 26+)", valueName: "on|off")
+    )
+    var symbolGradient: ToggleState = .off
+
+    // nil = unspecified, so the effective value can default based on the source
+    // (off for imported images, on for SF Symbols).
+    @Option(
+        name: .customLong("icon-fg-shadow"),
+        help: ArgumentHelp("Foreground shadow: on or off (default: off for images, on for SF Symbols)", valueName: "on|off")
+    )
+    var shadow: ToggleState?
+
+    @Option(
+        name: .customLong("icon-fg-visibility"),
+        help: ArgumentHelp("Foreground visibility: on (default) or off to hide the foreground", valueName: "on|off")
+    )
+    var visibility: ToggleState = .on
+}
+
+// MARK: - Icon Background Options
 
 /// Named asset colours available for `prerendered-liquid-glass` backgrounds.
 /// Matches the `background-<color>-<gradient|solid>` assets in Assets.xcassets.
@@ -133,7 +235,7 @@ let validPreRenderedColors = [
     "white", "yellow",
 ]
 
-struct BackgroundOptions: ParsableArguments {
+struct IconBackgroundOptions: ParsableArguments {
     // Folds the old --background-mode + --imported-background. Recognised
     // keywords select a generated background; any other value is an image path.
     @Option(
@@ -244,107 +346,6 @@ struct BackgroundOptions: ParsableArguments {
         guard let padding else { return true }
         return !padding.isOn
     }
-}
-
-// MARK: - Icon Foreground Options
-
-struct IconForegroundOptions: ParsableArguments {
-    // Folds the old --icon-source + --imported-image. `symbol:<name>` selects an
-    // SF Symbol; anything else is treated as an image file path. When omitted,
-    // the positional symbol-name shorthand on the command supplies the value.
-    @Option(
-        name: .customLong("icon-fg"),
-        help: ArgumentHelp(
-            "Icon foreground source",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. Overrides the positional symbol-name shorthand.",
-            valueName: "symbol:NAME|path"
-        )
-    )
-    var foreground: String?
-
-    // Folds --symbol-scale + --imported-image-scale into one flag that drives
-    // whichever source (symbol or image) is active.
-    @Option(
-        name: .customLong("icon-fg-scale"),
-        help: ArgumentHelp("Foreground scale multiplier (0.3-2.0)", valueName: "scale"),
-        transform: { try validateScale($0, name: "Icon foreground scale") }
-    )
-    var scale: Double = 1.0
-
-    @Option(
-        name: .customLong("icon-symbol-rendering"),
-        help: ArgumentHelp(
-            "Symbol rendering mode",
-            discussion: "monochrome (default), hierarchical, multicolor, or palette",
-            valueName: "mode"
-        ),
-        transform: { mode in
-            guard validRenderingModes.contains(mode.lowercased()) else {
-                throw ValidationError("Symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
-            }
-            return mode.lowercased()
-        }
-    )
-    var symbolRendering: String = "monochrome"
-
-    // Folds --symbol-color + --hierarchical-color + --appex-symbol-color into a
-    // single colour. Stored RAW; resolved in the settings builder by generation
-    // mode (mica → ColorParser, system → AppexColor.plistValue) since the
-    // transform can't see the chosen mode. nil → mode-appropriate default.
-    @Option(
-        name: .customLong("icon-symbol-color"),
-        help: ArgumentHelp(
-            "Symbol color (monochrome, hierarchical, and multicolor modes)",
-            discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
-            valueName: "color"
-        )
-    )
-    var symbolColor: String?
-
-    // Folds --palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`;
-    // c2/c3 accept a `:opacity` suffix. Validated/parsed in the builder.
-    @Option(
-        name: .customLong("icon-symbol-palette"),
-        help: ArgumentHelp(
-            "Palette colors for palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3'; the 2nd and 3rd accept a ':opacity' suffix (e.g. 'blue,white:0.5,white:0.26'). Default: white,white:0.5,white:0.26.",
-            valueName: "c1,c2,c3"
-        )
-    )
-    var symbolPalette: String?
-
-    @Option(
-        name: .customLong("icon-symbol-weight"),
-        help: ArgumentHelp("Symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
-        transform: { weight in
-            guard validSymbolWeights.contains(weight.lowercased()) else {
-                throw ValidationError("Symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
-            }
-            return weight.lowercased()
-        }
-    )
-    var symbolWeight: String = "auto"
-
-    // Was --symbol-color-rendering flat|gradient.
-    @Option(
-        name: .customLong("icon-symbol-gradient"),
-        help: ArgumentHelp("Symbol gradient fill: on or off (default; gradient requires macOS 26+)", valueName: "on|off")
-    )
-    var symbolGradient: ToggleState = .off
-
-    // nil = unspecified, so the effective value can default based on the source
-    // (off for imported images, on for SF Symbols).
-    @Option(
-        name: .customLong("icon-fg-shadow"),
-        help: ArgumentHelp("Foreground shadow: on or off (default: off for images, on for SF Symbols)", valueName: "on|off")
-    )
-    var shadow: ToggleState?
-
-    @Option(
-        name: .customLong("icon-fg-visibility"),
-        help: ArgumentHelp("Foreground visibility: on (default) or off to hide the foreground", valueName: "on|off")
-    )
-    var visibility: ToggleState = .on
 }
 
 // MARK: - Badge Options
@@ -672,20 +673,20 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     )
     var symbolName: String?
 
-    @OptionGroup(title: "Export")
-    var export: ExportOptions
-
     @OptionGroup(title: "Generation")
     var generation: GenerationOptions
-
-    @OptionGroup(title: "Background")
-    var background: BackgroundOptions
-
+    
     @OptionGroup(title: "Icon Foreground")
     var iconForeground: IconForegroundOptions
 
+    @OptionGroup(title: "Background")
+    var background: IconBackgroundOptions
+
     @OptionGroup(title: "Badge")
     var badge: BadgeOptions
+    
+    @OptionGroup(title: "Export")
+    var export: ExportOptions
 
     @OptionGroup(title: "Output")
     var output: OutputOptions

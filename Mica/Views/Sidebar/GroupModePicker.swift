@@ -20,7 +20,7 @@ struct GroupModePicker: View {
             HStack(spacing: 0) {
                 ForEach(IconModeSegment.allCases) { segment in
                     Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
+                        withAnimation() {
                             isSystem = (segment == .system)
                         }
                     } label: {
