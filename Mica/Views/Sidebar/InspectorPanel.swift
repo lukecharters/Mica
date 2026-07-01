@@ -14,6 +14,8 @@ struct InspectorPanel: View {
     let tab: InspectorTab
     let colorOptions: [(name: String, color: Color)]
     let appexHasImage: Bool
+    /// Panel width, driven by the resizable divider in `ContentView`.
+    let width: CGFloat
 
     var body: some View {
         Group {
@@ -37,9 +39,10 @@ struct InspectorPanel: View {
                 )
             }
         }
-        // Fixed width so the inspector never resizes when its content changes
-        // (Controls vs Export tab, or Custom vs System generation mode).
-        .frame(width: 380)
+        // Width is controlled by the parent (persisted + drag-resizable) so the
+        // inspector never resizes on its own when content changes (Controls vs
+        // Export tab, or Custom vs System generation mode).
+        .frame(width: width)
         .background(Color(.windowBackgroundColor))
     }
 }

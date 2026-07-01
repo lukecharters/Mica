@@ -39,28 +39,50 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
-    /// Fixed sidebar width. The inspector's fixed width lives in `InspectorPanel`.
-    private let sidebarWidth: CGFloat = 280
+    /// User-adjustable panel widths, persisted across launches. Dragging a divider
+    /// writes here; the values are clamped to `sidebarRange` / `inspectorRange`.
+    @AppStorage("layout.sidebarWidth") private var sidebarWidth: Double = 280
+    @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
+
+    private let sidebarRange: ClosedRange<Double> = 220...360
+    private let inspectorRange: ClosedRange<Double> = 330...460
+
+    /// Transient widths while a divider is being dragged. Kept out of `@AppStorage`
+    /// so the drag doesn't write to `UserDefaults` every frame; committed on release.
+    @State private var liveSidebarWidth: Double?
+    @State private var liveInspectorWidth: Double?
+
     /// Shared animation for sliding the sidebar / inspector in and out.
     private let panelAnimation: Animation = .easeInOut(duration: 0.25)
 
     var body: some View {
         // A plain HStack (rather than HSplitView) keeps the sidebar and inspector at
-        // fixed widths so they never resize when the other is toggled or when their
-        // content changes (generation mode / export tab). Show/hide is driven by
-        // edge `.move` transitions so each panel slides in and out from its own edge.
-        // Trade-off: the panels are no longer drag-resizable.
+        // controlled widths so they never resize when the other is toggled or when
+        // their content changes (generation mode / export tab). Show/hide is driven
+        // by edge `.move` transitions so each panel slides in from its own edge. Each
+        // panel carries a `ResizeHandle` on its inner edge for manual drag-resizing;
+        // widths persist via `@AppStorage`.
         HStack(spacing: 0) {
             if showLayerSidebar {
-                LayerSidebar(
-                    iconSettings: $viewModel.iconSettings,
-                    selection: $selection,
-                    appexEnclosureColor: viewModel.appexEnclosureColor,
-                    appexSymbolColor: viewModel.appexSymbolColor,
-                    badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
-                    badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
-                )
-                .frame(width: sidebarWidth)
+                HStack(spacing: 0) {
+                    LayerSidebar(
+                        iconSettings: $viewModel.iconSettings,
+                        selection: $selection,
+                        appexEnclosureColor: viewModel.appexEnclosureColor,
+                        appexSymbolColor: viewModel.appexSymbolColor,
+                        badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
+                        badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
+                    )
+                    .frame(width: CGFloat(liveSidebarWidth ?? sidebarWidth))
+
+                    ResizeHandle(
+                        base: sidebarWidth,
+                        range: sidebarRange,
+                        sign: 1,
+                        onChange: { liveSidebarWidth = $0 },
+                        onCommit: { sidebarWidth = $0; liveSidebarWidth = nil }
+                    )
+                }
                 .transition(.move(edge: .leading))
             }
 
@@ -88,18 +110,29 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if showInspector {
-                InspectorPanel(
-                    iconSettings: $viewModel.iconSettings,
-                    appexEnclosureColor: $viewModel.appexEnclosureColor,
-                    appexSymbolColor: $viewModel.appexSymbolColor,
-                    badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
-                    badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
-                    showExportDialog: $viewModel.showExportDialog,
-                    selection: selection,
-                    tab: inspectorTab,
-                    colorOptions: colorOptions,
-                    appexHasImage: viewModel.appexRenderedImage != nil
-                )
+                HStack(spacing: 0) {
+                    ResizeHandle(
+                        base: inspectorWidth,
+                        range: inspectorRange,
+                        sign: -1,
+                        onChange: { liveInspectorWidth = $0 },
+                        onCommit: { inspectorWidth = $0; liveInspectorWidth = nil }
+                    )
+
+                    InspectorPanel(
+                        iconSettings: $viewModel.iconSettings,
+                        appexEnclosureColor: $viewModel.appexEnclosureColor,
+                        appexSymbolColor: $viewModel.appexSymbolColor,
+                        badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
+                        badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
+                        showExportDialog: $viewModel.showExportDialog,
+                        selection: selection,
+                        tab: inspectorTab,
+                        colorOptions: colorOptions,
+                        appexHasImage: viewModel.appexRenderedImage != nil,
+                        width: CGFloat(liveInspectorWidth ?? inspectorWidth)
+                    )
+                }
                 .transition(.move(edge: .trailing))
             }
         }
@@ -338,6 +371,44 @@ struct ScaledIconPreview: View {
                 return // Only process first item
             }
         }
+    }
+}
+
+/// A thin draggable divider that resizes an adjacent panel. `sign` is `+1` when the
+/// handle sits on the panel's trailing edge (drag right ⇒ wider, e.g. the sidebar)
+/// and `-1` when it sits on the panel's leading edge (the inspector). The 1pt
+/// `Divider` gets a wider transparent hit target so it's easy to grab.
+///
+/// The drag is measured in the `.global` coordinate space on purpose: the handle
+/// moves as its panel resizes, so a `.local`-space translation would be measured
+/// against a shifting origin and oscillate. `base` is the committed width (stable
+/// for the duration of a drag); the live value is reported via `onChange` and the
+/// final value committed via `onCommit`.
+private struct ResizeHandle: View {
+    let base: Double
+    let range: ClosedRange<Double>
+    let sign: Double
+    let onChange: (Double) -> Void
+    let onCommit: (Double) -> Void
+
+    var body: some View {
+        Divider()
+            .overlay {
+                Color.clear
+                    .frame(width: 20)
+                    .contentShape(Rectangle())
+                    .pointerStyle(.columnResize)
+                    .gesture(
+                        DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                            .onChanged { value in onChange(resolved(value.translation.width)) }
+                            .onEnded { value in onCommit(resolved(value.translation.width)) }
+                    )
+            }
+    }
+
+    private func resolved(_ translationX: CGFloat) -> Double {
+        let proposed = base + sign * Double(translationX)
+        return min(max(proposed, range.lowerBound), range.upperBound)
     }
 }
 

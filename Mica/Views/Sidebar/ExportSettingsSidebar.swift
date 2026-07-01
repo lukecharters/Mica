@@ -73,7 +73,7 @@ struct ExportSettingsSidebar: View {
             .disabled(generationMode == .appleReference && !appexHasImage)
         }
         .padding()
-        .frame(width: 220)
+//        .frame(width: 330)
         .background(Color(.windowBackgroundColor))
     }
 
@@ -131,5 +131,5 @@ struct SidebarSection<Content: View>: View {
             .foregroundStyle(.secondary)
     }
     .padding()
-    .frame(width: 220)
+//    .frame(width: 330)
 }
