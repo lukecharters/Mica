@@ -149,10 +149,10 @@ struct ContentView: View {
                 ZoomMenu(zoomLevel: $zoomLevel)
                 PreviewSizeMenu(previewPointSize: $previewPointSize)
             }
-            ToolbarItemGroup(placement: .principal) {
-                Text("Icon Generation Mode")
-                    .padding(8)
-            }
+//            ToolbarItemGroup(placement: .principal) {
+//                Text("Icon Generation Mode")
+//                    .padding(8)
+//            }
 
             ToolbarItem(placement: .automatic) {
                 Picker("Styling/Export", selection: $inspectorTab) {
@@ -227,7 +227,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.windowBackgroundColor))
+        .background(Color(.tertiarySystemFill))
     }
 
     /// Calculates the preview display size based on zoom level
