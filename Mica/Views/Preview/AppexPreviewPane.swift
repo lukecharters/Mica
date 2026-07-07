@@ -34,15 +34,19 @@ struct AppexPreviewPane: View {
     private var previewContent: some View {
         ScrollView([.horizontal, .vertical]) {
             VStack {
-                Spacer(minLength: 60)
+//                Spacer(minLength: 0)
                 iconContent
-                    .padding()
-                Spacer()
+                // .padding()
+//                Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.secondary.opacity(0.3))
+                )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.windowBackgroundColor))
+        .background(Color(.tertiarySystemFill))
     }
 
     @ViewBuilder
