@@ -15,7 +15,7 @@ struct IconLayoutSection: View {
             Slider(value: $iconSettings.manualSymbolScale,
                    in: IconSettings.manualSymbolScaleRange,
                    step: 0.05) {
-                Text("Scale")
+                Text("Symbol Scale")
                 Text("\(Int(iconSettings.manualSymbolScale * 100))%")
                     .foregroundStyle(.secondary)
                 //                .monospacedDigit()

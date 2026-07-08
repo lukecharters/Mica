@@ -16,13 +16,13 @@ struct GroupModePicker: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Icon Generation Mode").font(.headline)
+            Text("Generation Mode").font(.headline)
             HStack(spacing: 0) {
                 ForEach(IconModeSegment.allCases) { segment in
                     Button {
-                        withAnimation() {
+//                        withAnimation() {
                             isSystem = (segment == .system)
-                        }
+//                        }
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: segment.systemImageName)

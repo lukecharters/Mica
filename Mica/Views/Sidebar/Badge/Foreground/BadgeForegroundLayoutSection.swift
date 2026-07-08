@@ -13,7 +13,7 @@ struct BadgeLayoutSection: View {
             Slider(value: $iconSettings.badgeSymbolScale,
                    in: IconSettings.manualSymbolScaleRange,
                    step: 0.05) {
-                Text("Scale")
+                Text("Symbol Scale")
                 Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

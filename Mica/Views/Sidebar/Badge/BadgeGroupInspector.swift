@@ -50,7 +50,7 @@ struct BadgeGroupInspector: View {
                     }
                 }
 
-                Section("Layout", isExpanded: $badgeGroupLayoutExpanded) {
+                Section("Badge Layout", isExpanded: $badgeGroupLayoutExpanded) {
                     BadgeGroupLayoutSection(iconSettings: $iconSettings)
                 }
             }
