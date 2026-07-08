@@ -35,7 +35,9 @@ struct ContentView: View {
     @State private var previewPointSize: CGFloat? = nil
     @State private var selection: LayerSelection = .group(.icon)
     @State private var appexService = AppexReferenceService()
-    @State private var showLayerSidebar: Bool = true
+    /// NavigationSplitView experiment: drives the sidebar column instead of the old
+    /// `showLayerSidebar` flag. `.all` shows the sidebar; `.detailOnly` hides it.
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
@@ -47,45 +49,29 @@ struct ContentView: View {
     private let sidebarRange: ClosedRange<Double> = 220...360
     private let inspectorRange: ClosedRange<Double> = 330...460
 
-    /// Transient widths while a divider is being dragged. Kept out of `@AppStorage`
-    /// so the drag doesn't write to `UserDefaults` every frame; committed on release.
-    @State private var liveSidebarWidth: Double?
-    @State private var liveInspectorWidth: Double?
-
-    /// Shared animation for sliding the sidebar / inspector in and out.
-    private let panelAnimation: Animation = .easeInOut(duration: 0.25)
 
     var body: some View {
-        // A plain HStack (rather than HSplitView) keeps the sidebar and inspector at
-        // controlled widths so they never resize when the other is toggled or when
-        // their content changes (generation mode / export tab). Show/hide is driven
-        // by edge `.move` transitions so each panel slides in from its own edge. Each
-        // panel carries a `ResizeHandle` on its inner edge for manual drag-resizing;
-        // widths persist via `@AppStorage`.
-        HStack(spacing: 0) {
-            if showLayerSidebar {
-                HStack(spacing: 0) {
-                    LayerSidebar(
-                        iconSettings: $viewModel.iconSettings,
-                        selection: $selection,
-                        appexEnclosureColor: viewModel.appexEnclosureColor,
-                        appexSymbolColor: viewModel.appexSymbolColor,
-                        badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
-                        badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
-                    )
-                    .frame(width: CGFloat(liveSidebarWidth ?? sidebarWidth))
-
-                    ResizeHandle(
-                        base: sidebarWidth,
-                        range: sidebarRange,
-                        sign: 1,
-                        onChange: { liveSidebarWidth = $0 },
-                        onCommit: { sidebarWidth = $0; liveSidebarWidth = nil }
-                    )
-                }
-                .transition(.move(edge: .leading))
-            }
-
+        // EXPERIMENT: the left sidebar is now the sidebar column of a NavigationSplitView
+        // instead of a hand-rolled panel inside a plain HStack. NavigationSplitView owns
+        // the sidebar's translucent material, native drag-resize, and show/hide animation
+        // (driven by `columnVisibility`). The preview + inspector remain a plain HStack in
+        // the detail column — the inspector keeps its custom `ResizeHandle` and `.move`
+        // transition, unchanged, so only the left sidebar's behavior differs.
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            LayerSidebar(
+                iconSettings: $viewModel.iconSettings,
+                selection: $selection,
+                appexEnclosureColor: viewModel.appexEnclosureColor,
+                appexSymbolColor: viewModel.appexSymbolColor,
+                badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
+                badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
+            )
+            .navigationSplitViewColumnWidth(
+                min: sidebarRange.lowerBound,
+                ideal: sidebarWidth,
+                max: sidebarRange.upperBound
+            )
+        } detail: {
             Group {
                 if viewModel.iconSettings.iconGenerationMode == .swiftUI {
                     previewPane
@@ -108,52 +94,43 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if showInspector {
-                HStack(spacing: 0) {
-                    ResizeHandle(
-                        base: inspectorWidth,
-                        range: inspectorRange,
-                        sign: -1,
-                        onChange: { liveInspectorWidth = $0 },
-                        onCommit: { inspectorWidth = $0; liveInspectorWidth = nil }
-                    )
-
-                    InspectorPanel(
-                        iconSettings: $viewModel.iconSettings,
-                        appexEnclosureColor: $viewModel.appexEnclosureColor,
-                        appexSymbolColor: $viewModel.appexSymbolColor,
-                        badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
-                        badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
-                        showExportDialog: $viewModel.showExportDialog,
-                        selection: selection,
-                        tab: inspectorTab,
-                        colorOptions: colorOptions,
-                        appexHasImage: viewModel.appexRenderedImage != nil,
-                        width: CGFloat(liveInspectorWidth ?? inspectorWidth)
-                    )
-                }
-                .transition(.move(edge: .trailing))
-            }
+        }
+        // EXPERIMENT: the right panel is now a native `.inspector` trailing column
+        // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
+        // material, show/hide animation, and native drag-resize; width is a hint via
+        // `.inspectorColumnWidth` (seeded from the old persisted value).
+        //
+        // It's attached to the whole NavigationSplitView (not to the detail content) on
+        // purpose: the detail swaps preview panes between Mica (`previewPane`) and System
+        // (`AppexPreviewPane`) modes. `Group` is a transparent container, so decorating
+        // it made the inspector's host identity change with the active branch — SwiftUI
+        // then rebuilt the inspector and snapped any user-dragged width back to `ideal`.
+        // The NavigationSplitView is a stable host, so the dragged width now survives a
+        // mode switch (within a session).
+        .inspector(isPresented: $showInspector) {
+            InspectorPanel(
+                iconSettings: $viewModel.iconSettings,
+                appexEnclosureColor: $viewModel.appexEnclosureColor,
+                appexSymbolColor: $viewModel.appexSymbolColor,
+                badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
+                badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
+                showExportDialog: $viewModel.showExportDialog,
+                selection: selection,
+                tab: inspectorTab,
+                colorOptions: colorOptions,
+                appexHasImage: viewModel.appexRenderedImage != nil
+            )
+            .inspectorColumnWidth(
+                min: inspectorRange.lowerBound,
+                ideal: inspectorWidth,
+                max: inspectorRange.upperBound
+            )
         }
         .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    withAnimation(panelAnimation) { showLayerSidebar.toggle() }
-                } label: {
-                    Label("Show Sidebar", systemImage: "sidebar.left")
-                }
-                .help("Toggle Layer Sidebar")
-            }
             ToolbarItemGroup(placement: .principal) {
                 ZoomMenu(zoomLevel: $zoomLevel)
                 PreviewSizeMenu(previewPointSize: $previewPointSize)
             }
-//            ToolbarItemGroup(placement: .principal) {
-//                Text("Icon Generation Mode")
-//                    .padding(8)
-//            }
-
             ToolbarItem(placement: .automatic) {
                 Picker("Styling/Export", selection: $inspectorTab) {
                     Label("Controls", systemImage: InspectorTab.controls.systemImage)
@@ -165,7 +142,7 @@ struct ContentView: View {
                 .help("Inspector tab")
                 // Selecting a tab reveals the inspector if it's hidden.
                 .onChange(of: inspectorTab) {
-                    if !showInspector { withAnimation(panelAnimation) { showInspector = true } }
+                    if !showInspector { showInspector = true }
                 }
             }
             if #available(macOS 26.0, *) {
@@ -173,7 +150,7 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .automatic) {
                 Button {
-                    withAnimation(panelAnimation) { showInspector.toggle() }
+                    showInspector.toggle()
                 } label: {
                     Label("Show Inspector", systemImage: "sidebar.right")
                 }
@@ -213,21 +190,20 @@ struct ContentView: View {
         // Size + zoom controls live in the window toolbar (see `.toolbar`).
         ScrollView([.horizontal, .vertical]) {
             VStack {
-                Spacer(minLength: 0)
+//                Spacer(minLength: 0)
 
                 ScaledIconPreview(
                     settings: $viewModel.iconSettings,
                     displaySize: previewDisplaySize,
                     badgeAppexImage: viewModel.badgeAppexRenderedImage
                 )
-                .padding()
+//                .padding()
 
-                Spacer(minLength: 0)
+//                Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.tertiarySystemFill))
     }
 
     /// Calculates the preview display size based on zoom level
@@ -371,44 +347,6 @@ struct ScaledIconPreview: View {
                 return // Only process first item
             }
         }
-    }
-}
-
-/// A thin draggable divider that resizes an adjacent panel. `sign` is `+1` when the
-/// handle sits on the panel's trailing edge (drag right ⇒ wider, e.g. the sidebar)
-/// and `-1` when it sits on the panel's leading edge (the inspector). The 1pt
-/// `Divider` gets a wider transparent hit target so it's easy to grab.
-///
-/// The drag is measured in the `.global` coordinate space on purpose: the handle
-/// moves as its panel resizes, so a `.local`-space translation would be measured
-/// against a shifting origin and oscillate. `base` is the committed width (stable
-/// for the duration of a drag); the live value is reported via `onChange` and the
-/// final value committed via `onCommit`.
-private struct ResizeHandle: View {
-    let base: Double
-    let range: ClosedRange<Double>
-    let sign: Double
-    let onChange: (Double) -> Void
-    let onCommit: (Double) -> Void
-
-    var body: some View {
-        Divider()
-            .overlay {
-                Color.clear
-                    .frame(width: 20)
-                    .contentShape(Rectangle())
-                    .pointerStyle(.columnResize)
-                    .gesture(
-                        DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                            .onChanged { value in onChange(resolved(value.translation.width)) }
-                            .onEnded { value in onCommit(resolved(value.translation.width)) }
-                    )
-            }
-    }
-
-    private func resolved(_ translationX: CGFloat) -> Double {
-        let proposed = base + sign * Double(translationX)
-        return min(max(proposed, range.lowerBound), range.upperBound)
     }
 }
 
