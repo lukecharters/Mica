@@ -46,7 +46,6 @@ struct AppexPreviewPane: View {
                 )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.tertiarySystemFill))
     }
 
     @ViewBuilder

@@ -43,7 +43,9 @@ struct LayerSidebar: View {
     private func migrateSelection(group: IconLayerGroup) {
         guard case .layer(let g, _) = selection, g == group else { return }
         if isSystem(group) {
+//            withAnimation() {
             selection = .group(group)
+//           }
         }
     }
 

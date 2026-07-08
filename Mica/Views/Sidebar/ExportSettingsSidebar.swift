@@ -73,8 +73,6 @@ struct ExportSettingsSidebar: View {
             .disabled(generationMode == .appleReference && !appexHasImage)
         }
         .padding()
-//        .frame(width: 330)
-        .background(Color(.windowBackgroundColor))
     }
 
     private var retinaSizeDescription: String {
