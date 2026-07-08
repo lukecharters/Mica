@@ -1,6 +1,12 @@
 // Views/Sidebar/LayerControls.swift
 import SwiftUI
 
+/// Shared UserDefaults keys for sidebar-wide preferences read by multiple
+/// section views via `@AppStorage`.
+enum SidebarSettings {
+    static let advancedControlsKey = "sidebar.advancedControls"
+}
+
 /// Renders the Source / Layout / Appearance controls for whichever layer (or group)
 /// is selected in the left LayerSidebar.
 struct LayerControls: View {
@@ -25,6 +31,7 @@ struct LayerControls: View {
     @AppStorage("sidebar.badgeBackgroundSource.expanded") private var badgeBackgroundSourceExpanded = true
     @AppStorage("sidebar.badgeBackgroundLayout.expanded") private var badgeBackgroundLayoutExpanded = true
     @AppStorage("sidebar.badgeBackgroundAppearance.expanded") private var badgeBackgroundAppearanceExpanded = true
+    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
 
     /// Remembers the badge's previously-picked non-system source so toggling
     /// System → Custom restores the user's choice instead of forcing `.sfSymbol`.
@@ -34,6 +41,24 @@ struct LayerControls: View {
     @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
 
     var body: some View {
+        VStack(spacing: 0) {
+            controlsScrollView
+            Divider()
+            HStack {
+                Text("Show Advanced Controls")
+                    .font(.subheadline)
+                Spacer()
+                Toggle("Show Advanced Controls", isOn: $advancedControlsEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+        }
+    }
+
+    private var controlsScrollView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 switch selection {

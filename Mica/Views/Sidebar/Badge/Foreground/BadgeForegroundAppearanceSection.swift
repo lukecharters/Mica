@@ -9,6 +9,8 @@ struct BadgeAppearanceSection: View {
     @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var badgeAppexEnclosureColor: AppexColor
 
+    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+
     @State private var useCustomBadgeSymbolColor = false
     @State private var useCustomBadgeHierarchicalColor = false
     @State private var useCustomBadgePalettePrimaryColor = false
@@ -34,27 +36,31 @@ struct BadgeAppearanceSection: View {
 
     @ViewBuilder
     private var sfSymbolControls: some View {
-        Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
-            ForEach(SymbolRenderingMode.allCases) { mode in
-                Text(mode.rawValue).tag(mode)
+        if advancedControlsEnabled {
+            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
+                ForEach(SymbolRenderingMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
             }
+            .pickerStyle(.inline)
         }
-        .pickerStyle(.inline)
 
         badgeSymbolColorControls
 
-        Picker("Weight", systemImage: "bold", selection: $iconSettings.badgeSymbolWeight) {
-            ForEach(SymbolWeight.allCases) { weight in
-                Text(weight.rawValue).tag(weight)
+        if advancedControlsEnabled {
+            Picker("Weight", systemImage: "bold", selection: $iconSettings.badgeSymbolWeight) {
+                ForEach(SymbolWeight.allCases) { weight in
+                    Text(weight.rawValue).tag(weight)
+                }
             }
-        }
-        .pickerStyle(.menu)
+            .pickerStyle(.menu)
 
-        if #available(macOS 26.0, *) {
-            Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
-                get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
-                set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
-            ))
+            if #available(macOS 26.0, *) {
+                Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
+                    get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
+                    set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
+                ))
+            }
         }
 
         Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)

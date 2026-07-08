@@ -5,6 +5,8 @@ struct BackgroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
+    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+
     @State private var useCustomBackgroundColor = false
 
     var body: some View {
@@ -20,12 +22,26 @@ struct BackgroundAppearanceSection: View {
 
     @ViewBuilder
     private var importedControls: some View {
-        Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
-            ForEach(BackgroundShadowStyle.allCases) { style in
-                Text(style.rawValue).tag(style)
+        shadowControl
+    }
+
+    /// Advanced mode exposes all shadow styles; simple mode is a plain on/off
+    /// toggle that maps "on" to the modern macOS 26 style.
+    @ViewBuilder
+    private var shadowControl: some View {
+        if advancedControlsEnabled {
+            Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
+                ForEach(BackgroundShadowStyle.allCases) { style in
+                    Text(style.rawValue).tag(style)
+                }
             }
+            .pickerStyle(.segmented)
+        } else {
+            Toggle("Shadow", systemImage: "app.shadow", isOn: Binding(
+                get: { iconSettings.backgroundShadowStyle != .off },
+                set: { iconSettings.backgroundShadowStyle = $0 ? .macOS26 : .off }
+            ))
         }
-        .pickerStyle(.segmented)
     }
 
     @ViewBuilder
@@ -46,35 +62,34 @@ struct BackgroundAppearanceSection: View {
         }
         .pickerStyle(.menu)
 
-        Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
-
-        Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
-            ForEach(BackgroundShadowStyle.allCases) { style in
-                Text(style.rawValue).tag(style)
-            }
+        if advancedControlsEnabled {
+            Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
         }
-        .pickerStyle(.segmented)
+
+        shadowControl
     }
 
     @ViewBuilder
     private var standardControls: some View {
-        
-        Picker("Corners", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
-            ForEach(IconCornerRadiusStyle.allCases) { style in
-                Text(style.rawValue).tag(style)
-            }
-        }
-        .pickerStyle(.segmented)
-        
-        Toggle("Custom Gradient", isOn: Binding(
-            get: { iconSettings.useCustomColors },
-            set: { newValue in
-                iconSettings.useCustomColors = newValue
-                if newValue {
-                    iconSettings.enableBackgroundGradient = true
+
+        if advancedControlsEnabled {
+            Picker("Corners", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
+                ForEach(IconCornerRadiusStyle.allCases) { style in
+                    Text(style.rawValue).tag(style)
                 }
             }
-        ))
+            .pickerStyle(.segmented)
+
+            Toggle("Custom Gradient", isOn: Binding(
+                get: { iconSettings.useCustomColors },
+                set: { newValue in
+                    iconSettings.useCustomColors = newValue
+                    if newValue {
+                        iconSettings.enableBackgroundGradient = true
+                    }
+                }
+            ))
+        }
 
         if iconSettings.useCustomColors {
             ColorPicker("Primary", selection: $iconSettings.customPrimaryColor)
@@ -125,16 +140,11 @@ struct BackgroundAppearanceSection: View {
             }
         }
 
-        if !iconSettings.useCustomColors {
+        if advancedControlsEnabled && !iconSettings.useCustomColors {
             Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
         }
 
-        Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
-            ForEach(BackgroundShadowStyle.allCases) { style in
-                Text(style.rawValue).tag(style)
-            }
-        }
-        .pickerStyle(.segmented)
+        shadowControl
     }
 }
 
