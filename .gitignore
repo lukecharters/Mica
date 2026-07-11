@@ -94,3 +94,4 @@ default.profraw
 # Local git-history backups
 *.bundle
 
+docs/plans/
