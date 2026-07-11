@@ -64,7 +64,8 @@ fastlane/test_output
 
 *.DS_Store
 
-# Claude Code local overrides
+# Claude Code
+.claude/
 .claude.local.md
 
 # Superpowers brainstorm sessions
@@ -74,6 +75,7 @@ fastlane/test_output
 # Github Copilot
 .github/
 .vscode/
+.agents/
 
 
 screenshots/
@@ -85,3 +87,4 @@ scripts/get-xcode-docs.sh
 scripts/tests/smoke-output/
 
 default.profraw
+
