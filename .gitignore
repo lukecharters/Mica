@@ -72,10 +72,13 @@ fastlane/test_output
 .superpowers/
 .worktrees/
 
-# Github Copilot
-.github/
+# Editor settings & agent tooling
 .vscode/
 .agents/
+.github/hooks/
+
+# Local-only session transcripts
+research/transcripts/
 
 
 screenshots/
@@ -87,4 +90,7 @@ scripts/get-xcode-docs.sh
 scripts/tests/smoke-output/
 
 default.profraw
+
+# Local git-history backups
+*.bundle
 
