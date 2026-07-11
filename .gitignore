@@ -95,3 +95,6 @@ default.profraw
 *.bundle
 
 docs/plans/
+
+# Code-review findings (local-only)
+code-review/
