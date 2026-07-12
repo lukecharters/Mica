@@ -172,6 +172,11 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("L", modifiers: [.command, .shift])
 
+                Button("Auto Calibration Playground") {
+                    openWindow(id: "auto-calibration")
+                }
+                .keyboardShortcut("A", modifiers: [.command, .shift])
+
                 Button("Resizable Dim-Cal Playground") {
                     openWindow(id: "resizable-dim-cal")
                 }
@@ -222,6 +227,11 @@ struct MicaApp: App {
             DimensionCalibrationPlayground()
         }
         .defaultSize(width: 1200, height: 800)
+
+        Window("Auto Calibration Playground", id: "auto-calibration") {
+            AutoCalibrationPlayground()
+        }
+        .defaultSize(width: 1250, height: 850)
 
         Window("Resizable Dim-Cal Playground", id: "resizable-dim-cal") {
             ResizableDimCalPlayground()

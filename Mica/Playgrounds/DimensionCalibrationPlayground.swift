@@ -132,7 +132,9 @@ class FamilyCalStore {
 
     private func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            migrateFromDimCalibration()
+            if !seedFromBundledCalibration() {
+                migrateFromDimCalibration()
+            }
             return
         }
         do {
@@ -145,6 +147,22 @@ class FamilyCalStore {
         } catch {
             print("FamilyCalStore: failed to load — \(error)")
         }
+    }
+
+    /// Seeds the working copy from the bundled family-calibration.json
+    /// (the same fallback SymbolSizingService uses in production) when no
+    /// Application Support copy exists yet.
+    private func seedFromBundledCalibration() -> Bool {
+        guard let url = Bundle.main.url(forResource: "family-calibration", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data)
+        else { return false }
+        symbolEntries = file.symbols
+        containerEntries = file.containers
+        familyOverrides = file.familyOverrides
+        print("FamilyCalStore: seeded \(symbolEntries.count) symbols from bundled calibration")
+        save()
+        return true
     }
 
     // MARK: - Migration from dim-calibration.json

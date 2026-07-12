@@ -31,6 +31,9 @@ struct FamilyCalEntry: Codable, Equatable {
     var yOffset: Double
     var weight: String   // "regular" or "medium"
     var status: String   // "calibrated", "skipped", "needs-review"
+    /// Provenance marker; nil for hand-calibrated entries, "auto-boxfit" for
+    /// entries accepted from the Auto Calibration playground's predicted rule.
+    var source: String? = nil
 }
 
 // MARK: - Calibration File
