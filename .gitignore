@@ -98,3 +98,5 @@ docs/plans/
 
 # Code-review findings (local-only)
 code-review/
+# Apple-derived data exports (never commit)
+research/container_recipes/
