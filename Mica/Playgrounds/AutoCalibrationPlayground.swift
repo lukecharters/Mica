@@ -8,8 +8,10 @@
 //   - Calibrated symbols that disagree with the rule are surfaced as outliers
 //     (likely stale macOS 15-era captures) for review against Apple's
 //     ground-truth appex render.
-//   - Symbols in Apple's container_recipes.plist are flagged as hand-tuned:
-//     the rule is NOT expected to match those, so they are never batch-filled.
+//   - Symbols in Apple's container_recipes.plist carry an apple.logo badge
+//     and are excluded from batch accept (the rule is NOT expected to match
+//     them), but otherwise bucket like any other symbol: only actual
+//     threshold misses show as outliers.
 //
 // Research: research/automated-sizing-and-system-resources-2026-07.md
 
@@ -26,7 +28,6 @@ private struct AutoCalItem: Identifiable {
 private enum AutoCalFilter: String, CaseIterable {
     case outliers = "Outliers"
     case uncalibrated = "Uncalibrated"
-    case appleTuned = "Apple-Tuned"
     case agrees = "Agrees"
     case all = "All"
 }
@@ -45,7 +46,9 @@ private struct TightBoundsCacheFile: Codable {
     var bounds: [String: SymbolTightBounds]
 }
 
-private enum TightBoundsCache {
+/// Shared with DimensionCalibrationPlayground, which reads the same cache to
+/// flag box-fit outliers for editing.
+enum TightBoundsCache {
     static var url: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         return appSupport
@@ -299,13 +302,11 @@ struct AutoCalibrationPlayground: View {
         switch filter {
         case .all:
             return true
-        case .appleTuned:
-            return recipeSymbols.contains(item.symbol)
         case .uncalibrated:
             return store.symbolEntries[item.symbol] == nil
         case .outliers:
             guard let d = delta(for: item) else { return false }
-            return abs(d) > threshold && !recipeSymbols.contains(item.symbol)
+            return abs(d) > threshold
         case .agrees:
             guard let d = delta(for: item) else { return false }
             return abs(d) <= threshold

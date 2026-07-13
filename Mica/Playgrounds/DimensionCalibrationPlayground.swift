@@ -291,6 +291,7 @@ private enum FamilyFilterMode: String, CaseIterable {
     case all = "All"
     case uncalibrated = "Uncalibrated"
     case needsReview = "Needs Review"
+    case outliers = "Outliers"
     case calibrated = "Calibrated"
     case skipped = "Skipped"
     case containers = "Containers"
@@ -372,6 +373,14 @@ struct DimensionCalibrationPlayground: View {
     /// symbol name -> dim key (for container lookup)
     @State private var symbolDimKeys: [String: String] = [:]
     @State private var symbolMetrics: [String: SymbolMetrics] = [:]
+
+    /// Box-fit multipliers computed from the Auto Calibration playground's
+    /// tight-bounds cache (auto-tight-bounds.json). Empty until that
+    /// playground (⇧⌘A) has measured. Drives the Outliers filter.
+    @State private var boxFitPredictions: [String: Double] = [:]
+
+    /// Same default disagreement threshold as the Auto Calibration playground.
+    private let outlierThreshold = 0.02
 
     // All Icons multi-selection
     @State private var allIconsSelection: Set<String> = []
@@ -562,6 +571,10 @@ struct DimensionCalibrationPlayground: View {
                 }
                 return store.familyAllMembers(withStatus: "skipped", members: family.members)
             }
+        case .outliers:
+            list = list.filter { family in
+                !family.isContainer && family.members.contains(where: isBoxFitOutlier)
+            }
         }
 
         if !searchText.isEmpty {
@@ -583,6 +596,30 @@ struct DimensionCalibrationPlayground: View {
         }
 
         return list
+    }
+
+    // MARK: - Box-Fit Outliers
+
+    /// Calibrated symbol whose stored multiplier disagrees with the box-fit
+    /// prediction by more than the threshold.
+    private func isBoxFitOutlier(_ symbol: String) -> Bool {
+        guard let delta = boxFitDelta(for: symbol) else { return false }
+        return abs(delta) > outlierThreshold
+    }
+
+    /// prediction − calibrated multiplier, or nil when either side is missing.
+    private func boxFitDelta(for symbol: String) -> Double? {
+        guard let entry = store.symbolEntries[symbol], entry.status == "calibrated",
+              let prediction = boxFitPredictions[symbol] else { return nil }
+        return prediction - entry.multiplier
+    }
+
+    /// In the Outliers filter, land on the first outlier member instead of
+    /// member 0 so the flagged symbol is immediately editable.
+    private func firstRelevantMemberIndex() -> Int {
+        guard filterMode == .outliers, let family = currentFamily,
+              let idx = family.members.firstIndex(where: isBoxFitOutlier) else { return 0 }
+        return idx
     }
 
     private var currentFamily: SymbolFamily? {
@@ -628,10 +665,13 @@ struct DimensionCalibrationPlayground: View {
         }
         .onAppear {
             baselineData = SymbolBaselineData.load()
+            if let bounds = TightBoundsCache.load() {
+                boxFitPredictions = bounds.mapValues { SymbolAutoSizingService.multiplier(for: $0) }
+            }
             loadCurrentMember()
         }
         .onChange(of: selectedIndex) { _, _ in
-            memberIndex = 0
+            memberIndex = firstRelevantMemberIndex()
             loadCurrentMember()
         }
         .onChange(of: memberIndex) { _, _ in loadCurrentMember() }
@@ -746,9 +786,16 @@ struct DimensionCalibrationPlayground: View {
                 .pickerStyle(.segmented)
                 .onChange(of: filterMode) { _, _ in
                     selectedIndex = 0
-                    memberIndex = 0
+                    memberIndex = firstRelevantMemberIndex()
                     loadCurrentMember()
                 }
+            }
+
+            if filterMode == .outliers && boxFitPredictions.isEmpty {
+                Label("No tight-bounds cache — open the Auto Calibration playground (⇧⌘A) to measure first.",
+                      systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
 
             HStack {
@@ -864,6 +911,12 @@ struct DimensionCalibrationPlayground: View {
                                         .font(.caption2.monospaced())
                                         .foregroundStyle(idx == memberIndex ? .primary : .tertiary)
                                         .fontWeight(idx == memberIndex ? .bold : .regular)
+                                    if let delta = boxFitDelta(for: sym), abs(delta) > outlierThreshold {
+                                        Text(String(format: "%+.3f", delta))
+                                            .font(.system(size: 8).monospacedDigit())
+                                            .foregroundStyle(.red)
+                                            .help("Box-fit prediction disagrees with calibration by this much")
+                                    }
                                 }
                                 .onTapGesture { memberIndex = idx }
                                 .contextMenu {
@@ -943,6 +996,25 @@ struct DimensionCalibrationPlayground: View {
                 }
                 Slider(value: $multiplier, in: 0.3...1.0, step: 0.01)
                     .onChange(of: multiplier) { _, _ in autoSave() }
+                if let symbol = currentSymbol, let prediction = boxFitPredictions[symbol] {
+                    HStack(spacing: 6) {
+                        Text(String(format: "Box-fit prediction: %.3f", prediction))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.blue)
+                        if let delta = boxFitDelta(for: symbol) {
+                            Text(String(format: "(Δ %+.3f)", delta))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(abs(delta) > outlierThreshold ? .red : .green)
+                        }
+                        Button("Use") {
+                            multiplier = (prediction * 1000).rounded() / 1000
+                            autoSave()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                        .disabled(abs(multiplier - prediction) < 0.0005)
+                    }
+                }
                 HStack(spacing: 4) {
                     ForEach([0.43, 0.44, 0.46, 0.48, 0.5, 0.52, 0.53, 0.54, 0.56, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66], id: \.self) { val in
                         Button(String(format: "%.2f", val)) {
