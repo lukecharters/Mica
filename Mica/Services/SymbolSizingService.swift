@@ -1,10 +1,13 @@
 // SymbolSizingService.swift - Unified SF Symbol sizing resolver
 //
 // Resolves the font-size multiplier, offsets, and weight for any SF Symbol.
-// Priority: family calibration -> container calibration -> default (0.55).
-// Calibration data loaded once lazily from family-calibration.json.
+// Priority: family calibration -> container calibration -> box-fit prediction
+// -> default (0.55). Calibration data loaded once lazily from
+// family-calibration.json; box-fit measures the symbol's tight bounds at
+// runtime (cached per process) via SymbolAutoSizingService.
 
 import SwiftUI
+import Synchronization
 
 // MARK: - Resolved Sizing
 
@@ -19,6 +22,7 @@ struct ResolvedSymbolSizing {
 enum SizingSource: String {
     case familyCalibration
     case containerCalibration
+    case autoBoxFit
     case defaultFallback
 }
 
@@ -50,7 +54,20 @@ struct SymbolSizingService {
             )
         }
 
-        // 3. Default
+        // 3. Box-fit prediction from measured tight bounds. Offsets stay
+        // zero: xOffset is optical and yOffset only partially predictable,
+        // so predictions are multiplier-only.
+        if let multiplier = boxFitMultiplier(for: symbolName) {
+            return ResolvedSymbolSizing(
+                multiplier: multiplier,
+                xOffset: 0,
+                yOffset: 0,
+                weight: .regular,
+                source: .autoBoxFit
+            )
+        }
+
+        // 4. Default (symbol unknown to the system — nothing to measure)
         return ResolvedSymbolSizing(
             multiplier: 0.55,
             xOffset: 0,
@@ -83,6 +100,22 @@ struct SymbolSizingService {
 
         return FamilyCalFile()
     }()
+
+    /// Measured box-fit multipliers, one entry per symbol per process.
+    /// `nil` values mark symbols that failed to render so they aren't
+    /// re-measured on every resolve.
+    private static let boxFitCache = Mutex<[String: Double?]>([:])
+
+    private static func boxFitMultiplier(for symbolName: String) -> Double? {
+        if let cached = boxFitCache.withLock({ $0[symbolName] }) {
+            return cached
+        }
+        let multiplier = SymbolAutoSizingService
+            .measureTightBounds(symbol: symbolName)
+            .map(SymbolAutoSizingService.multiplier(for:))
+        boxFitCache.withLock { $0[symbolName] = multiplier }
+        return multiplier
+    }
 
     private static func detectContainerType(_ symbolName: String) -> ContainerType? {
         let components = symbolName.split(separator: ".")

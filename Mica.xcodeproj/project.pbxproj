@@ -122,6 +122,7 @@
 				Services/AppexReferenceService.swift,
 				Services/IconRenderer.swift,
 				Services/ImageImportService.swift,
+				Services/SymbolAutoSizingService.swift,
 				Services/SymbolSizingService.swift,
 			);
 			target = 8C3148C82E61E39F00C7A0A9 /* mica-cli */;

@@ -1,8 +1,9 @@
 // SymbolSizingServiceTests.swift
-// SymbolSizingService.resolve(for:) picks one of three sources per symbol:
+// SymbolSizingService.resolve(for:) picks one of four sources per symbol:
 //  1. family calibration (per-symbol hit)
 //  2. container calibration (suffix .circle/.square/.rectangle)
-//  3. default fallback (multiplier 0.55)
+//  3. auto box-fit (real symbol with no calibration entry — measured at runtime)
+//  4. default fallback (multiplier 0.55; symbol unknown to the system)
 // The bundled family-calibration.json is the source of truth for the
 // per-symbol anchors; if Apple/we re-calibrate star.fill, update the
 // expected values below.
@@ -57,9 +58,44 @@ struct SymbolSizingServiceTests {
         #expect(r.weight == .regular)
     }
 
+    // MARK: - Auto box-fit
+
+    // These symbols exist in the system but have no per-symbol entry in the
+    // shipped family-calibration.json and no container suffix. If they get
+    // calibrated later, swap in another symbol from the uncalibrated set.
+    @Test("A real symbol with no calibration entry resolves via box-fit prediction",
+          arguments: ["soccerball", "accessibility", "apple.terminal"])
+    func autoBoxFit_uncalibratedRealSymbol(_ name: String) {
+        let r = SymbolSizingService.resolve(for: name)
+        #expect(r.source == .autoBoxFit,
+                "Expected autoBoxFit for \(name), got \(r.source)")
+        #expect(r.multiplier >= SymbolAutoSizingService.minMultiplier)
+        #expect(r.multiplier <= SymbolAutoSizingService.maxMultiplier)
+        #expect(r.xOffset == 0, "Box-fit predictions are multiplier-only")
+        #expect(r.yOffset == 0, "Box-fit predictions are multiplier-only")
+        #expect(r.weight == .regular)
+    }
+
+    @Test("Box-fit resolution is stable across repeated calls (cache consistency)")
+    func autoBoxFit_repeatedCallsAgree() {
+        let first = SymbolSizingService.resolve(for: "soccerball")
+        let second = SymbolSizingService.resolve(for: "soccerball")
+        #expect(first.source == .autoBoxFit)
+        #expect(first.multiplier == second.multiplier)
+    }
+
+    @Test("Box-fit multiplier matches a direct SymbolAutoSizingService measurement")
+    func autoBoxFit_matchesDirectMeasurement() throws {
+        let bounds = try #require(
+            SymbolAutoSizingService.measureTightBounds(symbol: "soccerball"))
+        let expected = SymbolAutoSizingService.multiplier(for: bounds)
+        let r = SymbolSizingService.resolve(for: "soccerball")
+        #expect(abs(r.multiplier - expected) < 0.0001)
+    }
+
     // MARK: - Default fallback
 
-    @Test("A symbol with no container suffix and no per-symbol entry returns default 0.55")
+    @Test("A nonexistent symbol (unmeasurable) returns default 0.55")
     func defaultFallback_unknownSymbol() {
         let r = SymbolSizingService.resolve(for: "definitely_unknown_xyz_no_suffix")
         #expect(r.source == .defaultFallback)
