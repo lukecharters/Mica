@@ -379,6 +379,13 @@ struct DimensionCalibrationPlayground: View {
     /// playground (⇧⌘A) has measured. Drives the Outliers filter.
     @State private var boxFitPredictions: [String: Double] = [:]
 
+    /// Outlier membership frozen when the Outliers filter is entered. The
+    /// filter must not re-evaluate live: editing a symbol to within the
+    /// threshold would drop its family out of filteredFamilies mid-drag and
+    /// silently jump the view to the next family. Re-entering the filter
+    /// refreshes the snapshot.
+    @State private var outlierSnapshot: Set<String> = []
+
     /// Same default disagreement threshold as the Auto Calibration playground.
     private let outlierThreshold = 0.02
 
@@ -573,7 +580,7 @@ struct DimensionCalibrationPlayground: View {
             }
         case .outliers:
             list = list.filter { family in
-                !family.isContainer && family.members.contains(where: isBoxFitOutlier)
+                !family.isContainer && family.members.contains { outlierSnapshot.contains($0) }
             }
         }
 
@@ -601,10 +608,15 @@ struct DimensionCalibrationPlayground: View {
     // MARK: - Box-Fit Outliers
 
     /// Calibrated symbol whose stored multiplier disagrees with the box-fit
-    /// prediction by more than the threshold.
+    /// prediction by more than the threshold. Live check — used to build the
+    /// snapshot and for row deltas, never for filtering directly.
     private func isBoxFitOutlier(_ symbol: String) -> Bool {
         guard let delta = boxFitDelta(for: symbol) else { return false }
         return abs(delta) > outlierThreshold
+    }
+
+    private func rebuildOutlierSnapshot() {
+        outlierSnapshot = Set(boxFitPredictions.keys.filter(isBoxFitOutlier))
     }
 
     /// prediction − calibrated multiplier, or nil when either side is missing.
@@ -618,7 +630,7 @@ struct DimensionCalibrationPlayground: View {
     /// member 0 so the flagged symbol is immediately editable.
     private func firstRelevantMemberIndex() -> Int {
         guard filterMode == .outliers, let family = currentFamily,
-              let idx = family.members.firstIndex(where: isBoxFitOutlier) else { return 0 }
+              let idx = family.members.firstIndex(where: outlierSnapshot.contains) else { return 0 }
         return idx
     }
 
@@ -667,6 +679,7 @@ struct DimensionCalibrationPlayground: View {
             baselineData = SymbolBaselineData.load()
             if let bounds = TightBoundsCache.load() {
                 boxFitPredictions = bounds.mapValues { SymbolAutoSizingService.multiplier(for: $0) }
+                rebuildOutlierSnapshot()
             }
             loadCurrentMember()
         }
@@ -784,7 +797,8 @@ struct DimensionCalibrationPlayground: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: filterMode) { _, _ in
+                .onChange(of: filterMode) { _, newMode in
+                    if newMode == .outliers { rebuildOutlierSnapshot() }
                     selectedIndex = 0
                     memberIndex = firstRelevantMemberIndex()
                     loadCurrentMember()
