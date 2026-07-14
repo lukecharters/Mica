@@ -678,7 +678,10 @@ struct DimensionCalibrationPlayground: View {
         .onAppear {
             baselineData = SymbolBaselineData.load()
             if let bounds = TightBoundsCache.load() {
-                boxFitPredictions = bounds.mapValues { SymbolAutoSizingService.multiplier(for: $0) }
+                boxFitPredictions = Dictionary(uniqueKeysWithValues: bounds.map { symbol, b in
+                    (symbol, SymbolAutoSizingService.multiplier(
+                        for: b, isBadge: SymbolAutoSizingService.isBadgeVariant(symbol)))
+                })
                 rebuildOutlierSnapshot()
             }
             loadCurrentMember()
@@ -1008,7 +1011,7 @@ struct DimensionCalibrationPlayground: View {
                     Text(String(format: "%.4f", multiplier))
                         .font(.caption.monospacedDigit())
                 }
-                Slider(value: $multiplier, in: 0.3...1.0, step: 0.01)
+                Slider(value: $multiplier, in: 0.3...1.0, step: 0.005)
                     .onChange(of: multiplier) { _, _ in autoSave() }
                 if let symbol = currentSymbol, let prediction = boxFitPredictions[symbol] {
                     HStack(spacing: 6) {

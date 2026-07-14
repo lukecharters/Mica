@@ -112,7 +112,8 @@ struct SymbolSizingService {
         }
         let multiplier = SymbolAutoSizingService
             .measureTightBounds(symbol: symbolName)
-            .map(SymbolAutoSizingService.multiplier(for:))
+            .map { SymbolAutoSizingService.multiplier(
+                for: $0, isBadge: SymbolAutoSizingService.isBadgeVariant(symbolName)) }
         boxFitCache.withLock { $0[symbolName] = multiplier }
         return multiplier
     }

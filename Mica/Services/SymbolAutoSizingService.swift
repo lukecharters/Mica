@@ -10,6 +10,11 @@
 // against family-calibration.json ground truth at 0.38% median relative error
 // (73% exact to ±0.01) on the 4,432 calibrated symbols outside
 // container_recipes.plist. See research/automated-sizing-and-system-resources-2026-07.md.
+//
+// Badge composites (`x.badge.y`) are calibrated systematically smaller than
+// the general rule predicts; they use factors refit on the 527 calibrated
+// badge variants (0.75/0.74, same clamps), halving their prediction error
+// (MAE 0.030 -> 0.020).
 
 import AppKit
 
@@ -52,27 +57,36 @@ enum SymbolAutoSizingService {
     // Box-fit rule constants (fitted against family-calibration ground truth).
     static let heightFactor = 0.77
     static let widthFactor = 0.79
+    // Badge-composite refit (see header note).
+    static let badgeHeightFactor = 0.75
+    static let badgeWidthFactor = 0.74
     static let minMultiplier = 0.43
     static let maxMultiplier = 0.65
     /// Global linear coefficient relating measured content-center offset to
     /// calibrated yOffset (fitted; r = -0.61).
     static let yOffsetCoefficient = -0.78
 
+    /// True for badge composites — a `badge` component after the base name
+    /// (`folder.badge.plus` yes, `badge.plus.radiowaves.forward` no).
+    static func isBadgeVariant(_ name: String) -> Bool {
+        name.split(separator: ".").dropFirst().contains("badge")
+    }
+
     /// Applies the box-fit rule to measured tight bounds.
-    static func multiplier(for bounds: SymbolTightBounds) -> Double {
+    static func multiplier(for bounds: SymbolTightBounds, isBadge: Bool = false) -> Double {
         let ref = SymbolTightBounds.referencePointSize
         let th = bounds.tightHeight / ref
         let tw = bounds.tightWidth / ref
         guard th > 0, tw > 0 else { return maxMultiplier }
-        let raw = min(heightFactor / th, widthFactor / tw)
+        let raw = rawFit(th: th, tw: tw, isBadge: isBadge)
         return min(max(raw, minMultiplier), maxMultiplier)
     }
 
-    static func prediction(for bounds: SymbolTightBounds) -> AutoSizingPrediction {
-        let mul = multiplier(for: bounds)
+    static func prediction(for bounds: SymbolTightBounds, isBadge: Bool = false) -> AutoSizingPrediction {
+        let mul = multiplier(for: bounds, isBadge: isBadge)
         let ref = SymbolTightBounds.referencePointSize
         let raw = bounds.tightHeight > 0 && bounds.tightWidth > 0
-            ? min(heightFactor / (bounds.tightHeight / ref), widthFactor / (bounds.tightWidth / ref))
+            ? rawFit(th: bounds.tightHeight / ref, tw: bounds.tightWidth / ref, isBadge: isBadge)
             : maxMultiplier
         return AutoSizingPrediction(
             multiplier: mul,
@@ -82,10 +96,15 @@ enum SymbolAutoSizingService {
         )
     }
 
+    private static func rawFit(th: Double, tw: Double, isBadge: Bool) -> Double {
+        min((isBadge ? badgeHeightFactor : heightFactor) / th,
+            (isBadge ? badgeWidthFactor : widthFactor) / tw)
+    }
+
     /// Measures a symbol's tight content bounds and returns the full prediction.
     static func prediction(forSymbol name: String, weight: NSFont.Weight = .regular) -> AutoSizingPrediction? {
         guard let bounds = measureTightBounds(symbol: name, weight: weight) else { return nil }
-        return prediction(for: bounds)
+        return prediction(for: bounds, isBadge: isBadgeVariant(name))
     }
 
     // MARK: - Tight-Bounds Measurement

@@ -250,7 +250,8 @@ struct AutoCalibrationPlayground: View {
         let containerSymbols = Self.loadContainerSymbols()
         items = bounds
             .filter { !containerSymbols.contains($0.key) }
-            .map { AutoCalItem(symbol: $0.key, prediction: SymbolAutoSizingService.prediction(for: $0.value)) }
+            .map { AutoCalItem(symbol: $0.key, prediction: SymbolAutoSizingService.prediction(
+                for: $0.value, isBadge: SymbolAutoSizingService.isBadgeVariant($0.key))) }
             .sorted { $0.symbol < $1.symbol }
         if selectedSymbol == nil {
             selectedSymbol = filteredItems.first?.symbol

@@ -54,6 +54,34 @@ struct SymbolAutoSizingRuleTests {
         #expect(mul == SymbolAutoSizingService.maxMultiplier)
     }
 
+    @Test func badgeVariantDetection() {
+        #expect(SymbolAutoSizingService.isBadgeVariant("folder.badge.plus"))
+        #expect(SymbolAutoSizingService.isBadgeVariant("person.fill.badge.minus"))
+        // "badge" as the base name is not a badge composite.
+        #expect(!SymbolAutoSizingService.isBadgeVariant("badge.plus.radiowaves.forward"))
+        #expect(!SymbolAutoSizingService.isBadgeVariant("folder.fill"))
+    }
+
+    @Test func badgeFactorsShrinkHeightConstrainedFit() {
+        // th = 1.3 → standard 0.77/1.3, badge 0.75/1.3.
+        let standard = SymbolAutoSizingService.multiplier(for: bounds(tw: 100, th: 130))
+        let badge = SymbolAutoSizingService.multiplier(for: bounds(tw: 100, th: 130), isBadge: true)
+        #expect(abs(standard - 0.77 / 1.3) < 0.0001)
+        #expect(abs(badge - 0.75 / 1.3) < 0.0001)
+    }
+
+    @Test func badgeFactorsShrinkWidthConstrainedFit() {
+        // tw = 1.58 → standard 0.79/1.58 = 0.50, badge 0.74/1.58.
+        let badge = SymbolAutoSizingService.multiplier(for: bounds(tw: 158, th: 100), isBadge: true)
+        #expect(abs(badge - 0.74 / 1.58) < 0.0001)
+    }
+
+    @Test func badgeFitSharesClamps() {
+        let prediction = SymbolAutoSizingService.prediction(for: bounds(tw: 50, th: 50), isBadge: true)
+        #expect(prediction.multiplier == SymbolAutoSizingService.maxMultiplier)
+        #expect(prediction.isClamped)
+    }
+
     @Test func suggestedYOffsetOpposesContentCenterOffset() {
         // Content below center (positive centerYOffset) → negative offset hint.
         var b = bounds(tw: 100, th: 100)
@@ -88,6 +116,17 @@ struct SymbolTightBoundsMeasurementTests {
         let prediction = try #require(SymbolAutoSizingService.prediction(forSymbol: "folder.fill"))
         #expect(prediction.multiplier >= SymbolAutoSizingService.minMultiplier)
         #expect(prediction.multiplier <= SymbolAutoSizingService.maxMultiplier)
+    }
+
+    @Test func nameBasedPredictionUsesBadgeFactorsForBadgeSymbols() throws {
+        // folder.badge.plus sits inside the clamp range under both parameter
+        // sets, so the badge fit must come out strictly smaller.
+        let bounds = try #require(SymbolAutoSizingService.measureTightBounds(symbol: "folder.badge.plus"))
+        let byName = try #require(SymbolAutoSizingService.prediction(forSymbol: "folder.badge.plus"))
+        let badgeFit = SymbolAutoSizingService.prediction(for: bounds, isBadge: true)
+        let standardFit = SymbolAutoSizingService.prediction(for: bounds)
+        #expect(byName.multiplier == badgeFit.multiplier)
+        #expect(byName.multiplier < standardFit.multiplier)
     }
 }
 
