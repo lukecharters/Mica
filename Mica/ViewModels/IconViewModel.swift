@@ -7,8 +7,6 @@ final class IconViewModel: ObservableObject {
     // Mirror previous @State vars from ContentView with identical types
     @Published var iconSettings: IconSettings = IconSettings()
     @Published var showExportDialog: Bool = false
-    @Published var exportPath: URL? = nil
-    @Published var testingMode: Bool = false
 
     // Generation mode is now per-group on `iconSettings` (iconGenerationMode +
     // badgeGenerationMode). A computed convenience for any code that still wants
@@ -106,16 +104,4 @@ final class IconViewModel: ObservableObject {
         badgeAppexIsGenerating = false
     }
 
-    // MARK: - Color Selection
-
-    // Actions for selecting preset colors (kept simple; types unchanged)
-    func selectPresetColor(index: Int, options: [(name: String, color: Color)]) {
-        guard options.indices.contains(index) else { return }
-        iconSettings.baseColor = options[index].color
-    }
-
-    func selectBadgePresetColor(index: Int, options: [(name: String, color: Color)]) {
-        guard options.indices.contains(index) else { return }
-        iconSettings.badgeBaseColor = options[index].color
-    }
 }

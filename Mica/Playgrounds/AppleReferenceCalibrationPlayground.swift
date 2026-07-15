@@ -4,8 +4,9 @@
 // private rendering pipeline (.appex manipulation), then overlaying our
 // rendered icon on top and fine-tuning multiplier + offsets until they match.
 //
-// Produces ~/Documents/icon-calibration.json mapping every SF Symbol to
-// its calibrated {multiplier, xOffset, yOffset, weight}.
+// Produces icon-calibration.json in the sandbox container's
+// Application Support/Mica/ (via CalibrationStore), mapping every SF Symbol
+// to its calibrated {multiplier, xOffset, yOffset, weight}.
 
 import SwiftUI
 

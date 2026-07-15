@@ -3,7 +3,6 @@ import SwiftUI
 
 @main
 struct MicaApp: App {
-    @StateObject private var appViewModel = AppViewModel()
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.iconSettings) private var iconSettings
 
@@ -12,7 +11,6 @@ struct MicaApp: App {
         WindowGroup {
             ContentView()
                 .frame(minWidth: 800, idealWidth: 1200, minHeight: 500, idealHeight: 800)
-                .environmentObject(appViewModel)
         }
         .defaultSize(width: 1200, height: 800)
         .windowStyle(.hiddenTitleBar)
@@ -177,11 +175,6 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("A", modifiers: [.command, .shift])
 
-                Button("Resizable Dim-Cal Playground") {
-                    openWindow(id: "resizable-dim-cal")
-                }
-                .keyboardShortcut("D", modifiers: [.command, .shift])
-
                 Button("Shadow Comparison Playground") {
                     openWindow(id: "shadow-comparison")
                 }
@@ -232,11 +225,6 @@ struct MicaApp: App {
             AutoCalibrationPlayground()
         }
         .defaultSize(width: 1250, height: 850)
-
-        Window("Resizable Dim-Cal Playground", id: "resizable-dim-cal") {
-            ResizableDimCalPlayground()
-        }
-        .defaultSize(width: 1200, height: 800)
 
         Window("Shadow Comparison Playground", id: "shadow-comparison") {
             ShadowComparisonPlayground()

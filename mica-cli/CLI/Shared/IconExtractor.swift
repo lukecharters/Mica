@@ -38,31 +38,6 @@ enum IconExtractor {
         }
     }
 
-    static func renderImage(
-        forBundleAt bundlePath: String,
-        size: Int,
-        scaleFactor: Int,
-        colorSpace: IconColorSpace
-    ) throws -> NSImage {
-        guard size > 0 else {
-            throw CLIError.invalidArgument("Size must be greater than 0 (received \(size))")
-        }
-
-        guard scaleFactor == 1 || scaleFactor == 2 else {
-            throw CLIError.invalidArgument("--scale must be 1x or 2x (received \(scaleFactor))")
-        }
-
-        let pixelSize = size * scaleFactor
-        let cgImage = try renderCGImage(
-            bundlePath: bundlePath,
-            pixelSize: pixelSize,
-            scaleFactor: scaleFactor,
-            colorSpace: colorSpace
-        )
-        let pointsPerSide = CGFloat(pixelSize) / CGFloat(scaleFactor)
-        return NSImage(cgImage: cgImage, size: NSSize(width: pointsPerSide, height: pointsPerSide))
-    }
-
     private static func renderCGImage(
         bundlePath: String,
         pixelSize: Int,
