@@ -159,6 +159,17 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
+        // Child-selection → group migration on generation-mode switch. Owned
+        // here rather than by LayerSidebar: the sidebar column can be hidden
+        // (columnVisibility == .detailOnly) while the mode is flipped from the
+        // inspector's GroupModePicker, and an unmounted view's onChange never
+        // fires — leaving the selection on a child row that no longer exists.
+        .onChange(of: viewModel.iconSettings.iconGenerationMode) { _, _ in
+            migrateSelection(for: .icon)
+        }
+        .onChange(of: viewModel.iconSettings.badgeIconSource) { _, _ in
+            migrateSelection(for: .badge)
+        }
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
             document: viewModel.iconSettings.iconGenerationMode == .appleReference
@@ -182,6 +193,21 @@ struct ContentView: View {
             case .failure(let error):
                 print("Failed to save icon: \(error.localizedDescription)")
             }
+        }
+    }
+
+    /// When a group switches into System mode its child rows disappear from
+    /// the sidebar; collapse a stale child selection to the group header so
+    /// the inspector doesn't keep showing Custom-mode controls.
+    private func migrateSelection(for group: IconLayerGroup) {
+        guard case .layer(let g, _) = selection, g == group else { return }
+        let isSystem: Bool
+        switch group {
+        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .appleReference
+        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .appleReference
+        }
+        if isSystem {
+            selection = .group(group)
         }
     }
 

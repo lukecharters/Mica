@@ -20,12 +20,9 @@ struct LayerSidebar: View {
             groupSection(.badge)
         }
         .listStyle(.sidebar)
-        .onChange(of: iconSettings.iconGenerationMode) { _, _ in
-            migrateSelection(group: .icon)
-        }
-        .onChange(of: iconSettings.badgeIconSource) { _, _ in
-            migrateSelection(group: .badge)
-        }
+        // Child-selection → group migration on mode switch lives in ContentView
+        // (the selection's owner): this sidebar column can be hidden/unmounted
+        // when the mode is flipped from the inspector, so onChange here can miss.
     }
 
     /// `List` single-selection wants a `Binding<LayerSelection?>`. Bridge from the
@@ -36,17 +33,6 @@ struct LayerSidebar: View {
             get: { selection },
             set: { if let new = $0 { selection = new } }
         )
-    }
-
-    /// When a group switches into System mode, any selected child layer collapses
-    /// to the group header (children are hidden in System mode).
-    private func migrateSelection(group: IconLayerGroup) {
-        guard case .layer(let g, _) = selection, g == group else { return }
-        if isSystem(group) {
-//            withAnimation() {
-            selection = .group(group)
-//           }
-        }
     }
 
     @ViewBuilder
@@ -93,18 +79,19 @@ struct LayerSidebar: View {
         }
     }
 
-    /// Group-eye toggle behavior: any state with at least one hidden flag still
-    /// shown → "show all"; everything visible → "hide all".
+    /// Group-eye toggle behavior: any layer visible (`.on` or `.mixed`) → click
+    /// hides all; everything hidden → click shows all. Must stay consistent
+    /// with `GroupVisibilityToggle`'s tooltips.
     private func groupVisibilityBinding(for group: IconLayerGroup) -> Binding<Bool> {
         switch group {
         case .icon:
             return Binding(
-                get: { iconSettings.iconVisibility() == .on },
+                get: { iconSettings.iconVisibility() != .off },
                 set: { iconSettings.iconHidden = !$0 }
             )
         case .badge:
             return Binding(
-                get: { iconSettings.badgeVisibility() == .on },
+                get: { iconSettings.badgeVisibility() != .off },
                 set: { iconSettings.badgeHidden = !$0 }
             )
         }
