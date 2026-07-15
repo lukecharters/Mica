@@ -757,7 +757,6 @@
 					PlaygroundAssets.xcassets,
 					Resources/symbol_metrics.json,
 					Resources/symbol_baselines.json,
-					Resources/sf_symbols.txt,
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Mica-Info.plist";
