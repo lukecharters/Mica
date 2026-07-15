@@ -299,15 +299,54 @@ struct ColorParser {
     
     // MARK: - Enhanced RGB Parsing
     
+    /// Bare comma-separated `r,g,b(,a)`. Component semantics deliberately match
+    /// the System-mode resolver (`AppexColor.plistValue(fromCLIString:)`) so the
+    /// same string means the same color in both generation modes: components are
+    /// 0–1 floats, or 0–255 when any of r/g/b exceeds 1; percentages are also
+    /// accepted; alpha is always 0–1.
     private static func parseRGBVariations(_ input: String) throws -> Color {
         let components = parseCommaSeparatedValues(input)
-        
-        guard components.count == 3 else {
-            throw ColorParseError.invalidRGBFormat(input, "RGB format requires exactly 3 comma-separated values")
+
+        guard components.count == 3 || components.count == 4 else {
+            throw ColorParseError.invalidRGBFormat(input, "RGB format requires 3 or 4 comma-separated values (r,g,b or r,g,b,a)")
         }
-        
-        let rgb = try parseRGBComponents(components, source: input)
-        return Color(red: rgb.0, green: rgb.1, blue: rgb.2)
+
+        let rgb = try parseBareRGBComponents(Array(components[0..<3]), source: input)
+        let alpha = components.count == 4 ? try parseAlphaComponent(components[3], source: input) : 1.0
+        return Color(red: rgb.0, green: rgb.1, blue: rgb.2, opacity: alpha)
+    }
+
+    private static func parseBareRGBComponents(_ components: [String], source: String) throws -> (Double, Double, Double) {
+        var values: [Double] = []
+        var isPercentage: [Bool] = []
+
+        for component in components {
+            let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if trimmed.hasSuffix("%") {
+                let percentString = String(trimmed.dropLast())
+                guard let percent = Double(percentString), percent >= 0 && percent <= 100 else {
+                    throw ColorParseError.invalidRGBPercentage(source, "RGB percentage values must be 0-100%")
+                }
+                values.append(percent / 100.0)
+                isPercentage.append(true)
+            } else {
+                guard let value = Double(trimmed), value >= 0 && value <= 255 else {
+                    throw ColorParseError.invalidRGBValues(source, "RGB values must be 0-1 floats, 0-255, or percentages 0-100%")
+                }
+                values.append(value)
+                isPercentage.append(false)
+            }
+        }
+
+        // Scale rule (mirrors AppexColorResolver): if any non-percentage
+        // component exceeds 1, all non-percentage components are 0-255.
+        let treatAs255 = zip(values, isPercentage).contains { value, isPercent in !isPercent && value > 1.0 }
+        let normalized = zip(values, isPercentage).map { value, isPercent in
+            (treatAs255 && !isPercent) ? value / 255.0 : value
+        }
+
+        return (normalized[0], normalized[1], normalized[2])
     }
     
     private static func parseRGBComponents(_ components: [String], source: String) throws -> (Double, Double, Double) {
@@ -354,8 +393,13 @@ struct ColorParser {
         // Parse lightness (0-100%)
         let lightString = components[2].trimmingCharacters(in: .whitespacesAndNewlines)
         let lightness = try parsePercentageComponent(lightString, componentName: "lightness", source: source)
-        
-        return Color(hue: hue, saturation: saturation, brightness: lightness, opacity: alpha)
+
+        // CSS HSL ≠ HSB: SwiftUI's Color(hue:saturation:brightness:) takes HSB,
+        // so convert (e.g. hsl(0,100%,50%) is pure red — brightness 1, not 0.5).
+        let brightness = lightness + saturation * min(lightness, 1 - lightness)
+        let hsbSaturation = brightness == 0 ? 0 : 2 * (1 - lightness / brightness)
+
+        return Color(hue: hue, saturation: hsbSaturation, brightness: brightness, opacity: alpha)
     }
     
     private static func parseHueComponent(_ input: String, source: String) throws -> Double {

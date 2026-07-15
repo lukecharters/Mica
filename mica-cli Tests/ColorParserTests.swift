@@ -1,7 +1,32 @@
 import Testing
+import SwiftUI
+import AppKit
 @testable import mica_cli
 
 @Suite struct ColorParserTests {
+
+    // MARK: - Value assertion helper
+
+    /// Resolve a SwiftUI Color to sRGB components so tests can assert actual
+    /// values, not just "didn't throw".
+    private func srgb(_ color: Color) throws -> (r: Double, g: Double, b: Double, a: Double) {
+        let nsColor = try #require(NSColor(color).usingColorSpace(.sRGB))
+        return (Double(nsColor.redComponent), Double(nsColor.greenComponent),
+                Double(nsColor.blueComponent), Double(nsColor.alphaComponent))
+    }
+
+    private func expectColor(
+        _ input: String,
+        _ expected: (r: Double, g: Double, b: Double, a: Double),
+        tolerance: Double = 0.005,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) throws {
+        let got = try srgb(try ColorParser.parse(input))
+        #expect(abs(got.r - expected.r) <= tolerance, "\(input): r \(got.r) != \(expected.r)", sourceLocation: sourceLocation)
+        #expect(abs(got.g - expected.g) <= tolerance, "\(input): g \(got.g) != \(expected.g)", sourceLocation: sourceLocation)
+        #expect(abs(got.b - expected.b) <= tolerance, "\(input): b \(got.b) != \(expected.b)", sourceLocation: sourceLocation)
+        #expect(abs(got.a - expected.a) <= tolerance, "\(input): a \(got.a) != \(expected.a)", sourceLocation: sourceLocation)
+    }
 
     // MARK: - Named colors
 
@@ -105,6 +130,66 @@ import Testing
         #expect(throws: ColorParseError.self) {
             try ColorParser.parseWithOpacity(input)
         }
+    }
+
+    // MARK: - Value assertions (hex, rgb(), hsl())
+
+    @Test func hexParsesToExpectedComponents() throws {
+        try expectColor("#FF5733", (255.0 / 255, 87.0 / 255, 51.0 / 255, 1))
+        try expectColor("#F53", (255.0 / 255, 85.0 / 255, 51.0 / 255, 1))
+        try expectColor("#FF573380", (255.0 / 255, 87.0 / 255, 51.0 / 255, 128.0 / 255))
+    }
+
+    @Test func rgbFunctionParsesToExpectedComponents() throws {
+        try expectColor("rgb(255,128,0)", (1, 128.0 / 255, 0, 1))
+        try expectColor("rgb(100%,50%,0%)", (1, 0.5, 0, 1))
+        try expectColor("rgba(255,0,0,0.5)", (1, 0, 0, 0.5))
+    }
+
+    /// CSS HSL, not HSB: hsl(0,100%,50%) is pure red (#FF0000), and lightness
+    /// 100% is white regardless of saturation.
+    @Test func hslParsesAsCSSHSLNotHSB() throws {
+        try expectColor("hsl(0,100%,50%)", (1, 0, 0, 1))
+        try expectColor("hsl(120,100%,25%)", (0, 0.5, 0, 1))
+        try expectColor("hsl(240,100%,50%)", (0, 0, 1, 1))
+        try expectColor("hsl(0,100%,100%)", (1, 1, 1, 1))
+        try expectColor("hsl(0,0%,50%)", (0.5, 0.5, 0.5, 1))
+        try expectColor("hsla(0,100%,50%,0.25)", (1, 0, 0, 0.25))
+    }
+
+    // MARK: - Bare r,g,b(,a) — semantics shared with the System-mode resolver
+
+    /// Components are 0-1 floats, or 0-255 when any of r/g/b exceeds 1 —
+    /// the same rule as AppexColor.plistValue(fromCLIString:), so a color
+    /// string means the same thing in both generation modes.
+    @Test func bareRGBTreatsAllLEQOneAsFloats() throws {
+        try expectColor("1,1,1", (1, 1, 1, 1))
+        try expectColor("0.5,0.5,0.5", (0.5, 0.5, 0.5, 1))
+        try expectColor("0,0,1", (0, 0, 1, 1))
+    }
+
+    @Test func bareRGBTreatsAnyGreaterThanOneAs255Scale() throws {
+        try expectColor("255,0,0", (1, 0, 0, 1))
+        try expectColor("255,128,0", (1, 128.0 / 255, 0, 1))
+        try expectColor("255,0.5,0", (1, 0.5 / 255, 0, 1))
+    }
+
+    @Test func bareRGBAcceptsDocumentedAlphaForm() throws {
+        try expectColor("255,0,0,0.5", (1, 0, 0, 0.5))
+        try expectColor("1,0,0,0.25", (1, 0, 0, 0.25))
+    }
+
+    @Test func bareRGBAcceptsPercentages() throws {
+        try expectColor("100%,50%,0%", (1, 0.5, 0, 1))
+    }
+
+    @Test(arguments: ["256,0,0", "1,2", "1,2,3,4,5", "-1,0,0", "a,b,c"])
+    func bareRGBRejectsInvalidComponents(_ input: String) {
+        #expect(throws: ColorParseError.self) { try ColorParser.parse(input) }
+    }
+
+    @Test func bareRGBRejectsAlphaOutOfRange() {
+        #expect(throws: ColorParseError.self) { try ColorParser.parse("255,0,0,1.5") }
     }
 
     // MARK: - Grayscale
