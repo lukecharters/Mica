@@ -1,7 +1,6 @@
 import Foundation
 import AppKit
 import ArgumentParser
-@testable import mica_cli
 
 /// Convenience wrapper for `IconGeneratorCommand.parse(_:)`.
 func parseCommand(_ args: [String]) throws -> IconGeneratorCommand {

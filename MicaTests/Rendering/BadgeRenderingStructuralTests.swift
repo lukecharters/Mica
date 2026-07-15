@@ -214,4 +214,48 @@ struct BadgeRenderingStructuralTests {
         #expect(abs(ratio256 - ratio512) <= tolerance,
                 "Normalized centroid shifts must be proportional across sizes. ratio256=\(ratio256), ratio512=\(ratio512), tolerance=\(tolerance)")
     }
+
+    // MARK: - Badged canvas expansion
+
+    nonisolated static let badgedDimsMatrix: [(size: CGFloat, retina: Bool)] = [
+        (256, false),
+        (256, true),
+        (512, false)
+    ]
+
+    /// A badge overflowing the chiclet expands the canvas beyond
+    /// finalExportSize; the rendered pixel dimensions must match
+    /// totalCanvasSize, not finalExportSize. The default anchor stays
+    /// inside the canvas, so a manual offset pushes the badge out.
+    /// (No-badge renders pin dims == finalExportSize in
+    /// IconRenderingStructuralTests.)
+    @Test("Badged render pixel dimensions equal totalCanvasSize, not finalExportSize",
+          arguments: badgedDimsMatrix)
+    func badgedCanvas_pixelDimensionsMatchTotalCanvasSize(_ arg: (size: CGFloat, retina: Bool)) throws {
+        var settings = IconSettings()
+        settings.symbolName = "folder.fill"
+        settings.exportSize = arg.size
+        settings.exportRetinaSize = arg.retina
+        settings.baseColor = .blue
+        settings.showBadge = true
+        settings.badgePosition = .bottomRight
+        settings.badgeSymbolName = "gearshape.fill"
+        settings.badgeManualOffsetX = 0.3
+        settings.badgeManualOffsetY = 0.3
+
+        let expectedCanvas = IconContentView.totalCanvasSize(
+            for: settings, displaySize: settings.finalExportSize)
+        #expect(expectedCanvas > settings.finalExportSize,
+                "Precondition: a default bottom-right badge must overflow the canvas")
+
+        let image = IconRenderer.renderIconSafely(settings: settings)
+        let data = try #require(image.tiffRepresentation)
+        let rep = try #require(NSBitmapImageRep(data: data))
+
+        // ±1px: totalCanvasSize can be fractional; ImageRenderer rounds.
+        #expect(abs(Double(rep.pixelsWide) - Double(expectedCanvas)) <= 1,
+                "Pixel width \(rep.pixelsWide) must equal totalCanvasSize \(expectedCanvas) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+        #expect(abs(Double(rep.pixelsHigh) - Double(expectedCanvas)) <= 1,
+                "Pixel height \(rep.pixelsHigh) must equal totalCanvasSize \(expectedCanvas) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+    }
 }

@@ -1,6 +1,5 @@
 import Testing
 import SwiftUI
-@testable import mica_cli
 
 /// Covers `AppexColor.plistValue(fromCLIString:)` — the CLI bridge that turns a
 /// `--symbol-color` / `--enclosure-color` argument into the string written to the

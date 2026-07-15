@@ -29,7 +29,15 @@ enum SizingSource: String {
 // MARK: - Service
 
 struct SymbolSizingService {
-    static func resolve(for symbolName: String) -> ResolvedSymbolSizing {
+    /// Resolve sizing for a symbol. `calibration` is an injection seam for
+    /// tests (pass `bundledCalibration()` to pin against shipped values);
+    /// production callers omit it and get the cached 2-tier data, which
+    /// prefers a user-writable Application Support override.
+    static func resolve(
+        for symbolName: String,
+        calibration: FamilyCalFile? = nil
+    ) -> ResolvedSymbolSizing {
+        let calibrationData = calibration ?? Self.calibrationData
         // 1. Per-symbol calibration
         if let entry = calibrationData.symbols[symbolName], entry.status == "calibrated" {
             return ResolvedSymbolSizing(
@@ -79,6 +87,18 @@ struct SymbolSizingService {
 
     // MARK: - Private
 
+    /// The bundled family-calibration.json, ignoring any user override.
+    /// Internal (not private) so tests can pin assertions to shipped values
+    /// regardless of calibration-playground edits in Application Support.
+    static func bundledCalibration() -> FamilyCalFile? {
+        guard let bundleURL = Bundle.main.url(forResource: "family-calibration", withExtension: "json"),
+              let data = try? Data(contentsOf: bundleURL),
+              let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data) else {
+            return nil
+        }
+        return file
+    }
+
     /// 2-tier loading: Application Support (playground edits) → bundled fallback
     private static let calibrationData: FamilyCalFile = {
         // 1. Application Support override (written by calibration playground)
@@ -92,13 +112,7 @@ struct SymbolSizingService {
         }
 
         // 2. Bundled fallback
-        if let bundleURL = Bundle.main.url(forResource: "family-calibration", withExtension: "json"),
-           let data = try? Data(contentsOf: bundleURL),
-           let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data) {
-            return file
-        }
-
-        return FamilyCalFile()
+        return bundledCalibration() ?? FamilyCalFile()
     }()
 
     /// Measured box-fit multipliers, one entry per symbol per process.
