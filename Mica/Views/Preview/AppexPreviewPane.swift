@@ -71,12 +71,23 @@ struct AppexPreviewPane: View {
                 if viewModel.iconSettings.showBadge {
                     let enclosureSize = size * (1 - 50.0 / 256.0)
                     let badgeSize = enclosureSize * (80.0 / 208.0) * viewModel.iconSettings.badgeScale
-                    BadgeView(
-                        settings: viewModel.iconSettings,
-                        badgeSize: badgeSize,
-                        badgeAppexImage: viewModel.badgeAppexRenderedImage
-                    )
-                    .offset(badgeOffset(enclosureSize: enclosureSize))
+                    if viewModel.iconSettings.badgeIconSource == .appleReference,
+                       viewModel.badgeAppexRenderedImage == nil {
+                        // Preview-only stand-in; BadgeView draws nothing until the
+                        // badge's appex image exists.
+                        BadgeAppexStatusView(
+                            badgeSize: badgeSize,
+                            error: viewModel.badgeAppexError
+                        )
+                        .offset(badgeOffset(enclosureSize: enclosureSize))
+                    } else {
+                        BadgeView(
+                            settings: viewModel.iconSettings,
+                            badgeSize: badgeSize,
+                            badgeAppexImage: viewModel.badgeAppexRenderedImage
+                        )
+                        .offset(badgeOffset(enclosureSize: enclosureSize))
+                    }
                 }
             }
         } else if let error = viewModel.appexError {
