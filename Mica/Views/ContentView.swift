@@ -231,6 +231,9 @@ struct ScaledIconPreview: View {
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
     @State private var isDropTargeted: Bool = false
+    @State private var isHoveringBadge: Bool = false
+    /// The single cursor this view currently has on NSCursor's stack, if any.
+    @State private var pushedCursor: NSCursor? = nil
 
     private var canvasSize: CGFloat {
         IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
@@ -275,16 +278,26 @@ struct ScaledIconPreview: View {
             return true
         }
         .onChange(of: settings.badgeManualOffsetX) { _, newValue in
-            dragStart = CGSize(width: newValue, height: settings.badgeManualOffsetY)
+            // Only track external offset changes (sliders, reset). Re-seeding on the
+            // drag's own writes compounds the offset: DragGesture.translation is
+            // cumulative from gesture start, so the baseline must stay fixed mid-drag.
+            if !isDragging {
+                dragStart = CGSize(width: newValue, height: settings.badgeManualOffsetY)
+            }
         }
         .onChange(of: settings.badgeManualOffsetY) { _, newValue in
-            dragStart = CGSize(width: settings.badgeManualOffsetX, height: newValue)
+            if !isDragging {
+                dragStart = CGSize(width: settings.badgeManualOffsetX, height: newValue)
+            }
         }
     }
 
-    /// Transparent circle at the badge position that captures drag gestures
+    /// Transparent circle at the badge position that captures drag gestures.
+    /// Diameter matches the rendered badge (80/208 of the enclosure — see
+    /// `IconContentView`/`AppexPreviewPane`), so the hover/drag region doesn't
+    /// extend past the visible badge.
     private var badgeDragOverlay: some View {
-        let badgeDiameter = enclosureSize * (100.0 / 208.0) * settings.badgeScale
+        let badgeDiameter = enclosureSize * (80.0 / 208.0) * settings.badgeScale
         let offset = computeBadgeOffset()
 
         return Circle()
@@ -292,10 +305,11 @@ struct ScaledIconPreview: View {
             .frame(width: badgeDiameter, height: badgeDiameter)
             .contentShape(Circle())
             .onHover { hovering in
-                if hovering && settings.showBadge {
-                    NSCursor.openHand.push()
-                } else {
-                    NSCursor.pop()
+                isHoveringBadge = hovering
+                // Mid-drag the closed hand stays put even when the pointer
+                // outruns the moving circle; onEnded restores the right cursor.
+                if !isDragging {
+                    setPushedCursor(hovering ? .openHand : nil)
                 }
             }
             .gesture(
@@ -307,7 +321,7 @@ struct ScaledIconPreview: View {
                                 width: settings.badgeManualOffsetX,
                                 height: settings.badgeManualOffsetY
                             )
-                            NSCursor.closedHand.push()
+                            setPushedCursor(.closedHand)
                         }
                         let normalizedDX = value.translation.width / enclosureSize
                         let normalizedDY = value.translation.height / enclosureSize
@@ -317,14 +331,32 @@ struct ScaledIconPreview: View {
                     }
                     .onEnded { _ in
                         isDragging = false
-                        NSCursor.pop()
+                        setPushedCursor(isHoveringBadge ? .openHand : nil)
                         dragStart = CGSize(
                             width: settings.badgeManualOffsetX,
                             height: settings.badgeManualOffsetY
                         )
                     }
             )
+            .onDisappear {
+                // Badge hidden (or preview unmounted) while hovered/dragging —
+                // don't leave our cursor on the global stack.
+                isHoveringBadge = false
+                isDragging = false
+                setPushedCursor(nil)
+            }
             .offset(offset)
+    }
+
+    /// Replaces whatever cursor this view previously pushed with `cursor`
+    /// (nil = pop back to the default). Funneling every cursor change through
+    /// here keeps NSCursor's global push/pop stack balanced regardless of the
+    /// hover/drag/disappear event order.
+    private func setPushedCursor(_ cursor: NSCursor?) {
+        guard pushedCursor !== cursor else { return }
+        if pushedCursor != nil { NSCursor.pop() }
+        cursor?.push()
+        pushedCursor = cursor
     }
 
     /// Compute badge offset matching IconContentView's logic
