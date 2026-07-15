@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 /// Layout controls (padding compensation, scale) live in `ImageImportLayoutControls`.
 struct ImageImportControls: View {
     @Binding var importedImage: ImportedImage?
-    /// Called after a successful import. Use to react to `imported.isAppIcon`
+    /// Called after a successful import. Use to react to `imported.isFileIcon`
     /// (e.g., toggle padding compensation).
     var onImport: (ImportedImage) -> Void = { _ in }
 
@@ -21,7 +21,7 @@ struct ImageImportControls: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 VStack(alignment: .leading) {
                     Text(img.sourceName).lineLimit(1)
-                    Text(img.isAppIcon ? "App Icon" : "Image")
+                    Text(img.isFileIcon ? "Icon" : "Image")
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }

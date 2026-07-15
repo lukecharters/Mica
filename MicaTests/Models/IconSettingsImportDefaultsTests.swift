@@ -13,8 +13,8 @@ import SwiftUI
 @MainActor
 struct IconSettingsImportDefaultsTests {
 
-    private func makeImage(isAppIcon: Bool = false) -> ImportedImage {
-        ImportedImage(id: UUID(), imageData: Data(), sourceName: "test", isAppIcon: isAppIcon)
+    private func makeImage(isFileIcon: Bool = false) -> ImportedImage {
+        ImportedImage(id: UUID(), imageData: Data(), sourceName: "test", isFileIcon: isFileIcon)
     }
 
     // MARK: - Icon foreground
@@ -49,10 +49,10 @@ struct IconSettingsImportDefaultsTests {
         #expect(settings.backgroundShadowStyle == .off)
     }
 
-    @Test("Icon background padding compensation defaults on regardless of isAppIcon")
+    @Test("Icon background padding compensation defaults on regardless of isFileIcon")
     func iconBackground_paddingOnForNonAppIcon() {
         var settings = IconSettings()
-        settings.applyImportedIconBackground(makeImage(isAppIcon: false))
+        settings.applyImportedIconBackground(makeImage(isFileIcon: false))
         #expect(settings.importedBackgroundPaddingCompensation == true)
     }
 

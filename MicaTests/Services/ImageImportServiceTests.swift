@@ -142,12 +142,12 @@ struct ImageImportServiceTests {
 
     // MARK: - importFromURL — image branch (fast)
 
-    @Test("importFromURL accepts a PNG and flags isAppIcon=false")
+    @Test("importFromURL accepts a PNG and flags isFileIcon=false")
     func importFromURL_png_returnsImage() throws {
         let url = try Self.fixtureURL(named: "test-icon")
         let result = try ImageImportService.importFromURL(url)
 
-        #expect(result.isAppIcon == false,
+        #expect(result.isFileIcon == false,
                 "NSImage(contentsOf:) succeeds for a PNG — extractFileIcon fallback must NOT run")
         #expect(result.sourceName == "test-icon.png")
         #expect(Self.startsWithPNGMagic(result.imageData),
@@ -271,10 +271,10 @@ struct ImageImportServiceTests {
 
         let result = try ImageImportService.importFromURL(txtURL)
 
-        // Image decode fails for plain text; extractFileIcon runs. A .txt is
-        // not an application bundle, so it must NOT be labeled an app icon.
-        #expect(result.isAppIcon == false,
-                "Only genuine .app bundles are flagged isAppIcon; a .txt gets its generic Finder icon")
+        // Image decode fails for plain text; extractFileIcon runs, and
+        // anything NSWorkspace-extracted is a file *icon*, not image content.
+        #expect(result.isFileIcon == true,
+                "NSWorkspace-derived Finder icons must be flagged isFileIcon (UI shows 'Icon')")
         #expect(result.sourceName == "hello.txt")
         #expect(Self.startsWithPNGMagic(result.imageData))
 
@@ -309,7 +309,7 @@ struct ImageImportServiceTests {
 
         let result = try ImageImportService.extractFileIcon(from: finderURL)
 
-        #expect(result.isAppIcon == true, "Finder.app is an application bundle — keeps the app-icon flag")
+        #expect(result.isFileIcon == true, "an extracted app-bundle icon is a file icon")
         #expect(result.sourceName == "Finder.app")
         #expect(Self.startsWithPNGMagic(result.imageData))
 

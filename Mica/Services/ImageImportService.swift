@@ -41,13 +41,13 @@ enum ImageImportService {
         // would be baked permanently into the stored PNG).
         if let cgImage = boundedCGImage(at: url, maxPixel: normalizedMaxPixel) {
             let data = try renderToData(cgImage)
-            return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isAppIcon: false)
+            return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isFileIcon: false)
         }
         // AppKit fallback for non-ImageIO formats NSImage can still draw
         // (PDF, EPS — vector-backed, so the full target size is safe).
         if let image = NSImage(contentsOf: url) {
             let data = try renderToData(image, targetSize: normalizedMaxPixel)
-            return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isAppIcon: false)
+            return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isFileIcon: false)
         }
         return try extractFileIcon(from: url)
     }
@@ -67,22 +67,19 @@ enum ImageImportService {
         // Try raw image data from pasteboard
         if let image = NSImage(pasteboard: pasteboard) {
             let data = try renderToData(image, targetSize: normalizedMaxPixel)
-            return ImportedImage(id: UUID(), imageData: data, sourceName: "Pasted Image", isAppIcon: false)
+            return ImportedImage(id: UUID(), imageData: data, sourceName: "Pasted Image", isFileIcon: false)
         }
 
         return nil
     }
 
-    /// Extract the Finder icon for any file via NSWorkspace.
+    /// Extract the Finder icon for any file via NSWorkspace. Everything that
+    /// comes through here — app bundle or plain file — is a file *icon*, not
+    /// the file's own image content, and is flagged as such.
     static func extractFileIcon(from url: URL) throws -> ImportedImage {
         let iconImage = NSWorkspace.shared.icon(forFile: url.path)
         let data = try renderToData(iconImage, targetSize: normalizedMaxPixel)
-        // Only genuine application bundles get the app-icon treatment (UI
-        // label + app-icon defaults); a .txt dropped here is just a generic
-        // Finder document icon, not an app icon.
-        let contentType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType
-        let isAppBundle = contentType?.conforms(to: .applicationBundle) ?? false
-        return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isAppIcon: isAppBundle)
+        return ImportedImage(id: UUID(), imageData: data, sourceName: url.lastPathComponent, isFileIcon: true)
     }
 
     // MARK: - Bounded decode

@@ -141,7 +141,7 @@ private struct GroupHeaderRow: View {
     }
 }
 
-/// Tri-state eye for a whole group. `.mixed` shows the outline `eye` and clicking
+/// Tri-state eye for a whole group. `.mixed` shows `eye.half.closed` and clicking
 /// hides everything (consistent with the binding's setter).
 private struct GroupVisibilityToggle: View {
     let visibility: LayerGroupVisibility
