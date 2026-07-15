@@ -5,7 +5,6 @@
 
 import Testing
 import Foundation
-@testable import mica_cli
 
 @Suite
 @MainActor

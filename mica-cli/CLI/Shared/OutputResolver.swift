@@ -37,8 +37,10 @@ enum OutputResolver {
     }
 
     static func suggestedIconFilename(forItemAt path: String, size: Int, scaleFactor: Int) -> String {
+        // lastPathComponent of "/" is "/" (not empty) — unusable in a filename.
         let baseName = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
         let scaleSuffix = scaleFactor > 1 ? "@\(scaleFactor)x" : ""
-        return "\(baseName.isEmpty ? "Application" : baseName)-\(size)\(scaleSuffix).png"
+        let safeBase = (baseName.isEmpty || baseName == "/") ? "Application" : baseName
+        return "\(safeBase)-\(size)\(scaleSuffix).png"
     }
 }

@@ -1,7 +1,6 @@
 import Testing
 import SwiftUI
 import AppKit
-@testable import mica_cli
 
 @Suite struct ColorParserTests {
 
@@ -198,7 +197,14 @@ import AppKit
     @Test func parsesGrayscale0To255() throws { _ = try ColorParser.parse("128") }
 
     @Test func rejectsGrayscaleOutOfRange() {
-        #expect(throws: ColorParseError.self) { try ColorParser.parse("300") }
+        // "300.0" not "300": any bare 3-digit number is consumed by the
+        // short-hex parser first (see hexWinsOverGrayscaleForThreeDigits).
+        #expect(throws: ColorParseError.self) { try ColorParser.parse("300.0") }
+    }
+
+    @Test func hexWinsOverGrayscaleForThreeDigits() throws {
+        // Precedence pin: a bare 3-digit number is short hex, never grayscale.
+        _ = try ColorParser.parse("300") // #330000, not out-of-range grayscale
     }
 
     // MARK: - Empty / invalid

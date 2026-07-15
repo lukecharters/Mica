@@ -6,7 +6,6 @@
 
 import Testing
 import Foundation
-@testable import mica_cli
 
 @Suite
 @MainActor
@@ -26,18 +25,22 @@ struct ImportedImageDefaultsTests {
         #expect(command.background.effectiveShadowStyle == "macos26")
     }
 
-    @Test("Background padding compensation defaults on and is opt-out")
+    // The user-facing flag mirrors the GUI "Icon Padding" toggle, so it is
+    // INVERSE to the compensation bool: padding "on" keeps the image's padding
+    // (compensation off); padding "off" or unspecified fills the frame
+    // (compensation on).
+    @Test("--icon-bg-padding on disables compensation; off/unspecified fill the frame")
     func effectivePaddingCompensation_default() throws {
         #expect(try parseCommand(["star.fill"]).background.effectivePaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "off"]).background.effectivePaddingCompensation == false)
-        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "on"]).background.effectivePaddingCompensation == true)
+        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "off"]).background.effectivePaddingCompensation == true)
+        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "on"]).background.effectivePaddingCompensation == false)
     }
 
-    @Test("Badge background padding compensation defaults on and is opt-out")
+    @Test("--badge-bg-padding on disables compensation; off/unspecified fill the frame")
     func effectiveBadgePaddingCompensation_default() throws {
         #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear"]).badge.effectiveBackgroundPaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "off"]).badge.effectiveBackgroundPaddingCompensation == false)
-        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "on"]).badge.effectiveBackgroundPaddingCompensation == true)
+        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "off"]).badge.effectiveBackgroundPaddingCompensation == true)
+        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "on"]).badge.effectiveBackgroundPaddingCompensation == false)
     }
 
     @Test("--icon-fg-shadow parses to an on|off toggle, unspecified is nil")

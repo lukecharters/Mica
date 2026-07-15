@@ -121,11 +121,49 @@
 			);
 			target = 8C3148C82E61E39F00C7A0A9 /* mica-cli */;
 		};
+		8CAA00012FA1000000000001 /* Exceptions for "mica-cli" folder in "mica-cli Tests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CLI/AppexColorResolver.swift,
+				CLI/ColorParser.swift,
+				CLI/GetIconCommand.swift,
+				CLI/IconGeneratorCLI.swift,
+				CLI/IconGeneratorCommand.swift,
+				CLI/Shared/CLIOutput.swift,
+				CLI/Shared/ExportScale.swift,
+				CLI/Shared/IconColorSpace.swift,
+				CLI/Shared/IconExtractor.swift,
+				CLI/Shared/OutputResolver.swift,
+				CLI/Shared/ToggleState.swift,
+			);
+			target = 8C75F5802E8D5AC4008FB893 /* mica-cli Tests */;
+		};
+		8CAA00022FA1000000000002 /* Exceptions for "Mica" folder in "mica-cli Tests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/AppexColor.swift,
+				Models/AppexEnclosureColor.swift,
+				Models/FamilyCalibration.swift,
+				Models/GenerationMode.swift,
+				Models/IconSettings.swift,
+				Models/ImportedImage.swift,
+				Services/AppexReferenceService.swift,
+				Services/IconRenderer.swift,
+				Services/ImageImportService.swift,
+				Services/PNGExporter.swift,
+				Services/SymbolAutoSizingService.swift,
+				Services/SymbolSizingService.swift,
+			);
+			target = 8C75F5802E8D5AC4008FB893 /* mica-cli Tests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8C3148CA2E61E39F00C7A0A9 /* mica-cli */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8CAA00012FA1000000000001 /* Exceptions for "mica-cli" folder in "mica-cli Tests" target */,
+			);
 			path = "mica-cli";
 			sourceTree = "<group>";
 		};
@@ -135,6 +173,7 @@
 				8C4155762FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaTests" target */,
 				8C4155772FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaUITests" target */,
 				8C886B372EBDFFFD00753351 /* Exceptions for "Mica" folder in "mica-cli" target */,
+				8CAA00022FA1000000000002 /* Exceptions for "Mica" folder in "mica-cli Tests" target */,
 			);
 			path = Mica;
 			sourceTree = "<group>";
@@ -859,7 +898,6 @@
 		8C75F5882E8D5AC4008FB893 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -875,14 +913,12 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mica.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mica";
 			};
 			name = Debug;
 		};
 		8C75F5892E8D5AC4008FB893 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -898,7 +934,6 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mica.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mica";
 			};
 			name = Release;
 		};

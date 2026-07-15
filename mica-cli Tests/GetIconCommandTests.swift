@@ -1,7 +1,6 @@
 import Foundation
 import Testing
 import ArgumentParser
-@testable import mica_cli
 
 @Suite struct GetIconCommandTests {
 
@@ -54,16 +53,26 @@ import ArgumentParser
 
     // MARK: - Validation
 
-    @Test func rejectsZeroSize() {
-        #expect(throws: ValidationError.self) {
-            _ = try GetIconCommand.parse(["/some/path", "--size", "0"])
-        }
+    // `parse` wraps a validate()-thrown ValidationError in ArgumentParser's
+    // internal CommandError, so asserting on the error TYPE can never match.
+    // Assert on the user-facing message instead.
+    private func parseFailureMessage(_ args: [String]) throws -> String {
+        let error = try #require(#expect(throws: (any Error).self) {
+            _ = try GetIconCommand.parse(args)
+        })
+        return GetIconCommand.message(for: error)
     }
 
-    @Test func rejectsNegativeSize() {
-        #expect(throws: ValidationError.self) {
-            _ = try GetIconCommand.parse(["/some/path", "--size", "-10"])
-        }
+    @Test func rejectsZeroSize() throws {
+        #expect(try parseFailureMessage(["/some/path", "--size", "0"])
+            .contains("Size must be greater than 0"))
+    }
+
+    @Test func rejectsNegativeSize() throws {
+        // "--size=-10" (not "--size -10"): a bare "-10" reads as a flag and
+        // fails with missingValueForOption before validation ever runs.
+        #expect(try parseFailureMessage(["/some/path", "--size=-10"])
+            .contains("Size must be greater than 0"))
     }
 
     @Test func rejectsInvalidScale() {
@@ -72,16 +81,14 @@ import ArgumentParser
         }
     }
 
-    @Test func rejectsDepthWithoutRecursive() {
-        #expect(throws: ValidationError.self) {
-            _ = try GetIconCommand.parse(["/some/path", "--depth", "2"])
-        }
+    @Test func rejectsDepthWithoutRecursive() throws {
+        #expect(try parseFailureMessage(["/some/path", "--depth", "2"])
+            .contains("--depth requires --recursive"))
     }
 
-    @Test func rejectsNegativeDepth() {
-        #expect(throws: ValidationError.self) {
-            _ = try GetIconCommand.parse(["/some/path", "--recursive", "--depth", "-1"])
-        }
+    @Test func rejectsNegativeDepth() throws {
+        #expect(try parseFailureMessage(["/some/path", "--recursive", "--depth=-1"])
+            .contains("--depth must be zero or greater"))
     }
 
     @Test func acceptsDepthZeroWithRecursive() throws {
@@ -148,13 +155,12 @@ import ArgumentParser
 
     // MARK: - End-to-end smoke test
 
-    @Test func extractsCalculatorIcon() throws {
+    // .enabled(if:) instead of a silent early return: a missing Calculator.app
+    // shows as a skip, not a green pass that tested nothing.
+    @Test(.enabled(if: FileManager.default.fileExists(atPath: "/System/Applications/Calculator.app")))
+    func extractsCalculatorIcon() throws {
         let fm = FileManager.default
         let calculatorPath = "/System/Applications/Calculator.app"
-        guard fm.fileExists(atPath: calculatorPath) else {
-            // Calculator not present on this system (unlikely, but possible on trimmed installs).
-            return
-        }
 
         let outputDir = URL.temporaryDirectory.appending(path: "geticon-test-\(UUID().uuidString)")
         defer { try? fm.removeItem(at: outputDir) }
