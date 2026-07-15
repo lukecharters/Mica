@@ -280,12 +280,6 @@ struct IconExportTests {
         }
     }
     
-    // Convenience method to run tests with default desktop location (requires entitlement)
-    static func runTests() async throws {
-        let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-        let testDirectory = desktop.appendingPathComponent("IconExportTests_\(Date().timeIntervalSince1970)")
-        try await exportTestIcons(to: testDirectory)
-    }
 }
 
 // Extension to make it easy to call from your app

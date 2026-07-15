@@ -5,7 +5,7 @@
 // (.circle 117x114, .square 115x104, .rectangle 141x104) share a single
 // calibration per container type.
 //
-// Saves to ~/Library/Application Support/Icon Generator/family-calibration.json
+// Saves to the sandbox container's Application Support/Mica/family-calibration.json.
 // Migrates from dim-calibration.json on first load.
 
 import SwiftUI
@@ -2574,82 +2574,6 @@ struct DimensionCalibrationPlayground: View {
         case "needs-review": .blue
         default: .secondary
         }
-    }
-}
-
-// MARK: - Legacy Type Aliases (used by ResizableDimCalPlayground, ResizableSizingPlayground)
-
-typealias DimCalibrationEntry = FamilyCalEntry
-
-/// Legacy store that reads from dim-calibration.json (used by ResizableSizingPlayground).
-@Observable
-class DimCalibrationStore {
-    var entries: [String: DimCalibrationEntry] = [:]
-
-    init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let url = appSupport
-            .appendingPathComponent("Mica", isDirectory: true)
-            .appendingPathComponent("dim-calibration.json")
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url) else { return }
-        struct LegacyFile: Decodable { let calibrations: [String: DimCalibrationEntry] }
-        if let file = try? JSONDecoder().decode(LegacyFile.self, from: data) {
-            entries = file.calibrations
-        }
-    }
-
-    func entry(for key: String) -> DimCalibrationEntry? { entries[key] }
-}
-
-/// Legacy file format for dim-calibration.json (used by ResizableDimCalPlayground).
-struct DimCalibrationFile: Codable {
-    var version: Int = 1
-    var calibrations: [String: DimCalibrationEntry] = [:]
-    var excludedSymbols: [String] = []
-    var overrides: [String: DimCalibrationEntry] = [:]
-    var subgroups: [String: [String]] = [:]
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
-        calibrations = try c.decodeIfPresent([String: DimCalibrationEntry].self, forKey: .calibrations) ?? [:]
-        excludedSymbols = try c.decodeIfPresent([String].self, forKey: .excludedSymbols) ?? []
-        overrides = try c.decodeIfPresent([String: DimCalibrationEntry].self, forKey: .overrides) ?? [:]
-        subgroups = try c.decodeIfPresent([String: [String]].self, forKey: .subgroups) ?? [:]
-    }
-
-    init(version: Int = 1, calibrations: [String: DimCalibrationEntry] = [:], excludedSymbols: [String] = [], overrides: [String: DimCalibrationEntry] = [:], subgroups: [String: [String]] = [:]) {
-        self.version = version
-        self.calibrations = calibrations
-        self.excludedSymbols = excludedSymbols
-        self.overrides = overrides
-        self.subgroups = subgroups
-    }
-}
-
-struct DimensionGroup: Identifiable {
-    let id: String
-    let width: Double
-    let height: Double
-    let symbols: [String]
-
-    var count: Int { symbols.count }
-    var representative: String { symbols[0] }
-
-    var isSubgroup: Bool { id.contains("#") }
-
-    var subgroupIndex: Int? {
-        guard let hashIndex = id.firstIndex(of: "#") else { return nil }
-        return Int(id[id.index(after: hashIndex)...])
-    }
-
-    var dimensionLabel: String {
-        let base = String(format: "%.1f × %.1f", width, height)
-        if let idx = subgroupIndex {
-            return "\(base) #\(idx)"
-        }
-        return base
     }
 }
 

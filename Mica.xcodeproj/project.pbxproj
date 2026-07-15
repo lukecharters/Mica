@@ -103,13 +103,6 @@
 			);
 			target = 8C71CCB32DBDDDD3006FB320 /* MicaUITests */;
 		};
-		8C886B362EBDFFFD00753351 /* Exceptions for "Mica" folder in "Mica" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"Playgrounds/liquid-glass.swift",
-			);
-			target = 8C71CC982DBDDDD2006FB320 /* Mica */;
-		};
 		8C886B372EBDFFFD00753351 /* Exceptions for "Mica" folder in "mica-cli" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -139,7 +132,6 @@
 		8C71CC9B2DBDDDD2006FB320 /* Mica */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				8C886B362EBDFFFD00753351 /* Exceptions for "Mica" folder in "Mica" target */,
 				8C4155762FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaTests" target */,
 				8C4155772FA6F17700B0B2DC /* Exceptions for "Mica" folder in "MicaUITests" target */,
 				8C886B372EBDFFFD00753351 /* Exceptions for "Mica" folder in "mica-cli" target */,

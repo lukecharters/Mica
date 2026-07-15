@@ -23,8 +23,6 @@ struct IconViewModelTests {
         #expect(vm.badgeAppexEnclosureColor == .blue)
         #expect(vm.badgeAppexSymbolColor == .white)
         #expect(vm.showExportDialog == false)
-        #expect(vm.exportPath == nil)
-        #expect(vm.testingMode == false)
         #expect(vm.appexIsGenerating == false)
         #expect(vm.badgeAppexIsGenerating == false)
         #expect(vm.appexError == nil)
@@ -177,60 +175,5 @@ struct IconViewModelTests {
             showBadge: true, badgeGenerationMode: .swiftUI,
             symbolName: "gearshape.fill", enclosureColor: .blue, symbolColor: .yellow)
         #expect(a != b)
-    }
-
-    // MARK: - Preset color selectors
-
-    @Test("selectPresetColor with a valid index writes to iconSettings.baseColor")
-    func selectPresetColor_valid_writes() {
-        let vm = IconViewModel()
-        let options: [(name: String, color: Color)] = [
-            ("blue", .blue),
-            ("green", .green),
-            ("red", .red)
-        ]
-        vm.selectPresetColor(index: 1, options: options)
-        #expect(vm.iconSettings.baseColor == .green)
-    }
-
-    @Test("selectPresetColor out-of-range index is a no-op",
-          arguments: [-1, 3, 99, Int.max])
-    func selectPresetColor_outOfRange_noop(_ index: Int) {
-        let vm = IconViewModel()
-        let original = vm.iconSettings.baseColor
-        let options: [(name: String, color: Color)] = [("a", .red)]
-        vm.selectPresetColor(index: index, options: options)
-        #expect(vm.iconSettings.baseColor == original,
-                "Out-of-range index (\(index)) must not mutate baseColor")
-    }
-
-    @Test("selectPresetColor with an empty options array is a no-op at any index")
-    func selectPresetColor_emptyOptions_noop() {
-        let vm = IconViewModel()
-        let original = vm.iconSettings.baseColor
-        vm.selectPresetColor(index: 0, options: [])
-        #expect(vm.iconSettings.baseColor == original)
-    }
-
-    @Test("selectBadgePresetColor with a valid index writes to iconSettings.badgeBaseColor")
-    func selectBadgePresetColor_valid_writes() {
-        let vm = IconViewModel()
-        let options: [(name: String, color: Color)] = [
-            ("blue", .blue),
-            ("purple", .purple)
-        ]
-        vm.selectBadgePresetColor(index: 0, options: options)
-        #expect(vm.iconSettings.badgeBaseColor == .blue)
-    }
-
-    @Test("selectBadgePresetColor out-of-range index is a no-op",
-          arguments: [-1, 2, 99])
-    func selectBadgePresetColor_outOfRange_noop(_ index: Int) {
-        let vm = IconViewModel()
-        let original = vm.iconSettings.badgeBaseColor
-        let options: [(name: String, color: Color)] = [("only", .gray)]
-        vm.selectBadgePresetColor(index: index, options: options)
-        #expect(vm.iconSettings.badgeBaseColor == original,
-                "Out-of-range index (\(index)) must not mutate badgeBaseColor")
     }
 }

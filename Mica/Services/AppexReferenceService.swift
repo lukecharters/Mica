@@ -51,8 +51,6 @@ class AppexReferenceService {
         }
     }
 
-    func cleanup() {}
-
     // MARK: - Per-Render Workspace
 
     /// Copy .appex to a unique temp path, configure, render, and clean up.
@@ -92,7 +90,6 @@ class AppexReferenceService {
         defer { try? FileManager.default.removeItem(at: wsURL) }
 
         try configurePlist(at: wsURL, symbolName: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
-        try touchBundle(at: wsURL)
 
         return try renderIcon(at: wsURL, pointSize: pointSize, scaleFactor: scaleFactor, cgColorSpace: colorSpace.cgColorSpace)
     }
@@ -143,14 +140,6 @@ class AppexReferenceService {
 
         let outputData = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
         try outputData.write(to: plistURL, options: .atomic)
-    }
-
-    /// Touch the bundle to invalidate LaunchServices icon cache
-    private nonisolated static func touchBundle(at bundleURL: URL) throws {
-        try FileManager.default.setAttributes(
-            [.modificationDate: Date()],
-            ofItemAtPath: bundleURL.path
-        )
     }
 
     // MARK: - Icon Rendering
