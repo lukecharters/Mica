@@ -121,46 +121,46 @@ struct LayerVisibilityTests {
     @Test("iconGenerationMode is stored and independent of badgeGenerationMode")
     func iconGenerationMode_independent() {
         var s = IconSettings()
-        s.iconGenerationMode = .appleReference
+        s.iconGenerationMode = .system
         s.badgeIconSource = .sfSymbol
-        #expect(s.iconGenerationMode == .appleReference)
-        #expect(s.badgeGenerationMode == .swiftUI)
+        #expect(s.iconGenerationMode == .system)
+        #expect(s.badgeGenerationMode == .mica)
     }
 
     @Test("badgeGenerationMode follows badgeIconSource")
     func badgeGenerationMode_followsSource() {
         var s = IconSettings()
-        s.badgeIconSource = .appleReference
-        #expect(s.badgeGenerationMode == .appleReference)
+        s.badgeIconSource = .system
+        #expect(s.badgeGenerationMode == .system)
 
         s.badgeIconSource = .sfSymbol
-        #expect(s.badgeGenerationMode == .swiftUI)
+        #expect(s.badgeGenerationMode == .mica)
 
         s.badgeIconSource = .customImage
-        #expect(s.badgeGenerationMode == .swiftUI)
+        #expect(s.badgeGenerationMode == .mica)
     }
 
-    @Test("Setting badgeGenerationMode .appleReference locks the source")
+    @Test("Setting badgeGenerationMode .system locks the source")
     func badgeGenerationMode_setAppleRef_locksSource() {
         var s = IconSettings()
         s.badgeIconSource = .sfSymbol
-        s.badgeGenerationMode = .appleReference
-        #expect(s.badgeIconSource == .appleReference)
+        s.badgeGenerationMode = .system
+        #expect(s.badgeIconSource == .system)
     }
 
-    @Test("Setting badgeGenerationMode .swiftUI falls back to sfSymbol when previously appleReference")
+    @Test("Setting badgeGenerationMode .mica falls back to sfSymbol when previously appleReference")
     func badgeGenerationMode_setSwiftUI_fallsBack() {
         var s = IconSettings()
-        s.badgeIconSource = .appleReference
-        s.badgeGenerationMode = .swiftUI
+        s.badgeIconSource = .system
+        s.badgeGenerationMode = .mica
         #expect(s.badgeIconSource == .sfSymbol)
     }
 
-    @Test("Setting badgeGenerationMode .swiftUI when already non-appleReference is a no-op")
+    @Test("Setting badgeGenerationMode .mica when already non-appleReference is a no-op")
     func badgeGenerationMode_setSwiftUI_preservesNonAppleSource() {
         var s = IconSettings()
         s.badgeIconSource = .customImage
-        s.badgeGenerationMode = .swiftUI
+        s.badgeGenerationMode = .mica
         #expect(s.badgeIconSource == .customImage)
     }
 }

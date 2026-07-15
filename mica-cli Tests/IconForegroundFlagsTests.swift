@@ -12,12 +12,12 @@ struct IconForegroundFlagsTests {
 
     // MARK: - Generation-mode token mapping
 
-    @Test("Generation-mode tokens map mica→custom, system→apple-reference")
+    @Test("Generation-mode tokens parse directly to GenerationMode")
     func generationModeMapping() throws {
-        #expect(try parseCommand(["star.fill"]).generation.resolvedIconMode == "custom")
-        #expect(try parseCommand(["star.fill", "--icon-generation-mode", "mica"]).generation.resolvedIconMode == "custom")
-        #expect(try parseCommand(["star.fill", "--icon-generation-mode", "system"]).generation.resolvedIconMode == "apple-reference")
-        #expect(try parseCommand(["star.fill", "--badge-generation-mode", "system"]).generation.resolvedBadgeMode == "apple-reference")
+        #expect(try parseCommand(["star.fill"]).generation.iconGenerationMode == .mica)
+        #expect(try parseCommand(["star.fill", "--icon-generation-mode", "mica"]).generation.iconGenerationMode == .mica)
+        #expect(try parseCommand(["star.fill", "--icon-generation-mode", "system"]).generation.iconGenerationMode == .system)
+        #expect(try parseCommand(["star.fill", "--badge-generation-mode", "system"]).generation.badgeGenerationMode == .system)
     }
 
     // MARK: - Foreground resolution

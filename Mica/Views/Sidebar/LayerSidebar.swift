@@ -67,8 +67,8 @@ struct LayerSidebar: View {
 
     private func isSystem(_ group: IconLayerGroup) -> Bool {
         switch group {
-        case .icon:  return iconSettings.iconGenerationMode == .appleReference
-        case .badge: return iconSettings.badgeGenerationMode == .appleReference
+        case .icon:  return iconSettings.iconGenerationMode == .system
+        case .badge: return iconSettings.badgeGenerationMode == .system
         }
     }
 
@@ -298,7 +298,7 @@ private struct IconForegroundThumb: View {
             } else {
                 placeholder
             }
-        case .sfSymbol, .appleReference:
+        case .sfSymbol, .system:
             SymbolThumb(
                 name: settings.symbolName,
                 renderingMode: settings.symbolRenderingMode,
@@ -381,7 +381,7 @@ private struct BadgeForegroundThumb: View {
                     .aspectRatio(contentMode: .fit)
                     .foregroundStyle(.tertiary)
             }
-        case .sfSymbol, .appleReference:
+        case .sfSymbol, .system:
             SymbolThumb(
                 name: settings.badgeSymbolName,
                 renderingMode: settings.badgeSymbolRenderingMode,

@@ -20,7 +20,7 @@ struct BadgeSourceSection: View {
                 switch iconSettings.badgeIconSource {
                 case .sfSymbol: return .sfSymbol
                 case .customImage: return .imported
-                case .appleReference: return .sfSymbol
+                case .system: return .sfSymbol
                 }
             },
             set: { newValue in

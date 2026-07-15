@@ -109,7 +109,7 @@ struct BadgeRenderingStructuralTests {
         settings.exportRetinaSize = false
         settings.baseColor = .blue
         settings.showBadge = true
-        settings.badgeIconSource = .appleReference
+        settings.badgeIconSource = .system
         settings.badgePosition = .bottomRight
         // Badge is System mode but its appex image hasn't rendered yet.
         let pendingBadge = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: nil)

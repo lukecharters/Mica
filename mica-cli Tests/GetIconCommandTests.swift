@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Testing
 import ArgumentParser
@@ -134,23 +135,23 @@ import ArgumentParser
         #expect(filename == "Application-256.png")
     }
 
-    // MARK: - IconColorSpace parsing
+    // MARK: - ExportColorSpace parsing
 
     @Test func colorSpaceParsesSRGB() {
-        #expect(IconColorSpace(argument: "sRGB") == .sRGB)
+        #expect(ExportColorSpace(argument: "sRGB") == .sRGB)
     }
 
     @Test func colorSpaceParsesDisplayP3() {
-        #expect(IconColorSpace(argument: "displayP3") == .displayP3)
+        #expect(ExportColorSpace(argument: "displayP3") == .displayP3)
     }
 
     @Test func colorSpaceRejectsInvalidValue() {
-        #expect(IconColorSpace(argument: "bogus") == nil)
+        #expect(ExportColorSpace(argument: "bogus") == nil)
     }
 
-    @Test func colorSpaceBuildsCGColorSpace() throws {
-        _ = try IconColorSpace.sRGB.makeColorSpace()
-        _ = try IconColorSpace.displayP3.makeColorSpace()
+    @Test func colorSpaceBuildsCGColorSpace() {
+        #expect(ExportColorSpace.sRGB.cgColorSpace.name == CGColorSpace.sRGB)
+        #expect(ExportColorSpace.displayP3.cgColorSpace.name == CGColorSpace.displayP3)
     }
 
     // MARK: - End-to-end smoke test

@@ -4,7 +4,7 @@ import SwiftUI
 struct ExportSettingsSidebar: View {
     @Binding var iconSettings: IconSettings
     @Binding var showExportDialog: Bool
-    var generationMode: GenerationMode = .swiftUI
+    var generationMode: GenerationMode = .mica
     var appexHasImage: Bool = false
     var badgeAppexHasImage: Bool = false
 
@@ -32,7 +32,7 @@ struct ExportSettingsSidebar: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    if generationMode == .appleReference {
+                    if generationMode == .system {
                         Text("Preview always renders at 512pt @2x.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -48,7 +48,7 @@ struct ExportSettingsSidebar: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Color Space", selection: $iconSettings.exportColorSpace) {
                         ForEach(ExportColorSpace.allCases) { colorSpace in
-                            Text(colorSpace.rawValue).tag(colorSpace)
+                            Text(colorSpace.displayName).tag(colorSpace)
                         }
                     }
                     .pickerStyle(.menu)
@@ -80,12 +80,12 @@ struct ExportSettingsSidebar: View {
     /// every active System-mode layer (icon AND badge) has one, otherwise the
     /// export would silently omit the pending layer.
     private var waitingOnIconAppex: Bool {
-        generationMode == .appleReference && !appexHasImage
+        generationMode == .system && !appexHasImage
     }
 
     private var waitingOnBadgeAppex: Bool {
         iconSettings.showBadge
-            && iconSettings.badgeIconSource == .appleReference
+            && iconSettings.badgeIconSource == .system
             && !badgeAppexHasImage
     }
 

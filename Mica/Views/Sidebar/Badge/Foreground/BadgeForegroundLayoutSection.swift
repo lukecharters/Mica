@@ -26,7 +26,7 @@ struct BadgeLayoutSection: View {
                 showPaddingCompensation: false
             )
 
-        case .appleReference:
+        case .system:
             EmptyView()
         }
     }

@@ -1,28 +1,41 @@
 // Views/Sidebar/GroupModePicker.swift
 import SwiftUI
 
-/// Two-state segmented control: Custom vs System for a single group. Shown at the
+/// Views-layer display metadata for `GenerationMode` (kept out of the shared
+/// model so the CLI doesn't carry UI strings).
+extension GenerationMode {
+    var systemImageName: String {
+        switch self {
+        case .mica: "slider.horizontal.3"
+        case .system: "command"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .mica: "Mica"
+        case .system: "System"
+        }
+    }
+}
+
+/// Two-state segmented control: Mica vs System for a single group. Shown at the
 /// top of a group's inspector (Icon / Badge) so the user can switch that group
-/// between custom SwiftUI rendering and Apple's system reference.
-///
-/// Mirrors the full-width capsule-segment styling of `IconModePicker` and reuses
-/// its `IconModeSegment` for the per-segment icon + label.
+/// between Mica's SwiftUI rendering and Apple's system reference.
 struct GroupModePicker: View {
     @Binding var isSystem: Bool
-    
-    private var selection: IconModeSegment {
-        isSystem ? .system : .custom
+
+    private var selection: GenerationMode {
+        isSystem ? .system : .mica
     }
-    
+
     var body: some View {
         VStack(alignment: .leading) {
             Text("Generation Mode").font(.headline)
             HStack(spacing: 0) {
-                ForEach(IconModeSegment.allCases) { segment in
+                ForEach(GenerationMode.allCases) { segment in
                     Button {
-//                        withAnimation() {
-                            isSystem = (segment == .system)
-//                        }
+                        isSystem = (segment == .system)
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: segment.systemImageName)
@@ -44,7 +57,6 @@ struct GroupModePicker: View {
                 }
             }
         }
-//        .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
     }

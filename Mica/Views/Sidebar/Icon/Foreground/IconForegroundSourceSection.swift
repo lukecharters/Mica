@@ -20,7 +20,7 @@ struct IconSourceSection: View {
                 switch iconSettings.iconSource {
                 case .sfSymbol: return .sfSymbol
                 case .customImage: return .imported
-                case .appleReference: return .sfSymbol
+                case .system: return .sfSymbol
                 }
             },
             set: { newValue in

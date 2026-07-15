@@ -131,7 +131,7 @@
 				CLI/IconGeneratorCommand.swift,
 				CLI/Shared/CLIOutput.swift,
 				CLI/Shared/ExportScale.swift,
-				CLI/Shared/IconColorSpace.swift,
+				"CLI/Shared/ExportColorSpace+CLI.swift",
 				CLI/Shared/IconExtractor.swift,
 				CLI/Shared/OutputResolver.swift,
 				CLI/Shared/ToggleState.swift,

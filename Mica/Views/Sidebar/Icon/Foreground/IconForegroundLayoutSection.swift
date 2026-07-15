@@ -28,7 +28,7 @@ struct IconLayoutSection: View {
                 showPaddingCompensation: false
             )
 
-        case .appleReference:
+        case .system:
             EmptyView() // Layout hidden in Apple Ref mode by SidebarView
         }
     }

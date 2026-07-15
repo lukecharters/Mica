@@ -87,7 +87,7 @@ struct AppexRenderingStructuralTests {
         settings.exportRetinaSize = false
         settings.showBadge = true
         settings.badgePosition = .bottomRight
-        settings.badgeIconSource = .appleReference // BadgeView uses badgeAppexImage for this mode
+        settings.badgeIconSource = .system // BadgeView uses badgeAppexImage for this mode
 
         let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
         // Badge appex is typically provided at 512pt @2x = 1024px per

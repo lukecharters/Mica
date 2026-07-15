@@ -5,7 +5,7 @@ struct BadgeAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
-    // Apple Reference bindings (only used when badgeIconSource == .appleReference)
+    // Apple Reference bindings (only used when badgeIconSource == .system)
     @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var badgeAppexEnclosureColor: AppexColor
 
@@ -19,7 +19,7 @@ struct BadgeAppearanceSection: View {
 
     var body: some View {
         switch iconSettings.badgeIconSource {
-        case .appleReference:
+        case .system:
             appleReferenceControls
         case .sfSymbol:
             sfSymbolControls
