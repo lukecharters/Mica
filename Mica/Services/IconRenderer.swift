@@ -2,6 +2,41 @@
 import SwiftUI
 import CoreGraphics
 
+/// Single source of truth for badge geometry, derived from native macOS badge
+/// measurements (100px badge on a 208px enclosure; Mica renders the badge at
+/// 80% of native). Shared by the render pipeline (`IconContentView`,
+/// `IconRenderer.renderAppexWithBadge`) and both previews (`ScaledIconPreview`,
+/// `AppexPreviewPane`) so the numbers cannot drift between copies.
+enum BadgeGeometry {
+    /// Badge diameter as a fraction of the enclosure (80% of the native 100px).
+    static let diameterRatio: CGFloat = 80.0 / 208.0    // ≈ 0.3846
+    /// Badge anchor from enclosure center — asymmetric, matches native macOS.
+    static let anchorXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
+    static let anchorYRatio: CGFloat = 80.0 / 208.0     // ≈ 0.3846
+    /// Shadow buffer beyond the badge edge (proportional to the 80px badge).
+    static let shadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269
+
+    /// Badge diameter for a given enclosure and user badge scale.
+    static func diameter(enclosureSize: CGFloat, badgeScale: CGFloat) -> CGFloat {
+        enclosureSize * diameterRatio * badgeScale
+    }
+
+    /// Offset of the badge center from the icon center, including the
+    /// normalized manual offset (stored as fractions of enclosure size).
+    static func offset(for settings: IconSettings, enclosureSize: CGFloat) -> CGSize {
+        let ax = enclosureSize * anchorXRatio
+        let ay = enclosureSize * anchorYRatio
+        let mx = enclosureSize * settings.badgeManualOffsetX
+        let my = enclosureSize * settings.badgeManualOffsetY
+        switch settings.badgePosition {
+        case .topRight:    return CGSize(width: ax + mx, height: -ay + my)
+        case .topLeft:     return CGSize(width: -ax + mx, height: -ay + my)
+        case .bottomRight: return CGSize(width: ax + mx, height: ay + my)
+        case .bottomLeft:  return CGSize(width: -ax + mx, height: ay + my)
+        }
+    }
+}
+
 struct IconRenderer {
     // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
     @MainActor
@@ -34,8 +69,7 @@ struct IconRenderer {
         let scaleFactor = exportSize / 256.0
         let backgroundInset = 25 * scaleFactor
         let enclosureSize = exportSize - 2 * backgroundInset
-        let badgeDiameterRatio: CGFloat = 80.0 / 208.0
-        let badgeSize = enclosureSize * badgeDiameterRatio * settings.badgeScale
+        let badgeSize = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
 
         let compositeView = ZStack {
             Image(nsImage: appexImage)
@@ -49,7 +83,7 @@ struct IconRenderer {
                     badgeSize: badgeSize,
                     badgeAppexImage: badgeAppexImage
                 )
-                .offset(badgeOffset(for: settings, enclosureSize: enclosureSize))
+                .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
             }
         }
         .frame(width: canvasSize, height: canvasSize)
@@ -63,20 +97,6 @@ struct IconRenderer {
             return setImageDPI(image: colorSpaceConverted, settings: settings)
         }
         return NSImage(size: CGSize(width: exportSize, height: exportSize))
-    }
-
-    /// Badge offset calculation (mirrors IconContentView.badgeOffset)
-    private static func badgeOffset(for settings: IconSettings, enclosureSize: CGFloat) -> CGSize {
-        let ax = enclosureSize * (76.0 / 208.0)
-        let ay = enclosureSize * (80.0 / 208.0)
-        let mx = enclosureSize * settings.badgeManualOffsetX
-        let my = enclosureSize * settings.badgeManualOffsetY
-        switch settings.badgePosition {
-        case .topRight:    return CGSize(width: ax + mx, height: -ay + my)
-        case .topLeft:     return CGSize(width: -ax + mx, height: -ay + my)
-        case .bottomRight: return CGSize(width: ax + mx, height: ay + my)
-        case .bottomLeft:  return CGSize(width: -ax + mx, height: ay + my)
-        }
     }
 
     // Thread-safe wrapper that hops to the main queue when needed
@@ -108,8 +128,11 @@ struct IconRenderer {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
-        let width = Int(image.size.width)
-        let height = Int(image.size.height)
+        // Use the bitmap's own pixel dimensions. The logical size can be
+        // fractional (badge overflow yields fractional canvases), and truncating
+        // it would resample the whole image into a context up to 1px smaller.
+        let width = originalCGImage.width
+        let height = originalCGImage.height
 
         let targetCGColorSpace: CGColorSpace = {
             switch colorSpace {
@@ -155,12 +178,7 @@ struct IconContentView: View {
     private let baseSymbolShadowOffset: CGFloat = 2.5
     private let symbolShadowOpacity: CGFloat = 0.23
 
-    // Badge layout ratios — derived from native macOS badge on 208px enclosure:
-    // 100px diameter, extends 22px past horizontal edge, 26px past vertical edge, 7px shadow buffer
-    private let badgeDiameterRatio: CGFloat = 80.0 / 208.0    // ≈ 0.3846 (80% of native 100px on 208px enclosure)
-    private let badgeCenterXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654 from enclosure center
-    private let badgeCenterYRatio: CGFloat = 80.0 / 208.0     // ≈ 0.3846 from enclosure center
-    private let badgeShadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269 (proportional to 80px badge)
+    // Badge layout ratios live in BadgeGeometry (shared with the previews).
 
     private var scaleFactor: CGFloat { displaySize / baseSize }
 
@@ -223,17 +241,15 @@ struct IconContentView: View {
     private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
 
     // Badge scaled values — all derived from enclosure size
-    private var badgeSize: CGFloat { enclosureSize * badgeDiameterRatio * settings.badgeScale }
-    private var badgeShadowBuffer: CGFloat { enclosureSize * badgeShadowBufferRatio }
-
-    /// Badge anchor X/Y from enclosure center (asymmetric — matches native macOS positioning)
-    private var badgeAnchorX: CGFloat { enclosureSize * badgeCenterXRatio }
-    private var badgeAnchorY: CGFloat { enclosureSize * badgeCenterYRatio }
+    private var badgeSize: CGFloat {
+        BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+    }
+    private var badgeShadowBuffer: CGFloat { enclosureSize * BadgeGeometry.shadowBufferRatio }
 
     /// How far the badge (including shadow) extends beyond the original canvas bounds
     private var badgeOverflow: CGFloat {
         guard settings.showBadge else { return 0 }
-        let offset = badgeOffset(for: settings.badgePosition)
+        let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
         let badgeRadius = badgeSize / 2
         let buffer = badgeShadowBuffer
         let halfCanvas = iconSize / 2
@@ -249,35 +265,24 @@ struct IconContentView: View {
         displaySize + 2 * badgeOverflow
     }
 
-    /// Computes total canvas size without creating the full view (for export/preview sizing)
+    /// Computes total canvas size without creating the full view (for export/preview sizing).
+    /// Mirrors the instance `badgeOverflow`/`totalCanvasSize` pair; both draw all
+    /// badge geometry from `BadgeGeometry`, so only the inset/overflow framing here
+    /// must be kept in sync with the instance properties.
     static func totalCanvasSize(for settings: IconSettings, displaySize: CGFloat) -> CGFloat {
         guard settings.showBadge else { return displaySize }
         let backgroundInset = 25 * (displaySize / 256) // baseBackgroundInset * scaleFactor
         let enclosureSize = displaySize - 2 * backgroundInset
-        let badgeRadius = (enclosureSize * (80.0 / 208.0) * settings.badgeScale) / 2
-        let shadowBuffer = enclosureSize * (5.6 / 208.0)
-        let anchorX = enclosureSize * (76.0 / 208.0)
-        let anchorY = enclosureSize * (80.0 / 208.0)
-        let manualX = enclosureSize * settings.badgeManualOffsetX
-        let manualY = enclosureSize * settings.badgeManualOffsetY
-
-        // Compute badge center for the selected position
-        let cx: CGFloat
-        let cy: CGFloat
-        switch settings.badgePosition {
-        case .topRight:    cx = anchorX + manualX;  cy = -anchorY + manualY
-        case .topLeft:     cx = -anchorX + manualX; cy = -anchorY + manualY
-        case .bottomRight: cx = anchorX + manualX;  cy = anchorY + manualY
-        case .bottomLeft:  cx = -anchorX + manualX; cy = anchorY + manualY
-        }
+        let center = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
+        let extent = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale) / 2
+            + enclosureSize * BadgeGeometry.shadowBufferRatio
 
         let halfCanvas = displaySize / 2
-        let extent = badgeRadius + shadowBuffer
         let overflow = max(0,
-            cx + extent - halfCanvas,
-            -cx + extent - halfCanvas,
-            cy + extent - halfCanvas,
-            -cy + extent - halfCanvas
+            center.width + extent - halfCanvas,
+            -center.width + extent - halfCanvas,
+            center.height + extent - halfCanvas,
+            -center.height + extent - halfCanvas
         )
         return displaySize + 2 * overflow
     }
@@ -301,7 +306,7 @@ struct IconContentView: View {
 
             if settings.showBadge {
                 BadgeView(settings: settings, badgeSize: badgeSize, badgeAppexImage: badgeAppexImage)
-                    .offset(badgeOffset(for: settings.badgePosition))
+                    .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
             }
         }
         .frame(width: totalCanvasSize, height: totalCanvasSize)
@@ -439,18 +444,6 @@ struct IconContentView: View {
         }
     }
 
-    private func badgeOffset(for position: BadgePosition) -> CGSize {
-        let ax = badgeAnchorX
-        let ay = badgeAnchorY
-        let manualX = enclosureSize * settings.badgeManualOffsetX
-        let manualY = enclosureSize * settings.badgeManualOffsetY
-        switch position {
-        case .topRight:    return CGSize(width: ax + manualX, height: -ay + manualY)
-        case .topLeft:     return CGSize(width: -ax + manualX, height: -ay + manualY)
-        case .bottomRight: return CGSize(width: ax + manualX, height: ay + manualY)
-        case .bottomLeft:  return CGSize(width: -ax + manualX, height: ay + manualY)
-        }
-    }
 }
 
 struct BadgeView: View {
@@ -538,7 +531,7 @@ struct BadgeView: View {
                         .shadow(
                             color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
                             radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.02 : 0
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
                         )
                 }
 

@@ -255,10 +255,10 @@ struct ScaledIconPreview: View {
                settings.badgeIconSource == .appleReference,
                badgeAppexImage == nil {
                 BadgeAppexStatusView(
-                    badgeSize: enclosureSize * (80.0 / 208.0) * settings.badgeScale,
+                    badgeSize: BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale),
                     error: badgeAppexError
                 )
-                .offset(computeBadgeOffset())
+                .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
                 .allowsHitTesting(false)
             }
 
@@ -293,12 +293,11 @@ struct ScaledIconPreview: View {
     }
 
     /// Transparent circle at the badge position that captures drag gestures.
-    /// Diameter matches the rendered badge (80/208 of the enclosure — see
-    /// `IconContentView`/`AppexPreviewPane`), so the hover/drag region doesn't
+    /// Diameter matches the rendered badge, so the hover/drag region doesn't
     /// extend past the visible badge.
     private var badgeDragOverlay: some View {
-        let badgeDiameter = enclosureSize * (80.0 / 208.0) * settings.badgeScale
-        let offset = computeBadgeOffset()
+        let badgeDiameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
 
         return Circle()
             .fill(Color.clear)
@@ -357,20 +356,6 @@ struct ScaledIconPreview: View {
         if pushedCursor != nil { NSCursor.pop() }
         cursor?.push()
         pushedCursor = cursor
-    }
-
-    /// Compute badge offset matching IconContentView's logic
-    private func computeBadgeOffset() -> CGSize {
-        let anchorX = enclosureSize * (76.0 / 208.0)
-        let anchorY = enclosureSize * (80.0 / 208.0)
-        let manualX = enclosureSize * settings.badgeManualOffsetX
-        let manualY = enclosureSize * settings.badgeManualOffsetY
-        switch settings.badgePosition {
-        case .topRight:    return CGSize(width: anchorX + manualX, height: -anchorY + manualY)
-        case .topLeft:     return CGSize(width: -anchorX + manualX, height: -anchorY + manualY)
-        case .bottomRight: return CGSize(width: anchorX + manualX, height: anchorY + manualY)
-        case .bottomLeft:  return CGSize(width: -anchorX + manualX, height: anchorY + manualY)
-        }
     }
 
     // MARK: - Drag and Drop
