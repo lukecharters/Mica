@@ -46,14 +46,14 @@ class IconGeneratorCLI {
         // Phase 4: Save
         let outputURL = try resolveOutputPath(basename: command.defaultOutputBasename(), userPath: command.export.outputPath)
         reporter.detail("Saving to \(outputURL.path)…")
-        try await saveImageWithValidation(image, to: outputURL, settings: settings)
+        let pixelSize = try await saveImageWithValidation(image, to: outputURL, settings: settings)
 
-        // Phase 5: Describe the result
-        let pixelDimension = Int(settings.exportSize) * (settings.exportRetinaSize ? 2 : 1)
+        // Phase 5: Describe the result (actual written dimensions — the canvas
+        // exceeds exportSize × scale when a badge overflows).
         return OutputFileJSON(
             path: outputURL.path,
-            width: pixelDimension,
-            height: pixelDimension,
+            width: pixelSize.width,
+            height: pixelSize.height,
             bytes: fileByteCount(outputURL),
             source: command.defaultOutputBasename()
         )
@@ -146,8 +146,10 @@ class IconGeneratorCLI {
             try validateSFSymbolExists(name)
         }
 
-        // Pre-validate all color strings with context
-        try validateAllColors(command)
+        // Color strings are validated once, in the command layer
+        // (IconGeneratorCommand.validateColorFormats) — it runs before this
+        // method, covers System-mode appex tokens too, and previously had a
+        // near-verbatim (dead) duplicate here that had started to drift.
 
         // Validate file system permissions
         if let outputPath = command.export.outputPath {
@@ -166,113 +168,10 @@ class IconGeneratorCLI {
         }
     }
     
-    private func validateAllColors(_ command: IconGeneratorCommand) throws {
-        let isSystemMode = command.generation.resolvedIconMode == "apple-reference"
-
-        // Merged --icon-symbol-color (mica mode only — system mode resolves via
-        // appex colour tokens, validated separately in the command layer).
-        if !isSystemMode, let symbolColor = command.iconForeground.symbolColor {
-            do {
-                _ = try ColorParser.parse(symbolColor)
-            } catch {
-                throw CLIError.invalidColorFormat("Invalid color format for --icon-symbol-color: '\(symbolColor)'. \(error.localizedDescription)")
-            }
-        }
-
-        // Palette colours (mica + palette rendering).
-        if !isSystemMode, command.iconForeground.symbolRendering == "palette", let palette = command.iconForeground.symbolPalette {
-            let parts = try splitPalette(palette, role: "--icon-symbol-palette")
-            for (index, part) in parts.enumerated() {
-                do {
-                    if index == 0 {
-                        _ = try ColorParser.parse(part)
-                    } else {
-                        _ = try ColorParser.parseWithOpacity(part)
-                    }
-                } catch {
-                    throw CLIError.invalidColorFormat("Invalid color in --icon-symbol-palette ('\(part)'). \(error.localizedDescription)")
-                }
-            }
-        }
-
-        // Merged --icon-bg-color (folds base / appex-enclosure), mode + kind aware.
-        if let bgColor = command.background.color {
-            if isSystemMode {
-                // resolved as an appex token in renderAppleReference
-            } else if case .preRendered = command.resolvedBackground() {
-                guard validPreRenderedColors.contains(bgColor.lowercased()) else {
-                    throw CLIError.invalidColorFormat("--icon-bg-color for prerendered-liquid-glass must be one of: \(validPreRenderedColors.joined(separator: ", ")). You provided '\(bgColor)'.")
-                }
-            } else {
-                do {
-                    _ = try ColorParser.parse(bgColor)
-                } catch {
-                    throw CLIError.invalidColorFormat("Invalid color format for --icon-bg-color: '\(bgColor)'. \(error.localizedDescription)")
-                }
-            }
-        }
-
-        // --icon-bg-gradient-colors (custom-gradient): exactly two colours.
-        if let gradientColors = command.background.gradientColors {
-            for part in try splitGradientColors(gradientColors) {
-                do {
-                    _ = try ColorParser.parse(part)
-                } catch {
-                    throw CLIError.invalidColorFormat("Invalid color in --icon-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
-                }
-            }
-        }
-
-        // Badge colours (only when the badge is active), mica mode. System-mode
-        // badge colours resolve via appex tokens, validated in the command layer.
-        if command.badgeIsActive {
-            let isSystemBadge = command.generation.resolvedBadgeMode == "apple-reference"
-
-            if !isSystemBadge, let badgeSymbolColor = command.badge.symbolColor {
-                do {
-                    _ = try ColorParser.parse(badgeSymbolColor)
-                } catch {
-                    throw CLIError.invalidColorFormat("Invalid color format for --badge-symbol-color: '\(badgeSymbolColor)'. \(error.localizedDescription)")
-                }
-            }
-
-            if !isSystemBadge, command.badge.symbolRendering == "palette", let palette = command.badge.symbolPalette {
-                let parts = try splitPalette(palette, role: "--badge-symbol-palette")
-                for (index, part) in parts.enumerated() {
-                    do {
-                        if index == 0 {
-                            _ = try ColorParser.parse(part)
-                        } else {
-                            _ = try ColorParser.parseWithOpacity(part)
-                        }
-                    } catch {
-                        throw CLIError.invalidColorFormat("Invalid color in --badge-symbol-palette ('\(part)'). \(error.localizedDescription)")
-                    }
-                }
-            }
-
-            if !isSystemBadge, let badgeBgColor = command.badge.backgroundColor {
-                do {
-                    _ = try ColorParser.parse(badgeBgColor)
-                } catch {
-                    throw CLIError.invalidColorFormat("Invalid color format for --badge-bg-color: '\(badgeBgColor)'. \(error.localizedDescription)")
-                }
-            }
-
-            if let badgeGradientColors = command.badge.backgroundGradientColors {
-                for part in try splitGradientColors(badgeGradientColors, role: "--badge-bg-gradient-colors") {
-                    do {
-                        _ = try ColorParser.parse(part)
-                    } catch {
-                        throw CLIError.invalidColorFormat("Invalid color in --badge-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
-                    }
-                }
-            }
-        }
-    }
-    
     private func validateOutputPermissions(_ outputPath: String) throws {
-        let url = URL(fileURLWithPath: outputPath)
+        // Expand ~ — must agree with resolveOutputPath, or this creates (and
+        // validates) a literal ./~ directory instead of the real destination.
+        let url = URL(fileURLWithPath: (outputPath as NSString).expandingTildeInPath)
         let directory = url.deletingLastPathComponent()
         
         // Check if directory exists and is writable
@@ -533,7 +432,9 @@ class IconGeneratorCLI {
     
     private func resolveOutputPath(basename: String, userPath: String?) throws -> URL {
         if let userPath = userPath {
-            let url = URL(fileURLWithPath: userPath)
+            // Expand ~ like every other path the CLI accepts (extract -o, image
+            // inputs) — otherwise a quoted '~/…' creates a literal ./~ directory.
+            let url = URL(fileURLWithPath: (userPath as NSString).expandingTildeInPath)
 
             // Ensure it has .png extension
             if url.pathExtension.lowercased() != "png" {
@@ -553,28 +454,23 @@ class IconGeneratorCLI {
         return URL(fileURLWithPath: "./\(sanitized).png")
     }
     
-    private func saveImageWithValidation(_ image: NSImage, to url: URL, settings: IconSettings) async throws {
-        // Prepare PNG data with proper settings
-        guard let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData) else {
+    /// Encode via the shared `PNGExporter` (same DPI metadata as GUI exports)
+    /// and write the file. Returns the written pixel dimensions — the canvas can
+    /// exceed the export size when a badge overflows, so callers must not assume
+    /// `exportSize × scale`.
+    private func saveImageWithValidation(_ image: NSImage, to url: URL, settings: IconSettings) async throws -> (width: Int, height: Int) {
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw CLIError.imageConversion("Failed to create bitmap representation of rendered image")
         }
-        
-        // Set bitmap properties based on settings
-        bitmap.size = NSSize(width: settings.exportSize, height: settings.exportSize)
-        
-        // Configure PNG properties
-        var pngProperties: [NSBitmapImageRep.PropertyKey: Any] = [:]
-        
-        // Set DPI based on retina setting
-        if settings.exportRetinaSize {
-            pngProperties[.compressionFactor] = NSNumber(value: 0.9) // High quality
-        }
-        
-        guard let pngData = bitmap.representation(using: .png, properties: pngProperties) else {
+
+        let scaleFactor = settings.exportRetinaSize ? 2 : 1
+        let pngData: Data
+        do {
+            pngData = try PNGExporter.pngData(from: cgImage, scaleFactor: scaleFactor)
+        } catch {
             throw CLIError.imageConversion("Failed to convert image to PNG format")
         }
-        
+
         // Validate PNG data
         guard pngData.count > 0 else {
             throw CLIError.imageConversion("Generated PNG data is empty")
@@ -611,6 +507,8 @@ class IconGeneratorCLI {
         } catch {
             throw CLIError.fileSystem("Cannot verify created file: \(error.localizedDescription)")
         }
+
+        return (cgImage.width, cgImage.height)
     }
     
     // MARK: - Enhanced Parsing Helpers

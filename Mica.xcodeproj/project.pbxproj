@@ -122,6 +122,7 @@
 				Services/AppexReferenceService.swift,
 				Services/IconRenderer.swift,
 				Services/ImageImportService.swift,
+				Services/PNGExporter.swift,
 				Services/SymbolAutoSizingService.swift,
 				Services/SymbolSizingService.swift,
 			);

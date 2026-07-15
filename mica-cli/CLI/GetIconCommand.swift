@@ -154,8 +154,12 @@ struct GetIconCommand: ParsableCommand {
         }
 
         var outputs: [OutputFileJSON] = []
+        var usedDestinations = Set<String>()
         for item in filteredItems {
-            let destination = try destinationURL(for: item, rootDirectory: rootURL, outputDirectory: outputDirectory)
+            let destination = Self.deduplicated(
+                try destinationURL(for: item, rootDirectory: rootURL, outputDirectory: outputDirectory),
+                used: &usedDestinations
+            )
             try IconExtractor.saveIcon(
                 forBundleAt: item.path,
                 size: size,
@@ -277,5 +281,27 @@ struct GetIconCommand: ParsableCommand {
 
         let filename = OutputResolver.suggestedIconFilename(forItemAt: itemURL.path, size: size, scaleFactor: scale.factor)
         return destinationDirectory.appendingPathComponent(filename)
+    }
+
+    /// Same-stem siblings (e.g. `Foo.app` + `Foo.pkg`) map to the same suggested
+    /// filename; disambiguate with a numeric suffix instead of silently
+    /// overwriting (the JSON output would otherwise list multiple `outputs`
+    /// entries pointing at one file).
+    private static func deduplicated(_ url: URL, used: inout Set<String>) -> URL {
+        // Raw .path, not standardizedFileURL: standardization consults the
+        // filesystem (/private symlink handling), so its output changes once
+        // the first file exists — insert and lookup would disagree. Every
+        // destination is built from the same outputDirectory URL, so raw
+        // paths compare exactly.
+        var candidate = url
+        var counter = 2
+        while used.contains(candidate.path) {
+            let base = url.deletingPathExtension().lastPathComponent
+            candidate = url.deletingLastPathComponent()
+                .appendingPathComponent("\(base)-\(counter).\(url.pathExtension)")
+            counter += 1
+        }
+        used.insert(candidate.path)
+        return candidate
     }
 }
