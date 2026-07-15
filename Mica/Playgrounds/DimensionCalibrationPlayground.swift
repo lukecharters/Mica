@@ -1101,10 +1101,11 @@ struct DimensionCalibrationPlayground: View {
 
             HStack {
                 Text("Weight")
-                Spacer()
                 Picker("Weight", selection: $weight) {
                     Text("Regular").tag(Font.Weight.regular)
                     Text("Medium").tag(Font.Weight.medium)
+                    Text("Semibold").tag(Font.Weight.semibold)
+                    Text("Bold").tag(Font.Weight.bold)
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 200)
