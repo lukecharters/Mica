@@ -76,24 +76,24 @@ struct ExportOptions: ParsableArguments {
     var scale: ExportScale = .oneX
 
     @Option(name: .long, help: ArgumentHelp("Color space to render in: sRGB (default) or displayP3", valueName: "space"))
-    var colorSpace: IconColorSpace = .sRGB
+    var colorSpace: ExportColorSpace = .sRGB
 }
 
 // MARK: - Generation Options
 
 struct GenerationOptions: ParsableArguments {
-    // Generation mode is taken in user-facing `mica`/`system` terms and stored
-    // canonically as `custom`/`apple-reference` so the downstream settings
-    // builder (which switches on `apple-reference`) stays unchanged.
+    // The user-facing `mica`/`system` tokens ARE GenerationMode's raw values,
+    // so the shared model type is stored directly — no parallel string
+    // vocabulary between the flag and the settings builder.
     @Option(
         name: .customLong("icon-generation-mode"),
         help: ArgumentHelp(
             "How the icon is rendered: mica (SwiftUI, default) or system (Apple appex rendering)",
             valueName: "mica|system"
         ),
-        transform: { try canonicalGenerationMode($0, role: "Icon") }
+        transform: { try parseGenerationMode($0, role: "Icon") }
     )
-    var iconGenerationMode: String = "custom"
+    var iconGenerationMode: GenerationMode = .mica
 
     @Option(
         name: .customLong("badge-generation-mode"),
@@ -101,26 +101,16 @@ struct GenerationOptions: ParsableArguments {
             "How the badge is rendered: mica (SwiftUI, default) or system (Apple appex rendering)",
             valueName: "mica|system"
         ),
-        transform: { try canonicalGenerationMode($0, role: "Badge") }
+        transform: { try parseGenerationMode($0, role: "Badge") }
     )
-    var badgeGenerationMode: String = "custom"
-
-    /// Canonical icon mode (`custom` / `apple-reference`).
-    var resolvedIconMode: String { iconGenerationMode }
-
-    /// Canonical badge mode (`custom` / `apple-reference`).
-    var resolvedBadgeMode: String { badgeGenerationMode }
+    var badgeGenerationMode: GenerationMode = .mica
 }
 
-/// Map the user-facing `mica`/`system` generation-mode tokens to the canonical
-/// `custom`/`apple-reference` values used throughout the settings builder.
-private func canonicalGenerationMode(_ mode: String, role: String) throws -> String {
-    switch mode.lowercased() {
-    case "mica": return "custom"
-    case "system": return "apple-reference"
-    default:
+private func parseGenerationMode(_ mode: String, role: String) throws -> GenerationMode {
+    guard let parsed = GenerationMode(rawValue: mode.lowercased()) else {
         throw ValidationError("\(role) generation mode must be 'mica' or 'system'.")
     }
+    return parsed
 }
 
 
@@ -796,7 +786,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             // stdout = the machine result; stderr = a concise human summary.
             reporter.path(result.path)
             var summary = "Generated \(result.width)×\(result.height) icon (\(humanByteCount(result.bytes)))"
-            if generation.resolvedIconMode == "apple-reference" {
+            if generation.iconGenerationMode == .system {
                 summary += " in system mode"
             }
             if badgeIsActive {
@@ -877,7 +867,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         }
 
         // System badge mode renders via the appex pipeline, which needs an SF Symbol.
-        if generation.resolvedBadgeMode == "apple-reference", case .image = badgeForeground {
+        if generation.badgeGenerationMode == .system, case .image = badgeForeground {
             throw ValidationError("--badge-generation-mode system requires an SF Symbol badge foreground (--badge-fg symbol:NAME); image foregrounds are only supported in mica mode.")
         }
 
@@ -949,7 +939,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         // The merged icon symbol color resolves differently by generation mode:
         // mica → ColorParser; system → appex color tokens. Validate accordingly.
         if let symbolColor = iconForeground.symbolColor {
-            if generation.resolvedIconMode == "apple-reference" {
+            if generation.iconGenerationMode == .system {
                 _ = try resolveAppexColorArg(symbolColor, role: "--icon-symbol-color")
             } else {
                 do {
@@ -979,7 +969,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         // Merged --icon-bg-color (folds base / appex-enclosure). Resolves by
         // generation mode + background kind.
         if let bgColor = background.color {
-            if generation.resolvedIconMode == "apple-reference" {
+            if generation.iconGenerationMode == .system {
                 _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color")
             } else if case .preRendered = resolvedBackground() {
                 guard validPreRenderedColors.contains(bgColor.lowercased()) else {
@@ -1009,7 +999,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         // --badge-symbol-color / --badge-bg-color resolve differently per mode:
         // mica → ColorParser; system → appex colour tokens.
         if badgeIsActive {
-            let isSystemBadge = generation.resolvedBadgeMode == "apple-reference"
+            let isSystemBadge = generation.badgeGenerationMode == .system
 
             if let badgeSymbolColor = badge.symbolColor {
                 if isSystemBadge {

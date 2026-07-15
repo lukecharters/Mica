@@ -22,7 +22,7 @@ struct AppexPreviewPane: View {
         }
         .task(id: viewModel.badgeAppexGenerationKey) {
             guard viewModel.iconSettings.showBadge,
-                  viewModel.iconSettings.badgeIconSource == .appleReference else {
+                  viewModel.iconSettings.badgeIconSource == .system else {
                 return
             }
             try? await Task.sleep(for: .milliseconds(400))
@@ -78,7 +78,7 @@ struct AppexPreviewPane: View {
                         for: viewModel.iconSettings,
                         enclosureSize: enclosureSize
                     )
-                    if viewModel.iconSettings.badgeIconSource == .appleReference,
+                    if viewModel.iconSettings.badgeIconSource == .system,
                        viewModel.badgeAppexRenderedImage == nil {
                         // Preview-only stand-in; BadgeView draws nothing until the
                         // badge's appex image exists.

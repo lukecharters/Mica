@@ -79,20 +79,20 @@ struct IconSettings: Equatable {
 
     // Per-group generation mode. Icon and Badge are independent — e.g. Custom icon
     // with a System (Apple Reference) badge, or vice versa.
-    var iconGenerationMode: GenerationMode = .swiftUI
+    var iconGenerationMode: GenerationMode = .mica
 
-    /// Badge generation mode derived from `badgeIconSource`. Setting `.appleReference`
-    /// locks the badge source to `.appleReference`; setting `.swiftUI` falls back to
+    /// Badge generation mode derived from `badgeIconSource`. Setting `.system`
+    /// locks the badge source to `.system`; setting `.mica` falls back to
     /// `.sfSymbol` when needed. The LayerSidebar keeps a separate UI-state memory of
     /// the previous non-system source so the user's pick is restored on round-trip.
     var badgeGenerationMode: GenerationMode {
-        get { badgeIconSource == .appleReference ? .appleReference : .swiftUI }
+        get { badgeIconSource == .system ? .system : .mica }
         set {
             switch newValue {
-            case .appleReference:
-                badgeIconSource = .appleReference
-            case .swiftUI:
-                if badgeIconSource == .appleReference {
+            case .system:
+                badgeIconSource = .system
+            case .mica:
+                if badgeIconSource == .system {
                     badgeIconSource = .sfSymbol
                 }
             }
@@ -231,9 +231,17 @@ enum SymbolColorRenderingMode: String, CaseIterable, Identifiable {
 
 enum ExportColorSpace: String, CaseIterable, Identifiable {
     case sRGB = "sRGB"
-    case displayP3 = "Display P3"
-    
+    case displayP3 = "displayP3"
+
     var id: String { self.rawValue }
+
+    /// GUI display string; the rawValue is the CLI's --color-space token.
+    var displayName: String {
+        switch self {
+        case .sRGB: return "sRGB"
+        case .displayP3: return "Display P3"
+        }
+    }
     
     var nsColorSpace: NSColorSpace {
         switch self {

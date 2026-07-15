@@ -446,7 +446,7 @@ struct IconContentView: View {
                     )
             }
 
-        case .appleReference:
+        case .system:
             EmptyView() // Handled by GenerationMode — appex image replaces the whole icon
         }
     }
@@ -484,7 +484,7 @@ struct BadgeView: View {
     }
 
     var body: some View {
-        if settings.badgeIconSource == .appleReference {
+        if settings.badgeIconSource == .system {
             // System-mode badge: draw only the rendered appex image. While it is
             // still generating (nil) draw nothing — this is the shared export
             // render path, so preview-only affordances (spinner, error) live in
@@ -605,7 +605,7 @@ struct BadgeView: View {
                     )
             }
 
-        case .appleReference:
+        case .system:
             EmptyView() // Handled in body — appex image is the complete badge
         }
     }

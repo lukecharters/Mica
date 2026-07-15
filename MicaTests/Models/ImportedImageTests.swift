@@ -89,7 +89,7 @@ struct ImportedImageTests {
     func iconSource_rawValues() {
         #expect(IconSource.sfSymbol.rawValue == "SF Symbol")
         #expect(IconSource.customImage.rawValue == "Custom Image")
-        #expect(IconSource.appleReference.rawValue == "Apple Reference")
+        #expect(IconSource.system.rawValue == "System")
     }
 
     @Test("IconSource rawValue round-trips", arguments: IconSource.allCases)

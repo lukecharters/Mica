@@ -55,7 +55,7 @@ struct GetIconCommand: ParsableCommand {
     var depth: Int?
 
     @Option(name: .long, help: ArgumentHelp("Color space to render the icon in: sRGB (default) or displayP3", valueName: "space"))
-    var colorSpace: IconColorSpace = .sRGB
+    var colorSpace: ExportColorSpace = .sRGB
 
     @OptionGroup(title: "Output")
     var output: OutputOptions

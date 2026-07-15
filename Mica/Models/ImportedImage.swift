@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 enum IconSource: String, CaseIterable, Identifiable, Equatable {
     case sfSymbol = "SF Symbol"
     case customImage = "Custom Image"
-    case appleReference = "Apple Reference"
+    case system = "System"
     var id: String { rawValue }
 }
 

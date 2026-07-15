@@ -73,11 +73,11 @@ struct ContentView: View {
             )
         } detail: {
             Group {
-                if viewModel.iconSettings.iconGenerationMode == .swiftUI {
+                if viewModel.iconSettings.iconGenerationMode == .mica {
                     previewPane
                         .task(id: viewModel.badgeAppexGenerationKey) {
                             guard viewModel.iconSettings.showBadge,
-                                  viewModel.iconSettings.badgeGenerationMode == .appleReference else {
+                                  viewModel.iconSettings.badgeGenerationMode == .system else {
                                 return
                             }
                             try? await Task.sleep(for: .milliseconds(400))
@@ -172,7 +172,7 @@ struct ContentView: View {
         }
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: viewModel.iconSettings.iconGenerationMode == .appleReference
+            document: viewModel.iconSettings.iconGenerationMode == .system
                 ? IconDocument(appexExport: .init(
                     symbolName: viewModel.iconSettings.symbolName,
                     enclosureColor: viewModel.appexEnclosureColor.plistValue,
@@ -203,8 +203,8 @@ struct ContentView: View {
         guard case .layer(let g, _) = selection, g == group else { return }
         let isSystem: Bool
         switch group {
-        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .appleReference
-        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .appleReference
+        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .system
+        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .system
         }
         if isSystem {
             selection = .group(group)
@@ -278,7 +278,7 @@ struct ScaledIconPreview: View {
             // BadgeView itself draws nothing until the appex image exists, so this
             // stand-in never reaches exports.
             if settings.showBadge,
-               settings.badgeIconSource == .appleReference,
+               settings.badgeIconSource == .system,
                badgeAppexImage == nil {
                 BadgeAppexStatusView(
                     badgeSize: BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale),
@@ -434,7 +434,7 @@ struct ContentView_Previews: PreviewProvider {
 
     @MainActor private static var customVM: IconViewModel {
         let vm = IconViewModel()
-        vm.iconSettings.iconGenerationMode = .appleReference
+        vm.iconSettings.iconGenerationMode = .system
         vm.iconSettings.symbolName = "gearshape.fill"
         vm.iconSettings.useCustomColors = true
         vm.iconSettings.customPrimaryColor = .blue

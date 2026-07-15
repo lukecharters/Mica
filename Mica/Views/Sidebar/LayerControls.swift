@@ -93,12 +93,12 @@ struct LayerControls: View {
             .id(selection)
         }
         .onAppear {
-            if iconSettings.badgeIconSource != .appleReference {
+            if iconSettings.badgeIconSource != .system {
                 lastNonSystemBadgeSource = iconSettings.badgeIconSource
             }
         }
         .onChange(of: iconSettings.badgeIconSource) { _, newValue in
-            if newValue != .appleReference {
+            if newValue != .system {
                 lastNonSystemBadgeSource = newValue
             }
         }
@@ -122,33 +122,33 @@ struct LayerControls: View {
     }
 
     private var isIconAppleReference: Bool {
-        iconSettings.iconGenerationMode == .appleReference
+        iconSettings.iconGenerationMode == .system
     }
 
     private var isBadgeAppleReference: Bool {
-        iconSettings.badgeGenerationMode == .appleReference
+        iconSettings.badgeGenerationMode == .system
     }
 
     /// Drives the icon group's Custom/System picker.
     private var iconModeBinding: Binding<Bool> {
         Binding(
-            get: { iconSettings.iconGenerationMode == .appleReference },
-            set: { iconSettings.iconGenerationMode = $0 ? .appleReference : .swiftUI }
+            get: { iconSettings.iconGenerationMode == .system },
+            set: { iconSettings.iconGenerationMode = $0 ? .system : .mica }
         )
     }
 
     /// Drives the badge group's Custom/System picker. The badge's mode is derived
-    /// from its `badgeIconSource` (`.appleReference` == System), so toggling swaps
+    /// from its `badgeIconSource` (`.system` == System), so toggling swaps
     /// the source and restores the prior custom choice on the way back.
     private var badgeModeBinding: Binding<Bool> {
         Binding(
-            get: { iconSettings.badgeGenerationMode == .appleReference },
+            get: { iconSettings.badgeGenerationMode == .system },
             set: { newValue in
                 if newValue {
-                    if iconSettings.badgeIconSource != .appleReference {
+                    if iconSettings.badgeIconSource != .system {
                         lastNonSystemBadgeSource = iconSettings.badgeIconSource
                     }
-                    iconSettings.badgeIconSource = .appleReference
+                    iconSettings.badgeIconSource = .system
                 } else {
                     iconSettings.badgeIconSource = lastNonSystemBadgeSource
                 }

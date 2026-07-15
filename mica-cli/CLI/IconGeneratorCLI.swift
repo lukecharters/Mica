@@ -24,15 +24,15 @@ class IconGeneratorCLI {
         // Phase 3: Render
         let image: NSImage
 
-        if command.generation.resolvedIconMode == "apple-reference" {
+        if command.generation.iconGenerationMode == .system {
             reporter.detail("Rendering via the Apple Reference (appex) pipeline…")
             image = try await renderAppleReference(command: command, settings: settings)
         } else {
             reporter.detail("Rendering…")
-            // Load badge appex image if badge uses apple-reference source.
+            // Load badge appex image if badge uses the System (appex) source.
             // `let` keeps this in a disconnected region so it can be sent
             // into the @MainActor render task (NSImage is non-Sendable).
-            let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .appleReference)
+            let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .system)
                 ? try renderAppexIcon(
                     symbolName: settings.badgeSymbolName,
                     enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
@@ -96,7 +96,7 @@ class IconGeneratorCLI {
         if settings.showBadge {
             // `let` keeps this in a disconnected region so it can be sent
             // into the @MainActor render task (NSImage is non-Sendable).
-            let badgeAppexImage: NSImage? = settings.badgeIconSource == .appleReference
+            let badgeAppexImage: NSImage? = settings.badgeIconSource == .system
                 ? try renderAppexIcon(
                     symbolName: settings.badgeSymbolName,
                     enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
@@ -218,7 +218,7 @@ class IconGeneratorCLI {
             // Export properties
             settings.exportSize = CGFloat(command.export.size)
             settings.exportRetinaSize = command.export.scale.factor == 2
-            settings.exportColorSpace = command.export.colorSpace == .displayP3 ? .displayP3 : .sRGB
+            settings.exportColorSpace = command.export.colorSpace
 
             // Icon foreground source (folds --icon-fg + --icon-fg-scale)
             switch try command.resolvedForeground() {
@@ -242,7 +242,7 @@ class IconGeneratorCLI {
                 settings.useCustomColors = false
                 // In system mode the enclosure colour is resolved separately in
                 // renderAppleReference, so leave the SwiftUI base colour default.
-                if command.generation.resolvedIconMode != "apple-reference" {
+                if command.generation.iconGenerationMode != .system {
                     settings.baseColor = try ColorParser.parse(command.background.color ?? "blue")
                 }
             case .customGradient:
@@ -281,7 +281,7 @@ class IconGeneratorCLI {
             // symbol/hierarchical/multicolor tint; in system mode the colour is
             // resolved as an appex token in renderAppleReference, so the SwiftUI
             // colour is left at its (unused) default here.
-            if command.generation.resolvedIconMode != "apple-reference" {
+            if command.generation.iconGenerationMode != .system {
                 let parsed = try ColorParser.parse(command.iconForeground.symbolColor ?? "white")
                 settings.symbolColor = parsed
                 settings.hierarchicalSymbolColor = parsed
@@ -305,9 +305,9 @@ class IconGeneratorCLI {
             settings.iconForegroundHidden = !command.iconForeground.visibility.isOn
 
             // Icon generation mode (always set, independent of badge presence — the
-            // render path reads command.generation.resolvedIconMode directly, but
+            // render path reads command.generation.iconGenerationMode directly, but
             // keeping this in sync is correct and avoids a latent quirk).
-            settings.iconGenerationMode = command.generation.resolvedIconMode == "apple-reference" ? .appleReference : .swiftUI
+            settings.iconGenerationMode = command.generation.iconGenerationMode
 
             // Badge settings — gated on --badge-fg activation.
             if let badgeForeground = try command.resolvedBadgeForeground() {
@@ -334,7 +334,7 @@ class IconGeneratorCLI {
                     settings.badgeUseCustomColors = false
                     // In system mode the enclosure colour is resolved separately
                     // via the appex pipeline, so leave the SwiftUI base default.
-                    if command.generation.resolvedBadgeMode != "apple-reference" {
+                    if command.generation.badgeGenerationMode != .system {
                         settings.badgeBaseColor = try ColorParser.parse(command.badge.backgroundColor ?? "gray")
                     }
                 case .customGradient:
@@ -368,7 +368,7 @@ class IconGeneratorCLI {
                 // Merged --badge-symbol-color. In mica mode it drives the SwiftUI
                 // symbol/hierarchical/multicolor tint; in system mode the colour is
                 // resolved as an appex token, so the SwiftUI colour is left default.
-                if command.generation.resolvedBadgeMode != "apple-reference" {
+                if command.generation.badgeGenerationMode != .system {
                     let parsed = try ColorParser.parse(command.badge.symbolColor ?? "white")
                     settings.badgeSymbolColor = parsed
                     settings.badgeHierarchicalSymbolColor = parsed
@@ -390,8 +390,8 @@ class IconGeneratorCLI {
                 settings.badgeEnableSymbolShadow = command.badge.foregroundShadow?.isOn ?? (isBadgeImageForeground ? false : true)
 
                 // Badge generation mode (system → appex pipeline).
-                if command.generation.resolvedBadgeMode == "apple-reference" {
-                    settings.badgeIconSource = .appleReference
+                if command.generation.badgeGenerationMode == .system {
+                    settings.badgeIconSource = .system
                 }
 
                 // Badge layer visibility (default on when the badge is active).

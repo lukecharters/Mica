@@ -9,7 +9,7 @@ enum IconExtractor {
         forBundleAt bundlePath: String,
         size: Int,
         scaleFactor: Int,
-        colorSpace: IconColorSpace,
+        colorSpace: ExportColorSpace,
         destination: URL
     ) throws {
         guard size > 0 else {
@@ -42,7 +42,7 @@ enum IconExtractor {
         bundlePath: String,
         pixelSize: Int,
         scaleFactor: Int,
-        colorSpace: IconColorSpace
+        colorSpace: ExportColorSpace
     ) throws -> CGImage {
         let pointsPerSide = CGFloat(pixelSize) / CGFloat(scaleFactor)
         let drawingSize = CGSize(width: pointsPerSide, height: pointsPerSide)
@@ -52,7 +52,7 @@ enum IconExtractor {
             throw CLIError.renderingError("Failed to render icon for \(bundlePath)")
         }
 
-        let cgColorSpace = try colorSpace.makeColorSpace()
+        let cgColorSpace = colorSpace.cgColorSpace
 
         let bytesPerRow = pixelSize * 4
         let bitmapInfo = CGBitmapInfo.byteOrder32Big.union(CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue))

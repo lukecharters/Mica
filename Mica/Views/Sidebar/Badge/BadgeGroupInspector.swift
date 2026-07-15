@@ -19,7 +19,7 @@ struct BadgeGroupInspector: View {
     @AppStorage("sidebar.badgeAppearance.expanded") private var badgeAppearanceExpanded = true
 
     private var isAppleReference: Bool {
-        iconSettings.badgeGenerationMode == .appleReference
+        iconSettings.badgeGenerationMode == .system
     }
 
     var body: some View {

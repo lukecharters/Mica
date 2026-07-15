@@ -155,7 +155,7 @@ struct BadgeFlagsTests {
         let settings = try IconGeneratorCLI().buildTestSettings(
             from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system"])
         )
-        #expect(settings.badgeIconSource == .appleReference)
+        #expect(settings.badgeIconSource == .system)
     }
 
     @Test("System badge appex colors resolve from --badge-bg-color / --badge-symbol-color")
