@@ -103,33 +103,6 @@ struct IconDocument: FileDocument {
     }
 
     private func makePNGFileWrapper(image: NSImage, scaleFactor: Int) throws -> FileWrapper {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-
-        let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(
-            data, UTType.png.identifier as CFString, 1, nil
-        ) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-
-        let dpi = CGFloat(scaleFactor == 2 ? 144 : 72)
-        let pixelsPerMeter = dpi / 0.0254
-        let properties: [CFString: Any] = [
-            kCGImagePropertyDPIWidth: dpi,
-            kCGImagePropertyDPIHeight: dpi,
-            kCGImagePropertyPNGDictionary: [
-                kCGImagePropertyPNGXPixelsPerMeter: pixelsPerMeter,
-                kCGImagePropertyPNGYPixelsPerMeter: pixelsPerMeter
-            ]
-        ]
-        CGImageDestinationAddImage(destination, cgImage, properties as CFDictionary)
-
-        guard CGImageDestinationFinalize(destination) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-
-        return FileWrapper(regularFileWithContents: data as Data)
+        FileWrapper(regularFileWithContents: try PNGExporter.pngData(from: image, scaleFactor: scaleFactor))
     }
 }

@@ -116,7 +116,14 @@ struct IconRenderer {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
-        let logicalSize = CGSize(width: settings.exportSize, height: settings.exportSize)
+        // Logical size derives from the actual raster and the export scale — the
+        // canvas exceeds exportSize when a badge overflows, so hardcoding
+        // settings.exportSize would misstate the image's point size.
+        let scale: CGFloat = settings.exportRetinaSize ? 2 : 1
+        let logicalSize = CGSize(
+            width: CGFloat(originalCGImage.width) / scale,
+            height: CGFloat(originalCGImage.height) / scale
+        )
         let newImage = NSImage(size: logicalSize)
         let bitmapRep = NSBitmapImageRep(cgImage: originalCGImage)
         bitmapRep.size = logicalSize

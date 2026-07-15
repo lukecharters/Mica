@@ -931,7 +931,9 @@ struct IconGeneratorCommand: AsyncParsableCommand {
 
     private func validateOutputPath() throws {
         if let path = export.outputPath {
-            let url = URL(fileURLWithPath: path)
+            // Expand ~ like the generator's resolveOutputPath does — otherwise
+            // this creates a literal ./~ parent directory at validation time.
+            let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
             let parentDir = url.deletingLastPathComponent()
             if !FileManager.default.fileExists(atPath: parentDir.path) {
                 do {
