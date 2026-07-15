@@ -15,7 +15,10 @@ struct ImportedImage: Equatable {
     let id: UUID
     let imageData: Data
     let sourceName: String
-    let isAppIcon: Bool
+    /// True when the image is a Finder icon extracted via NSWorkspace (an app
+    /// bundle or any other non-image file), false when the source file's own
+    /// pixels were imported. Drives the "Icon"/"Image" label in the UI.
+    let isFileIcon: Bool
 
     var nsImage: NSImage? { NSImage(data: imageData) }
 

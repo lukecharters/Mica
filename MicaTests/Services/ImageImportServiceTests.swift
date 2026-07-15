@@ -13,6 +13,7 @@ import Testing
 import AppKit
 import CoreGraphics
 import Foundation
+import UniformTypeIdentifiers
 @testable import Mica
 
 @Suite(.tags(.unit))
@@ -141,12 +142,12 @@ struct ImageImportServiceTests {
 
     // MARK: - importFromURL — image branch (fast)
 
-    @Test("importFromURL accepts a PNG and flags isAppIcon=false")
+    @Test("importFromURL accepts a PNG and flags isFileIcon=false")
     func importFromURL_png_returnsImage() throws {
         let url = try Self.fixtureURL(named: "test-icon")
         let result = try ImageImportService.importFromURL(url)
 
-        #expect(result.isAppIcon == false,
+        #expect(result.isFileIcon == false,
                 "NSImage(contentsOf:) succeeds for a PNG — extractFileIcon fallback must NOT run")
         #expect(result.sourceName == "test-icon.png")
         #expect(Self.startsWithPNGMagic(result.imageData),
@@ -162,7 +163,9 @@ struct ImageImportServiceTests {
         let nsImage = try #require(result.nsImage,
                                    "ImportedImage.nsImage must decode the PNG payload")
         let pixelSize = try #require(Self.pixelSize(of: nsImage))
-        // ImageImportService.renderToData hard-codes targetSize=1024.
+        // The fixture is natively 1024×1024 — exactly the normalizedMaxPixel
+        // budget, so it round-trips at full size (larger sources downsample,
+        // smaller ones keep their native size).
         #expect(pixelSize.width == 1024)
         #expect(pixelSize.height == 1024)
         #expect(result.imageData != originalData,
@@ -178,6 +181,84 @@ struct ImageImportServiceTests {
                 "Each importFromURL invocation must generate a fresh UUID")
     }
 
+    // MARK: - Import normalization (bounded decode, orientation, no upscale)
+
+    /// Write a solid-red image of the given pixel size, optionally tagged
+    /// with an EXIF orientation, to `url`.
+    private static func writeImage(
+        width: Int, height: Int, format: UTType, orientation: Int? = nil, to url: URL
+    ) throws {
+        let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+        let context = try #require(CGContext(
+            data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        let cgImage = try #require(context.makeImage())
+
+        let destination = try #require(CGImageDestinationCreateWithURL(
+            url as CFURL, format.identifier as CFString, 1, nil
+        ))
+        var properties: [CFString: Any] = [:]
+        if let orientation {
+            properties[kCGImagePropertyOrientation] = orientation
+        }
+        CGImageDestinationAddImage(destination, cgImage, properties as CFDictionary)
+        #expect(CGImageDestinationFinalize(destination))
+    }
+
+    @Test("Small images keep their native size — upscale blur is never baked in")
+    func importFromURL_smallImage_keepsNativeSize() throws {
+        let url = try Self.fixtureURL(named: "test-badge") // 408×408 native
+        let result = try ImageImportService.importFromURL(url)
+
+        let nsImage = try #require(result.nsImage)
+        let pixelSize = try #require(Self.pixelSize(of: nsImage))
+        #expect(pixelSize.width == 408, "408px source must not be upscaled to 1024 (got \(pixelSize))")
+        #expect(pixelSize.height == 408)
+    }
+
+    @Test("Oversized images are downsampled to the 1024 budget")
+    func importFromURL_hugeImage_isBounded() throws {
+        let temp = TempDir()
+        let url = temp.url.appendingPathComponent("big.png")
+        try Self.writeImage(width: 2048, height: 1024, format: .png, to: url)
+
+        let result = try ImageImportService.importFromURL(url)
+
+        let nsImage = try #require(result.nsImage)
+        let pixelSize = try #require(Self.pixelSize(of: nsImage))
+        // 2048×1024 → 1024×512 content on a 1024×1024 square canvas.
+        #expect(pixelSize.width == 1024, "longest side must be bounded to 1024 (got \(pixelSize))")
+        #expect(pixelSize.height == 1024)
+    }
+
+    @Test("EXIF orientation is applied on import, not ignored")
+    func importFromURL_appliesEXIFOrientation() throws {
+        let temp = TempDir()
+        let url = temp.url.appendingPathComponent("rotated.jpg")
+        // 80×40 landscape JPEG tagged orientation 6 ("rotate 90° CW to
+        // display") — a correct import shows 40×80 portrait content centered
+        // on an 80×80 canvas: top-center opaque, left-middle transparent.
+        // Ignoring the tag gives the opposite (landscape) layout.
+        try Self.writeImage(width: 80, height: 40, format: .jpeg, orientation: 6, to: url)
+
+        let result = try ImageImportService.importFromURL(url)
+        let rep = try #require(NSBitmapImageRep(data: result.imageData))
+        #expect(rep.pixelsWide == 80 && rep.pixelsHigh == 80,
+                "canvas must be the square of the rotated image's longest side")
+
+        let topCenter = try #require(rep.colorAt(x: 40, y: 4))
+        let leftMiddle = try #require(rep.colorAt(x: 4, y: 40))
+        #expect(topCenter.alphaComponent > 0.9,
+                "top-center must be inside the rotated (portrait) image")
+        #expect(leftMiddle.alphaComponent < 0.1,
+                "left-middle must be transparent canvas — EXIF orientation was ignored if opaque")
+    }
+
     // MARK: - importFromURL — NSWorkspace fallback (slow)
 
     @Test("importFromURL falls back to extractFileIcon for a non-image file",
@@ -190,16 +271,19 @@ struct ImageImportServiceTests {
 
         let result = try ImageImportService.importFromURL(txtURL)
 
-        // NSImage(contentsOf:) fails for plain text; extractFileIcon runs.
-        #expect(result.isAppIcon == true,
-                "Non-image input must come back flagged isAppIcon (NSWorkspace-derived Finder icon)")
+        // Image decode fails for plain text; extractFileIcon runs, and
+        // anything NSWorkspace-extracted is a file *icon*, not image content.
+        #expect(result.isFileIcon == true,
+                "NSWorkspace-derived Finder icons must be flagged isFileIcon (UI shows 'Icon')")
         #expect(result.sourceName == "hello.txt")
         #expect(Self.startsWithPNGMagic(result.imageData))
 
         let nsImage = try #require(result.nsImage)
         let pixelSize = try #require(Self.pixelSize(of: nsImage))
-        #expect(pixelSize.width == 1024)
-        #expect(pixelSize.height == 1024)
+        // Canvas is square and never exceeds the 1024 budget; the exact size
+        // follows the largest rep NSWorkspace provides (no upscaling).
+        #expect(pixelSize.width == pixelSize.height)
+        #expect(pixelSize.width <= 1024)
 
         let expectedBitmap = try Self.normalizedBitmapData(from: NSWorkspace.shared.icon(forFile: txtURL.path))
         let actualBitmap = try Self.normalizedBitmapData(from: nsImage)
@@ -225,14 +309,14 @@ struct ImageImportServiceTests {
 
         let result = try ImageImportService.extractFileIcon(from: finderURL)
 
-        #expect(result.isAppIcon == true)
+        #expect(result.isFileIcon == true, "an extracted app-bundle icon is a file icon")
         #expect(result.sourceName == "Finder.app")
         #expect(Self.startsWithPNGMagic(result.imageData))
 
         let nsImage = try #require(result.nsImage)
         let pixelSize = try #require(Self.pixelSize(of: nsImage))
-        #expect(pixelSize.width == 1024)
-        #expect(pixelSize.height == 1024)
+        #expect(pixelSize.width == pixelSize.height)
+        #expect(pixelSize.width <= 1024)
 
         let expectedBitmap = try Self.normalizedBitmapData(from: NSWorkspace.shared.icon(forFile: finderURL.path))
         let actualBitmap = try Self.normalizedBitmapData(from: nsImage)

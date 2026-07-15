@@ -35,9 +35,9 @@ struct ImportedImageTests {
     func equality_sameUUID() {
         let id = UUID()
         let a = ImportedImage(id: id, imageData: Self.makePNGData(fill: .red),
-                              sourceName: "a.png", isAppIcon: false)
+                              sourceName: "a.png", isFileIcon: false)
         let b = ImportedImage(id: id, imageData: Self.makePNGData(fill: .blue),
-                              sourceName: "b.png", isAppIcon: true)
+                              sourceName: "b.png", isFileIcon: true)
         #expect(a == b)
     }
 
@@ -45,9 +45,9 @@ struct ImportedImageTests {
     func equality_differentUUID() {
         let data = Self.makePNGData()
         let a = ImportedImage(id: UUID(), imageData: data,
-                              sourceName: "same.png", isAppIcon: false)
+                              sourceName: "same.png", isFileIcon: false)
         let b = ImportedImage(id: UUID(), imageData: data,
-                              sourceName: "same.png", isAppIcon: false)
+                              sourceName: "same.png", isFileIcon: false)
         #expect(a != b)
     }
 
@@ -60,7 +60,7 @@ struct ImportedImageTests {
             id: UUID(),
             imageData: data,
             sourceName: "test.png",
-            isAppIcon: false
+            isFileIcon: false
         )
         let decoded = try #require(imported.nsImage)
         #expect(decoded.size.width > 0)
@@ -73,7 +73,7 @@ struct ImportedImageTests {
             id: UUID(),
             imageData: Data([0xDE, 0xAD, 0xBE, 0xEF]),
             sourceName: "broken.bin",
-            isAppIcon: false
+            isFileIcon: false
         )
         #expect(imported.nsImage == nil)
     }
