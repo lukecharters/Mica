@@ -6,6 +6,7 @@ struct ExportSettingsSidebar: View {
     @Binding var showExportDialog: Bool
     var generationMode: GenerationMode = .swiftUI
     var appexHasImage: Bool = false
+    var badgeAppexHasImage: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -70,9 +71,22 @@ struct ExportSettingsSidebar: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .keyboardShortcut("e", modifiers: .command)
-            .disabled(generationMode == .appleReference && !appexHasImage)
+            .disabled(waitingOnIconAppex || waitingOnBadgeAppex)
         }
         .padding()
+    }
+
+    /// System-mode layers export their appex-rendered image; block export until
+    /// every active System-mode layer (icon AND badge) has one, otherwise the
+    /// export would silently omit the pending layer.
+    private var waitingOnIconAppex: Bool {
+        generationMode == .appleReference && !appexHasImage
+    }
+
+    private var waitingOnBadgeAppex: Bool {
+        iconSettings.showBadge
+            && iconSettings.badgeIconSource == .appleReference
+            && !badgeAppexHasImage
     }
 
     private var retinaSizeDescription: String {

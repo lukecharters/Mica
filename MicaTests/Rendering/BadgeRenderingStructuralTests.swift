@@ -99,6 +99,73 @@ struct BadgeRenderingStructuralTests {
         }
     }
 
+    // MARK: - Export integrity
+
+    @Test("Pending System-mode badge draws nothing — no placeholder can reach exports")
+    func pendingAppexBadge_drawsNothing() throws {
+        var settings = IconSettings()
+        settings.symbolName = "folder.fill"
+        settings.exportSize = 256
+        settings.exportRetinaSize = false
+        settings.baseColor = .blue
+        settings.showBadge = true
+        settings.badgeIconSource = .appleReference
+        settings.badgePosition = .bottomRight
+        // Badge is System mode but its appex image hasn't rendered yet.
+        let pendingBadge = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: nil)
+
+        settings.showBadge = false
+        let noBadge = IconRenderer.renderIconSafely(settings: settings)
+
+        // The canvases may differ (badge overflow buffer), but the drawn content
+        // must be identical in extent: any placeholder circle at the badge anchor
+        // would extend the alpha bounding box beyond the chiclet.
+        let pendingBox = try #require(
+            IconRenderingAssertions.alphaBoundingBox(of: pendingBadge),
+            "Pending-badge render must still contain the chiclet"
+        )
+        let baseBox = try #require(
+            IconRenderingAssertions.alphaBoundingBox(of: noBadge),
+            "Baseline render must contain the chiclet"
+        )
+        #expect(abs(pendingBox.width - baseBox.width) <= 1,
+                "Pending System badge must not draw anything (Δwidth \(pendingBox.width - baseBox.width))")
+        #expect(abs(pendingBox.height - baseBox.height) <= 1,
+                "Pending System badge must not draw anything (Δheight \(pendingBox.height - baseBox.height))")
+    }
+
+    @Test("Imported-background flag with no image still renders a visible badge")
+    func importedBackgroundFlag_withoutImage_stillRendersBadge() throws {
+        // The Type picker can set badgeUseImportedBackground before an image is
+        // chosen; the badge must fall back to its color background + symbol
+        // rather than rendering nothing.
+        var settings = IconSettings()
+        settings.symbolName = "folder.fill"
+        settings.exportSize = 256
+        settings.exportRetinaSize = false
+        settings.baseColor = .blue
+        settings.badgeSymbolName = "gearshape.fill"
+        settings.badgeBaseColor = .red
+        settings.showBadge = true
+        settings.badgePosition = .bottomRight
+        settings.badgeUseImportedBackground = true
+        settings.badgeImportedBackground = nil
+        let withBadge = IconRenderer.renderIconSafely(settings: settings)
+
+        settings.showBadge = false
+        let baseline = IconRenderer.renderIconSafely(settings: settings)
+
+        let badgedCentroid = try #require(IconRenderingAssertions.centroidOfNonClearPixels(in: withBadge))
+        let baseCentroid = try #require(IconRenderingAssertions.centroidOfNonClearPixels(in: baseline))
+
+        // Same sign-of-shift assertion as the position tests: a visible badge at
+        // bottomRight must pull the centroid (+x, -y) in bottom-origin coords.
+        #expect(badgedCentroid.x - baseCentroid.x > 1.0,
+                "Badge must be visible: expected Δx > 1, got \(badgedCentroid.x - baseCentroid.x)")
+        #expect(badgedCentroid.y - baseCentroid.y < -1.0,
+                "Badge must be visible: expected Δy < -1, got \(badgedCentroid.y - baseCentroid.y)")
+    }
+
     // MARK: - Manual offset normalization scales with canvas size
 
     @Test("Manual offset (normalized fraction) produces proportional centroid shift across sizes")

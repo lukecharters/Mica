@@ -14,6 +14,7 @@ struct InspectorPanel: View {
     let tab: InspectorTab
     let colorOptions: [(name: String, color: Color)]
     let appexHasImage: Bool
+    let badgeAppexHasImage: Bool
 
     var body: some View {
         // EXPERIMENT: hosted by a native `.inspector` in `ContentView`, which owns the
@@ -37,7 +38,8 @@ struct InspectorPanel: View {
                     iconSettings: $iconSettings,
                     showExportDialog: $showExportDialog,
                     generationMode: iconSettings.iconGenerationMode,
-                    appexHasImage: appexHasImage
+                    appexHasImage: appexHasImage,
+                    badgeAppexHasImage: badgeAppexHasImage
                 )
             }
         }

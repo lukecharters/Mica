@@ -49,12 +49,19 @@ final class IconViewModel: ObservableObject {
         appexIsGenerating = true
         appexError = nil
         do {
-            appexRenderedImage = try await service.referenceIcon(
+            let image = try await service.referenceIcon(
                 for: iconSettings.symbolName,
                 enclosureColor: appexEnclosureColor.plistValue,
                 symbolColor: appexSymbolColor.plistValue
             )
+            // .task(id:) cancellation is cooperative and the service render is not
+            // itself cancelled, so a superseded request can finish late. Drop its
+            // result instead of overwriting state that belongs to a newer key; the
+            // superseding task owns the isGenerating flag from here.
+            guard !Task.isCancelled else { return }
+            appexRenderedImage = image
         } catch {
+            guard !Task.isCancelled else { return }
             appexError = error.localizedDescription
             appexRenderedImage = nil
         }
@@ -83,12 +90,16 @@ final class IconViewModel: ObservableObject {
         badgeAppexIsGenerating = true
         badgeAppexError = nil
         do {
-            badgeAppexRenderedImage = try await service.referenceIcon(
+            let image = try await service.referenceIcon(
                 for: iconSettings.badgeSymbolName,
                 enclosureColor: badgeAppexEnclosureColor.plistValue,
                 symbolColor: badgeAppexSymbolColor.plistValue
             )
+            // Same late-completion guard as generateAppexIcon — see comment there.
+            guard !Task.isCancelled else { return }
+            badgeAppexRenderedImage = image
         } catch {
+            guard !Task.isCancelled else { return }
             badgeAppexError = error.localizedDescription
             badgeAppexRenderedImage = nil
         }

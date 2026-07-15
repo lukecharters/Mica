@@ -118,7 +118,8 @@ struct ContentView: View {
                 selection: selection,
                 tab: inspectorTab,
                 colorOptions: colorOptions,
-                appexHasImage: viewModel.appexRenderedImage != nil
+                appexHasImage: viewModel.appexRenderedImage != nil,
+                badgeAppexHasImage: viewModel.badgeAppexRenderedImage != nil
             )
             .inspectorColumnWidth(
                 min: inspectorRange.lowerBound,
@@ -195,7 +196,8 @@ struct ContentView: View {
                 ScaledIconPreview(
                     settings: $viewModel.iconSettings,
                     displaySize: previewDisplaySize,
-                    badgeAppexImage: viewModel.badgeAppexRenderedImage
+                    badgeAppexImage: viewModel.badgeAppexRenderedImage,
+                    badgeAppexError: viewModel.badgeAppexError
                 )
 //                .padding()
 
@@ -224,6 +226,7 @@ struct ScaledIconPreview: View {
     @Binding var settings: IconSettings
     let displaySize: CGFloat
     var badgeAppexImage: NSImage? = nil
+    var badgeAppexError: String? = nil
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -241,6 +244,20 @@ struct ScaledIconPreview: View {
     var body: some View {
         ZStack {
             IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
+
+            // Preview-only spinner/error where the System-mode badge will render.
+            // BadgeView itself draws nothing until the appex image exists, so this
+            // stand-in never reaches exports.
+            if settings.showBadge,
+               settings.badgeIconSource == .appleReference,
+               badgeAppexImage == nil {
+                BadgeAppexStatusView(
+                    badgeSize: enclosureSize * (80.0 / 208.0) * settings.badgeScale,
+                    error: badgeAppexError
+                )
+                .offset(computeBadgeOffset())
+                .allowsHitTesting(false)
+            }
 
             // Draggable badge overlay
             if settings.showBadge {

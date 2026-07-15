@@ -473,44 +473,49 @@ struct BadgeView: View {
         settings.badgeSymbolWeight.fontWeight ?? resolvedBadgeSizing.weight
     }
 
+    /// True only when an imported badge background will actually draw. The
+    /// "use imported" flag can be set before any image is chosen (the Type picker
+    /// writes it directly); in that state the badge falls back to its color
+    /// background and keeps its symbol instead of rendering nothing.
+    private var showsImportedBackground: Bool {
+        !settings.badgeBackgroundHidden
+            && settings.badgeUseImportedBackground
+            && settings.badgeImportedBackground != nil
+    }
+
     var body: some View {
-        if settings.badgeIconSource == .appleReference, let appexImage = badgeAppexImage {
-            Image(nsImage: appexImage)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: badgeSize, height: badgeSize)
-        } else if settings.badgeIconSource == .appleReference {
-            // Apple Ref selected but image not yet rendered — show placeholder
-            ZStack {
-                Circle()
-                    .fill(Color.secondary.opacity(0.2))
-                ProgressView()
-                    .scaleEffect(0.5)
+        if settings.badgeIconSource == .appleReference {
+            // System-mode badge: draw only the rendered appex image. While it is
+            // still generating (nil) draw nothing — this is the shared export
+            // render path, so preview-only affordances (spinner, error) live in
+            // BadgeAppexStatusView instead.
+            if let appexImage = badgeAppexImage {
+                Image(nsImage: appexImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: badgeSize, height: badgeSize)
             }
-            .frame(width: badgeSize, height: badgeSize)
         } else {
             // Existing rendering for SF Symbol and Imported modes
             ZStack {
-                if !settings.badgeBackgroundHidden, settings.badgeUseImportedBackground {
-                    if let nsImage = settings.badgeImportedBackground?.nsImage {
-                        let effectiveScale = settings.badgeImportedBackgroundScale
-                            * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .interpolation(.high)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(
-                                width: badgeSize * effectiveScale,
-                                height: badgeSize * effectiveScale
-                            )
-                            .clipShape(Circle())
-                            .shadow(
-                                color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                                radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                                y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
-                            )
-                    }
+                if showsImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
+                    let effectiveScale = settings.badgeImportedBackgroundScale
+                        * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(
+                            width: badgeSize * effectiveScale,
+                            height: badgeSize * effectiveScale
+                        )
+                        .clipShape(Circle())
+                        .shadow(
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                        )
                 } else if !settings.badgeBackgroundHidden, settings.badgeUseCustomColors {
                     Circle()
                         .fill(
@@ -539,8 +544,7 @@ struct BadgeView: View {
 
                 // Badge symbol — gated on the foreground visibility toggle, and (preserving the old
                 // behavior) suppressed when the badge background is an imported image that is itself visible.
-                if !settings.badgeForegroundHidden,
-                   settings.badgeBackgroundHidden || !settings.badgeUseImportedBackground {
+                if !settings.badgeForegroundHidden, !showsImportedBackground {
                     badgeContent
                         .shadow(
                             color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
