@@ -8,6 +8,21 @@ struct ColorPickerWithDropdown: View {
     let colorOptions: [(name: String, color: Color)]
 
     var body: some View {
+        content
+            .onAppear {
+                // Callers keep `useCustom` as view-local @State, which resets to
+                // false whenever the section view is recreated (selection change
+                // via .id, tab switch, mode switch). Re-derive it from the model:
+                // a color that isn't any preset must show the custom picker, not
+                // an unselected preset dropdown.
+                if !useCustom, !colorOptions.contains(where: { $0.color == color }) {
+                    useCustom = true
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if useCustom {
             ColorPicker(selection: $color) {
                 HStack(spacing: 12) {

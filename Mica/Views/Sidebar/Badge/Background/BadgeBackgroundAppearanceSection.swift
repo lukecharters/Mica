@@ -27,49 +27,14 @@ struct BadgeBackgroundAppearanceSection: View {
                 ColorPicker("Primary", selection: $iconSettings.badgeCustomPrimaryColor)
                 ColorPicker("Secondary", selection: $iconSettings.badgeCustomSecondaryColor)
             } else {
-                if useCustomBadgeBackgroundColor {
-                    ColorPicker(selection: $iconSettings.badgeBaseColor) {
-                        HStack(spacing: 12) {
-                            Circle()
-                                .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                                .fill(iconSettings.badgeBaseColor)
-                                .frame(width: 12, height: 12)
-                            Text("Color")
-                        }
-                    }
-                    Button("Use Preset", systemImage: "arrow.clockwise") {
-                        useCustomBadgeBackgroundColor = false
-                    }
-                    .buttonStyle(.link)
-                } else {
-                    let selectedColorOption = colorOptions.first { $0.color == iconSettings.badgeBaseColor }
-                    Picker(
-                        selection: Binding<Int?>(
-                            get: { colorOptions.firstIndex { $0.color == iconSettings.badgeBaseColor } },
-                            set: { newValue in
-                                if let index = newValue, index >= 0 {
-                                    iconSettings.badgeBaseColor = colorOptions[index].color
-                                } else if newValue == -1 {
-                                    useCustomBadgeBackgroundColor = true
-                                }
-                            }
-                        ),
-                        label: HStack(spacing: 12) {
-                            Circle()
-                                .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                                .fill(selectedColorOption?.color ?? Color.blue)
-                                .frame(width: 12, height: 12)
-                            Text("Color")
-                        }
-                    ) {
-                        ForEach(Array(colorOptions.enumerated()), id: \.offset) { index, option in
-                            Text(option.name).tag(Optional(index))
-                        }
-                        Divider()
-                        Text("Custom…").tag(Optional(-1))
-                    }
-                    .pickerStyle(.menu)
-                }
+                // Shared preset/custom flow — self-heals the reset `useCustom`
+                // flag and shows the actual color as the fallback swatch.
+                ColorPickerWithDropdown(
+                    label: "Color",
+                    color: $iconSettings.badgeBaseColor,
+                    useCustom: $useCustomBadgeBackgroundColor,
+                    colorOptions: colorOptions
+                )
             }
 
             if advancedControlsEnabled && !iconSettings.badgeUseCustomColors {
