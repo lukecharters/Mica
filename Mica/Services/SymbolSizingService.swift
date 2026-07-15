@@ -41,7 +41,7 @@ struct SymbolSizingService {
             )
         }
 
-        // 2. Container calibration (by suffix detection)
+        // 2. Container calibration (container keyword in any dot-component)
         if let containerType = detectContainerType(symbolName),
            let entry = calibrationData.containers[containerType.dimKey],
            entry.status == "calibrated" {
