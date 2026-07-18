@@ -130,8 +130,8 @@
 				CLI/IconGeneratorCLI.swift,
 				CLI/IconGeneratorCommand.swift,
 				CLI/Shared/CLIOutput.swift,
-				CLI/Shared/ExportScale.swift,
 				"CLI/Shared/ExportColorSpace+CLI.swift",
+				CLI/Shared/ExportScale.swift,
 				CLI/Shared/IconExtractor.swift,
 				CLI/Shared/OutputResolver.swift,
 				CLI/Shared/ToggleState.swift,
@@ -190,6 +190,9 @@
 		};
 		8C75F5822E8D5AC4008FB893 /* mica-cli Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFolders = (
+				"swift-syntax",
+			);
 			path = "mica-cli Tests";
 			sourceTree = "<group>";
 		};
