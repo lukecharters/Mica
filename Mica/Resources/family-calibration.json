@@ -92,11 +92,11 @@
       "yOffset": 0
     },
     "1.magnifyingglass": {
-      "multiplier": 0.6,
+      "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.025
+      "yOffset": 0
     },
     "10.arrow.trianglehead.clockwise": {
       "multiplier": 0.65,
@@ -309,11 +309,11 @@
       "yOffset": 0
     },
     "2h": {
-      "multiplier": 0.63,
+      "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.025
     },
     "3.calendar": {
       "multiplier": 0.65,
@@ -400,21 +400,23 @@
       "yOffset": 0
     },
     "4k.tv": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "4k.tv.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "4l": {
-      "multiplier": 0.63,
+      "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -799,24 +801,24 @@
       "yOffset": 0
     },
     "airplay.audio.badge.exclamationmark": {
-      "multiplier": 0.58,
+      "multiplier": 0.59,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0.035,
       "yOffset": -0.02
     },
     "airplay.video": {
-      "multiplier": 0.56,
+      "multiplier": 0.5700000000000001,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.015
+      "yOffset": 0.01999999999999999
     },
     "airplay.video.badge.exclamationmark": {
       "multiplier": 0.52,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.02,
+      "weight": "medium",
+      "xOffset": 0.024999999999999994,
       "yOffset": -0.005
     },
     "airpod.gen3.left": {
@@ -904,7 +906,7 @@
       "yOffset": 0
     },
     "airpods.gen4": {
-      "multiplier": 0.61,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -941,16 +943,16 @@
     "airpods.max": {
       "multiplier": 0.61,
       "status": "calibrated",
-      "weight": "medium",
+      "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": 0.0049999999999999906
     },
     "airpods.pro": {
-      "multiplier": 0.55,
+      "multiplier": 0.5700000000000001,
       "status": "calibrated",
-      "weight": "medium",
+      "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.02
+      "yOffset": -0.015
     },
     "airpods.pro.chargingcase.wireless": {
       "multiplier": 0.64,
@@ -1002,7 +1004,7 @@
       "yOffset": 0
     },
     "airport.extreme": {
-      "multiplier": 0.61,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "medium",
       "xOffset": 0,
@@ -1212,18 +1214,18 @@
       "yOffset": -0.045
     },
     "ant": {
-      "multiplier": 0.62,
+      "multiplier": 0.63,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.01
     },
     "ant.fill": {
-      "multiplier": 0.62,
+      "multiplier": 0.5700000000000001,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.01
+      "yOffset": -0.020000000000000004
     },
     "antenna.radiowaves.left.and.right": {
       "multiplier": 0.62,
@@ -1268,25 +1270,25 @@
       "yOffset": 0.035
     },
     "app.badge.checkmark.fill": {
-      "multiplier": 0.6,
+      "multiplier": 0.5800000000000001,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": -0.01,
-      "yOffset": 0.04
+      "weight": "medium",
+      "xOffset": -0.035,
+      "yOffset": 0.03
     },
     "app.badge.clock": {
-      "multiplier": 0.65,
+      "multiplier": 0.61,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": -0.005,
+      "weight": "medium",
+      "xOffset": -0.03,
       "yOffset": 0.035
     },
     "app.badge.clock.fill": {
-      "multiplier": 0.6,
+      "multiplier": 0.5800000000000001,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": -0.01,
-      "yOffset": 0.04
+      "weight": "medium",
+      "xOffset": -0.035,
+      "yOffset": 0.03
     },
     "app.badge.fill": {
       "multiplier": 0.65,
@@ -1408,11 +1410,11 @@
       "yOffset": -0.01
     },
     "apple.haptics.and.exclamationmark.triangle": {
-      "multiplier": 0.61,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0.01,
-      "yOffset": 0.01
+      "xOffset": 0.009999999999999995,
+      "yOffset": 0.0049999999999999906
     },
     "apple.haptics.and.music.note": {
       "multiplier": 0.64,
@@ -1454,14 +1456,14 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.01
+      "yOffset": -0.015
     },
     "apple.intelligence.badge.xmark": {
       "multiplier": 0.61,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": 0.024999999999999994,
+      "yOffset": -0.020000000000000004
     },
     "apple.logo": {
       "multiplier": 0.64,
@@ -1520,11 +1522,11 @@
       "yOffset": 0.02
     },
     "apple.writing.tools": {
-      "multiplier": 0.61,
+      "multiplier": 0.63,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": -0.01
+      "xOffset": -0.0050000000000000044,
+      "yOffset": -0.010000000000000009
     },
     "applepencil": {
       "multiplier": 0.65,
@@ -1548,18 +1550,18 @@
       "yOffset": 0
     },
     "applepencil.and.scribble": {
-      "multiplier": 0.66,
+      "multiplier": 0.6599999999999999,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0.015,
-      "yOffset": 0.04
+      "xOffset": 0.024999999999999994,
+      "yOffset": 0.03
     },
     "applepencil.doubletap": {
-      "multiplier": 0.75,
+      "multiplier": 0.625,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.005,
-      "yOffset": -0.01
+      "weight": "medium",
+      "xOffset": 0.04999999999999999,
+      "yOffset": 0.03
     },
     "applepencil.gen1": {
       "multiplier": 0.65,
@@ -1597,14 +1599,14 @@
       "yOffset": -0.03
     },
     "applescript": {
-      "multiplier": 0.58,
+      "multiplier": 0.59,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.01
+      "yOffset": -0.0050000000000000044
     },
     "applescript.fill": {
-      "multiplier": 0.58,
+      "multiplier": 0.59,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -1618,32 +1620,32 @@
       "yOffset": 0
     },
     "appletv.badge.checkmark": {
-      "multiplier": 0.61,
+      "multiplier": 0.5800000000000001,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.03,
+      "yOffset": -0.04000000000000001
     },
     "appletv.badge.checkmark.fill": {
-      "multiplier": 0.61,
+      "multiplier": 0.5800000000000001,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.03,
+      "yOffset": -0.04000000000000001
     },
     "appletv.badge.exclamationmark": {
-      "multiplier": 0.61,
+      "multiplier": 0.5800000000000001,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.03,
+      "yOffset": -0.04000000000000001
     },
     "appletv.badge.exclamationmark.fill": {
-      "multiplier": 0.61,
+      "multiplier": 0.59,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.03,
+      "yOffset": -0.04000000000000001
     },
     "appletv.fill": {
       "multiplier": 0.65,
@@ -1831,8 +1833,8 @@
       "multiplier": 0.55,
       "status": "calibrated",
       "weight": "medium",
-      "xOffset": -0.02,
-      "yOffset": -0.005
+      "xOffset": -0.02500000000000001,
+      "yOffset": -0.0050000000000000044
     },
     "aqi.low": {
       "multiplier": 0.627,
@@ -1933,11 +1935,11 @@
       "yOffset": 0
     },
     "arkit": {
-      "multiplier": 0.63,
+      "multiplier": 0.64,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": 0.005
+      "yOffset": 0
     },
     "arkit.badge.xmark": {
       "multiplier": 0.63,
@@ -2399,7 +2401,7 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.0
+      "yOffset": 0
     },
     "arrow.trianglehead.2.clockwise.rotate.90": {
       "multiplier": 0.58,
@@ -2410,15 +2412,15 @@
     },
     "arrow.trianglehead.2.clockwise.rotate.90.camera": {
       "multiplier": 0.54,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.015
     },
     "arrow.trianglehead.2.clockwise.rotate.90.camera.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.635,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": -0.015
     },
@@ -2448,7 +2450,7 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.0
+      "yOffset": 0
     },
     "arrow.trianglehead.2.counterclockwise.rotate.90": {
       "multiplier": 0.58,
@@ -2794,11 +2796,12 @@
       "yOffset": 0
     },
     "arrow.up.bin.fill": {
-      "multiplier": 0.56,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "arrow.up.circle.badge.clock": {
       "multiplier": 0.64,
@@ -2913,7 +2916,7 @@
       "yOffset": 0
     },
     "arrow.up.left.and.down.right.magnifyingglass": {
-      "multiplier": 0.6,
+      "multiplier": 0.64,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -2976,17 +2979,17 @@
       "yOffset": 0
     },
     "arrow.up.right.video": {
-      "multiplier": 0.64,
+      "multiplier": 0.595,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
       "yOffset": 0
     },
     "arrow.up.right.video.fill": {
-      "multiplier": 0.52,
+      "multiplier": 0.605,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
+      "weight": "medium",
+      "xOffset": -0.015,
       "yOffset": 0
     },
     "arrow.up.to.line": {
@@ -4096,11 +4099,12 @@
       "yOffset": 0
     },
     "barcode.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "base.unit": {
       "multiplier": 0.64,
@@ -4152,18 +4156,18 @@
       "yOffset": 0.005
     },
     "battery.0percent": {
-      "multiplier": 0.49,
+      "multiplier": 0.55,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": -0.015
+      "weight": "medium",
+      "xOffset": 0.01999999999999999,
+      "yOffset": 0
     },
     "battery.100percent": {
-      "multiplier": 0.49,
+      "multiplier": 0.5,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": -0.015
+      "xOffset": 0.01999999999999999,
+      "yOffset": 0
     },
     "battery.100percent.bolt": {
       "multiplier": 0.56,
@@ -4173,25 +4177,25 @@
       "yOffset": 0.02
     },
     "battery.25percent": {
-      "multiplier": 0.49,
+      "multiplier": 0.5449999999999999,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": -0.015
+      "weight": "medium",
+      "xOffset": 0.01999999999999999,
+      "yOffset": 0
     },
     "battery.50percent": {
-      "multiplier": 0.49,
+      "multiplier": 0.5,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": -0.015
+      "xOffset": 0.01999999999999999,
+      "yOffset": -0.0050000000000000044
     },
     "battery.75percent": {
-      "multiplier": 0.49,
+      "multiplier": 0.5449999999999999,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": -0.015
+      "xOffset": 0.01999999999999999,
+      "yOffset": 0
     },
     "batteryblock": {
       "multiplier": 0.65,
@@ -4461,7 +4465,7 @@
     },
     "beats.solobuds.chargingcase": {
       "multiplier": 0.47,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -4740,11 +4744,11 @@
       "yOffset": 0
     },
     "birthday.cake": {
-      "multiplier": 0.55,
+      "multiplier": 0.61,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": -0.055
+      "yOffset": -0.060000000000000005
     },
     "birthday.cake.fill": {
       "multiplier": 0.55,
@@ -5174,7 +5178,7 @@
       "yOffset": -0.005
     },
     "bookmark.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.575,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -5322,7 +5326,7 @@
     },
     "briefcase.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -5349,10 +5353,10 @@
       "yOffset": 0.02
     },
     "bubble.and.pencil": {
-      "multiplier": 0.52,
+      "multiplier": 0.525,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": -0.02,
+      "weight": "medium",
+      "xOffset": -0.015,
       "yOffset": -0.03
     },
     "bubble.fill": {
@@ -5412,7 +5416,7 @@
       "yOffset": 0.015
     },
     "bubble.left.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.56,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -5490,24 +5494,24 @@
     },
     "building.2.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0.005,
       "yOffset": -0.01
     },
     "building.columns": {
-      "multiplier": 0.65,
+      "multiplier": 0.62,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.02500000000000001
     },
     "building.columns.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.535,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.02500000000000001
     },
     "building.fill": {
       "multiplier": 0.648,
@@ -5631,14 +5635,14 @@
     "button.horizontal.top": {
       "multiplier": 0.62,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "button.horizontal.top.fill": {
       "multiplier": 0.62,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
@@ -5755,11 +5759,11 @@
       "yOffset": 0.001
     },
     "cable.coaxial": {
-      "multiplier": 0.65,
+      "multiplier": 0.565,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "xOffset": 0.015,
+      "yOffset": -0.02500000000000001
     },
     "cable.connector": {
       "multiplier": 0.65,
@@ -5804,7 +5808,7 @@
       "yOffset": -0.01
     },
     "calendar": {
-      "multiplier": 0.65,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -5895,21 +5899,21 @@
       "yOffset": 0
     },
     "camera": {
-      "multiplier": 0.54,
+      "multiplier": 0.63,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.015
     },
     "camera.badge.clock": {
-      "multiplier": 0.53,
+      "multiplier": 0.475,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.035
+      "xOffset": -0.03,
+      "yOffset": 0.015
     },
     "camera.badge.clock.fill": {
-      "multiplier": 0.53,
+      "multiplier": 0.525,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -6154,7 +6158,7 @@
       "yOffset": 0.02
     },
     "captions.bubble.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.565,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -6182,18 +6186,18 @@
       "yOffset": -0.005
     },
     "car.badge.gearshape": {
-      "multiplier": 0.56,
+      "multiplier": 0.535,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": -0.085
+      "weight": "medium",
+      "xOffset": -0.02500000000000001,
+      "yOffset": -0.07500000000000001
     },
     "car.badge.gearshape.fill": {
-      "multiplier": 0.56,
+      "multiplier": 0.5449999999999999,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": -0.085
+      "xOffset": -0.03,
+      "yOffset": -0.07500000000000001
     },
     "car.ferry": {
       "multiplier": 0.62,
@@ -6210,7 +6214,7 @@
       "yOffset": -0.02
     },
     "car.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.525,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -7841,10 +7845,10 @@
       "yOffset": -0.025
     },
     "cart.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.5700000000000001,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": -0.005,
+      "xOffset": 0,
       "yOffset": 0.02
     },
     "cart.fill.badge.minus": {
@@ -8101,7 +8105,7 @@
     },
     "character.magnify": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -8149,10 +8153,10 @@
       "yOffset": -0.015
     },
     "characters.uppercase": {
-      "multiplier": 0.46,
+      "multiplier": 0.44499999999999995,
       "status": "calibrated",
-      "weight": "medium",
-      "xOffset": -0.005,
+      "weight": "regular",
+      "xOffset": -0.0050000000000000044,
       "yOffset": 0
     },
     "chart.bar": {
@@ -8334,15 +8338,15 @@
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.02
+      "xOffset": 0.0049999999999999906,
+      "yOffset": 0.024999999999999994
     },
     "checkmark.bubble.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.56,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.02
+      "yOffset": 0.01999999999999999
     },
     "checkmark.circle.badge.airplane": {
       "multiplier": 0.56,
@@ -8480,26 +8484,26 @@
     "checkmark.rectangle.stack": {
       "multiplier": 0.65,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": 0.025
+      "yOffset": 0.015
     },
     "checkmark.rectangle.stack.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.59,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.025
+      "yOffset": -0.0050000000000000044
     },
     "checkmark.seal": {
-      "multiplier": 0.65,
+      "multiplier": 0.635,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
     "checkmark.seal.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -8507,14 +8511,14 @@
     },
     "checkmark.seal.text.page": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
     "checkmark.seal.text.page.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -8675,10 +8679,11 @@
     },
     "chevron.forward": {
       "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "chevron.forward.2": {
       "multiplier": 0.66,
@@ -8745,10 +8750,11 @@
     },
     "chevron.right": {
       "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "chevron.right.2": {
       "multiplier": 0.65,
@@ -9061,12 +9067,12 @@
     "circle.grid.2x2": {
       "multiplier": 0.65,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "circle.grid.2x2.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.59,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -9143,7 +9149,7 @@
       "yOffset": 0
     },
     "circle.hexagongrid.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.7150000000000001,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -9255,10 +9261,10 @@
       "yOffset": -0.001
     },
     "clock.arrow.trianglehead.counterclockwise.rotate.90": {
-      "multiplier": 0.65,
+      "multiplier": 0.615,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
+      "xOffset": -0.010000000000000009,
       "yOffset": -0.001
     },
     "clock.badge": {
@@ -9354,31 +9360,31 @@
     },
     "cloud.bolt": {
       "multiplier": 0.56,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
     "cloud.bolt.fill": {
-      "multiplier": 0.56,
+      "multiplier": 0.63,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.0050000000000000044,
+      "yOffset": 0.01999999999999999
     },
     "cloud.bolt.rain": {
-      "multiplier": 0.56,
+      "multiplier": 0.615,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.010000000000000009,
+      "yOffset": -0.0050000000000000044
     },
     "cloud.bolt.rain.fill": {
-      "multiplier": 0.56,
+      "multiplier": 0.615,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
+      "weight": "medium",
+      "xOffset": -0.010000000000000009,
+      "yOffset": -0.0050000000000000044
     },
     "cloud.drizzle": {
       "multiplier": 0.65,
@@ -10018,14 +10024,14 @@
       "yOffset": 0
     },
     "cpu": {
-      "multiplier": 0.65,
+      "multiplier": 0.665,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "cpu.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -10053,11 +10059,11 @@
       "yOffset": 0
     },
     "creditcard.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.535,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.020000000000000004
     },
     "creditcard.rewards": {
       "multiplier": 0.65,
@@ -10088,11 +10094,12 @@
       "yOffset": 0.03
     },
     "creditcard.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "crop": {
       "multiplier": 0.646,
@@ -10502,7 +10509,7 @@
     },
     "desktopcomputer.and.arrow.down": {
       "multiplier": 0.56,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.02
@@ -10592,9 +10599,9 @@
       "yOffset": 0
     },
     "diamond": {
-      "multiplier": 0.65,
+      "multiplier": 0.635,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
@@ -10606,7 +10613,7 @@
       "yOffset": 0
     },
     "diamond.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -10719,7 +10726,7 @@
     },
     "digitalcrown.horizontal.arrow.counterclockwise.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -10795,11 +10802,11 @@
       "yOffset": 0
     },
     "display.and.arrow.down": {
-      "multiplier": 0.56,
+      "multiplier": 0.605,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": -0.02
+      "yOffset": -0.03
     },
     "display.and.screwdriver": {
       "multiplier": 0.58,
@@ -10816,11 +10823,12 @@
       "yOffset": 0.02
     },
     "distribute.horizontal": {
-      "multiplier": 0.56,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "distribute.horizontal.center": {
       "multiplier": 0.65,
@@ -10837,11 +10845,12 @@
       "yOffset": 0
     },
     "distribute.horizontal.fill": {
-      "multiplier": 0.56,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "distribute.horizontal.left": {
       "multiplier": 0.57,
@@ -10935,11 +10944,11 @@
       "yOffset": 0
     },
     "document": {
-      "multiplier": 0.65,
+      "multiplier": 0.535,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0.01,
-      "yOffset": -0.013
+      "xOffset": 0,
+      "yOffset": -0.020000000000000004
     },
     "document.badge.arrow.up": {
       "multiplier": 0.65,
@@ -11002,7 +11011,7 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.055
+      "yOffset": 0.06
     },
     "document.badge.plus.fill": {
       "multiplier": 0.65,
@@ -11012,11 +11021,11 @@
       "yOffset": 0.05
     },
     "document.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.53,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.01,
-      "yOffset": -0.013
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": -0.020000000000000004
     },
     "document.on.clipboard": {
       "multiplier": 0.56,
@@ -11061,18 +11070,20 @@
       "yOffset": -0.005
     },
     "document.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "document.viewfinder.fill": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "dog": {
       "multiplier": 0.58,
@@ -11355,11 +11366,12 @@
       "yOffset": 0.03
     },
     "dot.circle.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "dot.crosshair": {
       "multiplier": 0.64,
@@ -11405,7 +11417,7 @@
     },
     "dot.scope.display": {
       "multiplier": 0.55,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.01
@@ -11418,11 +11430,12 @@
       "yOffset": -0.025
     },
     "dot.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "dots.and.line.vertical.and.pointer.arrow.rectangle": {
       "multiplier": 0.62,
@@ -11761,7 +11774,7 @@
       "yOffset": -0.03
     },
     "eject.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.575,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -11881,7 +11894,7 @@
     },
     "ellipsis.rectangle": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.015
@@ -11908,11 +11921,12 @@
       "yOffset": 0.02
     },
     "ellipsis.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "engine.combustion": {
       "multiplier": 0.58,
@@ -12608,14 +12622,14 @@
       "yOffset": 0
     },
     "exclamationmark.bubble": {
-      "multiplier": 0.65,
+      "multiplier": 0.655,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.02
+      "xOffset": 0.0049999999999999906,
+      "yOffset": 0.03
     },
     "exclamationmark.bubble.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.56,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -12650,7 +12664,7 @@
       "yOffset": -0.01
     },
     "exclamationmark.magnifyingglass": {
-      "multiplier": 0.6,
+      "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -12665,7 +12679,7 @@
     },
     "exclamationmark.message.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -12699,7 +12713,7 @@
       "yOffset": 0.01
     },
     "exclamationmark.shield.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.615,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -12728,7 +12742,7 @@
     },
     "exclamationmark.triangle.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -14624,7 +14638,7 @@
       "yOffset": 0
     },
     "figure.walk.diamond.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -14772,7 +14786,7 @@
     },
     "firewall.fill": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.005
@@ -17879,11 +17893,11 @@
       "yOffset": 0.015
     },
     "inset.filled.rectangle.and.person.filled.slash": {
-      "multiplier": 0.48,
+      "multiplier": 0.51,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.015
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.0049999999999999906
     },
     "inset.filled.rectangle.and.pointer.arrow": {
       "multiplier": 0.59,
@@ -17991,11 +18005,12 @@
       "yOffset": 0
     },
     "inset.filled.tv": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "internaldrive": {
       "multiplier": 0.65,
@@ -18321,7 +18336,7 @@
     },
     "iphone.and.vision.pro": {
       "multiplier": 0.51,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": -0.055,
       "yOffset": 0.015
@@ -18691,11 +18706,11 @@
       "yOffset": 0.01
     },
     "ipod.and.vision.pro": {
-      "multiplier": 0.52,
+      "multiplier": 0.49,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": -0.055,
-      "yOffset": 0.015
+      "xOffset": -0.05500000000000001,
+      "yOffset": 0.009999999999999995
     },
     "ipod.shuffle.gen1": {
       "multiplier": 0.65,
@@ -19034,11 +19049,12 @@
       "yOffset": -0.005
     },
     "key.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "keyboard": {
       "multiplier": 0.56,
@@ -19762,7 +19778,7 @@
       "yOffset": 0.005
     },
     "light.max": {
-      "multiplier": 0.61,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -19945,7 +19961,7 @@
     },
     "lightbulb.max": {
       "multiplier": 0.48,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.01
@@ -19953,9 +19969,9 @@
     "lightbulb.max.fill": {
       "multiplier": 0.48,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": -0.01
+      "yOffset": -0.015
     },
     "lightbulb.min": {
       "multiplier": 0.52,
@@ -20077,11 +20093,12 @@
       "yOffset": 0
     },
     "line.diagonal.trianglehead.up.right": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0.005,
-      "yOffset": -0.01
+      "yOffset": -0
     },
     "line.diagonal.trianglehead.up.right.left.down": {
       "multiplier": 0.65,
@@ -20224,11 +20241,11 @@
       "yOffset": -0.01
     },
     "list.bullet.badge.ellipsis": {
-      "multiplier": 0.58,
+      "multiplier": 0.5700000000000001,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": -0.03,
-      "yOffset": 0.04
+      "yOffset": 0.04000000000000001
     },
     "list.bullet.below.rectangle": {
       "multiplier": 0.65,
@@ -20294,10 +20311,10 @@
       "yOffset": 0
     },
     "list.dash.badge.ellipsis": {
-      "multiplier": 0.58,
+      "multiplier": 0.56,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": -0.025,
+      "xOffset": -0.03,
       "yOffset": 0.04
     },
     "list.number": {
@@ -20413,14 +20430,15 @@
       "yOffset": 0.005
     },
     "location.fill.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "location.magnifyingglass": {
-      "multiplier": 0.6,
+      "multiplier": 0.6699999999999999,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -20469,11 +20487,12 @@
       "yOffset": 0
     },
     "location.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "lock": {
       "multiplier": 0.65,
@@ -20645,14 +20664,14 @@
     },
     "lock.open.desktopcomputer": {
       "multiplier": 0.55,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.01
     },
     "lock.open.display": {
       "multiplier": 0.55,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.01
@@ -20694,7 +20713,7 @@
     },
     "lock.open.trianglebadge.exclamationmark": {
       "multiplier": 0.53,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0.04,
       "yOffset": 0.005
@@ -20707,25 +20726,28 @@
       "yOffset": 0.005
     },
     "lock.rectangle.on.rectangle": {
-      "multiplier": 0.54,
+      "multiplier": 0.642,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "lock.rectangle.on.rectangle.dashed": {
-      "multiplier": 0.54,
+      "multiplier": 0.642,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "lock.rectangle.on.rectangle.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.648,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.02
+      "yOffset": 0.023
     },
     "lock.rectangle.stack": {
       "multiplier": 0.65,
@@ -21155,28 +21177,28 @@
       "yOffset": 0
     },
     "macstudio": {
-      "multiplier": 0.62,
+      "multiplier": 0.615,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "macstudio.badge.checkmark": {
       "multiplier": 0.51,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": -0.03,
       "yOffset": -0.05
     },
     "macstudio.badge.checkmark.fill": {
-      "multiplier": 0.51,
+      "multiplier": 0.48,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": -0.03,
-      "yOffset": -0.05
+      "yOffset": -0.045000000000000005
     },
     "macstudio.fill": {
-      "multiplier": 0.62,
+      "multiplier": 0.565,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -21239,11 +21261,11 @@
       "yOffset": 0
     },
     "magnifyingglass": {
-      "multiplier": 0.6,
+      "multiplier": 0.6699999999999999,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.025
+      "yOffset": -0.02500000000000001
     },
     "magsafe.batterypack": {
       "multiplier": 0.642,
@@ -21260,11 +21282,11 @@
       "yOffset": 0
     },
     "mail.and.text.magnifyingglass": {
-      "multiplier": 0.56,
+      "multiplier": 0.61,
       "status": "calibrated",
-      "weight": "medium",
-      "xOffset": 0.015,
-      "yOffset": 0.025
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
     },
     "mail.stack": {
       "multiplier": 0.65,
@@ -21855,11 +21877,11 @@
       "yOffset": 0
     },
     "minus.magnifyingglass": {
-      "multiplier": 0.6,
+      "multiplier": 0.64,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.025
+      "yOffset": 0
     },
     "minus.plus.and.fluid.batteryblock": {
       "multiplier": 0.65,
@@ -22331,18 +22353,20 @@
       "yOffset": 0.025
     },
     "music.note.tv": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "music.note.tv.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "music.pages": {
       "multiplier": 0.65,
@@ -23241,11 +23265,12 @@
       "yOffset": -0.035
     },
     "pencil.slash": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0.005,
-      "yOffset": -0.01
+      "yOffset": -0.023
     },
     "pencil.tip": {
       "multiplier": 0.648,
@@ -23844,28 +23869,28 @@
     },
     "person.crop.square.badge.camera": {
       "multiplier": 0.54,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": -0.035,
       "yOffset": 0.025
     },
     "person.crop.square.badge.camera.fill": {
       "multiplier": 0.54,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": -0.035,
       "yOffset": 0.025
     },
     "person.crop.square.badge.video": {
       "multiplier": 0.53,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": -0.04,
       "yOffset": 0.03
     },
     "person.crop.square.badge.video.fill": {
       "multiplier": 0.53,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": -0.04,
       "yOffset": 0.03
@@ -24536,11 +24561,12 @@
       "yOffset": 0.02
     },
     "photo.on.rectangle": {
-      "multiplier": 0.54,
+      "multiplier": 0.642,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "photo.on.rectangle.angled": {
       "multiplier": 0.61,
@@ -24585,11 +24611,12 @@
       "yOffset": -0.05
     },
     "photo.tv": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "pi": {
       "multiplier": 0.66,
@@ -24803,7 +24830,7 @@
     },
     "play.desktopcomputer": {
       "multiplier": 0.55,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.01
@@ -24824,7 +24851,7 @@
     },
     "play.display": {
       "multiplier": 0.55,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.01
@@ -24858,18 +24885,20 @@
       "yOffset": -0.025
     },
     "play.rectangle.on.rectangle": {
-      "multiplier": 0.54,
+      "multiplier": 0.642,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "play.rectangle.on.rectangle.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.648,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.02
+      "yOffset": 0.023
     },
     "play.slash": {
       "multiplier": 0.66,
@@ -24900,18 +24929,20 @@
       "yOffset": 0.025
     },
     "play.tv": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "play.tv.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "playpause": {
       "multiplier": 0.61,
@@ -25054,11 +25085,12 @@
       "yOffset": 0
     },
     "plus.rectangle.fill.on.rectangle.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.648,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0.02
+      "yOffset": 0.023
     },
     "plus.rectangle.on.folder": {
       "multiplier": 0.53,
@@ -25075,11 +25107,12 @@
       "yOffset": -0.005
     },
     "plus.rectangle.on.rectangle": {
-      "multiplier": 0.54,
+      "multiplier": 0.642,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "plus.rectangle.portrait": {
       "multiplier": 0.65,
@@ -25747,11 +25780,11 @@
       "yOffset": 0
     },
     "projective": {
-      "multiplier": 0.67,
+      "multiplier": 0.6699999999999999,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.04
+      "yOffset": -0.04000000000000001
     },
     "purchased": {
       "multiplier": 0.62,
@@ -25923,7 +25956,7 @@
     },
     "questionmark.video.fill": {
       "multiplier": 0.52,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -26608,11 +26641,12 @@
       "yOffset": 0
     },
     "rectangle.on.rectangle.dashed": {
-      "multiplier": 0.54,
+      "multiplier": 0.642,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "rectangle.on.rectangle.slash": {
       "multiplier": 0.6,
@@ -26902,11 +26936,12 @@
       "yOffset": 0
     },
     "rectangle.split.2x1.slash.fill": {
-      "multiplier": 0.56,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "rectangle.stack": {
       "multiplier": 0.65,
@@ -28463,18 +28498,20 @@
       "yOffset": 0
     },
     "sparkles.tv": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "sparkles.tv.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "spatial.capture": {
       "multiplier": 0.65,
@@ -29765,18 +29802,20 @@
       "yOffset": -0.005
     },
     "stove": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "stove.fill": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "strikethrough": {
       "multiplier": 0.65,
@@ -31095,11 +31134,12 @@
       "yOffset": -0.015
     },
     "text.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "text.word.spacing": {
       "multiplier": 0.66,
@@ -31109,11 +31149,11 @@
       "yOffset": 0
     },
     "textformat": {
-      "multiplier": 0.63,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.025
+      "yOffset": -0.020000000000000004
     },
     "textformat.alt": {
       "multiplier": 0.65,
@@ -31123,11 +31163,11 @@
       "yOffset": -0.02
     },
     "textformat.characters": {
-      "multiplier": 0.51,
+      "multiplier": 0.485,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
-      "yOffset": -0.01
+      "xOffset": 0.0049999999999999906,
+      "yOffset": -0.010000000000000009
     },
     "textformat.characters.arrow.left.and.right": {
       "multiplier": 0.48,
@@ -31151,11 +31191,11 @@
       "yOffset": 0
     },
     "textformat.size": {
-      "multiplier": 0.63,
+      "multiplier": 0.615,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.025
+      "yOffset": -0.020000000000000004
     },
     "textformat.size.larger": {
       "multiplier": 0.647,
@@ -32257,25 +32297,28 @@
       "yOffset": 0.025
     },
     "tv.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "tv.slash": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.02
     },
     "tv.slash.fill": {
-      "multiplier": 0.54,
+      "multiplier": 0.637,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.02
     },
     "umbrella": {
       "multiplier": 0.63,
@@ -32348,11 +32391,12 @@
       "yOffset": -0.04
     },
     "vial.viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "video": {
       "multiplier": 0.64,
@@ -32454,7 +32498,7 @@
     },
     "video.slash": {
       "multiplier": 0.52,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
@@ -32495,15 +32539,16 @@
       "yOffset": 0
     },
     "viewfinder": {
-      "multiplier": 0.75,
+      "multiplier": 0.65,
+      "source": "auto-boxfit",
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0
     },
     "viewfinder.trianglebadge.exclamationmark": {
       "multiplier": 0.55,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": -0.025,
       "yOffset": 0.03
@@ -32986,7 +33031,7 @@
     },
     "waveform.path.ecg": {
       "multiplier": 0.65,
-      "status": "calibrated",
+      "status": "needs-review",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.006
@@ -33461,11 +33506,11 @@
       "yOffset": -0.005
     },
     "wrench.and.screwdriver.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.52,
       "status": "calibrated",
-      "weight": "medium",
+      "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.005
+      "yOffset": -0.015
     },
     "xbox.logo": {
       "multiplier": 0.59,
