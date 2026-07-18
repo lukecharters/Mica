@@ -57,7 +57,11 @@ Let macOS itself render the icon, with Apple's own sizing, layout, and (on macOS
 mica-cli star.fill --icon-generation-mode system --icon-bg-color blue --icon-symbol-color white
 ```
 
-In System mode the colour flags accept Apple's named tokens for the curated system look, or any custom colour (hex / `r,g,b,a`) for an exact match to your branding.
+![System mode](images/system-mode.png)
+
+In System mode the colour flags accept Apple's named tokens for the curated system look, or any custom colour (hex / `r,g,b,a`) for an exact match to your branding. The colour flags are optional — omitting them gives the default white symbol on a blue enclosure.
+
+Note that macOS renders the icon in the Mac's current appearance, so on a Mac in dark mode the output is the dark variant (dark enclosure, tinted symbol).
 
 ## Badges
 
