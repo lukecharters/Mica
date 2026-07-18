@@ -190,9 +190,6 @@
 		};
 		8C75F5822E8D5AC4008FB893 /* mica-cli Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			explicitFolders = (
-				"swift-syntax",
-			);
 			path = "mica-cli Tests";
 			sourceTree = "<group>";
 		};
