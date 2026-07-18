@@ -19,8 +19,8 @@ extension AppexColor {
             throw ColorParseError.emptyInput("Color string cannot be empty")
         }
 
-        // 1. Named appex token.
-        if let token = AppexEnclosureColor(rawValue: trimmed.lowercased()) {
+        // 1. Named appex token ("grey" resolves to Apple's curated "gray").
+        if let token = AppexEnclosureColor(rawValue: normalizeBritishSpelling(trimmed)) {
             return token.rawValue
         }
 

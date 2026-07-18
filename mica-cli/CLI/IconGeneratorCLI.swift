@@ -255,7 +255,7 @@ class IconGeneratorCLI {
             case .preRendered:
                 settings.backgroundMode = .preRendered
                 // preRenderedAssetName lowercases this when building the asset name.
-                settings.preRenderedColorName = command.background.color ?? "blue"
+                settings.preRenderedColorName = normalizeBritishSpelling(command.background.color ?? "blue")
             case .image(let path):
                 settings.backgroundMode = .importedImage
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)

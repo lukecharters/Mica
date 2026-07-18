@@ -75,7 +75,10 @@ struct ExportOptions: ParsableArguments {
     @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x (retina)", valueName: "scale"))
     var scale: ExportScale = .oneX
 
-    @Option(name: .long, help: ArgumentHelp("Color space to render in: sRGB (default) or displayP3", valueName: "space"))
+    @Option(
+        name: [.customLong("color-space"), .customLong("colour-space")],
+        help: ArgumentHelp("Color space to render in: sRGB (default) or displayP3", valueName: "space")
+    )
     var colorSpace: ExportColorSpace = .sRGB
 }
 
@@ -147,10 +150,11 @@ struct IconForegroundOptions: ParsableArguments {
             valueName: "mode"
         ),
         transform: { mode in
-            guard validRenderingModes.contains(mode.lowercased()) else {
+            let normalized = normalizeBritishSpelling(mode)
+            guard validRenderingModes.contains(normalized) else {
                 throw ValidationError("Symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
             }
-            return mode.lowercased()
+            return normalized
         }
     )
     var symbolRendering: String = "monochrome"
@@ -160,7 +164,7 @@ struct IconForegroundOptions: ParsableArguments {
     // mode (mica → ColorParser, system → AppexColor.plistValue) since the
     // transform can't see the chosen mode. nil → mode-appropriate default.
     @Option(
-        name: .customLong("icon-symbol-color"),
+        name: [.customLong("icon-symbol-color"), .customLong("icon-symbol-colour")],
         help: ArgumentHelp(
             "Symbol color (monochrome, hierarchical, and multicolor modes)",
             discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
@@ -241,7 +245,7 @@ struct IconBackgroundOptions: ParsableArguments {
     // Folds --base-color + --appex-enclosure-color. Stored RAW; resolved in the
     // builder by generation mode + background kind. nil → blue.
     @Option(
-        name: .customLong("icon-bg-color"),
+        name: [.customLong("icon-bg-color"), .customLong("icon-bg-colour")],
         help: ArgumentHelp(
             "Background color",
             discussion: "standard: base color (mica) or appex enclosure color (system). prerendered-liquid-glass: one of \(validPreRenderedColors.joined(separator: ", ")). Default: blue.",
@@ -252,7 +256,7 @@ struct IconBackgroundOptions: ParsableArguments {
 
     // Folds --use-custom-colors + --custom-primary + --custom-secondary.
     @Option(
-        name: .customLong("icon-bg-gradient-colors"),
+        name: [.customLong("icon-bg-gradient-colors"), .customLong("icon-bg-gradient-colours")],
         help: ArgumentHelp(
             "Two gradient colors for custom-gradient backgrounds",
             discussion: "Comma-separated 'c1,c2' (top,bottom).",
@@ -374,10 +378,11 @@ struct BadgeOptions: ParsableArguments {
             valueName: "mode"
         ),
         transform: { mode in
-            guard validRenderingModes.contains(mode.lowercased()) else {
+            let normalized = normalizeBritishSpelling(mode)
+            guard validRenderingModes.contains(normalized) else {
                 throw ValidationError("Badge symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
             }
-            return mode.lowercased()
+            return normalized
         }
     )
     var symbolRendering: String = "monochrome"
@@ -386,7 +391,7 @@ struct BadgeOptions: ParsableArguments {
     // into one colour. Stored RAW; resolved in the settings builder by generation
     // mode (mica → ColorParser, system → AppexColor.plistValue). nil → white.
     @Option(
-        name: .customLong("badge-symbol-color"),
+        name: [.customLong("badge-symbol-color"), .customLong("badge-symbol-colour")],
         help: ArgumentHelp(
             "Badge symbol color (monochrome, hierarchical, and multicolor modes)",
             discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
@@ -458,7 +463,7 @@ struct BadgeOptions: ParsableArguments {
     // Folds --badge-color + --badge-appex-enclosure-color. Stored RAW; resolved in
     // the builder by generation mode. nil → gray (mica) / blue (system).
     @Option(
-        name: .customLong("badge-bg-color"),
+        name: [.customLong("badge-bg-color"), .customLong("badge-bg-colour")],
         help: ArgumentHelp(
             "Badge background color",
             discussion: "standard: base color (mica) or appex enclosure color (system). Default: gray (mica) / blue (system).",
@@ -469,7 +474,7 @@ struct BadgeOptions: ParsableArguments {
 
     // Folds --badge-use-custom + --badge-primary + --badge-secondary.
     @Option(
-        name: .customLong("badge-bg-gradient-colors"),
+        name: [.customLong("badge-bg-gradient-colors"), .customLong("badge-bg-gradient-colours")],
         help: ArgumentHelp(
             "Two gradient colors for custom-gradient badge backgrounds",
             discussion: "Comma-separated 'c1,c2' (top,bottom).",
@@ -972,7 +977,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
             if generation.iconGenerationMode == .system {
                 _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color")
             } else if case .preRendered = resolvedBackground() {
-                guard validPreRenderedColors.contains(bgColor.lowercased()) else {
+                guard validPreRenderedColors.contains(normalizeBritishSpelling(bgColor)) else {
                     throw ValidationError("--icon-bg-color for prerendered-liquid-glass must be one of: \(validPreRenderedColors.joined(separator: ", ")). You provided '\(bgColor)'.")
                 }
             } else {
