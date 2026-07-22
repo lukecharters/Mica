@@ -49,6 +49,70 @@ enum ImportedImageGeometry {
     static let paddingCompensationFactor: CGFloat = 1024.0 / 824.0 // ≈ 1.2427
 }
 
+/// Drop-shadow parameter set for the full render pipeline. Canvas shadows
+/// (background chiclet, symbol) are base-256pt values scaled by
+/// `displaySize / 256`; badge shadows are multipliers of the badge diameter.
+/// `IconContentView`/`BadgeView` resolve their style from
+/// `settings.backgroundShadowStyle` unless an explicit override is injected
+/// (Debug playgrounds only).
+struct ShadowStyle: Equatable {
+    struct CanvasShadow: Equatable {
+        /// Blur radius at the 256pt reference size.
+        var radius: CGFloat
+        /// Vertical offset at the 256pt reference size.
+        var offsetY: CGFloat
+        var opacity: CGFloat
+
+        static let none = CanvasShadow(radius: 0, offsetY: 0, opacity: 0)
+    }
+
+    struct BadgeShadow: Equatable {
+        /// Blur radius as a fraction of the badge diameter.
+        var radiusMultiplier: CGFloat
+        /// Vertical offset as a fraction of the badge diameter.
+        var offsetYMultiplier: CGFloat
+        var opacity: CGFloat
+    }
+
+    var background: CanvasShadow
+    var symbol: CanvasShadow
+    var badgeBackground: BadgeShadow
+    var badgeSymbol: BadgeShadow
+
+    // Symbol and badge shadows are intentionally identical across presets —
+    // only the background shadow varies by OS style today. A future
+    // `.macOS27` preset is where those values would start to diverge.
+    static let macOS26 = ShadowStyle(
+        background: CanvasShadow(radius: 3.6, offsetY: 2.5, opacity: 0.30),
+        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.23),
+        badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
+        badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
+    )
+
+    static let sequoia = ShadowStyle(
+        background: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.31),
+        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.23),
+        badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
+        badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
+    )
+
+    /// The preset matching a settings-level shadow style. `.off` disables only
+    /// the background shadow — symbol and badge shadows remain gated solely by
+    /// their own `enable…Shadow` flags.
+    static func preset(for style: BackgroundShadowStyle) -> ShadowStyle {
+        switch style {
+        case .off:
+            var style = ShadowStyle.macOS26
+            style.background = .none
+            return style
+        case .sequoia:
+            return .sequoia
+        case .macOS26:
+            return .macOS26
+        }
+    }
+}
+
 struct IconRenderer {
     /// Integer supersampling factor for a nominal export pixel size. Exports
     /// below 1024px are rendered at the smallest integer multiple that reaches
@@ -216,21 +280,15 @@ struct IconContentView: View {
     let settings: IconSettings
     let displaySize: CGFloat
     var badgeAppexImage: NSImage? = nil
+    /// Debug-playground hook: when non-nil, replaces the preset derived from
+    /// `settings.backgroundShadowStyle`. Production paths leave this nil.
+    var shadowOverride: ShadowStyle? = nil
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
     private let baseCornerRadiusSequoia: CGFloat = 46
     private let baseCornerRadius: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
-    private let baseShadowRadius: CGFloat = 3.6
-    private let baseShadowOffset: CGFloat = 2.5
-    private let shadowOpacity: CGFloat = 0.30
-    private let baseShadowRadiusSequoia: CGFloat = 2
-    private let baseShadowOffsetSequoia: CGFloat = 2.5
-    private let shadowOpacitySequoia: CGFloat = 0.31
-    private let baseSymbolShadowRadius: CGFloat = 2
-    private let baseSymbolShadowOffset: CGFloat = 2.5
-    private let symbolShadowOpacity: CGFloat = 0.23
 
     // Badge layout ratios live in BadgeGeometry (shared with the previews).
 
@@ -270,29 +328,15 @@ struct IconContentView: View {
         enclosureSize * resolvedSizing.yOffset
     }
 
-    private var backgroundShadowRadius: CGFloat {
-        switch settings.backgroundShadowStyle {
-        case .off: return 0
-        case .sequoia: return baseShadowRadiusSequoia * scaleFactor
-        case .macOS26: return baseShadowRadius * scaleFactor
-        }
+    private var shadowStyle: ShadowStyle {
+        shadowOverride ?? .preset(for: settings.backgroundShadowStyle)
     }
-    private var backgroundShadowOffset: CGFloat {
-        switch settings.backgroundShadowStyle {
-        case .off: return 0
-        case .sequoia: return baseShadowOffsetSequoia * scaleFactor
-        case .macOS26: return baseShadowOffset * scaleFactor
-        }
-    }
-    private var backgroundShadowOpacity: CGFloat {
-        switch settings.backgroundShadowStyle {
-        case .off: return 0
-        case .sequoia: return shadowOpacitySequoia
-        case .macOS26: return shadowOpacity
-        }
-    }
-    private var symbolShadowRadius: CGFloat { baseSymbolShadowRadius * scaleFactor }
-    private var symbolShadowOffset: CGFloat { baseSymbolShadowOffset * scaleFactor }
+
+    private var backgroundShadowRadius: CGFloat { shadowStyle.background.radius * scaleFactor }
+    private var backgroundShadowOffset: CGFloat { shadowStyle.background.offsetY * scaleFactor }
+    private var backgroundShadowOpacity: CGFloat { shadowStyle.background.opacity }
+    private var symbolShadowRadius: CGFloat { shadowStyle.symbol.radius * scaleFactor }
+    private var symbolShadowOffset: CGFloat { shadowStyle.symbol.offsetY * scaleFactor }
 
     // Badge scaled values — all derived from enclosure size
     private var badgeSize: CGFloat {
@@ -352,15 +396,20 @@ struct IconContentView: View {
             if !settings.iconForegroundHidden, settings.backgroundMode != .importedImage {
                 iconContent
                     .shadow(
-                        color: settings.enableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
+                        color: settings.enableSymbolShadow ? Color.black.opacity(shadowStyle.symbol.opacity) : Color.clear,
                         radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
                         y: settings.enableSymbolShadow ? symbolShadowOffset : 0
                     )
             }
 
             if settings.showBadge {
-                BadgeView(settings: settings, badgeSize: badgeSize, badgeAppexImage: badgeAppexImage)
-                    .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
+                BadgeView(
+                    settings: settings,
+                    badgeSize: badgeSize,
+                    badgeAppexImage: badgeAppexImage,
+                    shadowOverride: shadowOverride
+                )
+                .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
             }
         }
         .frame(width: totalCanvasSize, height: totalCanvasSize)
@@ -502,9 +551,15 @@ struct BadgeView: View {
     let settings: IconSettings
     let badgeSize: CGFloat
     var badgeAppexImage: NSImage? = nil
+    /// Debug-playground hook — see `IconContentView.shadowOverride`.
+    var shadowOverride: ShadowStyle? = nil
 
-    private let shadowOpacity: CGFloat = 0.23
-    private let symbolShadowOpacity: CGFloat = 0.15
+    // Badge shadow values are identical across all presets today, so resolving
+    // through `settings.backgroundShadowStyle` is behavior-neutral here; a
+    // future `.macOS27` preset is where badge shadows would start to differ.
+    private var shadowStyle: ShadowStyle {
+        shadowOverride ?? .preset(for: settings.backgroundShadowStyle)
+    }
 
     private var resolvedBadgeSizing: ResolvedSymbolSizing {
         SymbolSizingService.resolve(for: settings.badgeSymbolName)
@@ -558,9 +613,9 @@ struct BadgeView: View {
                         )
                         .clipShape(Circle())
                         .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowStyle.badgeBackground.opacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.radiusMultiplier : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.offsetYMultiplier : 0
                         )
                 } else if !settings.badgeBackgroundHidden, settings.badgeUseCustomColors {
                     Circle()
@@ -574,17 +629,17 @@ struct BadgeView: View {
                                 : AnyShapeStyle(settings.badgeCustomPrimaryColor)
                         )
                         .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowStyle.badgeBackground.opacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.radiusMultiplier : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.offsetYMultiplier : 0
                         )
                 } else if !settings.badgeBackgroundHidden {
                     Circle()
                         .fill(settings.badgeEnableBackgroundGradient ? AnyShapeStyle(settings.badgeBaseColor.gradient) : AnyShapeStyle(settings.badgeBaseColor))
                         .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowOpacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * 0.03 : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * 0.04 : 0
+                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowStyle.badgeBackground.opacity) : Color.clear,
+                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.radiusMultiplier : 0,
+                            y: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.offsetYMultiplier : 0
                         )
                 }
 
@@ -593,9 +648,9 @@ struct BadgeView: View {
                 if !settings.badgeForegroundHidden, !showsImportedBackground {
                     badgeContent
                         .shadow(
-                            color: settings.badgeEnableSymbolShadow ? Color.black.opacity(symbolShadowOpacity) : Color.clear,
-                            radius: settings.badgeEnableSymbolShadow ? badgeSize * 0.02 : 0,
-                            y: settings.badgeEnableSymbolShadow ? badgeSize * 0.025 : 0
+                            color: settings.badgeEnableSymbolShadow ? Color.black.opacity(shadowStyle.badgeSymbol.opacity) : Color.clear,
+                            radius: settings.badgeEnableSymbolShadow ? badgeSize * shadowStyle.badgeSymbol.radiusMultiplier : 0,
+                            y: settings.badgeEnableSymbolShadow ? badgeSize * shadowStyle.badgeSymbol.offsetYMultiplier : 0
                         )
                 }
             }
