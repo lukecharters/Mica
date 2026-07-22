@@ -34,7 +34,7 @@ struct LayerControls: View {
     @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
 
     /// Remembers the badge's previously-picked non-system source so toggling
-    /// System → Custom restores the user's choice instead of forcing `.sfSymbol`.
+    /// System → Mica restores the user's choice instead of forcing `.sfSymbol`.
     /// Owned here (rather than in `BadgeGroupInspector`) because `LayerControls`
     /// stays mounted across every layer selection, so the tracked value never goes
     /// stale when the user toggles the mode from a child-layer inspector.
@@ -73,7 +73,7 @@ struct LayerControls: View {
                         badgeAppexEnclosureColor: $badgeAppexEnclosureColor
                     )
                     if !isBadgeAppleReference {
-                        // Custom mode: surface the Foreground + Background children
+                        // Mica mode: surface the Foreground + Background children
                         // inline beneath the group-level layout controls.
                         layerSectionHeader(LayerRole.foreground.label)
                         badgeForegroundControls
@@ -104,7 +104,7 @@ struct LayerControls: View {
         }
     }
 
-    /// Wraps a child layer's controls with the parent group's Custom/System picker
+    /// Wraps a child layer's controls with the parent group's Mica/System picker
     /// at the top, so the generation mode can be switched without first navigating
     /// back to the group header.
     @ViewBuilder
@@ -129,7 +129,7 @@ struct LayerControls: View {
         iconSettings.badgeGenerationMode == .system
     }
 
-    /// Drives the icon group's Custom/System picker.
+    /// Drives the icon group's Mica/System picker.
     private var iconModeBinding: Binding<Bool> {
         Binding(
             get: { iconSettings.iconGenerationMode == .system },
@@ -137,9 +137,9 @@ struct LayerControls: View {
         )
     }
 
-    /// Drives the badge group's Custom/System picker. The badge's mode is derived
+    /// Drives the badge group's Mica/System picker. The badge's mode is derived
     /// from its `badgeIconSource` (`.system` == System), so toggling swaps
-    /// the source and restores the prior custom choice on the way back.
+    /// the source and restores the prior Mica choice on the way back.
     private var badgeModeBinding: Binding<Bool> {
         Binding(
             get: { iconSettings.badgeGenerationMode == .system },
@@ -161,7 +161,7 @@ struct LayerControls: View {
     @ViewBuilder
     private var iconGroupControls: some View {
         // In System mode the group is the only selectable target for the icon, so
-        // expose the appex Source + Appearance directly. In Custom mode, prompt
+        // expose the appex Source + Appearance directly. In Mica mode, prompt
         // the user to pick a child layer.
         VStack(alignment: .leading, spacing: 0) {
             GroupModePicker(isSystem: iconModeBinding)
@@ -176,6 +176,7 @@ struct LayerControls: View {
                             iconSettings: $iconSettings,
                             isSystem: true
                         )
+                        .padding(4)
                     }
 
                     Section("Appearance", isExpanded: $iconAppearanceExpanded) {
@@ -186,13 +187,14 @@ struct LayerControls: View {
                             appexSymbolColor: $appexSymbolColor,
                             appexEnclosureColor: $appexEnclosureColor
                         )
+                        .padding(4)
                     }
                 }
                 .formStyle(GroupedFormStyle())
                 .scrollDisabled(true)
                 .fixedSize(horizontal: false, vertical: true)
             } else {
-                // Custom mode: the group has Foreground + Background children. Show
+                // Mica mode: the group has Foreground + Background children. Show
                 // both children's controls inline so the group header is a combined
                 // editor in addition to being individually selectable in the sidebar.
                 layerSectionHeader(LayerRole.foreground.label)
@@ -215,7 +217,7 @@ struct LayerControls: View {
             .padding(.bottom, 2)
     }
 
-    // MARK: - Icon Foreground (Custom mode)
+    // MARK: - Icon Foreground (Mica mode)
 
     @ViewBuilder
     private var iconForegroundControls: some View {
@@ -225,10 +227,11 @@ struct LayerControls: View {
                     iconSettings: $iconSettings,
                     isSystem: false
                 )
+                .padding(4)
             }
-
             Section("Layout", isExpanded: $iconLayoutExpanded) {
                 IconLayoutSection(iconSettings: $iconSettings)
+                .padding(4)
             }
 
             Section("Appearance", isExpanded: $iconAppearanceExpanded) {
@@ -239,26 +242,31 @@ struct LayerControls: View {
                     appexSymbolColor: $appexSymbolColor,
                     appexEnclosureColor: $appexEnclosureColor
                 )
+                .padding(4)
             }
         }
+        .padding(.bottom, 12)
         .formStyle(GroupedFormStyle())
         .scrollDisabled(true)
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    // MARK: - Icon Background (Custom mode)
+    // MARK: - Icon Background (Mica mode)
 
     @ViewBuilder
     private var iconBackgroundControls: some View {
         Form {
             Section("Source", isExpanded: $backgroundSourceExpanded) {
                 BackgroundSourceSection(iconSettings: $iconSettings)
+                    .padding(4)
             }
 
             if iconSettings.backgroundMode == .importedImage {
                 Section("Layout", isExpanded: $backgroundLayoutExpanded) {
                     BackgroundLayoutSection(iconSettings: $iconSettings)
+                    .padding(4)
                 }
+
             }
 
             Section("Appearance", isExpanded: $backgroundAppearanceExpanded) {
@@ -266,6 +274,7 @@ struct LayerControls: View {
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
                 )
+                .padding(4)
             }
         }
         .formStyle(GroupedFormStyle())
@@ -273,7 +282,7 @@ struct LayerControls: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    // MARK: - Badge Foreground (Custom mode)
+    // MARK: - Badge Foreground (Mica mode)
 
     @ViewBuilder
     private var badgeForegroundControls: some View {
@@ -283,9 +292,11 @@ struct LayerControls: View {
                     iconSettings: $iconSettings,
                     isSystem: false
                 )
+                .padding(4)
             }
             Section("Layout", isExpanded: $badgeLayoutExpanded) {
                 BadgeLayoutSection(iconSettings: $iconSettings)
+                    .padding(4)
             }
             Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                 BadgeAppearanceSection(
@@ -294,6 +305,7 @@ struct LayerControls: View {
                     badgeAppexSymbolColor: $badgeAppexSymbolColor,
                     badgeAppexEnclosureColor: $badgeAppexEnclosureColor
                 )
+                .padding(4)
             }
         }
         .formStyle(GroupedFormStyle())
@@ -301,18 +313,20 @@ struct LayerControls: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    // MARK: - Badge Background (Custom mode)
+    // MARK: - Badge Background (Mica mode)
 
     @ViewBuilder
     private var badgeBackgroundControls: some View {
         Form {
             Section("Source", isExpanded: $badgeBackgroundSourceExpanded) {
                 BadgeBackgroundSourceSection(iconSettings: $iconSettings)
+                    .padding(4)
             }
 
             if iconSettings.badgeUseImportedBackground {
                 Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
                     BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
+                        .padding(4)
                 }
             }
 
@@ -321,6 +335,7 @@ struct LayerControls: View {
                     iconSettings: $iconSettings,
                     colorOptions: colorOptions
                 )
+                .padding(4)
             }
         }
         .formStyle(GroupedFormStyle())
