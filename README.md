@@ -209,13 +209,6 @@ For bugs, please include your macOS version, app version and, for rendering prob
 
 Issues and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to build from source and run the tests.
 
-AI assisted contributions are welcome under the following criteria:
-1. You are a human who uses the app and found a problem or had an idea for a feature/improvement.
-2. You, a human, validated that the code builds, runs, and works as you expected.
-3. The build passes all existing tests and any new features have a test created for them.
-
-Drive-by AI pull requests will not be accepted.
-
 ## Changelog
 
 Release notes are published with each release on the [Releases](../../releases) page.
