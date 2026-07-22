@@ -175,8 +175,8 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("A", modifiers: [.command, .shift])
 
-                Button("Shadow Comparison Playground") {
-                    openWindow(id: "shadow-comparison")
+                Button("Icon Comparison Playground") {
+                    openWindow(id: "icon-comparison")
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
@@ -226,8 +226,8 @@ struct MicaApp: App {
         }
         .defaultSize(width: 1250, height: 850)
 
-        Window("Shadow Comparison Playground", id: "shadow-comparison") {
-            ShadowComparisonPlayground()
+        Window("Icon Comparison Playground", id: "icon-comparison") {
+            IconComparisonPlayground()
         }
         .defaultSize(width: 1400, height: 900)
         #endif
