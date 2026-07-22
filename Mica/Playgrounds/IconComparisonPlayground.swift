@@ -30,13 +30,22 @@ struct IconComparisonPlayground: View {
     // to the real gates in IconSettings.
     @State private var bgShadowEnabled: Bool = true
 
-    // Reference screenshot + alignment transform (applied inside its cell,
+    // Reference image + alignment transform (applied inside its cell,
     // independent of the shared zoom/pan).
+    @State private var referenceSource: ReferenceSource = .screenshot
     @State private var referenceImage: NSImage? = nil
     @State private var referenceName: String = ""
     @State private var refScale: CGFloat = 1.0
     @State private var refOffsetX: CGFloat = 0
     @State private var refOffsetY: CGFloat = 0
+
+    // System-mode reference: Apple's IconServices ground-truth render of the
+    // current symbol/colours on this Mac (same machinery as the Apple
+    // Reference Calibration Playground). No badge — badge ground truth
+    // still needs screenshots.
+    @State private var appexService = AppexReferenceService()
+    @State private var systemReferenceImage: NSImage? = nil
+    @State private var systemReferenceError: String? = nil
 
     // Comparison controls
     @State private var comparisonMode: ComparisonMode = .split
@@ -54,6 +63,11 @@ struct IconComparisonPlayground: View {
     // Sheets
     @State private var showSymbolPicker = false
     @State private var showBadgeSymbolPicker = false
+
+    enum ReferenceSource: String, CaseIterable {
+        case screenshot = "Screenshot"
+        case system = "System Icon"
+    }
 
     enum ComparisonMode: String, CaseIterable {
         case split = "Split"
@@ -95,6 +109,9 @@ struct IconComparisonPlayground: View {
         }
         .sheet(isPresented: $showBadgeSymbolPicker) {
             SymbolPickerView(selectedSymbol: $settings.badgeSymbolName)
+        }
+        .task(id: systemReferenceKey) {
+            await generateSystemReference()
         }
     }
 
@@ -321,20 +338,61 @@ struct IconComparisonPlayground: View {
 
     private var referenceSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Reference Screenshot")
+            Text("Reference")
                 .font(.headline)
-            if let image = referenceImage {
-                HStack {
-                    Text(referenceName)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                    Button("Clear") { clearReference() }
-                        .controlSize(.small)
+            Picker("", selection: $referenceSource) {
+                ForEach(ReferenceSource.allCases, id: \.self) { source in
+                    Text(source.rawValue).tag(source)
                 }
-                Text("\(pixelSize(of: image).width, specifier: "%.0f") × \(pixelSize(of: image).height, specifier: "%.0f") px")
-                    .font(.caption.monospaced())
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            switch referenceSource {
+            case .screenshot:
+                if let image = referenceImage {
+                    HStack {
+                        Text(referenceName)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button("Clear") { clearReference() }
+                            .controlSize(.small)
+                    }
+                    Text("\(pixelSize(of: image).width, specifier: "%.0f") × \(pixelSize(of: image).height, specifier: "%.0f") px")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Drop an image on the comparison area, or…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Button("Import…") { importReferenceFromPanel() }
+                    .controlSize(.small)
+
+            case .system:
+                Text("Apple's IconServices render of the current symbol and colours on this Mac. Follows the system appearance. No badge — badge ground truth needs screenshots.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if appexService.isGenerating {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Generating…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if let error = systemReferenceError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if activeReferenceImage != nil {
                 LabeledSlider(label: "Scale", value: $refScale, range: 0.5...2.0, format: "%.4f")
                 LabeledSlider(label: "Offset X", value: $refOffsetX, range: -renderSize / 2...renderSize / 2, format: "%.1f")
                 LabeledSlider(label: "Offset Y", value: $refOffsetY, range: -renderSize / 2...renderSize / 2, format: "%.1f")
@@ -350,13 +408,7 @@ struct IconComparisonPlayground: View {
                     refOffsetY = 0
                 }
                 .controlSize(.small)
-            } else {
-                Text("Drop an image on the comparison area, or…")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
-            Button("Import…") { importReferenceFromPanel() }
-                .controlSize(.small)
         }
     }
 
@@ -572,9 +624,14 @@ struct IconComparisonPlayground: View {
         return style
     }
 
+    /// The image the comparison views draw on the reference side.
+    private var activeReferenceImage: NSImage? {
+        referenceSource == .screenshot ? referenceImage : systemReferenceImage
+    }
+
     private var referenceView: some View {
         Group {
-            if let image = referenceImage {
+            if let image = activeReferenceImage {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)
@@ -582,6 +639,14 @@ struct IconComparisonPlayground: View {
                     .frame(width: renderSize, height: renderSize)
                     .scaleEffect(refScale)
                     .offset(x: refOffsetX, y: refOffsetY)
+            } else if referenceSource == .system {
+                if let error = systemReferenceError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                } else {
+                    ProgressView()
+                }
             } else {
                 // Fixed gray, not .secondary: the canvas colour is explicit
                 // (white/gray/black) regardless of appearance, and semantic
@@ -615,7 +680,7 @@ struct IconComparisonPlayground: View {
         DragGesture(minimumDistance: 5)
             .onChanged { value in
                 guard comparisonMode != .split else { return } // wiper owns the drag
-                if dragTarget == .reference, referenceImage != nil {
+                if dragTarget == .reference, activeReferenceImage != nil {
                     // Dividing by zoom keeps drag speed 1:1 with the cursor.
                     refOffsetX = dragStart.width + value.translation.width / zoomScale
                     refOffsetY = dragStart.height + value.translation.height / zoomScale
@@ -627,12 +692,49 @@ struct IconComparisonPlayground: View {
                 }
             }
             .onEnded { _ in
-                if dragTarget == .reference, referenceImage != nil {
+                if dragTarget == .reference, activeReferenceImage != nil {
                     dragStart = CGSize(width: refOffsetX, height: refOffsetY)
                 } else {
                     dragStart = panOffset
                 }
             }
+    }
+
+    // MARK: - System reference generation
+
+    /// `.task(id:)` key — includes ALL state that gates execution (the source
+    /// toggle as well as the render parameters), per the project's task-key rule.
+    private var systemReferenceKey: String {
+        guard referenceSource == .system else { return "off" }
+        return [settings.symbolName, systemEnclosureColor, systemSymbolColor].joined(separator: "|")
+    }
+
+    private var systemEnclosureColor: String {
+        AppexColor.rgbaString(from: settings.useCustomColors ? settings.customPrimaryColor : settings.baseColor)
+    }
+
+    private var systemSymbolColor: String {
+        AppexColor.rgbaString(from: settings.symbolColor)
+    }
+
+    private func generateSystemReference() async {
+        guard referenceSource == .system else { return }
+        systemReferenceError = nil
+        do {
+            let icon = try await appexService.referenceIcon(
+                for: settings.symbolName,
+                enclosureColor: systemEnclosureColor,
+                symbolColor: systemSymbolColor
+            )
+            // The appex render is not cancellation-aware; drop stale results
+            // so fast symbol switches can't apply out of order.
+            guard !Task.isCancelled else { return }
+            systemReferenceImage = icon
+        } catch {
+            guard !Task.isCancelled else { return }
+            systemReferenceImage = nil
+            systemReferenceError = error.localizedDescription
+        }
     }
 
     // MARK: - Reference import
@@ -642,6 +744,7 @@ struct IconComparisonPlayground: View {
     /// pixel-accurate comparison.
     private func loadReference(from url: URL) {
         guard let image = NSImage(contentsOf: url) else { return }
+        referenceSource = .screenshot // dropping an image implies comparing against it
         referenceImage = image
         referenceName = url.lastPathComponent
         refScale = 1.0
