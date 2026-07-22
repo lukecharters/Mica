@@ -410,135 +410,135 @@ struct ScaledIconPreview: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    @MainActor static var previews: some View {
-        Group {
-            ContentView()
-                .previewDisplayName("Default VM")
-                .previewLayout(.fixed(width: 1200, height: 800))
-            
-            ContentView(viewModel: customVM, showInspector: false)
-                .previewDisplayName("Custom VM")
-                .previewLayout(.fixed(width: 1200, height: 800))
-
-
-            ContentView(viewModel: IconViewModel())
-                .previewDisplayName("Injected VM")
-                .previewLayout(.fixed(width: 1200, height: 800))
-
-            ContentView(viewModel: retinaLargeVM)
-                .previewDisplayName("Retina 1024px")
-                .previewLayout(.fixed(width: 1200, height: 800))
-        }
-    }
-
-    @MainActor private static var customVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.iconGenerationMode = .system
-        vm.iconSettings.symbolName = "gearshape.fill"
-        vm.iconSettings.useCustomColors = true
-        vm.iconSettings.customPrimaryColor = .blue
-        vm.iconSettings.customSecondaryColor = .indigo
-        vm.iconSettings.symbolRenderingMode = .monochrome
-        vm.iconSettings.showBadge = true
-        vm.iconSettings.badgePosition = .bottomRight
-        vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
-        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-        vm.iconSettings.badgeHierarchicalSymbolColor = .white
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
-        return vm
-    }
-
-    @MainActor private static var retinaLargeVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.symbolName = "square"
-        vm.iconSettings.useCustomColors = false
-        vm.iconSettings.baseColor = .orange
-        vm.iconSettings.symbolRenderingMode = .monochrome
-        vm.iconSettings.symbolColor = .white
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
-        return vm
-    }
-}
-
-struct ContentView_GridPreviews: PreviewProvider {
-    @MainActor static var previews: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 20) {
-                ContentView(viewModel: monoVM, showInspector: false)
-                    .previewDisplayName("Monochrome")
-                ContentView(viewModel: hierarchicalVM, showInspector: false)
-                    .previewDisplayName("Hierarchical")
-            }
-            HStack(spacing: 20) {
-                ContentView(viewModel: multicolorVM, showInspector: false)
-                    .previewDisplayName("Multicolor")
-                ContentView(viewModel: paletteVM, showInspector: false)
-                    .previewDisplayName("Palette")
-            }
-        }
-        .padding()
-        .previewDisplayName("Rendering Modes Grid")
-        .previewLayout(.fixed(width: 1500, height: 800))
-    }
-
-    @MainActor private static var monoVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.symbolName = "app"
-        vm.iconSettings.useCustomColors = false
-        vm.iconSettings.baseColor = .blue
-        vm.iconSettings.symbolRenderingMode = .monochrome
-        vm.iconSettings.symbolColor = .white
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
-        return vm
-    }
-
-    @MainActor private static var hierarchicalVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.symbolName = "folder.fill.badge.plus"
-        vm.iconSettings.useCustomColors = true
-        vm.iconSettings.customPrimaryColor = .green
-        vm.iconSettings.customSecondaryColor = .blue
-        vm.iconSettings.symbolRenderingMode = .hierarchical
-        vm.iconSettings.hierarchicalSymbolColor = .white
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
-        return vm
-    }
-
-    @MainActor private static var multicolorVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.symbolName = "drop.fill"
-        vm.iconSettings.useCustomColors = false
-        vm.iconSettings.baseColor = .gray
-        vm.iconSettings.symbolRenderingMode = .multicolor
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
-        return vm
-    }
-
-    @MainActor private static var paletteVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.symbolName = "paintpalette.fill"
-        vm.iconSettings.useCustomColors = true
-        vm.iconSettings.customPrimaryColor = .pink
-        vm.iconSettings.customSecondaryColor = .purple
-        vm.iconSettings.symbolRenderingMode = .palette
-        vm.iconSettings.paletteSymbolPrimaryColor = .white
-        vm.iconSettings.paletteSymbolSecondaryColor = .blue
-        vm.iconSettings.paletteSymbolTertiaryColor = .red
-        vm.iconSettings.showBadge = true
-        vm.iconSettings.badgeSymbolName = "star.fill"
-        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-        vm.iconSettings.badgeSymbolColor = .white
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
-        return vm
-    }
-}
+//struct ContentView_Previews: PreviewProvider {
+//    @MainActor static var previews: some View {
+//        Group {
+//            ContentView()
+//                .previewDisplayName("Default VM")
+//                .previewLayout(.fixed(width: 1200, height: 800))
+//            
+//            ContentView(viewModel: customVM, showInspector: false)
+//                .previewDisplayName("Custom VM")
+//                .previewLayout(.fixed(width: 1200, height: 800))
+//
+//
+//            ContentView(viewModel: IconViewModel())
+//                .previewDisplayName("Injected VM")
+//                .previewLayout(.fixed(width: 1200, height: 800))
+//
+//            ContentView(viewModel: retinaLargeVM)
+//                .previewDisplayName("Retina 1024px")
+//                .previewLayout(.fixed(width: 1200, height: 800))
+//        }
+//    }
+//
+//    @MainActor private static var customVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.iconGenerationMode = .system
+//        vm.iconSettings.symbolName = "gearshape.fill"
+//        vm.iconSettings.useCustomColors = true
+//        vm.iconSettings.customPrimaryColor = .blue
+//        vm.iconSettings.customSecondaryColor = .indigo
+//        vm.iconSettings.symbolRenderingMode = .monochrome
+//        vm.iconSettings.showBadge = true
+//        vm.iconSettings.badgePosition = .bottomRight
+//        vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
+//        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
+//        vm.iconSettings.badgeHierarchicalSymbolColor = .white
+//        vm.iconSettings.exportSize = 256
+//        vm.iconSettings.exportRetinaSize = false
+//        return vm
+//    }
+//
+//    @MainActor private static var retinaLargeVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.symbolName = "square"
+//        vm.iconSettings.useCustomColors = false
+//        vm.iconSettings.baseColor = .orange
+//        vm.iconSettings.symbolRenderingMode = .monochrome
+//        vm.iconSettings.symbolColor = .white
+//        vm.iconSettings.exportSize = 256
+//        vm.iconSettings.exportRetinaSize = false
+//        return vm
+//    }
+//}
+//
+//struct ContentView_GridPreviews: PreviewProvider {
+//    @MainActor static var previews: some View {
+//        VStack(spacing: 20) {
+//            HStack(spacing: 20) {
+//                ContentView(viewModel: monoVM, showInspector: false)
+//                    .previewDisplayName("Monochrome")
+//                ContentView(viewModel: hierarchicalVM, showInspector: false)
+//                    .previewDisplayName("Hierarchical")
+//            }
+//            HStack(spacing: 20) {
+//                ContentView(viewModel: multicolorVM, showInspector: false)
+//                    .previewDisplayName("Multicolor")
+//                ContentView(viewModel: paletteVM, showInspector: false)
+//                    .previewDisplayName("Palette")
+//            }
+//        }
+//        .padding()
+//        .previewDisplayName("Rendering Modes Grid")
+//        .previewLayout(.fixed(width: 1500, height: 800))
+//    }
+//
+//    @MainActor private static var monoVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.symbolName = "app"
+//        vm.iconSettings.useCustomColors = false
+//        vm.iconSettings.baseColor = .blue
+//        vm.iconSettings.symbolRenderingMode = .monochrome
+//        vm.iconSettings.symbolColor = .white
+//        vm.iconSettings.exportSize = 256
+//        vm.iconSettings.exportRetinaSize = false
+//        return vm
+//    }
+//
+//    @MainActor private static var hierarchicalVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.symbolName = "folder.fill.badge.plus"
+//        vm.iconSettings.useCustomColors = true
+//        vm.iconSettings.customPrimaryColor = .green
+//        vm.iconSettings.customSecondaryColor = .blue
+//        vm.iconSettings.symbolRenderingMode = .hierarchical
+//        vm.iconSettings.hierarchicalSymbolColor = .white
+//        vm.iconSettings.exportSize = 256
+//        vm.iconSettings.exportRetinaSize = false
+//        return vm
+//    }
+//
+//    @MainActor private static var multicolorVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.symbolName = "drop.fill"
+//        vm.iconSettings.useCustomColors = false
+//        vm.iconSettings.baseColor = .gray
+//        vm.iconSettings.symbolRenderingMode = .multicolor
+//        vm.iconSettings.exportSize = 256
+//        vm.iconSettings.exportRetinaSize = false
+//        return vm
+//    }
+//
+//    @MainActor private static var paletteVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.symbolName = "paintpalette.fill"
+//        vm.iconSettings.useCustomColors = true
+//        vm.iconSettings.customPrimaryColor = .pink
+//        vm.iconSettings.customSecondaryColor = .purple
+//        vm.iconSettings.symbolRenderingMode = .palette
+//        vm.iconSettings.paletteSymbolPrimaryColor = .white
+//        vm.iconSettings.paletteSymbolSecondaryColor = .blue
+//        vm.iconSettings.paletteSymbolTertiaryColor = .red
+//        vm.iconSettings.showBadge = true
+//        vm.iconSettings.badgeSymbolName = "star.fill"
+//        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
+//        vm.iconSettings.badgeSymbolColor = .white
+//        vm.iconSettings.exportSize = 256
+//        vm.iconSettings.exportRetinaSize = false
+//        return vm
+//    }
+//}
 
 #Preview {
     ContentView()

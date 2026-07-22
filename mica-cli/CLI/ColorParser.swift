@@ -500,6 +500,19 @@ struct ColorParser {
     }
 }
 
+// MARK: - Spelling Normalisation
+
+/// Accept British/Australian spellings in CLI token values by normalising
+/// `colour` → `color` and `grey` → `gray`. Returns a lowercased string, so use
+/// only where the consumer compares against lowercased US-spelled tokens
+/// (rendering modes, prerendered asset colour names, appex colour tokens) —
+/// not on free-form colour strings, which `ColorParser` already handles.
+func normalizeBritishSpelling(_ input: String) -> String {
+    input.lowercased()
+        .replacingOccurrences(of: "colour", with: "color")
+        .replacingOccurrences(of: "grey", with: "gray")
+}
+
 // MARK: - Enhanced Error Types
 
 enum ColorParseError: LocalizedError {

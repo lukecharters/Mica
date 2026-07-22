@@ -54,7 +54,10 @@ struct GetIconCommand: ParsableCommand {
     @Option(name: [.customLong("depth")], help: "Maximum nested depth to process when input is a directory (0 includes only direct children)")
     var depth: Int?
 
-    @Option(name: .long, help: ArgumentHelp("Color space to render the icon in: sRGB (default) or displayP3", valueName: "space"))
+    @Option(
+        name: [.customLong("color-space"), .customLong("colour-space")],
+        help: ArgumentHelp("Color space to render the icon in: sRGB (default) or displayP3", valueName: "space")
+    )
     var colorSpace: ExportColorSpace = .sRGB
 
     @OptionGroup(title: "Output")

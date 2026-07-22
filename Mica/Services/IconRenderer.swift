@@ -38,6 +38,18 @@ enum BadgeGeometry {
 }
 
 struct IconRenderer {
+    /// Integer supersampling factor for a nominal export pixel size. Exports
+    /// below 1024px are rendered at the smallest integer multiple that reaches
+    /// 1024 and downsampled. At 1x, shape frames are snapped to integral pixel
+    /// bounds while Core Text rounds SF Symbol glyph origins independently —
+    /// the two can disagree by up to a full device pixel, which reads as an
+    /// off-centre symbol (worst on badges at small sizes). Supersampling keeps
+    /// that mismatch sub-pixel in the output.
+    static func supersampleFactor(forPixelSize pixelSize: CGFloat) -> Int {
+        guard pixelSize > 0, pixelSize < 1024 else { return 1 }
+        return Int((1024 / pixelSize).rounded(.up))
+    }
+
     // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
     @MainActor
     static func renderIcon(settings: IconSettings, badgeAppexImage: NSImage? = nil) -> NSImage {
@@ -46,12 +58,17 @@ struct IconRenderer {
         let iconView = IconContentView(settings: settings, displaySize: exportSize, badgeAppexImage: badgeAppexImage)
             .frame(width: canvasSize, height: canvasSize)
 
+        let factor = supersampleFactor(forPixelSize: exportSize)
         let renderer = ImageRenderer(content: iconView)
-        renderer.scale = 1.0
+        renderer.scale = CGFloat(factor)
         renderer.isOpaque = false
 
         if let nsImage = renderer.nsImage {
-            let colorSpaceConverted = convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
+            let colorSpaceConverted = convertToColorSpace(
+                image: nsImage,
+                colorSpace: settings.exportColorSpace,
+                downsampleFactor: factor
+            )
             return setImageDPI(image: colorSpaceConverted, settings: settings)
         }
         return NSImage(size: CGSize(width: exportSize, height: exportSize))
@@ -88,12 +105,20 @@ struct IconRenderer {
         }
         .frame(width: canvasSize, height: canvasSize)
 
+        // Supersample only when a badge overlay is drawn — without one the view
+        // is a straight passthrough of the appex raster, and an upsample/downsample
+        // round trip would soften it for no benefit.
+        let factor = settings.showBadge ? supersampleFactor(forPixelSize: exportSize) : 1
         let renderer = ImageRenderer(content: compositeView)
-        renderer.scale = 1.0
+        renderer.scale = CGFloat(factor)
         renderer.isOpaque = false
 
         if let nsImage = renderer.nsImage {
-            let colorSpaceConverted = convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
+            let colorSpaceConverted = convertToColorSpace(
+                image: nsImage,
+                colorSpace: settings.exportColorSpace,
+                downsampleFactor: factor
+            )
             return setImageDPI(image: colorSpaceConverted, settings: settings)
         }
         return NSImage(size: CGSize(width: exportSize, height: exportSize))
@@ -131,15 +156,24 @@ struct IconRenderer {
         return newImage
     }
 
-    static func convertToColorSpace(image: NSImage, colorSpace: ExportColorSpace) -> NSImage {
+    static func convertToColorSpace(image: NSImage, colorSpace: ExportColorSpace, downsampleFactor: Int = 1) -> NSImage {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
         // Use the bitmap's own pixel dimensions. The logical size can be
         // fractional (badge overflow yields fractional canvases), and truncating
         // it would resample the whole image into a context up to 1px smaller.
-        let width = originalCGImage.width
-        let height = originalCGImage.height
+        // A supersampled render is the exception: it is deliberately reduced by
+        // its integer factor here, so conversion and downsample are one pass.
+        let width: Int
+        let height: Int
+        if downsampleFactor > 1 {
+            width = Int((Double(originalCGImage.width) / Double(downsampleFactor)).rounded())
+            height = Int((Double(originalCGImage.height) / Double(downsampleFactor)).rounded())
+        } else {
+            width = originalCGImage.width
+            height = originalCGImage.height
+        }
 
         let targetCGColorSpace: CGColorSpace = {
             switch colorSpace {
@@ -158,6 +192,7 @@ struct IconRenderer {
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { return image }
 
+        context.interpolationQuality = .high
         context.draw(originalCGImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         guard let newCGImage = context.makeImage() else { return image }
         return NSImage(cgImage: newCGImage, size: image.size)

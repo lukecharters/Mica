@@ -1,0 +1,96 @@
+# Contributing to Mica
+
+Thanks for your interest in contributing. Issues and pull requests are welcome.
+
+## AI-assisted contributions
+
+AI assisted contributions are welcome under the following criteria:
+
+1. You are a human who uses the app and found a problem or had an idea for a feature/improvement.
+2. You, a human, validated that the code builds, runs, and works as you expected.
+3. The build passes all existing tests and any new features have a test created for them.
+
+Drive-by AI pull requests will not be accepted.
+
+## Requirements
+
+- macOS 15 Sequoia or later (macOS 26 Tahoe to work on Liquid Glass / System mode features)
+- Xcode 16 or later
+
+## Building from source
+
+Clone the repository and open `Mica.xcodeproj` in Xcode. There are two main schemes:
+
+- **Mica** — the macOS app. The built app embeds the CLI binary.
+- **mica-cli** — the command-line tool.
+
+Or build from the command line:
+
+```shell
+xcodebuild build -project Mica.xcodeproj -scheme Mica -destination "generic/platform=macOS" -quiet
+```
+
+Use `generic/platform=macOS` (not `platform=macOS`) for builds — it builds all configured architectures, which is what you want for anything that will be distributed.
+
+There is no SwiftPM package; the CLI is an Xcode target whose sources live in `mica-cli/CLI/` and share `Mica/Models/` and `Mica/Services/` with the app.
+
+### Project layout
+
+| Path | Contents |
+|---|---|
+| `Mica/Models/` | Configuration models shared by the app and CLI (`IconSettings`, `GenerationMode`, …) |
+| `Mica/Services/` | The rendering engine (`IconRenderer`), export, symbol sizing, image import |
+| `Mica/ViewModels/` | `IconViewModel`, the app's state coordinator |
+| `Mica/Views/` | All SwiftUI views (sidebar, preview, symbol picker, controls) |
+| `mica-cli/CLI/` | CLI argument parsing and command implementations |
+| `MicaTests/`, `MicaUITests/`, `mica-cli Tests/` | Test targets |
+| `scripts/` | Packaging (`build-pkg`) and the end-to-end CLI smoke test |
+
+Both interfaces share the same models and services — a new feature should land in **both** the app and the CLI wherever it applies, with tests.
+
+## Running the tests
+
+Tests use the Swift Testing framework (`@Suite`, `@Test`, `#expect`).
+
+Run in Xcode via the Test Navigator, or from the command line (the signing overrides are needed for command-line test runs):
+
+```shell
+# App/shared-logic tests
+xcodebuild test -project Mica.xcodeproj -scheme Mica -destination "platform=macOS" \
+  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+# CLI tests (flag parsing and CLI contract)
+xcodebuild test -project Mica.xcodeproj -scheme mica-cli -destination "platform=macOS" \
+  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+# End-to-end CLI smoke test
+scripts/tests/cli-smoke-test.sh
+```
+
+Put tests for shared logic (`Models/`, `Services/`) in `MicaTests`; CLI flag-parsing tests belong in `mica-cli Tests`.
+
+Note: if you add a new source file under `mica-cli/CLI/`, it must also be added to the `mica-cli Tests` target's membership exceptions in `project.pbxproj` (the test bundle compiles the CLI sources directly).
+
+## Documentation and the wiki
+
+The GitHub wiki's source pages live in `wiki/` in this repository (a GitHub wiki is its own git repository, so the pages are versioned here and pushed across). To publish changes:
+
+```shell
+git clone https://github.com/OWNER/REPO.wiki.git /tmp/mica-wiki
+cp wiki/*.md /tmp/mica-wiki/
+cp -R wiki/images /tmp/mica-wiki/
+cd /tmp/mica-wiki && git add -A && git commit -m "Sync wiki from main repo" && git push
+```
+
+If a change alters CLI flags or app controls, update the matching wiki page (and the README if it touches the essentials shown there).
+
+## Commit style
+
+The project uses [Conventional Commits](https://www.conventionalcommits.org): `feat|fix|chore|docs|test|refactor|build|ci|style|perf`, with an optional scope, e.g. `feat(cli): add capture retry`.
+
+## Pull requests
+
+- Summarise the intent of the change.
+- List the test commands you ran.
+- Mention any documentation updates (README / wiki).
+- Include screenshots or terminal snippets when behaviour changes.
