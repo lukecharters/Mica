@@ -37,6 +37,18 @@ enum BadgeGeometry {
     }
 }
 
+/// Geometry for imported images that already carry the macOS icon grid's
+/// built-in margins (Finder/app icons extracted via NSWorkspace).
+enum ImportedImageGeometry {
+    /// Scale-up applied when "Icon Padding" compensation is on: a native macOS
+    /// icon's chiclet occupies 824 of its 1024-pixel canvas, so scaling the
+    /// image by 1024/824 makes that chiclet fill the target frame. Mica's own
+    /// chiclet ratio (enclosure 206 of a 256 canvas) is identical, which is
+    /// what lets a dropped app icon export pixel-for-pixel identical to
+    /// `mica-cli extract`. Shared by the icon and badge background paths.
+    static let paddingCompensationFactor: CGFloat = 1024.0 / 824.0 // ≈ 1.2427
+}
+
 struct IconRenderer {
     /// Integer supersampling factor for a nominal export pixel size. Exports
     /// below 1024px are rendered at the smallest integer multiple that reaches
@@ -405,7 +417,8 @@ struct IconContentView: View {
             case .importedImage:
                 if let nsImage = settings.importedBackground?.nsImage {
                     let effectiveScale = settings.importedBackgroundScale
-                        * (settings.importedBackgroundPaddingCompensation ? paddingCompensationFactor : 1.0)
+                        * (settings.importedBackgroundPaddingCompensation
+                            ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
                     Image(nsImage: nsImage)
                         .resizable()
                         .interpolation(.high)
@@ -449,9 +462,6 @@ struct IconContentView: View {
             view
         }
     }
-
-    /// Padding compensation factor for imported app icons that already include macOS icon padding/shadow.
-    private let paddingCompensationFactor: CGFloat = 1.22
 
     @ViewBuilder
     private var iconContent: some View {
@@ -536,7 +546,8 @@ struct BadgeView: View {
             ZStack {
                 if showsImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
                     let effectiveScale = settings.badgeImportedBackgroundScale
-                        * (settings.badgeImportedBackgroundPaddingCompensation ? 1.22 : 1.0)
+                        * (settings.badgeImportedBackgroundPaddingCompensation
+                            ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
                     Image(nsImage: nsImage)
                         .resizable()
                         .interpolation(.high)
