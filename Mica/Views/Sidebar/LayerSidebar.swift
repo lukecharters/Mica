@@ -255,16 +255,15 @@ private struct LayerThumbnail: View {
     let badgeAppexSymbolColor: AppexColor
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(.clear))
+        CheckerboardBackground()
             .overlay {
                 content.padding(4)
             }
-//            .overlay(
-//                RoundedRectangle(cornerRadius: 8, style: .continuous)
-//                    .stroke(Color.secondary.opacity(0.25), lineWidth: 0.5)
-//            )
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 1)
+            )
     }
 
     @ViewBuilder
@@ -421,6 +420,35 @@ private struct BadgeBackgroundThumb: View {
         return settings.badgeEnableBackgroundGradient
             ? AnyShapeStyle(settings.badgeBaseColor.gradient)
             : AnyShapeStyle(settings.badgeBaseColor)
+    }
+}
+
+/// Fixed mid-tone transparency grid behind each sub-thumb so light content
+/// stays visible on the light sidebar and dark content in dark mode.
+/// `.primary`-derived tones keep the checker equally subtle in both appearances.
+private struct CheckerboardBackground: View {
+    var squareSize: CGFloat = 2.25
+
+    var body: some View {
+        Canvas { context, size in
+            context.fill(
+                Path(CGRect(origin: .zero, size: size)),
+                with: .color(.primary.opacity(0.01))
+            )
+            let cols = Int(ceil(size.width / squareSize))
+            let rows = Int(ceil(size.height / squareSize))
+            for row in 0..<rows {
+                for col in 0..<cols where (row + col).isMultiple(of: 2) {
+                    let square = CGRect(
+                        x: CGFloat(col) * squareSize,
+                        y: CGFloat(row) * squareSize,
+                        width: squareSize,
+                        height: squareSize
+                    )
+                    context.fill(Path(square), with: .color(.primary.opacity(0.25)))
+                }
+            }
+        }
     }
 }
 
