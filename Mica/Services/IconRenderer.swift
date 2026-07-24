@@ -283,6 +283,12 @@ struct IconContentView: View {
     /// Debug-playground hook: when non-nil, replaces the preset derived from
     /// `settings.backgroundShadowStyle`. Production paths leave this nil.
     var shadowOverride: ShadowStyle? = nil
+    /// Debug-playground hook: when true, the custom-colour icon background is
+    /// filled with SwiftUI's automatic `Color.gradient` (top-light → bottom-dark),
+    /// matching the gradient macOS/IconServices bakes onto appex enclosures by
+    /// default. Lets the calibration playground's "Ours" render match the
+    /// System Icon reference. Production paths leave this false.
+    var forceAutoBackgroundGradient: Bool = false
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
@@ -436,13 +442,15 @@ struct IconContentView: View {
                 if settings.useCustomColors {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(
-                            settings.enableBackgroundGradient
-                                ? AnyShapeStyle(LinearGradient(
-                                    gradient: Gradient(colors: settings.gradientColors),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ))
-                                : AnyShapeStyle(settings.customPrimaryColor)
+                            forceAutoBackgroundGradient
+                                ? AnyShapeStyle(settings.customPrimaryColor.gradient)
+                                : settings.enableBackgroundGradient
+                                    ? AnyShapeStyle(LinearGradient(
+                                        gradient: Gradient(colors: settings.gradientColors),
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ))
+                                    : AnyShapeStyle(settings.customPrimaryColor)
                         )
                         .padding(backgroundInset)
                         .shadow(

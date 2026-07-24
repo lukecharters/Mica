@@ -30,6 +30,11 @@ struct IconComparisonPlayground: View {
     // to the real gates in IconSettings.
     @State private var bgShadowEnabled: Bool = true
 
+    // Applies SwiftUI's automatic `.gradient` to the icon background in the
+    // "Ours" render, matching the gradient macOS bakes onto appex enclosures by
+    // default. On by default so "Ours" matches the System Icon reference.
+    @State private var autoBackgroundGradient: Bool = true
+
     // Reference image + alignment transform (applied inside its cell,
     // independent of the shared zoom/pan).
     @State private var referenceSource: ReferenceSource = .screenshot
@@ -159,8 +164,13 @@ struct IconComparisonPlayground: View {
                     .controlSize(.small)
             }
             ColorPicker("Background", selection: $settings.customPrimaryColor)
+            Toggle("Auto Gradient (.gradient)", isOn: $autoBackgroundGradient)
+            Text("Matches the gradient macOS applies to appex enclosures by default.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             Toggle("Background Gradient", isOn: $settings.enableBackgroundGradient)
-            if settings.enableBackgroundGradient {
+                .disabled(autoBackgroundGradient)
+            if settings.enableBackgroundGradient && !autoBackgroundGradient {
                 ColorPicker("Gradient End", selection: $settings.customSecondaryColor)
             }
             ColorPicker("Symbol", selection: $settings.symbolColor)
@@ -611,7 +621,12 @@ struct IconComparisonPlayground: View {
     /// reference while letting the badge overflow draw.
     private var ourRenderView: some View {
         let canvas = IconContentView.totalCanvasSize(for: settings, displaySize: renderSize)
-        return IconContentView(settings: settings, displaySize: renderSize, shadowOverride: effectiveShadow)
+        return IconContentView(
+            settings: settings,
+            displaySize: renderSize,
+            shadowOverride: effectiveShadow,
+            forceAutoBackgroundGradient: autoBackgroundGradient
+        )
             .frame(width: canvas, height: canvas)
             .frame(width: renderSize, height: renderSize)
     }
