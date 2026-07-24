@@ -59,10 +59,19 @@ struct BadgeSourceSection: View {
         }
     }
 
+    /// Whether the current name resolves to a real SF Symbol, so the label can
+    /// show its glyph without blanking out on a partially-typed name.
+    private var symbolNameIsValid: Bool {
+        !iconSettings.badgeSymbolName.isEmpty
+            && NSImage(systemSymbolName: iconSettings.badgeSymbolName, accessibilityDescription: nil) != nil
+    }
+
     /// SF Symbol name field with a button that opens the full symbol browser.
     private var symbolField: some View {
         HStack(spacing: 8) {
-            TextField("Symbol", text: $iconSettings.badgeSymbolName)
+            TextField(text: $iconSettings.badgeSymbolName, prompt: Text("Symbol")) {
+                Label("Symbol", systemImage: symbolNameIsValid ? iconSettings.badgeSymbolName : "questionmark.square.dashed")
+            }
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
             Button(action: { showSymbolPicker = true }) {

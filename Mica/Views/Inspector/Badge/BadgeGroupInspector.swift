@@ -7,7 +7,7 @@ import SwiftUI
 /// appex badge are surfaced here too.
 struct BadgeGroupInspector: View {
     @Binding var iconSettings: IconSettings
-    /// Custom/System picker binding, owned by `LayerControls` so the same restore
+    /// Custom/System picker binding, owned by `InspectorControls` so the same restore
     /// state is shared with the badge child-layer inspectors.
     @Binding var badgeMode: Bool
     var colorOptions: [(name: String, color: Color)] = []

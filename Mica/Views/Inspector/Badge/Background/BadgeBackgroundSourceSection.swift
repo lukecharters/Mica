@@ -6,7 +6,7 @@ struct BadgeBackgroundSourceSection: View {
 
     var body: some View {
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.badgeUseImportedBackground) {
-            Text("Standard").tag(false)
+            Text("Native").tag(false)
             Text("Imported").tag(true)
         }
         .pickerStyle(.segmented)

@@ -7,7 +7,7 @@ extension GenerationMode {
     var systemImageName: String {
         switch self {
         case .mica: "slider.horizontal.3"
-        case .system: "command"
+        case .system: "gearshape.2.fill"
         }
     }
 

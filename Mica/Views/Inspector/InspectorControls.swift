@@ -1,4 +1,4 @@
-// Views/Sidebar/LayerControls.swift
+// Views/Sidebar/InspectorControls.swift
 import SwiftUI
 
 /// Shared UserDefaults keys for sidebar-wide preferences read by multiple
@@ -9,7 +9,7 @@ enum SidebarSettings {
 
 /// Renders the Source / Layout / Appearance controls for whichever layer (or group)
 /// is selected in the left LayerSidebar.
-struct LayerControls: View {
+struct InspectorControls: View {
     let selection: LayerSelection
     @Binding var iconSettings: IconSettings
     @Binding var appexEnclosureColor: AppexColor
@@ -35,7 +35,7 @@ struct LayerControls: View {
 
     /// Remembers the badge's previously-picked non-system source so toggling
     /// System → Mica restores the user's choice instead of forcing `.sfSymbol`.
-    /// Owned here (rather than in `BadgeGroupInspector`) because `LayerControls`
+    /// Owned here (rather than in `BadgeGroupInspector`) because `InspectorControls`
     /// stays mounted across every layer selection, so the tracked value never goes
     /// stale when the user toggles the mode from a child-layer inspector.
     @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
@@ -170,29 +170,30 @@ struct LayerControls: View {
                 .padding(.bottom, 8)
 
             if isIconAppleReference {
-                Form {
-                    Section("Source", isExpanded: $iconSourceExpanded) {
-                        IconSourceSection(
-                            iconSettings: $iconSettings,
-                            isSystem: true
-                        )
-                        .padding(4)
+                VStack(spacing: Self.sectionSpacing) {
+                    sectionForm {
+                        Section("Source", isExpanded: $iconSourceExpanded) {
+                            IconSourceSection(
+                                iconSettings: $iconSettings,
+                                isSystem: true
+                            )
+                            .padding(4)
+                        }
                     }
 
-                    Section("Appearance", isExpanded: $iconAppearanceExpanded) {
-                        IconAppearanceSection(
-                            iconSettings: $iconSettings,
-                            colorOptions: colorOptions,
-                            isAppleReference: true,
-                            appexSymbolColor: $appexSymbolColor,
-                            appexEnclosureColor: $appexEnclosureColor
-                        )
-                        .padding(4)
+                    sectionForm {
+                        Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+                            IconAppearanceSection(
+                                iconSettings: $iconSettings,
+                                colorOptions: colorOptions,
+                                isAppleReference: true,
+                                appexSymbolColor: $appexSymbolColor,
+                                appexEnclosureColor: $appexEnclosureColor
+                            )
+                            .padding(4)
+                        }
                     }
                 }
-                .formStyle(GroupedFormStyle())
-                .scrollDisabled(true)
-                .fixedSize(horizontal: false, vertical: true)
             } else {
                 // Mica mode: the group has Foreground + Background children. Show
                 // both children's controls inline so the group header is a combined
@@ -221,125 +222,155 @@ struct LayerControls: View {
 
     @ViewBuilder
     private var iconForegroundControls: some View {
-        Form {
-            Section("Source", isExpanded: $iconSourceExpanded) {
-                IconSourceSection(
-                    iconSettings: $iconSettings,
-                    isSystem: false
-                )
-                .padding(4)
+        VStack(spacing: Self.sectionSpacing) {
+            sectionForm {
+                Section("Source", isExpanded: $iconSourceExpanded) {
+                    IconSourceSection(
+                        iconSettings: $iconSettings,
+                        isSystem: false
+                    )
+                    .padding(4)
+                }
             }
-            Section("Layout", isExpanded: $iconLayoutExpanded) {
-                IconLayoutSection(iconSettings: $iconSettings)
-                .padding(4)
+            sectionForm {
+                Section("Layout", isExpanded: $iconLayoutExpanded) {
+                    IconLayoutSection(iconSettings: $iconSettings)
+                    .padding(4)
+                }
             }
-
-            Section("Appearance", isExpanded: $iconAppearanceExpanded) {
-                IconAppearanceSection(
-                    iconSettings: $iconSettings,
-                    colorOptions: colorOptions,
-                    isAppleReference: false,
-                    appexSymbolColor: $appexSymbolColor,
-                    appexEnclosureColor: $appexEnclosureColor
-                )
-                .padding(4)
+            sectionForm {
+                Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+                    IconAppearanceSection(
+                        iconSettings: $iconSettings,
+                        colorOptions: colorOptions,
+                        isAppleReference: false,
+                        appexSymbolColor: $appexSymbolColor,
+                        appexEnclosureColor: $appexEnclosureColor
+                    )
+                    .padding(4)
+                }
             }
         }
-        .padding(.bottom, 12)
-        .formStyle(GroupedFormStyle())
-        .scrollDisabled(true)
-        .fixedSize(horizontal: false, vertical: true)
+        .padding(.bottom, 20)
     }
 
     // MARK: - Icon Background (Mica mode)
 
     @ViewBuilder
     private var iconBackgroundControls: some View {
-        Form {
-            Section("Source", isExpanded: $backgroundSourceExpanded) {
-                BackgroundSourceSection(iconSettings: $iconSettings)
-                    .padding(4)
+        VStack(spacing: Self.sectionSpacing) {
+            sectionForm {
+                Section("Source", isExpanded: $backgroundSourceExpanded) {
+                    BackgroundSourceSection(iconSettings: $iconSettings)
+                        .padding(4)
+                }
             }
 
             if iconSettings.backgroundMode == .importedImage {
-                Section("Layout", isExpanded: $backgroundLayoutExpanded) {
-                    BackgroundLayoutSection(iconSettings: $iconSettings)
+                sectionForm {
+                    Section("Layout", isExpanded: $backgroundLayoutExpanded) {
+                        BackgroundLayoutSection(iconSettings: $iconSettings)
+                        .padding(4)
+                    }
+                }
+            }
+
+            sectionForm {
+                Section("Appearance", isExpanded: $backgroundAppearanceExpanded) {
+                    BackgroundAppearanceSection(
+                        iconSettings: $iconSettings,
+                        colorOptions: colorOptions
+                    )
                     .padding(4)
                 }
-
-            }
-
-            Section("Appearance", isExpanded: $backgroundAppearanceExpanded) {
-                BackgroundAppearanceSection(
-                    iconSettings: $iconSettings,
-                    colorOptions: colorOptions
-                )
-                .padding(4)
             }
         }
-        .formStyle(GroupedFormStyle())
-        .scrollDisabled(true)
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Badge Foreground (Mica mode)
 
     @ViewBuilder
     private var badgeForegroundControls: some View {
-        Form {
-            Section("Source", isExpanded: $badgeSourceExpanded) {
-                BadgeSourceSection(
-                    iconSettings: $iconSettings,
-                    isSystem: false
-                )
-                .padding(4)
-            }
-            Section("Layout", isExpanded: $badgeLayoutExpanded) {
-                BadgeLayoutSection(iconSettings: $iconSettings)
+        VStack(spacing: Self.sectionSpacing) {
+            sectionForm {
+                Section("Source", isExpanded: $badgeSourceExpanded) {
+                    BadgeSourceSection(
+                        iconSettings: $iconSettings,
+                        isSystem: false
+                    )
                     .padding(4)
+                }
             }
-            Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
-                BadgeAppearanceSection(
-                    iconSettings: $iconSettings,
-                    colorOptions: colorOptions,
-                    badgeAppexSymbolColor: $badgeAppexSymbolColor,
-                    badgeAppexEnclosureColor: $badgeAppexEnclosureColor
-                )
-                .padding(4)
+            sectionForm {
+                Section("Layout", isExpanded: $badgeLayoutExpanded) {
+                    BadgeLayoutSection(iconSettings: $iconSettings)
+                        .padding(4)
+                }
+            }
+            sectionForm {
+                Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
+                    BadgeAppearanceSection(
+                        iconSettings: $iconSettings,
+                        colorOptions: colorOptions,
+                        badgeAppexSymbolColor: $badgeAppexSymbolColor,
+                        badgeAppexEnclosureColor: $badgeAppexEnclosureColor
+                    )
+                    .padding(4)
+                }
             }
         }
-        .formStyle(GroupedFormStyle())
-        .scrollDisabled(true)
-        .fixedSize(horizontal: false, vertical: true)
+        .padding(.bottom, 20)
     }
 
     // MARK: - Badge Background (Mica mode)
 
     @ViewBuilder
     private var badgeBackgroundControls: some View {
-        Form {
-            Section("Source", isExpanded: $badgeBackgroundSourceExpanded) {
-                BadgeBackgroundSourceSection(iconSettings: $iconSettings)
-                    .padding(4)
-            }
-
-            if iconSettings.badgeUseImportedBackground {
-                Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
-                    BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
+        VStack(spacing: Self.sectionSpacing) {
+            sectionForm {
+                Section("Source", isExpanded: $badgeBackgroundSourceExpanded) {
+                    BadgeBackgroundSourceSection(iconSettings: $iconSettings)
                         .padding(4)
                 }
             }
 
-            Section("Appearance", isExpanded: $badgeBackgroundAppearanceExpanded) {
-                BadgeBackgroundAppearanceSection(
-                    iconSettings: $iconSettings,
-                    colorOptions: colorOptions
-                )
-                .padding(4)
+            if iconSettings.badgeUseImportedBackground {
+                sectionForm {
+                    Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
+                        BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
+                            .padding(4)
+                    }
+                }
+            }
+
+            sectionForm {
+                Section("Appearance", isExpanded: $badgeBackgroundAppearanceExpanded) {
+                    BadgeBackgroundAppearanceSection(
+                        iconSettings: $iconSettings,
+                        colorOptions: colorOptions
+                    )
+                    .padding(4)
+                }
             }
         }
-        .formStyle(GroupedFormStyle())
-        .scrollDisabled(true)
-        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: - Section layout helpers
+
+    /// Vertical gap between the per-section grouped forms. macOS gives no API to
+    /// space `Section`s inside a single grouped `Form`, so each section is its own
+    /// single-section grouped form and this drives the gap between them.
+    private static let sectionSpacing: CGFloat = 20
+
+    /// Wraps a single `Section` in its own grouped, non-scrolling form so a
+    /// surrounding `VStack(spacing:)` controls the inter-section spacing.
+    @ViewBuilder
+    private func sectionForm<Content: View>(
+        @ViewBuilder _ content: () -> Content
+    ) -> some View {
+        Form { content() }
+            .formStyle(GroupedFormStyle())
+            .scrollDisabled(true)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

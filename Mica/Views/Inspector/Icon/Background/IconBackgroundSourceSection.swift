@@ -6,7 +6,7 @@ struct BackgroundSourceSection: View {
 
     var body: some View {
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
-            Text("Standard").tag(BackgroundMode.custom)
+            Text("Native").tag(BackgroundMode.custom)
             Text("Pre-Rendered").tag(BackgroundMode.preRendered)
             Text("Imported").tag(BackgroundMode.importedImage)
         }

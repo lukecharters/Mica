@@ -17,14 +17,12 @@ struct InspectorPanel: View {
     let badgeAppexHasImage: Bool
 
     var body: some View {
-        // EXPERIMENT: hosted by a native `.inspector` in `ContentView`, which owns the
-        // trailing column's material, width, and resize. The old parent-driven `width`
-        // frame and opaque `windowBackgroundColor` are gone so native inspector styling
-        // shows through.
+        // Hosted by a native `.inspector` in `ContentView`, which owns the
+        // trailing column's material, width, and resize.
         Group {
             switch tab {
             case .controls:
-                LayerControls(
+                InspectorControls(
                     selection: selection,
                     iconSettings: $iconSettings,
                     appexEnclosureColor: $appexEnclosureColor,

@@ -59,11 +59,20 @@ struct IconSourceSection: View {
         }
     }
 
+    /// Whether the current name resolves to a real SF Symbol, so the label can
+    /// show its glyph without blanking out on a partially-typed name.
+    private var symbolNameIsValid: Bool {
+        !iconSettings.symbolName.isEmpty
+            && NSImage(systemSymbolName: iconSettings.symbolName, accessibilityDescription: nil) != nil
+    }
+
     /// SF Symbol name field with a button that opens the full symbol browser.
     private var symbolField: some View {
         HStack(spacing: 8) {
-            TextField("Symbol", text: $iconSettings.symbolName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            TextField(text: $iconSettings.symbolName, prompt: Text("Symbol")) {
+                Label("Symbol", systemImage: symbolNameIsValid ? iconSettings.symbolName : "questionmark.square.dashed")
+            }
+            .textFieldStyle(RoundedBorderTextFieldStyle())
             Button(action: { showSymbolPicker = true }) {
                 Image(systemName: "square.grid.2x2.fill")
             }
