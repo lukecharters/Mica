@@ -8,11 +8,12 @@ import CoreGraphics
 /// `IconRenderer.renderAppexWithBadge`) and both previews (`ScaledIconPreview`,
 /// `AppexPreviewPane`) so the numbers cannot drift between copies.
 enum BadgeGeometry {
+    
     /// Badge diameter as a fraction of the enclosure (80% of the native 100px).
     static let diameterRatio: CGFloat = 80.0 / 208.0    // ≈ 0.3846
     /// Badge anchor from enclosure center — asymmetric, matches native macOS.
     static let anchorXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
-    static let anchorYRatio: CGFloat = 80.0 / 208.0     // ≈ 0.3846
+    static let anchorYRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3846
     /// Shadow buffer beyond the badge edge (proportional to the 80px badge).
     static let shadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269
 
@@ -83,8 +84,8 @@ struct ShadowStyle: Equatable {
     // only the background shadow varies by OS style today. A future
     // `.macOS27` preset is where those values would start to diverge.
     static let macOS26 = ShadowStyle(
-        background: CanvasShadow(radius: 3.6, offsetY: 2.5, opacity: 0.30),
-        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.23),
+        background: CanvasShadow(radius: 3.6, offsetY: 2.5, opacity: 0.23),
+        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.15),
         badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
         badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
     )
