@@ -33,7 +33,7 @@ struct ContentView: View {
     /// Optional preview-only override of the icon's display point size, used to
     /// simulate how the icon reads in an MDM self service portal. `nil` = export size.
     @State private var previewPointSize: CGFloat? = nil
-    @State private var selection: LayerSelection = .group(.icon)
+    @State private var selectedGroup: IconLayerGroup = .icon
     @State private var appexService = AppexReferenceService()
     /// NavigationSplitView experiment: drives the sidebar column instead of the old
     /// `showLayerSidebar` flag. `.all` shows the sidebar; `.detailOnly` hides it.
@@ -60,11 +60,7 @@ struct ContentView: View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             LayerSidebar(
                 iconSettings: $viewModel.iconSettings,
-                selection: $selection,
-                appexEnclosureColor: viewModel.appexEnclosureColor,
-                appexSymbolColor: viewModel.appexSymbolColor,
-                badgeAppexEnclosureColor: viewModel.badgeAppexEnclosureColor,
-                badgeAppexSymbolColor: viewModel.badgeAppexSymbolColor
+                selection: $selectedGroup
             )
             .navigationSplitViewColumnWidth(
                 min: sidebarRange.lowerBound,
@@ -115,7 +111,7 @@ struct ContentView: View {
                 badgeAppexEnclosureColor: $viewModel.badgeAppexEnclosureColor,
                 badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
                 showExportDialog: $viewModel.showExportDialog,
-                selection: selection,
+                group: selectedGroup,
                 tab: inspectorTab,
                 colorOptions: colorOptions,
                 appexHasImage: viewModel.appexRenderedImage != nil,
@@ -159,17 +155,6 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
-        // Child-selection → group migration on generation-mode switch. Owned
-        // here rather than by LayerSidebar: the sidebar column can be hidden
-        // (columnVisibility == .detailOnly) while the mode is flipped from the
-        // inspector's GroupModePicker, and an unmounted view's onChange never
-        // fires — leaving the selection on a child row that no longer exists.
-        .onChange(of: viewModel.iconSettings.iconGenerationMode) { _, _ in
-            migrateSelection(for: .icon)
-        }
-        .onChange(of: viewModel.iconSettings.badgeIconSource) { _, _ in
-            migrateSelection(for: .badge)
-        }
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
             document: viewModel.iconSettings.iconGenerationMode == .system
@@ -193,21 +178,6 @@ struct ContentView: View {
             case .failure(let error):
                 print("Failed to save icon: \(error.localizedDescription)")
             }
-        }
-    }
-
-    /// When a group switches into System mode its child rows disappear from
-    /// the sidebar; collapse a stale child selection to the group header so
-    /// the inspector doesn't keep showing Custom-mode controls.
-    private func migrateSelection(for group: IconLayerGroup) {
-        guard case .layer(let g, _) = selection, g == group else { return }
-        let isSystem: Bool
-        switch group {
-        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .system
-        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .system
-        }
-        if isSystem {
-            selection = .group(group)
         }
     }
 

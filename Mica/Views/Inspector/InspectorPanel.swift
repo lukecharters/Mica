@@ -10,7 +10,7 @@ struct InspectorPanel: View {
     @Binding var badgeAppexEnclosureColor: AppexColor
     @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var showExportDialog: Bool
-    let selection: LayerSelection
+    let group: IconLayerGroup
     let tab: InspectorTab
     let colorOptions: [(name: String, color: Color)]
     let appexHasImage: Bool
@@ -23,7 +23,7 @@ struct InspectorPanel: View {
             switch tab {
             case .controls:
                 InspectorControls(
-                    selection: selection,
+                    group: group,
                     iconSettings: $iconSettings,
                     appexEnclosureColor: $appexEnclosureColor,
                     appexSymbolColor: $appexSymbolColor,

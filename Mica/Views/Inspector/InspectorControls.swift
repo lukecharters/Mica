@@ -7,10 +7,10 @@ enum SidebarSettings {
     static let advancedControlsKey = "sidebar.advancedControls"
 }
 
-/// Renders the Source / Layout / Appearance controls for whichever layer (or group)
-/// is selected in the left LayerSidebar.
+/// Renders the Source / Layout / Appearance controls for whichever group is
+/// selected in the left LayerSidebar.
 struct InspectorControls: View {
-    let selection: LayerSelection
+    let group: IconLayerGroup
     @Binding var iconSettings: IconSettings
     @Binding var appexEnclosureColor: AppexColor
     @Binding var appexSymbolColor: AppexColor
@@ -61,10 +61,10 @@ struct InspectorControls: View {
     private var controlsScrollView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                switch selection {
-                case .group(.icon):
+                switch group {
+                case .icon:
                     iconGroupControls
-                case .group(.badge):
+                case .badge:
                     BadgeGroupInspector(
                         iconSettings: $iconSettings,
                         badgeMode: badgeModeBinding,
@@ -75,22 +75,14 @@ struct InspectorControls: View {
                     if !isBadgeAppleReference {
                         // Mica mode: surface the Foreground + Background children
                         // inline beneath the group-level layout controls.
-                        layerSectionHeader(LayerRole.foreground.label)
+                        layerSectionHeader(LayerTab.foreground.label)
                         badgeForegroundControls
-                        layerSectionHeader(LayerRole.background.label)
+                        layerSectionHeader(LayerTab.background.label)
                         badgeBackgroundControls
                     }
-                case .layer(.icon, .foreground):
-                    layerWithModePicker(iconModeBinding) { iconForegroundControls }
-                case .layer(.icon, .background):
-                    layerWithModePicker(iconModeBinding) { iconBackgroundControls }
-                case .layer(.badge, .foreground):
-                    layerWithModePicker(badgeModeBinding) { badgeForegroundControls }
-                case .layer(.badge, .background):
-                    layerWithModePicker(badgeModeBinding) { badgeBackgroundControls }
                 }
             }
-            .id(selection)
+            .id(group)
         }
         .onAppear {
             if iconSettings.badgeIconSource != .system {
@@ -198,9 +190,9 @@ struct InspectorControls: View {
                 // Mica mode: the group has Foreground + Background children. Show
                 // both children's controls inline so the group header is a combined
                 // editor in addition to being individually selectable in the sidebar.
-                layerSectionHeader(LayerRole.foreground.label)
+                layerSectionHeader(LayerTab.foreground.label)
                 iconForegroundControls
-                layerSectionHeader(LayerRole.background.label)
+                layerSectionHeader(LayerTab.background.label)
                 iconBackgroundControls
             }
         }

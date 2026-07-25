@@ -1,6 +1,23 @@
 // Models/LayerTab.swift
 import Foundation
 
+/// Top-level object selected in the LayerSidebar. Each group owns a generation
+/// mode and, in Mica mode, a set of editable layers exposed as inspector tabs
+/// (see `LayerTab`).
+enum IconLayerGroup: String, CaseIterable, Identifiable, Hashable {
+    case icon
+    case badge
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .icon: "Icon"
+        case .badge: "Badge"
+        }
+    }
+}
+
 /// Which aspect of the selected group the inspector is editing. Rendered as a
 /// segmented tab bar at the top of the inspector (Keynote's Format-inspector
 /// pattern) rather than as child rows in the sidebar.
