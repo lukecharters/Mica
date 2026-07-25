@@ -36,8 +36,9 @@ struct IconSourceSection: View {
 
     var body: some View {
         if isSystem {
-            // System mode renders the icon as a single appex image — no separately
-            // hideable foreground layer, so no Visible toggle here.
+            // System mode renders the icon as one appex image, so visibility is
+            // all-or-nothing for the group rather than per layer.
+            LayerVisibleToggle(isHidden: $iconSettings.iconHidden)
             symbolField
         } else {
             LayerVisibleToggle(isHidden: $iconSettings.iconForegroundHidden)

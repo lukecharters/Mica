@@ -113,6 +113,63 @@ struct AppexRenderingStructuralTests {
         )
     }
 
+    // MARK: - Icon group visibility
+
+    @Test("Hiding the icon group drops the appex raster from the composite")
+    func appexComposite_iconHidden_isTransparent() throws {
+        var settings = IconSettings()
+        settings.exportSize = 256
+        settings.exportRetinaSize = false
+        settings.showBadge = false
+        settings.iconHidden = true
+
+        let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
+        let output = IconRenderer.renderAppexWithBadge(
+            appexImage: appex,
+            settings: settings,
+            badgeAppexImage: nil
+        )
+
+        // Nothing is drawn, so no opaque pixels survive anywhere.
+        let quadrants = try #require(IconRenderingAssertions.quadrantAverageColors(of: output))
+        for (name, color) in [
+            ("topLeft",     quadrants.topLeft),
+            ("topRight",    quadrants.topRight),
+            ("bottomLeft",  quadrants.bottomLeft),
+            ("bottomRight", quadrants.bottomRight)
+        ] {
+            #expect(color.alphaComponent < 0.05,
+                    "Hidden icon group must leave quadrant \(name) transparent. A=\(color.alphaComponent)")
+        }
+    }
+
+    @Test("Hiding the icon group keeps the badge, leaving a badge-only render")
+    func appexComposite_iconHiddenWithBadge_keepsBadge() throws {
+        var settings = IconSettings()
+        settings.exportSize = 256
+        settings.exportRetinaSize = false
+        settings.showBadge = true
+        settings.badgePosition = .bottomRight
+        settings.badgeIconSource = .system
+        settings.iconHidden = true
+
+        let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
+        let badgeAppex = Self.solidColorImage(.green, size: 1024)
+
+        let output = IconRenderer.renderAppexWithBadge(
+            appexImage: appex,
+            settings: settings,
+            badgeAppexImage: badgeAppex
+        )
+
+        let quadrants = try #require(IconRenderingAssertions.quadrantAverageColors(of: output))
+        // The badge still lands bottom-right; the icon's red is gone everywhere.
+        #expect(quadrants.bottomRight.alphaComponent > quadrants.topLeft.alphaComponent,
+                "Badge must still draw with the icon hidden. BR.A=\(quadrants.bottomRight.alphaComponent), TL.A=\(quadrants.topLeft.alphaComponent)")
+        #expect(quadrants.topLeft.alphaComponent < 0.05,
+                "Hidden icon group must leave the badge-free topLeft quadrant transparent. A=\(quadrants.topLeft.alphaComponent)")
+    }
+
     // MARK: - Slow path: AppexReferenceService.renderForExport
 
     @Test("AppexReferenceService.renderForExport returns a sized non-empty image for star.fill",

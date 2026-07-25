@@ -66,11 +66,19 @@ struct AppexPreviewPane: View {
             .frame(width: size, height: size)
         } else if let image = viewModel.appexRenderedImage {
             ZStack {
-                Image(nsImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
-                    .frame(width: size, height: size)
+                // Hiding the icon group hides the appex render, same as hiding both
+                // layers does in Mica mode. Without this gate the sidebar's group
+                // eye and the Visible toggle would appear to do nothing here.
+                if !viewModel.iconSettings.iconHidden {
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .antialiased(true)
+                        .frame(width: size, height: size)
+                } else {
+                    Color.clear
+                        .frame(width: size, height: size)
+                }
 
                 if viewModel.iconSettings.showBadge {
                     let enclosureSize = size * (1 - 50.0 / 256.0)

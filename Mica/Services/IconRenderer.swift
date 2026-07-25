@@ -166,10 +166,17 @@ struct IconRenderer {
         let badgeSize = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
 
         let compositeView = ZStack {
-            Image(nsImage: appexImage)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: exportSize, height: exportSize)
+            // Mirrors the Mica path: a hidden icon group isn't drawn, leaving just
+            // the badge on a transparent canvas.
+            if !settings.iconHidden {
+                Image(nsImage: appexImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: exportSize, height: exportSize)
+            } else {
+                Color.clear
+                    .frame(width: exportSize, height: exportSize)
+            }
 
             if settings.showBadge {
                 BadgeView(

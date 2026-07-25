@@ -63,7 +63,10 @@ struct IconDocument: FileDocument {
                 scaleFactor: params.scaleFactor,
                 colorSpace: params.colorSpace
             )
-            if settings.showBadge {
+            // A hidden icon group also needs the compositing path: the raw appex
+            // raster can only be used as-is when the icon is visible and there's
+            // no badge to overlay.
+            if settings.showBadge || settings.iconHidden {
                 if Thread.isMainThread {
                     image = MainActor.assumeIsolated {
                         IconRenderer.renderAppexWithBadge(
