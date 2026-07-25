@@ -39,6 +39,9 @@ struct ContentView: View {
     /// launches (matching the sidebar selection, which also resets to Icon).
     @State private var iconTab: LayerTab = .defaultTab(for: .icon)
     @State private var badgeTab: LayerTab = .defaultTab(for: .badge)
+    /// Incremented on every canvas click. The selection outline restarts its fade
+    /// when this changes, so clicking the already-selected layer still flashes it.
+    @State private var selectionPulse: Int = 0
     @State private var appexService = AppexReferenceService()
     /// NavigationSplitView experiment: drives the sidebar column instead of the old
     /// `showLayerSidebar` flag. `.all` shows the sidebar; `.detailOnly` hides it.
@@ -92,7 +95,8 @@ struct ContentView: View {
                         zoomLevel: $zoomLevel,
                         previewPointSize: $previewPointSize,
                         onSelect: select,
-                        selection: currentPreviewSelection
+                        selection: currentPreviewSelection,
+                        selectionPulse: selectionPulse
                     )
                 }
             }
@@ -213,6 +217,7 @@ struct ContentView: View {
     /// only moves for a group in Mica mode — a System group has no tabs, so
     /// selecting the group is the whole story there.
     private func select(_ target: PreviewHitTarget) {
+        selectionPulse += 1
         selectedGroup = target.group
         switch target.group {
         case .icon where viewModel.iconSettings.iconGenerationMode == .mica:
@@ -242,7 +247,8 @@ struct ContentView: View {
                     badgeAppexImage: viewModel.badgeAppexRenderedImage,
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
-                    selection: currentPreviewSelection
+                    selection: currentPreviewSelection,
+                    selectionPulse: selectionPulse
                 )
 //                .padding()
 
@@ -277,6 +283,9 @@ struct ScaledIconPreview: View {
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview. nil draws nothing.
     var selection: PreviewSelection? = nil
+    /// Bumped on each canvas click so re-clicking the selected layer re-shows the
+    /// outline after it has faded.
+    var selectionPulse: Int = 0
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -320,7 +329,13 @@ struct ScaledIconPreview: View {
                    settings: settings,
                    displaySize: displaySize
                ) {
-                SelectionOutline(shape: shape, canvasSize: canvasSize, displaySize: displaySize)
+                SelectionOutline(
+                    shape: shape,
+                    canvasSize: canvasSize,
+                    displaySize: displaySize,
+                    selection: selection,
+                    pulse: selectionPulse
+                )
             }
 
             // Draggable badge overlay

@@ -2,7 +2,8 @@
 import SwiftUI
 
 /// Accent outline tracing the layer the inspector is editing, the way Icon
-/// Composer marks the selected element.
+/// Composer marks the selected element — but it fades out after a moment so it
+/// doesn't sit over the artwork while you judge colours.
 ///
 /// Preview-only chrome: it lives here rather than in `IconContentView` so it can
 /// never reach an export. Its geometry comes from
@@ -15,6 +16,26 @@ struct SelectionOutline: View {
     /// Scales the stroke with the preview so it stays hairline-thin when zoomed out
     /// and doesn't turn into a thick band when zoomed in.
     var displaySize: CGFloat
+    /// Which layer this outline is for. Changing it restarts the fade.
+    var selection: PreviewSelection
+    /// Bumped by the owner on every canvas click, so clicking the layer that's
+    /// already selected re-shows the outline instead of doing nothing visible.
+    var pulse: Int = 0
+    /// Set false to hold the outline indefinitely (used by previews).
+    var autoFade: Bool = true
+
+    /// How long the outline stays at full strength before fading.
+    private static let holdDuration: Duration = .milliseconds(1600)
+    private static let fadeDuration: TimeInterval = 0.45
+
+    @State private var isVisible = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Restart key: either a different layer, or another click on the same one.
+    private struct FadeKey: Equatable {
+        let selection: PreviewSelection
+        let pulse: Int
+    }
 
     private var lineWidth: CGFloat {
         // 1.5pt at the 256pt reference, clamped so extreme zooms stay usable.
@@ -43,6 +64,19 @@ struct SelectionOutline: View {
         }
         .frame(width: canvasSize, height: canvasSize)
         .allowsHitTesting(false)
+        .opacity(isVisible ? 1 : 0)
+        // Reduce Motion keeps the behaviour but drops the cross-fade.
+        .animation(reduceMotion ? nil : .easeOut(duration: Self.fadeDuration), value: isVisible)
+        .task(id: FadeKey(selection: selection, pulse: pulse)) {
+            guard autoFade else {
+                isVisible = true
+                return
+            }
+            isVisible = true
+            try? await Task.sleep(for: Self.holdDuration)
+            guard !Task.isCancelled else { return }
+            isVisible = false
+        }
     }
 }
 
@@ -72,7 +106,10 @@ struct SelectionOutline: View {
                         SelectionOutline(
                             shape: shape,
                             canvasSize: IconContentView.totalCanvasSize(for: settings, displaySize: displaySize),
-                            displaySize: displaySize
+                            displaySize: displaySize,
+                            selection: selection,
+                            // Hold them so the preview is inspectable.
+                            autoFade: false
                         )
                     }
                 }

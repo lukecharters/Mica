@@ -17,6 +17,9 @@ struct AppexPreviewPane: View {
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview.
     var selection: PreviewSelection? = nil
+    /// Bumped on each canvas click so re-clicking the selected layer re-shows the
+    /// outline after it has faded.
+    var selectionPulse: Int = 0
 
     var body: some View {
         previewContent
@@ -122,7 +125,13 @@ struct AppexPreviewPane: View {
                        displaySize: size,
                        canvasSize: size
                    ) {
-                    SelectionOutline(shape: shape, canvasSize: size, displaySize: size)
+                    SelectionOutline(
+                        shape: shape,
+                        canvasSize: size,
+                        displaySize: size,
+                        selection: selection,
+                        pulse: selectionPulse
+                    )
                 }
             }
             .contentShape(Rectangle())
