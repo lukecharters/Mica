@@ -36,8 +36,12 @@ struct BadgeSourceSection: View {
 
     var body: some View {
         if isSystem {
+            // System mode renders the badge as a single appex image — no separately
+            // hideable foreground layer, so no Visible toggle here.
             symbolField
         } else {
+            LayerVisibleToggle(isHidden: $iconSettings.badgeForegroundHidden)
+
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in
                     Text(type.rawValue).tag(type)

@@ -5,6 +5,8 @@ struct BadgeBackgroundSourceSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
+        LayerVisibleToggle(isHidden: $iconSettings.badgeBackgroundHidden)
+
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.badgeUseImportedBackground) {
             Text("Native").tag(false)
             Text("Imported").tag(true)

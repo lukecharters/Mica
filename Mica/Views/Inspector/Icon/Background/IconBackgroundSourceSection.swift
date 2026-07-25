@@ -5,6 +5,8 @@ struct BackgroundSourceSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
+        LayerVisibleToggle(isHidden: $iconSettings.iconBackgroundHidden)
+
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
             Text("Native").tag(BackgroundMode.custom)
             Text("Pre-Rendered").tag(BackgroundMode.preRendered)
