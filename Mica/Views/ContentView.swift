@@ -90,7 +90,8 @@ struct ContentView: View {
                         viewModel: viewModel,
                         appexService: appexService,
                         zoomLevel: $zoomLevel,
-                        previewPointSize: $previewPointSize
+                        previewPointSize: $previewPointSize,
+                        onSelect: select
                     )
                 }
             }
@@ -188,6 +189,27 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Canvas selection
+
+    /// Points the inspector at the layer the user clicked in the preview. The tab
+    /// only moves for a group in Mica mode — a System group has no tabs, so
+    /// selecting the group is the whole story there.
+    private func select(_ target: PreviewHitTarget) {
+        selectedGroup = target.group
+        switch target.group {
+        case .icon where viewModel.iconSettings.iconGenerationMode == .mica:
+            iconTab = target.tab
+        case .badge where viewModel.iconSettings.badgeGenerationMode == .mica:
+            badgeTab = target.tab
+        default:
+            break
+        }
+        // Show the controls that were just targeted, even if the user was on the
+        // Export tab or had the inspector closed.
+        inspectorTab = .controls
+        if !showInspector { showInspector = true }
+    }
+
     // MARK: - Preview Pane
 
     private var previewPane: some View {
@@ -200,7 +222,8 @@ struct ContentView: View {
                     settings: $viewModel.iconSettings,
                     displaySize: previewDisplaySize,
                     badgeAppexImage: viewModel.badgeAppexRenderedImage,
-                    badgeAppexError: viewModel.badgeAppexError
+                    badgeAppexError: viewModel.badgeAppexError,
+                    onSelect: select
                 )
 //                .padding()
 
@@ -230,6 +253,9 @@ struct ScaledIconPreview: View {
     let displaySize: CGFloat
     var badgeAppexImage: NSImage? = nil
     var badgeAppexError: String? = nil
+    /// Click-to-select: reports which layer the click landed on so the owner can
+    /// point the inspector at it. See `PreviewHitTester`.
+    var onSelect: ((PreviewHitTarget) -> Void)? = nil
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -271,6 +297,27 @@ struct ScaledIconPreview: View {
             }
         }
         .frame(width: canvasSize, height: canvasSize, alignment: .center)
+        // Attached after the frame so the tap location is in canvas coordinates,
+        // which is what PreviewHitTester expects.
+        //
+        // simultaneousGesture, not .onTapGesture: the badge overlay is a child with
+        // its own DragGesture, and a child's gesture normally wins arbitration
+        // against the parent's. Recognizing simultaneously keeps a click on the
+        // badge from being swallowed. The two still can't fight — a tap needs the
+        // pointer to stay put, so a real drag fails the tap, and a stationary click
+        // never reaches the drag's 2pt minimum.
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            SpatialTapGesture(coordinateSpace: .local)
+                .onEnded { value in
+                    guard let target = PreviewHitTester.target(
+                        at: value.location,
+                        settings: settings,
+                        displaySize: displaySize
+                    ) else { return }
+                    onSelect?(target)
+                }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.3),

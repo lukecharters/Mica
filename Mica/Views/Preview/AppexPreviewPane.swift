@@ -11,6 +11,10 @@ struct AppexPreviewPane: View {
     /// etc.); `nil` follows the export size. Owned by `ContentView`, driven by the
     /// toolbar's `PreviewSizeMenu`.
     @Binding var previewPointSize: CGFloat?
+    /// Click-to-select, as in `ScaledIconPreview`. The icon is a single appex image
+    /// here, so clicking it reports the background layer and the owner collapses
+    /// that to the Icon group; a Mica-composited badge still resolves its layers.
+    var onSelect: ((PreviewHitTarget) -> Void)? = nil
 
     var body: some View {
         previewContent
@@ -96,6 +100,18 @@ struct AppexPreviewPane: View {
                         .offset(badgeOffset)
                     }
                 }
+            }
+            // The badge is offset rather than laid out, so it doesn't grow this
+            // frame — any part of it hanging outside the image isn't clickable.
+            .frame(width: size, height: size)
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                guard let target = PreviewHitTester.systemTarget(
+                    at: location,
+                    settings: viewModel.iconSettings,
+                    iconSize: size
+                ) else { return }
+                onSelect?(target)
             }
         } else if let error = viewModel.appexError {
             ContentUnavailableView(
