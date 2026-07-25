@@ -433,7 +433,7 @@ private struct CheckerboardBackground: View {
         Canvas { context, size in
             context.fill(
                 Path(CGRect(origin: .zero, size: size)),
-                with: .color(.primary.opacity(0.01))
+                with: .color(.primary.opacity(0.015))
             )
             let cols = Int(ceil(size.width / squareSize))
             let rows = Int(ceil(size.height / squareSize))
@@ -445,7 +445,7 @@ private struct CheckerboardBackground: View {
                         width: squareSize,
                         height: squareSize
                     )
-                    context.fill(Path(square), with: .color(.primary.opacity(0.25)))
+                    context.fill(Path(square), with: .color(.primary.opacity(0.15)))
                 }
             }
         }
