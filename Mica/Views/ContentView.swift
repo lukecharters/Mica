@@ -34,6 +34,11 @@ struct ContentView: View {
     /// simulate how the icon reads in an MDM self service portal. `nil` = export size.
     @State private var previewPointSize: CGFloat? = nil
     @State private var selectedGroup: IconLayerGroup = .icon
+    /// Active inspector tab per group, remembered while the app runs so switching
+    /// between Icon and Badge returns to where you left off. Not persisted across
+    /// launches (matching the sidebar selection, which also resets to Icon).
+    @State private var iconTab: LayerTab = .defaultTab(for: .icon)
+    @State private var badgeTab: LayerTab = .defaultTab(for: .badge)
     @State private var appexService = AppexReferenceService()
     /// NavigationSplitView experiment: drives the sidebar column instead of the old
     /// `showLayerSidebar` flag. `.all` shows the sidebar; `.detailOnly` hides it.
@@ -112,6 +117,8 @@ struct ContentView: View {
                 badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
                 showExportDialog: $viewModel.showExportDialog,
                 group: selectedGroup,
+                iconTab: $iconTab,
+                badgeTab: $badgeTab,
                 tab: inspectorTab,
                 colorOptions: colorOptions,
                 appexHasImage: viewModel.appexRenderedImage != nil,

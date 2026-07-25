@@ -1,4 +1,4 @@
-// Views/Sidebar/InspectorControls.swift
+// Views/Inspector/InspectorControls.swift
 import SwiftUI
 
 /// Shared UserDefaults keys for sidebar-wide preferences read by multiple
@@ -7,10 +7,15 @@ enum SidebarSettings {
     static let advancedControlsKey = "sidebar.advancedControls"
 }
 
-/// Renders the Source / Layout / Appearance controls for whichever group is
-/// selected in the left LayerSidebar.
+/// Renders the controls for whichever group is selected in the left LayerSidebar:
+/// the group's Mica/System picker, then — in Mica mode — a `LayerTabPicker` and
+/// the Source / Layout / Appearance sections for the active tab. System mode has
+/// no tabs and shows a single pane instead.
 struct InspectorControls: View {
     let group: IconLayerGroup
+    /// Active tab per group, owned by ContentView so a canvas click can drive it.
+    @Binding var iconTab: LayerTab
+    @Binding var badgeTab: LayerTab
     @Binding var iconSettings: IconSettings
     @Binding var appexEnclosureColor: AppexColor
     @Binding var appexSymbolColor: AppexColor
@@ -31,13 +36,15 @@ struct InspectorControls: View {
     @AppStorage("sidebar.badgeBackgroundSource.expanded") private var badgeBackgroundSourceExpanded = true
     @AppStorage("sidebar.badgeBackgroundLayout.expanded") private var badgeBackgroundLayoutExpanded = true
     @AppStorage("sidebar.badgeBackgroundAppearance.expanded") private var badgeBackgroundAppearanceExpanded = true
+    /// Moved here from the dissolved BadgeGroupInspector; key kept so existing
+    /// user state carries over.
+    @AppStorage("sidebar.badgeGroupLayout.expanded") private var badgeGroupLayoutExpanded = true
     @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
 
     /// Remembers the badge's previously-picked non-system source so toggling
     /// System → Mica restores the user's choice instead of forcing `.sfSymbol`.
-    /// Owned here (rather than in `BadgeGroupInspector`) because `InspectorControls`
-    /// stays mounted across every layer selection, so the tracked value never goes
-    /// stale when the user toggles the mode from a child-layer inspector.
+    /// Owned here because `InspectorControls` stays mounted across every group and
+    /// tab change, so the tracked value never goes stale.
     @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
 
     var body: some View {
@@ -65,24 +72,12 @@ struct InspectorControls: View {
                 case .icon:
                     iconGroupControls
                 case .badge:
-                    BadgeGroupInspector(
-                        iconSettings: $iconSettings,
-                        badgeMode: badgeModeBinding,
-                        colorOptions: colorOptions,
-                        badgeAppexSymbolColor: $badgeAppexSymbolColor,
-                        badgeAppexEnclosureColor: $badgeAppexEnclosureColor
-                    )
-                    if !isBadgeAppleReference {
-                        // Mica mode: surface the Foreground + Background children
-                        // inline beneath the group-level layout controls.
-                        layerSectionHeader(LayerTab.foreground.label)
-                        badgeForegroundControls
-                        layerSectionHeader(LayerTab.background.label)
-                        badgeBackgroundControls
-                    }
+                    badgeGroupControls
                 }
             }
-            .id(group)
+            // Reset scroll position when the user moves to another group or tab,
+            // so a long pane doesn't leave the next one scrolled halfway down.
+            .id("\(group.rawValue).\(activeTab.rawValue)")
         }
         .onAppear {
             if iconSettings.badgeIconSource != .system {
@@ -96,21 +91,10 @@ struct InspectorControls: View {
         }
     }
 
-    /// Wraps a child layer's controls with the parent group's Mica/System picker
-    /// at the top, so the generation mode can be switched without first navigating
-    /// back to the group header.
-    @ViewBuilder
-    private func layerWithModePicker<Content: View>(
-        _ mode: Binding<Bool>,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            GroupModePicker(isSystem: mode)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
-            content()
-        }
+    /// The tab currently driving the selected group's pane. Meaningless in System
+    /// mode (no tabs), but still fine to read — it just doesn't change there.
+    private var activeTab: LayerTab {
+        group == .icon ? iconTab : badgeTab
     }
 
     private var isIconAppleReference: Bool {
@@ -148,66 +132,136 @@ struct InspectorControls: View {
         )
     }
 
-    // MARK: - Icon group (header selected)
+    // MARK: - Group panes
 
+    /// Icon: mode picker, then either the single System pane or the tabbed
+    /// Foreground / Background panes.
     @ViewBuilder
     private var iconGroupControls: some View {
-        // In System mode the group is the only selectable target for the icon, so
-        // expose the appex Source + Appearance directly. In Mica mode, prompt
-        // the user to pick a child layer.
-        VStack(alignment: .leading, spacing: 0) {
-            GroupModePicker(isSystem: iconModeBinding)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
-
-            if isIconAppleReference {
-                VStack(spacing: Self.sectionSpacing) {
-                    sectionForm {
-                        Section("Source", isExpanded: $iconSourceExpanded) {
-                            IconSourceSection(
-                                iconSettings: $iconSettings,
-                                isSystem: true
-                            )
-                            .padding(4)
-                        }
-                    }
-
-                    sectionForm {
-                        Section("Appearance", isExpanded: $iconAppearanceExpanded) {
-                            IconAppearanceSection(
-                                iconSettings: $iconSettings,
-                                colorOptions: colorOptions,
-                                isAppleReference: true,
-                                appexSymbolColor: $appexSymbolColor,
-                                appexEnclosureColor: $appexEnclosureColor
-                            )
-                            .padding(4)
-                        }
+        groupPane(mode: iconModeBinding, tab: $iconTab, isSystem: isIconAppleReference) {
+            // System mode renders the whole icon as one appex image, so only its
+            // source symbol and colours are editable.
+            VStack(spacing: Self.sectionSpacing) {
+                sectionForm {
+                    Section("Source", isExpanded: $iconSourceExpanded) {
+                        IconSourceSection(
+                            iconSettings: $iconSettings,
+                            isSystem: true
+                        )
+                        .padding(4)
                     }
                 }
-            } else {
-                // Mica mode: the group has Foreground + Background children. Show
-                // both children's controls inline so the group header is a combined
-                // editor in addition to being individually selectable in the sidebar.
-                layerSectionHeader(LayerTab.foreground.label)
-                iconForegroundControls
-                layerSectionHeader(LayerTab.background.label)
-                iconBackgroundControls
+
+                sectionForm {
+                    Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+                        IconAppearanceSection(
+                            iconSettings: $iconSettings,
+                            colorOptions: colorOptions,
+                            isAppleReference: true,
+                            appexSymbolColor: $appexSymbolColor,
+                            appexEnclosureColor: $appexEnclosureColor
+                        )
+                        .padding(4)
+                    }
+                }
+            }
+        } tabContent: { tab in
+            switch tab {
+            case .foreground, .layout: iconForegroundControls // .layout is badge-only
+            case .background:          iconBackgroundControls
             }
         }
     }
 
-    /// Header delineating a child layer's controls when both are shown together
-    /// under a selected group header.
+    /// Badge: mode picker, then either the single System pane (which keeps the
+    /// group-level layout controls, since position and size are applied when the
+    /// appex badge is composited) or the tabbed Layout / Foreground / Background
+    /// panes.
     @ViewBuilder
-    private func layerSectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.title3.weight(.semibold))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 2)
+    private var badgeGroupControls: some View {
+        groupPane(mode: badgeModeBinding, tab: $badgeTab, isSystem: isBadgeAppleReference) {
+            VStack(spacing: Self.sectionSpacing) {
+                sectionForm {
+                    Section("Source", isExpanded: $badgeSourceExpanded) {
+                        BadgeSourceSection(
+                            iconSettings: $iconSettings,
+                            isSystem: true
+                        )
+                        .padding(4)
+                    }
+                }
+
+                sectionForm {
+                    Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
+                        BadgeAppearanceSection(
+                            iconSettings: $iconSettings,
+                            colorOptions: colorOptions,
+                            badgeAppexSymbolColor: $badgeAppexSymbolColor,
+                            badgeAppexEnclosureColor: $badgeAppexEnclosureColor
+                        )
+                        .padding(4)
+                    }
+                }
+
+                badgeLayoutSectionForm
+            }
+        } tabContent: { tab in
+            switch tab {
+            case .layout:     badgeLayoutControls
+            case .foreground: badgeForegroundControls
+            case .background: badgeBackgroundControls
+            }
+        }
+    }
+
+    /// Shared frame for both groups: the Mica/System picker, the layer tab bar
+    /// (Mica only), and whichever pane those two select.
+    @ViewBuilder
+    private func groupPane<SystemPane: View, TabPane: View>(
+        mode: Binding<Bool>,
+        tab: Binding<LayerTab>,
+        isSystem: Bool,
+        @ViewBuilder systemContent: () -> SystemPane,
+        @ViewBuilder tabContent: (LayerTab) -> TabPane
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            GroupModePicker(isSystem: mode)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
+
+            if isSystem {
+                systemContent()
+            } else {
+                LayerTabPicker(group: group, selection: tab)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+
+                tabContent(tab.wrappedValue)
+            }
+        }
+    }
+
+    // MARK: - Badge Layout (Mica mode)
+
+    @ViewBuilder
+    private var badgeLayoutControls: some View {
+        VStack(spacing: Self.sectionSpacing) {
+            badgeLayoutSectionForm
+        }
+        .padding(.bottom, 20)
+    }
+
+    /// Badge-wide position / offset / size. Shared by the Mica-mode Layout tab and
+    /// the System-mode pane.
+    @ViewBuilder
+    private var badgeLayoutSectionForm: some View {
+        sectionForm {
+            Section("Badge Layout", isExpanded: $badgeGroupLayoutExpanded) {
+                BadgeGroupLayoutSection(iconSettings: $iconSettings)
+                    .padding(4)
+            }
+        }
     }
 
     // MARK: - Icon Foreground (Mica mode)
@@ -365,4 +419,58 @@ struct InspectorControls: View {
             .scrollDisabled(true)
             .fixedSize(horizontal: false, vertical: true)
     }
+}
+
+// MARK: - Previews
+
+/// Host that supplies the bindings `InspectorControls` needs, so each preview
+/// below is a one-liner.
+private struct InspectorControlsPreview: View {
+    let group: IconLayerGroup
+    var isSystem: Bool = false
+    @State private var settings = IconSettings()
+    @State private var iconTab: LayerTab = .foreground
+    @State private var badgeTab: LayerTab = .layout
+    @State private var enclosure: AppexColor = .blue
+    @State private var symbol: AppexColor = .white
+    @State private var badgeEnclosure: AppexColor = .blue
+    @State private var badgeSymbol: AppexColor = .white
+
+    var body: some View {
+        InspectorControls(
+            group: group,
+            iconTab: $iconTab,
+            badgeTab: $badgeTab,
+            iconSettings: $settings,
+            appexEnclosureColor: $enclosure,
+            appexSymbolColor: $symbol,
+            badgeAppexEnclosureColor: $badgeEnclosure,
+            badgeAppexSymbolColor: $badgeSymbol,
+            colorOptions: OptionsCatalog.colorOptions
+        )
+        .frame(width: 380, height: 700)
+        .onAppear {
+            settings.showBadge = true
+            switch group {
+            case .icon:  settings.iconGenerationMode = isSystem ? .system : .mica
+            case .badge: settings.badgeIconSource = isSystem ? .system : .sfSymbol
+            }
+        }
+    }
+}
+
+#Preview("Icon") {
+    InspectorControlsPreview(group: .icon)
+}
+
+#Preview("Icon — System") {
+    InspectorControlsPreview(group: .icon, isSystem: true)
+}
+
+#Preview("Badge") {
+    InspectorControlsPreview(group: .badge)
+}
+
+#Preview("Badge — System") {
+    InspectorControlsPreview(group: .badge, isSystem: true)
 }
