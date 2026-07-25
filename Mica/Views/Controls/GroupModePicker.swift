@@ -23,10 +23,8 @@ extension GenerationMode {
 /// top of a group's inspector (Icon / Badge) so the user can switch that group
 /// between Mica's SwiftUI rendering and Apple's system reference.
 ///
-/// Uses the native segmented `Picker` rather than hand-rolled capsules so it
-/// renders as the macOS 26 Liquid Glass pill (matching Pages/Keynote inspectors)
-/// and degrades to the classic segmented control on macOS 15. `LayerTabPicker`
-/// is the sibling control directly beneath it — keep the two visually aligned.
+/// Uses `FillingSegmentedPicker` so it spans the inspector width, matching
+/// `LayerTabPicker` directly beneath it — keep the two visually aligned.
 struct GroupModePicker: View {
     @Binding var isSystem: Bool
 
@@ -43,15 +41,11 @@ struct GroupModePicker: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            Picker("Generation Mode", selection: selection) {
-                ForEach(GenerationMode.allCases) { mode in
-                    Label(mode.label, systemImage: mode.systemImageName)
-                        .tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.large)
+            FillingSegmentedPicker(
+                segments: GenerationMode.allCases.map { ($0.label, $0) },
+                selection: selection,
+                accessibilityLabel: "Generation Mode"
+            )
         }
         .padding(.top, 8)
         .padding(.bottom, 12)

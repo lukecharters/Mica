@@ -3,8 +3,8 @@ import SwiftUI
 
 /// Segmented tab bar for the layers within a group — Foreground / Background for
 /// the icon, plus Layout for the badge. Sits directly beneath `GroupModePicker`
-/// at the top of the inspector and uses the same native segmented style, so on
-/// macOS 26 both read as Liquid Glass pills (the Pages/Keynote inspector pattern).
+/// at the top of the inspector and uses the same full-width segmented control
+/// (the Pages/Keynote inspector pattern).
 ///
 /// Only shown in Mica mode: `LayerTab.availableTabs(for:isSystem:)` is empty in
 /// System mode, where the group renders as a single appex image with no
@@ -14,17 +14,11 @@ struct LayerTabPicker: View {
     @Binding var selection: LayerTab
 
     var body: some View {
-        Picker("Layer", selection: $selection) {
-            ForEach(LayerTab.availableTabs(for: group, isSystem: false)) { tab in
-                Text(tab.label).tag(tab)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .controlSize(.large)
-        // Intrinsic width, leading-aligned by the caller. A segmented Picker on
-        // macOS keeps its intrinsic size — maxWidth: .infinity only centers it —
-        // so don't try to stretch it to the inspector's width.
+        FillingSegmentedPicker(
+            segments: LayerTab.availableTabs(for: group, isSystem: false).map { ($0.label, $0) },
+            selection: $selection,
+            accessibilityLabel: "Layer"
+        )
     }
 }
 
