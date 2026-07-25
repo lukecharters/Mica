@@ -1,4 +1,4 @@
-// Views/Sidebar/GroupModePicker.swift
+// Views/Controls/GroupModePicker.swift
 import SwiftUI
 
 /// Views-layer display metadata for `GenerationMode` (kept out of the shared
@@ -22,40 +22,36 @@ extension GenerationMode {
 /// Two-state segmented control: Mica vs System for a single group. Shown at the
 /// top of a group's inspector (Icon / Badge) so the user can switch that group
 /// between Mica's SwiftUI rendering and Apple's system reference.
+///
+/// Uses the native segmented `Picker` rather than hand-rolled capsules so it
+/// renders as the macOS 26 Liquid Glass pill (matching Pages/Keynote inspectors)
+/// and degrades to the classic segmented control on macOS 15. `LayerTabPicker`
+/// is the sibling control directly beneath it — keep the two visually aligned.
 struct GroupModePicker: View {
     @Binding var isSystem: Bool
 
-    private var selection: GenerationMode {
-        isSystem ? .system : .mica
+    private var selection: Binding<GenerationMode> {
+        Binding(
+            get: { isSystem ? .system : .mica },
+            set: { isSystem = ($0 == .system) }
+        )
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("Generation Mode").font(.headline)
-            HStack(spacing: 0) {
-                ForEach(GenerationMode.allCases) { segment in
-                    Button {
-                        isSystem = (segment == .system)
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: segment.systemImageName)
-                                .symbolRenderingMode(.monochrome)
-                            Text(segment.label)
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(selection == segment
-                                      ? Color.accentColor
-                                      : Color.primary.opacity(0.1))
-                        )
-                        .foregroundStyle(selection == segment ? Color.white : .primary)
-                    }
-                    .buttonStyle(.borderless)
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Generation Mode")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Picker("Generation Mode", selection: selection) {
+                ForEach(GenerationMode.allCases) { mode in
+                    Label(mode.label, systemImage: mode.systemImageName)
+                        .tag(mode)
                 }
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .controlSize(.large)
         }
         .padding(.top, 8)
         .padding(.bottom, 12)
