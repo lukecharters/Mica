@@ -11,9 +11,9 @@ enum BadgeGeometry {
     
     /// Badge diameter as a fraction of the enclosure (80% of the native 100px).
     static let diameterRatio: CGFloat = 80.0 / 208.0    // ≈ 0.3846
-    /// Badge anchor from enclosure center — asymmetric, matches native macOS.
+    /// Badge anchor from enclosure center, matching native macOS.
     static let anchorXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
-    static let anchorYRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3846
+    static let anchorYRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
     /// Shadow buffer beyond the badge edge (proportional to the 80px badge).
     static let shadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269
 
@@ -80,9 +80,8 @@ struct ShadowStyle: Equatable {
     var badgeBackground: BadgeShadow
     var badgeSymbol: BadgeShadow
 
-    // Symbol and badge shadows are intentionally identical across presets —
-    // only the background shadow varies by OS style today. A future
-    // `.macOS27` preset is where those values would start to diverge.
+    // Badge shadows are identical across presets; the canvas background and
+    // symbol shadows differ — macOS 26 lightened both relative to Sequoia.
     static let macOS26 = ShadowStyle(
         background: CanvasShadow(radius: 3.6, offsetY: 2.5, opacity: 0.23),
         symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.15),

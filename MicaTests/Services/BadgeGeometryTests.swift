@@ -35,12 +35,14 @@ struct BadgeGeometryTests {
         (.bottomLeft,  -1, +1)
     ]
 
-    @Test("Offset anchors are ±76/208 and ±80/208 of the enclosure", arguments: positionSigns)
+    @Test("Offset anchors are ±76/208 of the enclosure on both axes", arguments: positionSigns)
     func offset_matchesAnchorRatios(_ arg: (position: BadgePosition, xSign: CGFloat, ySign: CGFloat)) {
-        let enclosure: CGFloat = 208 // makes expected values exactly 76 and 80
+        let enclosure: CGFloat = 208 // makes the expected value exactly 76
         let offset = BadgeGeometry.offset(for: Self.settings(position: arg.position), enclosureSize: enclosure)
         #expect(offset.width == arg.xSign * 76)
-        #expect(offset.height == arg.ySign * 80)
+        // The Y anchor was 80/208 until the badge anchor was made symmetric in
+        // 1b1a985 ("removed default badge offset").
+        #expect(offset.height == arg.ySign * 76)
     }
 
     @Test("Manual offset adds linearly in enclosure fractions")
