@@ -313,6 +313,135 @@ struct PreviewHitTesterTests {
         #expect(PreviewHitTester.enclosureSize(displaySize: iconSize) == iconSize * (1 - 50.0 / 256.0))
     }
 
+    // MARK: - PreviewSelection mapping
+
+    @Test("Group + tab maps to the layer the preview should outline")
+    func previewSelection_fromGroupAndTab() {
+        #expect(PreviewSelection.from(group: .icon, tab: .foreground, isSystem: false) == .iconForeground)
+        #expect(PreviewSelection.from(group: .icon, tab: .background, isSystem: false) == .iconBackground)
+        #expect(PreviewSelection.from(group: .badge, tab: .foreground, isSystem: false) == .badgeForeground)
+        #expect(PreviewSelection.from(group: .badge, tab: .background, isSystem: false) == .badgeBackground)
+        // The badge's Layout tab edits the badge as a whole.
+        #expect(PreviewSelection.from(group: .badge, tab: .layout, isSystem: false) == .badge)
+    }
+
+    @Test("System mode outlines the whole group regardless of tab", arguments: LayerTab.allCases)
+    func previewSelection_systemIsWholeGroup(tab: LayerTab) {
+        #expect(PreviewSelection.from(group: .icon, tab: tab, isSystem: true) == .icon)
+        #expect(PreviewSelection.from(group: .badge, tab: tab, isSystem: true) == .badge)
+    }
+
+    // MARK: - Selection outline geometry
+
+    private static func shape(_ selection: PreviewSelection, _ settings: IconSettings) -> PreviewSelectionShape? {
+        PreviewHitTester.selectionShape(
+            for: selection,
+            settings: settings,
+            displaySize: displaySize,
+            symbolSizing: sizing,
+            badgeSymbolSizing: sizing
+        )
+    }
+
+    @Test("Icon background outlines the chiclet at the enclosure and corner radius")
+    func selectionShape_iconBackground() throws {
+        var s = IconSettings()
+        s.cornerRadiusStyle = .macOS26
+        let centre = Self.canvasCentre(s)
+        let enclosure = Self.enclosure()
+
+        guard case .roundedRect(let rect, let cornerRadius)? = Self.shape(.iconBackground, s) else {
+            Issue.record("Expected a rounded rect for the icon background")
+            return
+        }
+        #expect(rect.width == enclosure)
+        #expect(rect.height == enclosure)
+        #expect(rect.midX == centre.x)
+        #expect(rect.midY == centre.y)
+        #expect(cornerRadius == 54 * (Self.displaySize / 256))
+    }
+
+    @Test("System-mode icon outlines the same chiclet as the icon background")
+    func selectionShape_iconWholeMatchesBackground() {
+        let s = IconSettings()
+        #expect(Self.shape(.icon, s) == Self.shape(.iconBackground, s))
+    }
+
+    @Test("Icon foreground outlines the symbol box")
+    func selectionShape_iconForeground() throws {
+        let s = IconSettings()
+        let expectedSide = Self.enclosure() * Self.sizing.multiplier * s.manualSymbolScale
+
+        guard case .roundedRect(let rect, _)? = Self.shape(.iconForeground, s) else {
+            Issue.record("Expected a rounded rect for the icon foreground")
+            return
+        }
+        // Tolerance, not equality: the side is derived through a chain of
+        // CGFloat/Double multiplications that can land a ulp apart.
+        #expect(abs(rect.width - expectedSide) < 0.001)
+        #expect(abs(rect.midX - Self.canvasCentre(s).x) < 0.001)
+    }
+
+    @Test("Badge and badge background outline the full badge circle")
+    func selectionShape_badgeCircle() throws {
+        let s = Self.settingsWithBadge()
+        let (expectedCentre, expectedRadius) = Self.badgeCircle(s)
+
+        for selection in [PreviewSelection.badge, .badgeBackground] {
+            guard case .circle(let centre, let radius)? = Self.shape(selection, s) else {
+                Issue.record("Expected a circle for \(selection)")
+                return
+            }
+            #expect(radius == expectedRadius)
+            #expect(abs(centre.x - expectedCentre.x) < 0.001)
+            #expect(abs(centre.y - expectedCentre.y) < 0.001)
+        }
+    }
+
+    @Test("Badge foreground outlines the glyph box, not the click circle")
+    func selectionShape_badgeForegroundIsGlyphBox() throws {
+        let s = Self.settingsWithBadge()
+        let (badgeCentre, radius) = Self.badgeCircle(s)
+        let expectedSide = radius * 2 * Self.sizing.multiplier * s.badgeSymbolScale
+
+        guard case .roundedRect(let rect, _)? = Self.shape(.badgeForeground, s) else {
+            Issue.record("Expected a rounded rect for the badge foreground")
+            return
+        }
+        #expect(abs(rect.width - expectedSide) < 0.001)
+        #expect(abs(rect.midX - badgeCentre.x) < 0.001)
+        #expect(abs(rect.midY - badgeCentre.y) < 0.001)
+    }
+
+    @Test("Nothing drawn means nothing outlined")
+    func selectionShape_nilWhenNothingDrawn() throws {
+        var noBadge = IconSettings()
+        noBadge.showBadge = false
+        #expect(Self.shape(.badge, noBadge) == nil)
+        #expect(Self.shape(.badgeForeground, noBadge) == nil)
+        #expect(Self.shape(.badgeBackground, noBadge) == nil)
+
+        // An imported background replaces the icon's foreground.
+        var importedBg = IconSettings()
+        importedBg.backgroundMode = .importedImage
+        importedBg.importedBackground = try ImportedImage.testFixture()
+        #expect(Self.shape(.iconForeground, importedBg) == nil)
+
+        // A System-mode badge has no separate glyph to box.
+        var systemBadge = Self.settingsWithBadge()
+        systemBadge.badgeIconSource = .system
+        #expect(Self.shape(.badgeForeground, systemBadge) == nil)
+    }
+
+    @Test("A hidden layer still outlines, so the user can see what they're editing")
+    func selectionShape_hiddenLayerStillOutlines() {
+        var s = IconSettings()
+        s.iconBackgroundHidden = true
+        s.iconForegroundHidden = true
+        #expect(Self.shape(.iconBackground, s) != nil)
+        #expect(Self.shape(.iconForeground, s) != nil)
+    }
+
     // MARK: - Target mapping
 
     @Test("Targets map to the right group and tab")

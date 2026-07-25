@@ -33,6 +33,43 @@ enum PreviewHitTarget: Equatable {
     }
 }
 
+/// What the preview is currently editing, for drawing a selection outline. Wider
+/// than `PreviewHitTarget` because a group can be selected without a specific
+/// layer — the badge's Layout tab edits the badge as a whole, and a System-mode
+/// group has no layers at all.
+enum PreviewSelection: Equatable {
+    case iconForeground
+    case iconBackground
+    /// The icon as a whole (System mode).
+    case icon
+    case badgeForeground
+    case badgeBackground
+    /// The badge as a whole (its Layout tab, or System mode).
+    case badge
+
+    /// Derives what to outline from the inspector's current group and tab.
+    static func from(group: IconLayerGroup, tab: LayerTab, isSystem: Bool) -> PreviewSelection {
+        switch group {
+        case .icon:
+            guard !isSystem else { return .icon }
+            return tab == .background ? .iconBackground : .iconForeground
+        case .badge:
+            guard !isSystem else { return .badge }
+            switch tab {
+            case .layout:     return .badge
+            case .foreground: return .badgeForeground
+            case .background: return .badgeBackground
+            }
+        }
+    }
+}
+
+/// The outline shape for a selection, in canvas coordinates.
+enum PreviewSelectionShape: Equatable {
+    case roundedRect(CGRect, cornerRadius: CGFloat)
+    case circle(center: CGPoint, radius: CGFloat)
+}
+
 enum PreviewHitTester {
 
     /// Fraction of the badge *radius* treated as the glyph (foreground) region;
@@ -113,6 +150,121 @@ enum PreviewHitTester {
         }
 
         return nil
+    }
+
+    // MARK: - Selection outline
+
+    /// The shape to outline for `selection`, in the coordinates of the square
+    /// canvas returned by `IconContentView.totalCanvasSize(for:displaySize:)`.
+    /// Deliberately the same geometry the hit tests use, so what's outlined is
+    /// exactly what's clickable.
+    ///
+    /// Returns nil when there's nothing to outline — a badge selection with the
+    /// badge switched off, or a foreground with no symbol or image drawn.
+    /// A *hidden* layer still returns its shape: the user has it selected and
+    /// needs to see where it sits.
+    ///
+    /// One deliberate divergence from the hit regions: a foreground selection is
+    /// outlined as the glyph's own box rather than the click target, because a
+    /// circle drawn through the middle of a badge glyph reads as a mistake.
+    /// Everything else traces exactly what a click resolves to.
+    ///
+    /// Pass `iconSize` instead of a canvas size for the System-mode preview,
+    /// whose canvas is the appex image itself.
+    static func selectionShape(
+        for selection: PreviewSelection,
+        settings: IconSettings,
+        displaySize: CGFloat,
+        canvasSize: CGFloat? = nil,
+        symbolSizing: ResolvedSymbolSizing? = nil,
+        badgeSymbolSizing: ResolvedSymbolSizing? = nil
+    ) -> PreviewSelectionShape? {
+        let canvas = canvasSize ?? IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
+        let center = CGPoint(x: canvas / 2, y: canvas / 2)
+        let enclosure = enclosureSize(displaySize: displaySize)
+
+        switch selection {
+        case .icon, .iconBackground:
+            return .roundedRect(
+                centeredSquare(center: center, side: backgroundSide(settings: settings, enclosureSize: enclosure) ?? enclosure),
+                cornerRadius: cornerRadius(for: settings, displaySize: displaySize)
+            )
+
+        case .iconForeground:
+            guard let box = foregroundBox(center: center, settings: settings,
+                                          enclosureSize: enclosure, symbolSizing: symbolSizing) else {
+                return nil
+            }
+            // Small radius: this is a bounding box, not a drawn shape.
+            return .roundedRect(box, cornerRadius: min(box.width, box.height) * 0.08)
+
+        case .badge, .badgeBackground, .badgeForeground:
+            guard settings.showBadge else { return nil }
+            let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosure)
+            let badgeCenter = CGPoint(x: center.x + offset.width, y: center.y + offset.height)
+            let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badgeScale)
+            guard diameter > 0 else { return nil }
+
+            if selection == .badgeForeground {
+                // Box the badge glyph, sized as BadgeView sizes it (badgeSize ×
+                // multiplier × badgeSymbolScale, centred, no offsets).
+                guard settings.badgeIconSource != .system else { return nil }
+                let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badgeSymbolName)
+                let side = diameter * sizing.multiplier * settings.badgeSymbolScale
+                guard side > 0 else { return nil }
+                let box = centeredSquare(center: badgeCenter, side: side)
+                return .roundedRect(box, cornerRadius: min(box.width, box.height) * 0.08)
+            }
+
+            return .circle(center: badgeCenter, radius: diameter / 2)
+        }
+    }
+
+    /// Bounding box of the icon's drawn foreground, or nil when nothing is drawn.
+    private static func foregroundBox(
+        center: CGPoint,
+        settings: IconSettings,
+        enclosureSize: CGFloat,
+        symbolSizing: ResolvedSymbolSizing?
+    ) -> CGRect? {
+        guard settings.backgroundMode != .importedImage else { return nil }
+
+        switch settings.iconSource {
+        case .sfSymbol:
+            let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.symbolName)
+            let side = enclosureSize * sizing.multiplier * settings.manualSymbolScale
+            guard side > 0 else { return nil }
+            return centeredSquare(
+                center: CGPoint(
+                    x: center.x + enclosureSize * sizing.xOffset,
+                    y: center.y + enclosureSize * sizing.yOffset
+                ),
+                side: side
+            )
+
+        case .customImage:
+            guard settings.importedImage?.nsImage != nil else { return nil }
+            let side = enclosureSize * customImageEnclosureRatio * settings.importedImageScale
+            guard side > 0 else { return nil }
+            return centeredSquare(center: center, side: side)
+
+        case .system:
+            return nil
+        }
+    }
+
+    /// Side length of the drawn icon background, or nil to use the enclosure.
+    private static func backgroundSide(settings: IconSettings, enclosureSize: CGFloat) -> CGFloat? {
+        guard settings.backgroundMode == .importedImage,
+              settings.importedBackground?.nsImage != nil else { return nil }
+        let scale = settings.importedBackgroundScale
+            * (settings.importedBackgroundPaddingCompensation
+                ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
+        return enclosureSize * scale
+    }
+
+    private static func centeredSquare(center: CGPoint, side: CGFloat) -> CGRect {
+        CGRect(x: center.x - side / 2, y: center.y - side / 2, width: side, height: side)
     }
 
     // MARK: - Geometry (mirrors IconContentView)

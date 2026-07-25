@@ -91,7 +91,8 @@ struct ContentView: View {
                         appexService: appexService,
                         zoomLevel: $zoomLevel,
                         previewPointSize: $previewPointSize,
-                        onSelect: select
+                        onSelect: select,
+                        selection: currentPreviewSelection
                     )
                 }
             }
@@ -191,6 +192,23 @@ struct ContentView: View {
 
     // MARK: - Canvas selection
 
+    /// What the preview outlines: whichever layer the inspector is editing.
+    /// Only while the Controls tab is showing — on the Export tab there's no layer
+    /// being edited, so the outline would just be in the way.
+    private var currentPreviewSelection: PreviewSelection? {
+        guard inspectorTab == .controls, showInspector else { return nil }
+        let isSystem: Bool
+        switch selectedGroup {
+        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .system
+        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .system
+        }
+        return PreviewSelection.from(
+            group: selectedGroup,
+            tab: selectedGroup == .icon ? iconTab : badgeTab,
+            isSystem: isSystem
+        )
+    }
+
     /// Points the inspector at the layer the user clicked in the preview. The tab
     /// only moves for a group in Mica mode — a System group has no tabs, so
     /// selecting the group is the whole story there.
@@ -223,7 +241,8 @@ struct ContentView: View {
                     displaySize: previewDisplaySize,
                     badgeAppexImage: viewModel.badgeAppexRenderedImage,
                     badgeAppexError: viewModel.badgeAppexError,
-                    onSelect: select
+                    onSelect: select,
+                    selection: currentPreviewSelection
                 )
 //                .padding()
 
@@ -256,6 +275,8 @@ struct ScaledIconPreview: View {
     /// Click-to-select: reports which layer the click landed on so the owner can
     /// point the inspector at it. See `PreviewHitTester`.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
+    /// The layer the inspector is editing, outlined in the preview. nil draws nothing.
+    var selection: PreviewSelection? = nil
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -289,6 +310,17 @@ struct ScaledIconPreview: View {
                 )
                 .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
                 .allowsHitTesting(false)
+            }
+
+            // Selection outline sits above the icon but below the badge overlay so
+            // it never intercepts a drag.
+            if let selection,
+               let shape = PreviewHitTester.selectionShape(
+                   for: selection,
+                   settings: settings,
+                   displaySize: displaySize
+               ) {
+                SelectionOutline(shape: shape, canvasSize: canvasSize, displaySize: displaySize)
             }
 
             // Draggable badge overlay

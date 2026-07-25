@@ -15,6 +15,8 @@ struct AppexPreviewPane: View {
     /// here, so clicking it reports the background layer and the owner collapses
     /// that to the Icon group; a Mica-composited badge still resolves its layers.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
+    /// The layer the inspector is editing, outlined in the preview.
+    var selection: PreviewSelection? = nil
 
     var body: some View {
         previewContent
@@ -112,6 +114,17 @@ struct AppexPreviewPane: View {
             // The badge is offset rather than laid out, so it doesn't grow this
             // frame — any part of it hanging outside the image isn't clickable.
             .frame(width: size, height: size)
+            .overlay {
+                if let selection,
+                   let shape = PreviewHitTester.selectionShape(
+                       for: selection,
+                       settings: viewModel.iconSettings,
+                       displaySize: size,
+                       canvasSize: size
+                   ) {
+                    SelectionOutline(shape: shape, canvasSize: size, displaySize: size)
+                }
+            }
             .contentShape(Rectangle())
             .onTapGesture { location in
                 guard let target = PreviewHitTester.systemTarget(
