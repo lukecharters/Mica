@@ -8,7 +8,7 @@ struct BadgeBackgroundSourceSection: View {
         LayerVisibleToggle(isHidden: $iconSettings.badgeBackgroundHidden)
 
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.badgeUseImportedBackground) {
-            Text("Native").tag(false)
+            Text("Color").tag(false)
             Text("Imported").tag(true)
         }
         .pickerStyle(.segmented)

@@ -8,7 +8,7 @@ struct BackgroundSourceSection: View {
         LayerVisibleToggle(isHidden: $iconSettings.iconBackgroundHidden)
 
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
-            Text("Native").tag(BackgroundMode.custom)
+            Text("Color").tag(BackgroundMode.custom)
             Text("Pre-Rendered").tag(BackgroundMode.preRendered)
             Text("Imported").tag(BackgroundMode.importedImage)
         }
