@@ -47,20 +47,29 @@ enum PreviewSelection: Equatable {
     /// The badge as a whole (its Layout tab, or System mode).
     case badge
 
-    /// Derives what to outline from the inspector's current group and tab.
+    /// Derives what to outline from the inspector's current group and tab, or nil
+    /// when nothing should be outlined.
     ///
-    /// - Parameter exposesLayers: whether the inspector is showing the group's
-    ///   layers as tabs. False in System mode, which renders the group as one
-    ///   image, and false in Mica mode with the advanced controls off, whose
-    ///   single un-tabbed pane edits the group as a whole — in both cases `tab` is
-    ///   whatever the tab bar was last left on and must not drive the outline.
-    static func from(group: IconLayerGroup, tab: LayerTab, exposesLayers: Bool) -> PreviewSelection {
+    /// - Parameter isSystem: whether this group renders through the appex pipeline.
+    ///   A System group has no layer tabs — it's one image — so it outlines as a
+    ///   whole, and `tab`, whatever the tab bar was last left on, must not leak in.
+    /// - Parameter advancedControlsEnabled: the outline is an advanced-controls
+    ///   affordance. With them off the inspector shows a single un-tabbed pane per
+    ///   group and the sidebar already says which group that is, so an accent ring
+    ///   over the artwork would be noise rather than orientation: nothing outlines.
+    static func from(
+        group: IconLayerGroup,
+        tab: LayerTab,
+        isSystem: Bool,
+        advancedControlsEnabled: Bool
+    ) -> PreviewSelection? {
+        guard advancedControlsEnabled else { return nil }
         switch group {
         case .icon:
-            guard exposesLayers else { return .icon }
+            guard !isSystem else { return .icon }
             return tab == .background ? .iconBackground : .iconForeground
         case .badge:
-            guard exposesLayers else { return .badge }
+            guard !isSystem else { return .badge }
             switch tab {
             case .layout:     return .badge
             case .foreground: return .badgeForeground

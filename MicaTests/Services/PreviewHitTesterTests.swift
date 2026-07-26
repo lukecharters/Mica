@@ -352,23 +352,47 @@ struct PreviewHitTesterTests {
 
     // MARK: - PreviewSelection mapping
 
-    @Test("Group + tab maps to the layer the preview should outline")
-    func previewSelection_fromGroupAndTab() {
-        #expect(PreviewSelection.from(group: .icon, tab: .foreground, exposesLayers: true) == .iconForeground)
-        #expect(PreviewSelection.from(group: .icon, tab: .background, exposesLayers: true) == .iconBackground)
-        #expect(PreviewSelection.from(group: .badge, tab: .foreground, exposesLayers: true) == .badgeForeground)
-        #expect(PreviewSelection.from(group: .badge, tab: .background, exposesLayers: true) == .badgeBackground)
-        // The badge's Layout tab edits the badge as a whole.
-        #expect(PreviewSelection.from(group: .badge, tab: .layout, exposesLayers: true) == .badge)
+    private static func selection(
+        _ group: IconLayerGroup,
+        _ tab: LayerTab,
+        isSystem: Bool = false,
+        advanced: Bool = true
+    ) -> PreviewSelection? {
+        PreviewSelection.from(
+            group: group,
+            tab: tab,
+            isSystem: isSystem,
+            advancedControlsEnabled: advanced
+        )
     }
 
-    /// Covers both panes that hide the layer tabs: System mode and Mica mode with
-    /// the advanced controls off. Neither exposes layers, so the tab the bar was
-    /// last left on must not leak into the outline.
-    @Test("An un-tabbed pane outlines the whole group regardless of tab", arguments: LayerTab.allCases)
-    func previewSelection_withoutLayersIsWholeGroup(tab: LayerTab) {
-        #expect(PreviewSelection.from(group: .icon, tab: tab, exposesLayers: false) == .icon)
-        #expect(PreviewSelection.from(group: .badge, tab: tab, exposesLayers: false) == .badge)
+    @Test("Group + tab maps to the layer the preview should outline")
+    func previewSelection_fromGroupAndTab() {
+        #expect(Self.selection(.icon, .foreground) == .iconForeground)
+        #expect(Self.selection(.icon, .background) == .iconBackground)
+        #expect(Self.selection(.badge, .foreground) == .badgeForeground)
+        #expect(Self.selection(.badge, .background) == .badgeBackground)
+        // The badge's Layout tab edits the badge as a whole.
+        #expect(Self.selection(.badge, .layout) == .badge)
+    }
+
+    /// System mode renders a group as one image and shows no layer tabs, so the tab
+    /// the bar was last left on must not leak into the outline.
+    @Test("A System group outlines as a whole regardless of tab", arguments: LayerTab.allCases)
+    func previewSelection_systemIsWholeGroup(tab: LayerTab) {
+        #expect(Self.selection(.icon, tab, isSystem: true) == .icon)
+        #expect(Self.selection(.badge, tab, isSystem: true) == .badge)
+    }
+
+    /// The outline is an advanced-controls affordance: the simple pane edits a group
+    /// as one thing and the sidebar already says which, so nothing is outlined.
+    @Test("Nothing outlines with the advanced controls off", arguments: LayerTab.allCases)
+    func previewSelection_advancedControlsOffOutlinesNothing(tab: LayerTab) {
+        for group in [IconLayerGroup.icon, .badge] {
+            for isSystem in [false, true] {
+                #expect(Self.selection(group, tab, isSystem: isSystem, advanced: false) == nil)
+            }
+        }
     }
 
     // MARK: - Selection outline geometry

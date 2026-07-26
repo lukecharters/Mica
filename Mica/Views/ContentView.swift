@@ -53,8 +53,8 @@ struct ContentView: View {
     /// writes here; the values are clamped to `sidebarRange` / `inspectorRange`.
     @AppStorage("layout.sidebarWidth") private var sidebarWidth: Double = 280
     @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
-    /// Read here too: with the advanced controls off the inspector shows no layer
-    /// tabs, so the preview outlines the whole selected group instead of a layer.
+    /// Read here too: the selection outline is an advanced-controls affordance, so
+    /// with them off the preview draws none (see `currentPreviewSelection`).
     @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
 
     private let sidebarRange: ClosedRange<Double> = 220...360
@@ -200,9 +200,10 @@ struct ContentView: View {
     // MARK: - Canvas selection
 
     /// What the preview outlines: whichever layer the inspector is editing, or the
-    /// whole group when the inspector isn't showing its layers separately.
+    /// whole group in System mode, which has no layers to distinguish.
     /// Only while the Controls tab is showing — on the Export tab there's no layer
-    /// being edited, so the outline would just be in the way.
+    /// being edited, so the outline would just be in the way — and only with the
+    /// advanced controls on, which is `PreviewSelection.from`'s call.
     private var currentPreviewSelection: PreviewSelection? {
         guard inspectorTab == .controls, showInspector else { return nil }
         let isSystem: Bool
@@ -213,7 +214,8 @@ struct ContentView: View {
         return PreviewSelection.from(
             group: selectedGroup,
             tab: selectedGroup == .icon ? iconTab : badgeTab,
-            exposesLayers: !isSystem && advancedControlsEnabled
+            isSystem: isSystem,
+            advancedControlsEnabled: advancedControlsEnabled
         )
     }
 
