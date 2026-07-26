@@ -5,8 +5,6 @@ struct BadgeSourceSection: View {
     @Binding var iconSettings: IconSettings
     let isSystem: Bool
 
-    @State private var showSymbolPicker = false
-
     /// Source selection within Custom mode (SF Symbol vs Imported image).
     private enum SourceType: String, CaseIterable, Identifiable {
         case sfSymbol = "SF Symbol"
@@ -64,29 +62,11 @@ struct BadgeSourceSection: View {
         }
     }
 
-    /// Whether the current name resolves to a real SF Symbol, so the label can
-    /// show its glyph without blanking out on a partially-typed name.
-    private var symbolNameIsValid: Bool {
-        !iconSettings.badgeSymbolName.isEmpty
-            && NSImage(systemSymbolName: iconSettings.badgeSymbolName, accessibilityDescription: nil) != nil
-    }
-
-    /// SF Symbol name field with a button that opens the full symbol browser.
     private var symbolField: some View {
-        HStack(spacing: 8) {
-            TextField(text: $iconSettings.badgeSymbolName, prompt: Text("Symbol")) {
-                Label("Symbol", systemImage: symbolNameIsValid ? iconSettings.badgeSymbolName : "questionmark.square.dashed")
-            }
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .help("Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)")
-            Button(action: { showSymbolPicker = true }) {
-                Image(systemName: "square.grid.2x2.fill")
-            }
-            .help("Browse SF Symbols")
-        }
-        .sheet(isPresented: $showSymbolPicker) {
-            SymbolPickerView(selectedSymbol: $iconSettings.badgeSymbolName)
-        }
+        SymbolNameField(
+            symbolName: $iconSettings.badgeSymbolName,
+            help: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"
+        )
     }
 }
 

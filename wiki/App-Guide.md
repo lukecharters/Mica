@@ -53,7 +53,7 @@ Choose **SF Symbol** or **Imported**.
 
 ### Appearance
 
-Several of these appear only with **Show Advanced Controls** on (bottom of the inspector).
+This whole pane appears only with **Show Advanced Controls** on (bottom of the inspector) — see [Show Advanced Controls](#show-advanced-controls) for what the simple pane shows instead.
 
 | Control | What it does | CLI |
 |---|---|---|
@@ -166,4 +166,19 @@ Switch the inspector to the **Export** tab (or just press **⌘E**):
 
 ## Show Advanced Controls
 
-The toggle at the bottom of the Controls tab. Off (the default) keeps the inspector simple; on reveals the Rendering and Weight pickers, Gradient and Custom Gradient toggles, the Corners picker, and the multi-style Shadow picker. The setting persists between launches.
+The toggle at the bottom of the Controls tab. It switches the whole shape of the inspector, and the setting persists between launches.
+
+**Off (the default)** — each group collapses to a single pane with the same shape as System mode, plus the shadows Mica renders itself:
+
+| Section | Controls |
+|---|---|
+| **Source** | Visible, Symbol |
+| **Appearance** | Symbol Color, Symbol Shadow, Background Color, Background Shadow |
+
+The Badge group keeps its **Badge Layout** section (position, offsets, size) below those, exactly as the System badge pane does. There are no layer tabs, so clicking anywhere in the preview selects the whole group and the selection outline traces it.
+
+**On** — reveals the Foreground / Background layer tabs and every per-layer control: the Source type pickers and imported-image controls, the Layout sections, the Rendering and Weight pickers, Gradient and Custom Gradient toggles, the Corners picker, and the multi-style Shadow picker.
+
+Switching **off** folds each layer back to something the simple pane can show: an SF Symbol foreground on a plain colour background, monochrome rendering, one background colour. Nothing is thrown away — your imported artwork, palette colours and custom gradient colours all stay put, so switching back on and re-picking the source restores the previous look.
+
+Importing an image while the advanced controls are off (**File ▸ Import as…**, **⇧⌘I** and friends, or dropping a file on the canvas) switches them on for you, since the simple pane has no controls for an imported layer.

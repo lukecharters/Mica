@@ -354,18 +354,21 @@ struct PreviewHitTesterTests {
 
     @Test("Group + tab maps to the layer the preview should outline")
     func previewSelection_fromGroupAndTab() {
-        #expect(PreviewSelection.from(group: .icon, tab: .foreground, isSystem: false) == .iconForeground)
-        #expect(PreviewSelection.from(group: .icon, tab: .background, isSystem: false) == .iconBackground)
-        #expect(PreviewSelection.from(group: .badge, tab: .foreground, isSystem: false) == .badgeForeground)
-        #expect(PreviewSelection.from(group: .badge, tab: .background, isSystem: false) == .badgeBackground)
+        #expect(PreviewSelection.from(group: .icon, tab: .foreground, exposesLayers: true) == .iconForeground)
+        #expect(PreviewSelection.from(group: .icon, tab: .background, exposesLayers: true) == .iconBackground)
+        #expect(PreviewSelection.from(group: .badge, tab: .foreground, exposesLayers: true) == .badgeForeground)
+        #expect(PreviewSelection.from(group: .badge, tab: .background, exposesLayers: true) == .badgeBackground)
         // The badge's Layout tab edits the badge as a whole.
-        #expect(PreviewSelection.from(group: .badge, tab: .layout, isSystem: false) == .badge)
+        #expect(PreviewSelection.from(group: .badge, tab: .layout, exposesLayers: true) == .badge)
     }
 
-    @Test("System mode outlines the whole group regardless of tab", arguments: LayerTab.allCases)
-    func previewSelection_systemIsWholeGroup(tab: LayerTab) {
-        #expect(PreviewSelection.from(group: .icon, tab: tab, isSystem: true) == .icon)
-        #expect(PreviewSelection.from(group: .badge, tab: tab, isSystem: true) == .badge)
+    /// Covers both panes that hide the layer tabs: System mode and Mica mode with
+    /// the advanced controls off. Neither exposes layers, so the tab the bar was
+    /// last left on must not leak into the outline.
+    @Test("An un-tabbed pane outlines the whole group regardless of tab", arguments: LayerTab.allCases)
+    func previewSelection_withoutLayersIsWholeGroup(tab: LayerTab) {
+        #expect(PreviewSelection.from(group: .icon, tab: tab, exposesLayers: false) == .icon)
+        #expect(PreviewSelection.from(group: .badge, tab: tab, exposesLayers: false) == .badge)
     }
 
     // MARK: - Selection outline geometry

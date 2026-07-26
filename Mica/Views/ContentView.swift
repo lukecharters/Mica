@@ -53,6 +53,9 @@ struct ContentView: View {
     /// writes here; the values are clamped to `sidebarRange` / `inspectorRange`.
     @AppStorage("layout.sidebarWidth") private var sidebarWidth: Double = 280
     @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
+    /// Read here too: with the advanced controls off the inspector shows no layer
+    /// tabs, so the preview outlines the whole selected group instead of a layer.
+    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
 
     private let sidebarRange: ClosedRange<Double> = 220...360
     private let inspectorRange: ClosedRange<Double> = 330...460
@@ -196,7 +199,8 @@ struct ContentView: View {
 
     // MARK: - Canvas selection
 
-    /// What the preview outlines: whichever layer the inspector is editing.
+    /// What the preview outlines: whichever layer the inspector is editing, or the
+    /// whole group when the inspector isn't showing its layers separately.
     /// Only while the Controls tab is showing — on the Export tab there's no layer
     /// being edited, so the outline would just be in the way.
     private var currentPreviewSelection: PreviewSelection? {
@@ -209,13 +213,15 @@ struct ContentView: View {
         return PreviewSelection.from(
             group: selectedGroup,
             tab: selectedGroup == .icon ? iconTab : badgeTab,
-            isSystem: isSystem
+            exposesLayers: !isSystem && advancedControlsEnabled
         )
     }
 
     /// Points the inspector at the layer the user clicked in the preview. The tab
     /// only moves for a group in Mica mode — a System group has no tabs, so
-    /// selecting the group is the whole story there.
+    /// selecting the group is the whole story there. Harmless with the advanced
+    /// controls off, where the tab bar is hidden: the tab is simply left pointing
+    /// at the clicked layer for when it comes back.
     private func select(_ target: PreviewHitTarget) {
         selectionPulse += 1
         selectedGroup = target.group

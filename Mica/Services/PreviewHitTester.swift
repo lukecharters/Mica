@@ -48,13 +48,19 @@ enum PreviewSelection: Equatable {
     case badge
 
     /// Derives what to outline from the inspector's current group and tab.
-    static func from(group: IconLayerGroup, tab: LayerTab, isSystem: Bool) -> PreviewSelection {
+    ///
+    /// - Parameter exposesLayers: whether the inspector is showing the group's
+    ///   layers as tabs. False in System mode, which renders the group as one
+    ///   image, and false in Mica mode with the advanced controls off, whose
+    ///   single un-tabbed pane edits the group as a whole — in both cases `tab` is
+    ///   whatever the tab bar was last left on and must not drive the outline.
+    static func from(group: IconLayerGroup, tab: LayerTab, exposesLayers: Bool) -> PreviewSelection {
         switch group {
         case .icon:
-            guard !isSystem else { return .icon }
+            guard exposesLayers else { return .icon }
             return tab == .background ? .iconBackground : .iconForeground
         case .badge:
-            guard !isSystem else { return .badge }
+            guard exposesLayers else { return .badge }
             switch tab {
             case .layout:     return .badge
             case .foreground: return .badgeForeground

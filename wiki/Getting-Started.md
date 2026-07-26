@@ -21,13 +21,13 @@ Mica requires **macOS 15 Sequoia or later**. System generation mode (Liquid Glas
 -->
 
 1. Launch Mica. You'll see a three-pane window: the **layer sidebar** on the left, the **preview** in the middle, and the **inspector** on the right.
-2. In the sidebar, select the Icon group's **Foreground** layer. In the inspector, click the grid button next to the Symbol field to open the **SF Symbols browser**, search for a symbol (say `star.fill`), and click it.
-3. Select the **Background** layer and pick a colour from the Colour dropdown.
+2. With **Icon** selected in the sidebar, click the grid button next to the Symbol field in the inspector to open the **SF Symbols browser**, search for a symbol (say `star.fill`), and click it.
+3. Pick a colour from the **Background Color** dropdown.
 4. Press **⌘E**, choose where to save, and you have a PNG.
 
 That's the whole loop. From here, explore:
 
-- Flick on **Show Advanced Controls** (bottom of the inspector) to reveal rendering modes, symbol weights, corner styles, and more.
+- Flick on **Show Advanced Controls** (bottom of the inspector) to split each group into Foreground and Background layers and reveal imported images, rendering modes, symbol weights, corner styles, and more.
 - Use the **preview size menu** in the toolbar to see your icon at the exact size it will appear in Jamf Self Service.
 - Turn on the **Badge** layer to overlay a second symbol — see the [App Guide](App-Guide#badge).
 

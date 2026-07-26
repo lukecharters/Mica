@@ -1,16 +1,14 @@
 // Views/Inspector/InspectorControls.swift
 import SwiftUI
 
-/// Shared UserDefaults keys for sidebar-wide preferences read by multiple
-/// section views via `@AppStorage`.
-enum SidebarSettings {
-    static let advancedControlsKey = "sidebar.advancedControls"
-}
-
 /// Renders the controls for whichever group is selected in the left LayerSidebar:
-/// the group's Mica/System picker, then — in Mica mode — a `LayerTabPicker` and
-/// the Source / Layout / Appearance sections for the active tab. System mode has
-/// no tabs and shows a single pane instead.
+/// the group's Mica/System picker, then one of three panes — the tabbed
+/// Source / Layout / Appearance sections for the active `LayerTabPicker` tab
+/// (Mica mode with advanced controls on), a single un-tabbed pane of the handful
+/// of controls that matter (Mica mode with advanced controls off), or System
+/// mode's single pane. See `groupPane(mode:tab:isSystem:…)`.
+///
+/// `SidebarSettings` (in Models) holds the advanced-controls key.
 struct InspectorControls: View {
     let group: IconLayerGroup
     /// Active tab per group, owned by ContentView so a canvas click can drive it.
@@ -77,17 +75,46 @@ struct InspectorControls: View {
             }
             // Reset scroll position when the user moves to another group or tab,
             // so a long pane doesn't leave the next one scrolled halfway down.
-            .id("\(group.rawValue).\(activeTab.rawValue)")
+            // The simple pane has no tabs, so it keys on the group alone —
+            // otherwise a canvas click, which still moves the hidden tab, would
+            // scroll the pane back to the top for no visible reason.
+            .id("\(group.rawValue).\(advancedControlsEnabled ? activeTab.rawValue : "simple")")
         }
         .onAppear {
             if iconSettings.badgeIconSource != .system {
                 lastNonSystemBadgeSource = iconSettings.badgeIconSource
             }
+            revealAdvancedControlsIfNeeded()
         }
         .onChange(of: iconSettings.badgeIconSource) { _, newValue in
             if newValue != .system {
                 lastNonSystemBadgeSource = newValue
             }
+        }
+        .onChange(of: advancedControlsEnabled) { _, isOn in
+            // The simple pane has one row per setting, so anything needing extra
+            // rows — an imported source, palette rendering, a custom gradient —
+            // is folded away on the way in. Non-destructive: the artwork and
+            // colours stay in the model, so switching back and re-picking a
+            // source restores the previous look.
+            if !isOn { iconSettings.resetToSimpleControls() }
+        }
+        .onChange(of: iconSettings.usesImportedSources) { _, _ in
+            revealAdvancedControlsIfNeeded()
+        }
+    }
+
+    /// An image can be imported from the File and Edit menus or by dropping one on
+    /// the canvas, all of which work while the simple pane is showing. The simple
+    /// pane has no controls for an imported layer, so reveal the ones that do
+    /// rather than leave a pane that contradicts the preview.
+    ///
+    /// Also checked `onAppear`, which covers an import that landed while the
+    /// inspector was closed. Cannot loop with the fold above: that only runs on
+    /// the advanced → simple transition, and it clears every imported source.
+    private func revealAdvancedControlsIfNeeded() {
+        if !advancedControlsEnabled, iconSettings.usesImportedSources {
+            advancedControlsEnabled = true
         }
     }
 
@@ -165,6 +192,8 @@ struct InspectorControls: View {
                     }
                 }
             }
+        } simpleContent: {
+            iconSimpleControls
         } tabContent: { tab in
             switch tab {
             case .foreground, .layout: iconForegroundControls // .layout is badge-only
@@ -205,6 +234,8 @@ struct InspectorControls: View {
 
                 badgeLayoutSectionForm
             }
+        } simpleContent: {
+            badgeSimpleControls
         } tabContent: { tab in
             switch tab {
             case .layout:     badgeLayoutControls
@@ -214,14 +245,17 @@ struct InspectorControls: View {
         }
     }
 
-    /// Shared frame for both groups: the Mica/System picker, the layer tab bar
-    /// (Mica only), and whichever pane those two select.
+    /// Shared frame for both groups: the Mica/System picker, then one of the three
+    /// panes. The layer tab bar belongs to Mica mode with advanced controls on —
+    /// System mode has no separately editable layers, and the simple pane
+    /// deliberately mirrors System's un-tabbed shape.
     @ViewBuilder
-    private func groupPane<SystemPane: View, TabPane: View>(
+    private func groupPane<SystemPane: View, SimplePane: View, TabPane: View>(
         mode: Binding<Bool>,
         tab: Binding<LayerTab>,
         isSystem: Bool,
         @ViewBuilder systemContent: () -> SystemPane,
+        @ViewBuilder simpleContent: () -> SimplePane,
         @ViewBuilder tabContent: (LayerTab) -> TabPane
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -232,6 +266,8 @@ struct InspectorControls: View {
 
             if isSystem {
                 systemContent()
+            } else if !advancedControlsEnabled {
+                simpleContent()
             } else {
                 LayerTabPicker(group: group, selection: tab)
                     .padding(.horizontal, 20)
@@ -240,6 +276,94 @@ struct InspectorControls: View {
                 tabContent(tab.wrappedValue)
             }
         }
+    }
+
+    // MARK: - Simple panes (Mica mode, advanced controls off)
+
+    /// Icon, un-tabbed: the symbol, the two colours, and the two shadows. Reuses
+    /// the tabbed panes' expand/collapse keys so a collapsed Source stays
+    /// collapsed across the advanced toggle.
+    @ViewBuilder
+    private var iconSimpleControls: some View {
+        VStack(spacing: Self.sectionSpacing) {
+            sectionForm {
+                Section("Source", isExpanded: $iconSourceExpanded) {
+                    SimpleSourceSection(
+                        isVisible: groupVisibleBinding(for: .icon),
+                        symbolName: $iconSettings.symbolName
+                    )
+                    .padding(4)
+                }
+            }
+
+            sectionForm {
+                Section("Appearance", isExpanded: $iconAppearanceExpanded) {
+                    SimpleAppearanceSection(
+                        symbolColor: $iconSettings.symbolColor,
+                        symbolShadow: $iconSettings.enableSymbolShadow,
+                        backgroundColor: $iconSettings.baseColor,
+                        backgroundShadow: backgroundShadowEnabled,
+                        colorOptions: colorOptions
+                    )
+                    .padding(4)
+                }
+            }
+        }
+        .padding(.bottom, 20)
+    }
+
+    /// Badge, un-tabbed: the same rows as the icon, plus the group-level layout
+    /// controls — matching the System badge pane, which keeps them for the same
+    /// reason (position and size apply however the badge itself is drawn).
+    @ViewBuilder
+    private var badgeSimpleControls: some View {
+        VStack(spacing: Self.sectionSpacing) {
+            sectionForm {
+                Section("Source", isExpanded: $badgeSourceExpanded) {
+                    SimpleSourceSection(
+                        isVisible: groupVisibleBinding(for: .badge),
+                        symbolName: $iconSettings.badgeSymbolName,
+                        symbolHelp: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"
+                    )
+                    .padding(4)
+                }
+            }
+
+            sectionForm {
+                Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
+                    SimpleAppearanceSection(
+                        symbolColor: $iconSettings.badgeSymbolColor,
+                        symbolShadow: $iconSettings.badgeEnableSymbolShadow,
+                        backgroundColor: $iconSettings.badgeBaseColor,
+                        backgroundShadow: $iconSettings.badgeEnableBackgroundShadow,
+                        colorOptions: colorOptions
+                    )
+                    .padding(4)
+                }
+            }
+
+            badgeLayoutSectionForm
+        }
+        .padding(.bottom, 20)
+    }
+
+    /// One Visible toggle for a whole group. Reads as off unless *every* layer is
+    /// visible, so a per-layer flag set in advanced mode can be cleared here.
+    private func groupVisibleBinding(for group: IconLayerGroup) -> Binding<Bool> {
+        Binding(
+            get: { iconSettings.isGroupFullyVisible(group) },
+            set: { iconSettings.setGroupVisible($0, for: group) }
+        )
+    }
+
+    /// The icon's background shadow as a plain on/off, mapping "on" to the modern
+    /// macOS 26 style — the same mapping `BackgroundAppearanceSection` uses when
+    /// the advanced style picker is hidden.
+    private var backgroundShadowEnabled: Binding<Bool> {
+        Binding(
+            get: { iconSettings.backgroundShadowStyle != .off },
+            set: { iconSettings.backgroundShadowStyle = $0 ? .macOS26 : .off }
+        )
     }
 
     // MARK: - Badge Layout (Mica mode)
@@ -425,6 +549,12 @@ struct InspectorControls: View {
 
 /// Host that supplies the bindings `InspectorControls` needs, so each preview
 /// below is a one-liner.
+///
+/// The Mica-mode previews open on whichever pane the advanced-controls
+/// preference is currently set to — flick the switch at the bottom of the preview
+/// itself to see the other one. It isn't injected here on purpose: the only store
+/// `@AppStorage` reads is the app's own defaults, so a preview that set it would
+/// silently change the real app's setting.
 private struct InspectorControlsPreview: View {
     let group: IconLayerGroup
     var isSystem: Bool = false
