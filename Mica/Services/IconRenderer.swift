@@ -626,7 +626,13 @@ struct BadgeView: View {
                             width: badgeSize * effectiveScale,
                             height: badgeSize * effectiveScale
                         )
-                        .clipShape(Circle())
+                        // Deliberately unclipped: an imported badge background
+                        // defines its own shape through its alpha. This used to
+                        // clip to a Circle() inscribed in the frame, which sliced
+                        // the corners off any artwork that filled its own bounds
+                        // (a tight graphic or a square file icon) while leaving a
+                        // padded app icon untouched. The shadow follows the
+                        // artwork's shape for the same reason.
                         .shadow(
                             color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(shadowStyle.badgeBackground.opacity) : Color.clear,
                             radius: settings.badgeEnableBackgroundShadow ? badgeSize * shadowStyle.badgeBackground.radiusMultiplier : 0,

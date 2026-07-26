@@ -258,4 +258,49 @@ struct BadgeRenderingStructuralTests {
         #expect(abs(Double(rep.pixelsHigh) - Double(expectedCanvas)) <= 1,
                 "Pixel height \(rep.pixelsHigh) must equal totalCanvasSize \(expectedCanvas) for (size=\(Int(arg.size)),retina=\(arg.retina))")
     }
+
+    // MARK: - Imported badge background is unclipped
+
+    /// An imported badge background defines its own shape through its alpha. It
+    /// used to be clipped to a `Circle()` inscribed in its frame, which sliced the
+    /// corners off any artwork that filled its own bounds.
+    ///
+    /// Measures area rather than sampling corners, so it needs no assumption about
+    /// pixel y-direction: only the badge draws, so the opaque area is the badge's.
+    /// A solid square fixture covers d², a circular clip only πd²/4 ≈ 79% of it.
+    @Test("An imported badge background keeps its corners")
+    func importedBadgeBackground_isNotClippedToACircle() throws {
+        var settings = IconSettings()
+        settings.exportSize = 512
+        settings.exportRetinaSize = false
+        // Leave the badge as the only thing on the canvas.
+        settings.iconBackgroundHidden = true
+        settings.iconForegroundHidden = true
+        settings.showBadge = true
+        settings.badgePosition = .bottomRight
+        settings.badgeUseImportedBackground = true
+        settings.badgeImportedBackground = try ImportedImage.testFixture(
+            width: 64, height: 64, fill: .systemGreen)
+        // The fixture fills its own bounds, so it needs no padding compensation —
+        // its frame is then exactly the badge diameter.
+        settings.badgeImportedBackgroundPaddingCompensation = false
+        settings.badgeEnableBackgroundShadow = false
+
+        let canvas = IconContentView.totalCanvasSize(
+            for: settings, displaySize: settings.finalExportSize)
+        let diameter = BadgeGeometry.diameter(
+            enclosureSize: PreviewHitTester.enclosureSize(displaySize: settings.finalExportSize),
+            badgeScale: settings.badgeScale
+        )
+
+        let image = IconRenderer.renderIconSafely(settings: settings)
+        let clearFraction = IconRenderingAssertions.clearPixelFraction(
+            in: image, rect: CGRect(x: 0, y: 0, width: canvas, height: canvas))
+        let opaqueArea = (1 - clearFraction) * Double(canvas * canvas)
+        let coverage = opaqueArea / Double(diameter * diameter)
+
+        #expect(coverage > 0.92,
+                "Imported badge background covers only \(coverage) of its square frame; a circular clip would give ≈0.785, so the corners are being cut off")
+        #expect(coverage < 1.08, "Unexpectedly more area than the badge frame: \(coverage)")
+    }
 }

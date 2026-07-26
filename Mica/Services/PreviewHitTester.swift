@@ -88,9 +88,9 @@ enum PreviewHitTester {
     ///
     /// Only the colour badge is a `Circle()`. A System-mode badge is an app-icon
     /// squircle drawn by IconServices, and an imported badge background is
-    /// arbitrary artwork whose own shape shows through (its `Circle()` clip is
-    /// inscribed in the *padding-compensated* frame, so at the default 1.24×
-    /// compensation the clip is wider than the artwork and never bites).
+    /// unclipped artwork that defines its own shape — most often a squircle,
+    /// since the images people badge with are app or file icons. A squircle is
+    /// the closest honest bounding shape for either.
     ///
     /// Measured off a rendered 1024pt appex badge: ≈0.235 of the badge side.
     /// Deliberately a constant rather than `cornerRadiusStyle` — that setting
