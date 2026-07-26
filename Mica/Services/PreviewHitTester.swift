@@ -84,6 +84,21 @@ enum PreviewHitTester {
     /// (mirrors `IconContentView.iconContent`'s `enclosureSize * 0.85` frame).
     private static let customImageEnclosureRatio: CGFloat = 0.85
 
+    /// Corner radius of a non-circular badge, as a fraction of its side.
+    ///
+    /// Only the colour badge is a `Circle()`. A System-mode badge is an app-icon
+    /// squircle drawn by IconServices, and an imported badge background is
+    /// arbitrary artwork whose own shape shows through (its `Circle()` clip is
+    /// inscribed in the *padding-compensated* frame, so at the default 1.24×
+    /// compensation the clip is wider than the artwork and never bites).
+    ///
+    /// Measured off a rendered 1024pt appex badge: ≈0.235 of the badge side.
+    /// Deliberately a constant rather than `cornerRadiusStyle` — that setting
+    /// shapes Mica's own chiclet and has no effect on an OS-rendered badge, so
+    /// it must not move this outline. (It sits between the two chiclet ratios,
+    /// 46/206 ≈ 0.223 and 54/206 ≈ 0.262, matching neither.)
+    static let badgeCornerRadiusRatio: CGFloat = 0.235
+
     // MARK: - Mica-mode preview
 
     /// Resolves a click in `ScaledIconPreview`.
@@ -216,8 +231,53 @@ enum PreviewHitTester {
                 return .roundedRect(box, cornerRadius: min(box.width, box.height) * 0.08)
             }
 
-            return .circle(center: badgeCenter, radius: diameter / 2)
+            return badgeShape(settings: settings, center: badgeCenter, diameter: diameter)
         }
+    }
+
+    // MARK: - Badge footprint
+
+    /// The badge's drawn shape, centred on `center`.
+    ///
+    /// The colour badge is a circle; a System-mode badge and a drawn imported
+    /// background are squircles (see `badgeCornerRadiusRatio`). Shared by the
+    /// outline and the hit test so the two cannot disagree.
+    private static func badgeShape(
+        settings: IconSettings,
+        center: CGPoint,
+        diameter: CGFloat
+    ) -> PreviewSelectionShape {
+        guard let side = badgeSquircleSide(settings: settings, diameter: diameter) else {
+            return .circle(center: center, radius: diameter / 2)
+        }
+        return .roundedRect(
+            centeredSquare(center: center, side: side),
+            cornerRadius: side * badgeCornerRadiusRatio
+        )
+    }
+
+    /// Visible side of a squircle badge, or nil when the circular colour badge
+    /// is what draws.
+    private static func badgeSquircleSide(settings: IconSettings, diameter: CGFloat) -> CGFloat? {
+        // A System-mode badge is an appex image, and its tile sits inside its own
+        // canvas exactly as the icon's chiclet sits inside the icon canvas. So the
+        // visible squircle is the *enclosure* of the badge frame (≈0.80 of it),
+        // not the frame — the rest is the padding the appex render carries.
+        if settings.badgeIconSource == .system {
+            return enclosureSize(displaySize: diameter)
+        }
+
+        // An imported background is meant to present as a tile at the badge's
+        // nominal size: padding compensation widens the frame by exactly the
+        // padding a standard app icon carries, so the artwork lands back at
+        // `diameter × scale` either way, and only the scale slider moves it.
+        // Artwork that doesn't match that assumption can defeat this — the
+        // compensation toggle is the user's claim about the image, not a
+        // measurement of it.
+        guard !settings.badgeBackgroundHidden,
+              settings.badgeUseImportedBackground,
+              settings.badgeImportedBackground?.nsImage != nil else { return nil }
+        return diameter * settings.badgeImportedBackgroundScale
     }
 
     /// Bounding box of the icon's drawn foreground, or nil when nothing is drawn.
@@ -292,22 +352,21 @@ enum PreviewHitTester {
 
         let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
         let badgeCenter = CGPoint(x: center.x + offset.width, y: center.y + offset.height)
-        let radius = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale) / 2
-        guard radius > 0 else { return nil }
+        let diameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        guard diameter > 0 else { return nil }
+
+        let shape = badgeShape(settings: settings, center: badgeCenter, diameter: diameter)
+        guard shapeContains(point, shape) else { return nil }
+
+        // Both squircle cases are a single editable layer: a System-mode badge
+        // bakes symbol and enclosure into one appex image, and a drawn imported
+        // background suppresses the glyph entirely (mirrors
+        // BadgeView.showsImportedBackground). So there is no glyph to split off.
+        guard case .circle(_, let radius) = shape else { return .badgeBackground }
 
         let distance = hypot(point.x - badgeCenter.x, point.y - badgeCenter.y)
-        guard distance <= radius else { return nil }
-
-        // An imported badge background suppresses the glyph entirely
-        // (mirrors BadgeView.showsImportedBackground), so the whole badge is
-        // background in that state.
-        let glyphSuppressed = settings.badgeForegroundHidden
-            || (!settings.badgeBackgroundHidden
-                && settings.badgeUseImportedBackground
-                && settings.badgeImportedBackground?.nsImage != nil)
-
         if distance <= radius * badgeInnerHitRatio {
-            return glyphSuppressed ? .badgeBackground : .badgeForeground
+            return settings.badgeForegroundHidden ? .badgeBackground : .badgeForeground
         }
         // `showBadge` guarantees at least one badge layer is visible, so a hidden
         // background means the glyph is what's on screen out here.
@@ -385,6 +444,23 @@ enum PreviewHitTester {
     }
 
     // MARK: - Shape helpers
+
+    /// Containment for either selection shape. Its rects are always centred
+    /// squares, so the rounded-rect case defers to `roundedRectContains`.
+    private static func shapeContains(_ point: CGPoint, _ shape: PreviewSelectionShape) -> Bool {
+        switch shape {
+        case .circle(let center, let radius):
+            guard radius > 0 else { return false }
+            return hypot(point.x - center.x, point.y - center.y) <= radius
+        case .roundedRect(let rect, let cornerRadius):
+            return roundedRectContains(
+                point,
+                center: CGPoint(x: rect.midX, y: rect.midY),
+                side: rect.width,
+                cornerRadius: cornerRadius
+            )
+        }
+    }
 
     private static func squareContains(_ point: CGPoint, center: CGPoint, side: CGFloat) -> Bool {
         guard side > 0 else { return false }

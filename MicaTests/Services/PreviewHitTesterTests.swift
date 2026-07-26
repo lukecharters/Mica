@@ -117,6 +117,43 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
     }
 
+    @Test("A System-mode badge is one layer across its whole squircle")
+    func badgeSystem_isAllBackground() {
+        var s = Self.settingsWithBadge()
+        s.badgeIconSource = .system
+        #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeBackground)
+    }
+
+    @Test("An imported badge background is hittable into its squircle corners")
+    func badgeImported_cornersAreHittable() throws {
+        var s = Self.settingsWithBadge()
+        s.badgeUseImportedBackground = true
+        s.badgeImportedBackground = try ImportedImage.testFixture()
+
+        let (centre, radius) = Self.badgeCircle(s)
+        // 0.85 of the half-side on both axes: inside the corner arc, but 1.2× the
+        // radius from the centre, so the inscribed circle used to miss it.
+        let corner = CGPoint(x: centre.x + radius * 0.85, y: centre.y + radius * 0.85)
+        #expect(Self.hit(corner, s) == .badgeBackground)
+    }
+
+    /// The appex tile is ≈0.80 of the badge frame, the rest being the padding the
+    /// appex render carries, so the badge stops short of its own circle.
+    @Test("A System-mode badge stops at the appex tile, not the badge frame")
+    func badgeSystem_stopsAtTheTile() {
+        var s = Self.settingsWithBadge()
+        s.badgeIconSource = .system
+        let (centre, radius) = Self.badgeCircle(s)
+
+        // 0.9 of the radius straight along +x is past the tile edge (0.80) while
+        // still inside the old circle, so it must no longer select the badge.
+        let padding = CGPoint(x: centre.x + radius * 0.9, y: centre.y)
+        #expect(Self.hit(padding, s) != .badgeBackground)
+        #expect(Self.hit(padding, s) != .badgeForeground)
+        // The tile itself still does.
+        #expect(Self.hit(centre, s) == .badgeBackground)
+    }
+
     // MARK: - Badge: position, offset, scale
 
     @Test("Badge hit region follows badgePosition", arguments: BadgePosition.allCases)
@@ -395,6 +432,86 @@ struct PreviewHitTesterTests {
             #expect(radius == expectedRadius)
             #expect(abs(centre.x - expectedCentre.x) < 0.001)
             #expect(abs(centre.y - expectedCentre.y) < 0.001)
+        }
+    }
+
+    @Test("A System-mode badge outlines a squircle, not a circle")
+    func selectionShape_badgeSystemIsSquircle() throws {
+        var s = Self.settingsWithBadge()
+        s.badgeIconSource = .system
+        let (expectedCentre, radius) = Self.badgeCircle(s)
+        // The appex tile, not the badge frame: ≈0.80 of it, matching a rendered
+        // 1024pt badge measured at 255pt across a 317pt frame.
+        let expectedSide = PreviewHitTester.enclosureSize(displaySize: radius * 2)
+
+        for selection in [PreviewSelection.badge, .badgeBackground] {
+            guard case .roundedRect(let rect, let cornerRadius)? = Self.shape(selection, s) else {
+                Issue.record("Expected a rounded rect for \(selection) on a System badge")
+                return
+            }
+            #expect(abs(rect.width - expectedSide) < 0.001)
+            #expect(abs(rect.midX - expectedCentre.x) < 0.001)
+            #expect(abs(rect.midY - expectedCentre.y) < 0.001)
+            #expect(abs(cornerRadius - expectedSide * PreviewHitTester.badgeCornerRadiusRatio) < 0.001)
+        }
+    }
+
+    /// Padding compensation widens the *frame* but is meant to cancel against the
+    /// padding the artwork carries, so the visible tile is the badge's nominal
+    /// size either way. Both settings must outline the same square.
+    @Test("A drawn imported badge background outlines a squircle at the badge size",
+          arguments: [true, false])
+    func selectionShape_badgeImportedIsSquircle(compensated: Bool) throws {
+        var s = Self.settingsWithBadge()
+        s.badgeUseImportedBackground = true
+        s.badgeImportedBackground = try ImportedImage.testFixture()
+        s.badgeImportedBackgroundPaddingCompensation = compensated
+        let (expectedCentre, radius) = Self.badgeCircle(s)
+        let expectedSide = radius * 2 * s.badgeImportedBackgroundScale
+
+        guard case .roundedRect(let rect, let cornerRadius)? = Self.shape(.badgeBackground, s) else {
+            Issue.record("Expected a rounded rect for an imported badge background")
+            return
+        }
+        #expect(abs(rect.width - expectedSide) < 0.001)
+        #expect(abs(rect.midX - expectedCentre.x) < 0.001)
+        #expect(abs(cornerRadius - expectedSide * PreviewHitTester.badgeCornerRadiusRatio) < 0.001)
+    }
+
+    @Test("The badge background scale slider resizes the imported outline")
+    func selectionShape_badgeImportedFollowsScale() throws {
+        var s = Self.settingsWithBadge()
+        s.badgeUseImportedBackground = true
+        s.badgeImportedBackground = try ImportedImage.testFixture()
+        s.badgeImportedBackgroundScale = 1.5
+        let radius = Self.badgeCircle(s).radius
+
+        guard case .roundedRect(let rect, _)? = Self.shape(.badgeBackground, s) else {
+            Issue.record("Expected a rounded rect for an imported badge background")
+            return
+        }
+        #expect(abs(rect.width - radius * 2 * 1.5) < 0.001)
+    }
+
+    @Test("The imported-background flag alone leaves the badge outline a circle")
+    func selectionShape_badgeImportedFlagWithoutImageStaysCircle() {
+        var s = Self.settingsWithBadge()
+        s.badgeUseImportedBackground = true // no image chosen yet — colour badge draws
+        guard case .circle? = Self.shape(.badgeBackground, s) else {
+            Issue.record("Expected a circle while no imported image is chosen")
+            return
+        }
+    }
+
+    @Test("A hidden imported badge background falls back to the circle outline")
+    func selectionShape_badgeImportedHiddenStaysCircle() throws {
+        var s = Self.settingsWithBadge()
+        s.badgeUseImportedBackground = true
+        s.badgeImportedBackground = try ImportedImage.testFixture()
+        s.badgeBackgroundHidden = true // only the glyph draws, inside the badge circle
+        guard case .circle? = Self.shape(.badgeBackground, s) else {
+            Issue.record("Expected a circle when the imported background is hidden")
+            return
         }
     }
 
