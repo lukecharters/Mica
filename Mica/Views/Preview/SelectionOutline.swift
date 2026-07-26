@@ -25,8 +25,8 @@ struct SelectionOutline: View {
     var autoFade: Bool = true
 
     /// How long the outline stays at full strength before fading.
-    private static let holdDuration: Duration = .milliseconds(1600)
-    private static let fadeDuration: TimeInterval = 0.45
+    private static let holdDuration: Duration = .milliseconds(500)
+    private static let fadeDuration: TimeInterval = 0.2
 
     @State private var isVisible = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -38,8 +38,8 @@ struct SelectionOutline: View {
     }
 
     private var lineWidth: CGFloat {
-        // 1.5pt at the 256pt reference, clamped so extreme zooms stay usable.
-        min(max(1.5 * (displaySize / 256), 1), 6)
+        // 2pt at the 256pt reference, clamped so extreme zooms stay usable.
+        min(max(2 * (displaySize / 256), 1), 6)
     }
 
     var body: some View {
@@ -57,9 +57,6 @@ struct SelectionOutline: View {
                 ))
             }
 
-            // Dark halo first so the accent stays legible over a same-coloured
-            // layer (a blue chiclet under a blue outline).
-            context.stroke(path, with: .color(.black.opacity(0.35)), lineWidth: lineWidth * 2)
             context.stroke(path, with: .color(.accentColor), lineWidth: lineWidth)
         }
         .frame(width: canvasSize, height: canvasSize)
