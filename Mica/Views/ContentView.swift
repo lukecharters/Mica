@@ -489,18 +489,18 @@ struct ScaledIconPreview: View {
     }
 }
 
-//struct ContentView_Previews: PreviewProvider {
-//    @MainActor static var previews: some View {
-//        Group {
+struct ContentView_Previews: PreviewProvider {
+    @MainActor static var previews: some View {
+        Group {
 //            ContentView()
 //                .previewDisplayName("Default VM")
 //                .previewLayout(.fixed(width: 1200, height: 800))
 //            
-//            ContentView(viewModel: customVM, showInspector: false)
-//                .previewDisplayName("Custom VM")
-//                .previewLayout(.fixed(width: 1200, height: 800))
-//
-//
+            ContentView(viewModel: customVM, showInspector: false)
+                .previewDisplayName("Custom VM")
+                .previewLayout(.fixed(width: 1200, height: 800))
+
+
 //            ContentView(viewModel: IconViewModel())
 //                .previewDisplayName("Injected VM")
 //                .previewLayout(.fixed(width: 1200, height: 800))
@@ -508,26 +508,26 @@ struct ScaledIconPreview: View {
 //            ContentView(viewModel: retinaLargeVM)
 //                .previewDisplayName("Retina 1024px")
 //                .previewLayout(.fixed(width: 1200, height: 800))
-//        }
-//    }
-//
-//    @MainActor private static var customVM: IconViewModel {
-//        let vm = IconViewModel()
-//        vm.iconSettings.iconGenerationMode = .system
-//        vm.iconSettings.symbolName = "gearshape.fill"
+        }
+    }
+
+    @MainActor private static var customVM: IconViewModel {
+        let vm = IconViewModel()
+        vm.iconSettings.iconGenerationMode = .mica
+        vm.iconSettings.symbolName = "gearshape.fill"
 //        vm.iconSettings.useCustomColors = true
 //        vm.iconSettings.customPrimaryColor = .blue
 //        vm.iconSettings.customSecondaryColor = .indigo
-//        vm.iconSettings.symbolRenderingMode = .monochrome
-//        vm.iconSettings.showBadge = true
-//        vm.iconSettings.badgePosition = .bottomRight
-//        vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
-//        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-//        vm.iconSettings.badgeHierarchicalSymbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
-//        return vm
-//    }
+        vm.iconSettings.symbolRenderingMode = .monochrome
+        vm.iconSettings.showBadge = true
+        vm.iconSettings.badgePosition = .bottomRight
+        vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
+        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
+        vm.iconSettings.badgeHierarchicalSymbolColor = .white
+        vm.iconSettings.exportSize = 512
+        vm.iconSettings.exportRetinaSize = false
+        return vm
+    }
 //
 //    @MainActor private static var retinaLargeVM: IconViewModel {
 //        let vm = IconViewModel()
@@ -617,7 +617,7 @@ struct ScaledIconPreview: View {
 //        vm.iconSettings.exportRetinaSize = false
 //        return vm
 //    }
-//}
+}
 
 #Preview {
     ContentView()
