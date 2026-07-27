@@ -59,7 +59,7 @@ enum InspectorTab: Hashable, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .controls: "paintbrush"
-        case .export: "square.and.arrow.up"
+        case .export: "document"
         }
     }
 
