@@ -615,20 +615,17 @@ struct IconComparisonPlayground: View {
 
     // MARK: - Rendered views
 
-    /// The REAL render pipeline. The canvas can exceed renderSize when the
-    /// badge overhangs the chiclet; framing at the full canvas first and then
-    /// re-centering in a renderSize cell keeps the chiclet aligned with the
-    /// reference while letting the badge overflow draw.
+    /// The REAL render pipeline. The canvas is always renderSize — a badge that
+    /// would overhang it is moved inward by `BadgeGeometry` — so the chiclet
+    /// lines up with the reference without any re-centering.
     private var ourRenderView: some View {
-        let canvas = IconContentView.totalCanvasSize(for: settings, displaySize: renderSize)
-        return IconContentView(
+        IconContentView(
             settings: settings,
             displaySize: renderSize,
             shadowOverride: effectiveShadow,
             forceAutoBackgroundGradient: autoBackgroundGradient
         )
-            .frame(width: canvas, height: canvas)
-            .frame(width: renderSize, height: renderSize)
+        .frame(width: renderSize, height: renderSize)
     }
 
     private var effectiveShadow: ShadowStyle {

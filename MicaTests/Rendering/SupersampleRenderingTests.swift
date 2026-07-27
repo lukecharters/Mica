@@ -80,9 +80,9 @@ struct SupersampleRenderingTests {
         let appexImage = AppexRenderingStructuralTests.solidColorImage(.red, size: 256)
         let image = IconRenderer.renderAppexWithBadge(appexImage: appexImage, settings: settings)
         let rep = try #require(image.representations.first as? NSBitmapImageRep)
-        let expectedCanvas = IconContentView.totalCanvasSize(for: settings, displaySize: settings.finalExportSize)
-        // ±1px: totalCanvasSize can be fractional; the supersampled raster is
-        // reduced by its integer factor and rounded.
+        let expectedCanvas = settings.finalExportSize
+        // ±1px: the supersampled raster is reduced by its integer factor and
+        // rounded.
         #expect(abs(Double(rep.pixelsWide) - Double(expectedCanvas)) <= 1)
         #expect(abs(Double(rep.pixelsHigh) - Double(expectedCanvas)) <= 1)
     }

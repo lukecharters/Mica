@@ -4,7 +4,7 @@
 // Fast path (no NSWorkspace): IconRenderer.renderAppexWithBadge(...) takes
 // an appex image as input and composites it with an optional badge. We
 // synthesize the appex image in-test (a solid red NSImage), then verify:
-//   - Output dimensions match totalCanvasSize(for:displaySize:)
+//   - Output dimensions match finalExportSize (the canvas never grows)
 //   - Red dominates every quadrant (the synthesized appex fills the canvas)
 //   - Adding a green badge at bottomRight shifts the green signal there
 //
@@ -36,14 +36,14 @@ struct AppexRenderingStructuralTests {
 
     // MARK: - Fast path: renderAppexWithBadge with stubbed appex image
 
-    @Test("Appex composite without badge matches totalCanvasSize and is red-dominant")
+    @Test("Appex composite without badge matches finalExportSize and is red-dominant")
     func appexComposite_noBadge_dimensionsAndDominance() throws {
         var settings = IconSettings()
         settings.exportSize = 256
         settings.exportRetinaSize = false
         settings.showBadge = false
 
-        let expectedCanvas = IconContentView.totalCanvasSize(for: settings, displaySize: settings.finalExportSize)
+        let expectedCanvas = settings.finalExportSize
         let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
 
         let output = IconRenderer.renderAppexWithBadge(
@@ -56,9 +56,8 @@ struct AppexRenderingStructuralTests {
         #expect(Int(output.size.width) == Int(settings.exportSize))
         #expect(Int(output.size.height) == Int(settings.exportSize))
 
-        // With no badge, totalCanvasSize == finalExportSize. The returned
-        // NSImage after setImageDPI reports logical = exportSize, pixels =
-        // finalExportSize. Validate at the pixel level.
+        // The returned NSImage after setImageDPI reports logical = exportSize,
+        // pixels = finalExportSize. Validate at the pixel level.
         let data = try #require(output.tiffRepresentation)
         let rep = try #require(NSBitmapImageRep(data: data))
         #expect(rep.pixelsWide == Int(expectedCanvas))

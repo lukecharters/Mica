@@ -17,24 +17,103 @@ enum BadgeGeometry {
     /// Shadow buffer beyond the badge edge (proportional to the 80px badge).
     static let shadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269
 
+    /// The canvas is the enclosure plus `2 * backgroundInset` (25 at the 256pt
+    /// reference), so the enclosure is 206/256 of it. Every caller works in
+    /// enclosure units; this recovers the canvas they sit in, which is what the
+    /// badge has to stay inside.
+    static let enclosureToCanvasRatio: CGFloat = 256.0 / 206.0
+
     /// Badge diameter for a given enclosure and user badge scale.
     static func diameter(enclosureSize: CGFloat, badgeScale: CGFloat) -> CGFloat {
         enclosureSize * diameterRatio * badgeScale
     }
 
-    /// Offset of the badge center from the icon center, including the
-    /// normalized manual offset (stored as fractions of enclosure size).
-    static func offset(for settings: IconSettings, enclosureSize: CGFloat) -> CGSize {
-        let ax = enclosureSize * anchorXRatio
-        let ay = enclosureSize * anchorYRatio
-        let mx = enclosureSize * settings.badgeManualOffsetX
-        let my = enclosureSize * settings.badgeManualOffsetY
-        switch settings.badgePosition {
-        case .topRight:    return CGSize(width: ax + mx, height: -ay + my)
-        case .topLeft:     return CGSize(width: -ax + mx, height: -ay + my)
-        case .bottomRight: return CGSize(width: ax + mx, height: ay + my)
-        case .bottomLeft:  return CGSize(width: -ax + mx, height: ay + my)
+    /// How far the badge center may sit from the icon center on either axis
+    /// before the badge (plus its shadow buffer) would leave the canvas.
+    ///
+    /// The canvas never grows to accommodate a badge — an export is always
+    /// exactly its requested size — so an oversized badge moves inward instead.
+    /// With the default anchor this only bites past `badgeScale ≈ 1.19`; below
+    /// that the badge sits exactly where native macOS puts it.
+    static func maxCenterOffset(enclosureSize: CGFloat, badgeScale: CGFloat) -> CGFloat {
+        let halfCanvas = enclosureSize * enclosureToCanvasRatio / 2
+        let extent = diameter(enclosureSize: enclosureSize, badgeScale: badgeScale) / 2
+            + enclosureSize * shadowBufferRatio
+        // Clamped at 0: a badge wider than the canvas can't be placed legally,
+        // so it centers. Unreachable at the 2.0 scale cap, but the caller of a
+        // geometry primitive shouldn't have to know that.
+        return max(0, halfCanvas - extent)
+    }
+
+    /// Which corner a position anchors to, in SwiftUI's top-origin coordinates
+    /// (y grows downward, so "top" is negative). The one place the four cases
+    /// are spelled out — both `offset` and `manualOffsetRange` read it, so the
+    /// forward placement and its inverse can't disagree about a corner.
+    private static func anchorSigns(for position: BadgePosition) -> (x: CGFloat, y: CGFloat) {
+        switch position {
+        case .topRight:    return (1, -1)
+        case .topLeft:     return (-1, -1)
+        case .bottomRight: return (1, 1)
+        case .bottomLeft:  return (-1, 1)
         }
+    }
+
+    /// The badge's anchor point before any manual offset.
+    private static func anchor(for position: BadgePosition, enclosureSize: CGFloat) -> CGSize {
+        let signs = anchorSigns(for: position)
+        return CGSize(
+            width: signs.x * enclosureSize * anchorXRatio,
+            height: signs.y * enclosureSize * anchorYRatio
+        )
+    }
+
+    /// Offset of the badge center from the icon center, including the
+    /// normalized manual offset (stored as fractions of enclosure size),
+    /// clamped per axis so the badge stays within the canvas.
+    static func offset(for settings: IconSettings, enclosureSize: CGFloat) -> CGSize {
+        let anchor = anchor(for: settings.badgePosition, enclosureSize: enclosureSize)
+        let unclamped = CGSize(
+            width: anchor.width + enclosureSize * settings.badgeManualOffsetX,
+            height: anchor.height + enclosureSize * settings.badgeManualOffsetY
+        )
+
+        // Per axis, not radially: both anchors are equal and the extent is the
+        // same on both axes, so a badge with no manual offset stays on its
+        // diagonal anyway, and a dragged one slides along the edge it hit
+        // rather than being dragged around a circle.
+        let limit = maxCenterOffset(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        return CGSize(
+            width: min(max(unclamped.width, -limit), limit),
+            height: min(max(unclamped.height, -limit), limit)
+        )
+    }
+
+    /// The clamp of `offset(for:enclosureSize:)` expressed back in stored manual
+    /// offset units, so a control can stop at the limit instead of banking up a
+    /// value the badge can't use. Intersected with `IconSettings.badgeOffsetRange`.
+    ///
+    /// The range is asymmetric, and past `badgeScale ≈ 1.19` it no longer
+    /// contains zero — the badge *must* sit inward of its anchor by then. That's
+    /// why this only clamps live gestures; re-clamping stored settings against it
+    /// would silently rewrite a user's 0% into -6%.
+    static func manualOffsetRange(
+        for settings: IconSettings,
+        enclosureSize: CGFloat
+    ) -> (x: ClosedRange<Double>, y: ClosedRange<Double>) {
+        let limit = maxCenterOffset(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        // The point the manual offset is measured from.
+        let anchor = anchor(for: settings.badgePosition, enclosureSize: enclosureSize)
+
+        func range(anchor: CGFloat) -> ClosedRange<Double> {
+            let outer = IconSettings.badgeOffsetRange
+            let lower = max(Double((-limit - anchor) / enclosureSize), outer.lowerBound)
+            let upper = min(Double((limit - anchor) / enclosureSize), outer.upperBound)
+            // The two clamps can cross when the geometric window falls entirely
+            // outside badgeOffsetRange; collapse rather than trap on an invalid range.
+            return lower <= upper ? lower...upper : lower...lower
+        }
+
+        return (x: range(anchor: anchor.width), y: range(anchor: anchor.height))
     }
 }
 
@@ -130,9 +209,8 @@ struct IconRenderer {
     @MainActor
     static func renderIcon(settings: IconSettings, badgeAppexImage: NSImage? = nil) -> NSImage {
         let exportSize = settings.finalExportSize
-        let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: exportSize)
         let iconView = IconContentView(settings: settings, displaySize: exportSize, badgeAppexImage: badgeAppexImage)
-            .frame(width: canvasSize, height: canvasSize)
+            .frame(width: exportSize, height: exportSize)
 
         let factor = supersampleFactor(forPixelSize: exportSize)
         let renderer = ImageRenderer(content: iconView)
@@ -158,7 +236,6 @@ struct IconRenderer {
         badgeAppexImage: NSImage? = nil
     ) -> NSImage {
         let exportSize = settings.finalExportSize
-        let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: exportSize)
         let scaleFactor = exportSize / 256.0
         let backgroundInset = 25 * scaleFactor
         let enclosureSize = exportSize - 2 * backgroundInset
@@ -186,7 +263,7 @@ struct IconRenderer {
                 .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
             }
         }
-        .frame(width: canvasSize, height: canvasSize)
+        .frame(width: exportSize, height: exportSize)
 
         // Supersample only when a badge overlay is drawn — without one the view
         // is a straight passthrough of the appex raster, and an upsample/downsample
@@ -224,9 +301,9 @@ struct IconRenderer {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
-        // Logical size derives from the actual raster and the export scale — the
-        // canvas exceeds exportSize when a badge overflows, so hardcoding
-        // settings.exportSize would misstate the image's point size.
+        // Logical size derives from the actual raster and the export scale rather
+        // than settings.exportSize, so a supersampled render that has already been
+        // reduced isn't re-labelled with a point size it no longer has.
         let scale: CGFloat = settings.exportRetinaSize ? 2 : 1
         let logicalSize = CGSize(
             width: CGFloat(originalCGImage.width) / scale,
@@ -243,11 +320,11 @@ struct IconRenderer {
         guard let originalCGImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return image
         }
-        // Use the bitmap's own pixel dimensions. The logical size can be
-        // fractional (badge overflow yields fractional canvases), and truncating
-        // it would resample the whole image into a context up to 1px smaller.
-        // A supersampled render is the exception: it is deliberately reduced by
-        // its integer factor here, so conversion and downsample are one pass.
+        // Use the bitmap's own pixel dimensions rather than the logical size,
+        // which can be fractional at a retina scale and would resample the whole
+        // image into a context up to 1px smaller. A supersampled render is the
+        // exception: it is deliberately reduced by its integer factor here, so
+        // conversion and downsample are one pass.
         let width: Int
         let height: Int
         if downsampleFactor > 1 {
@@ -355,48 +432,6 @@ struct IconContentView: View {
     private var badgeSize: CGFloat {
         BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
     }
-    private var badgeShadowBuffer: CGFloat { enclosureSize * BadgeGeometry.shadowBufferRatio }
-
-    /// How far the badge (including shadow) extends beyond the original canvas bounds
-    private var badgeOverflow: CGFloat {
-        guard settings.showBadge else { return 0 }
-        let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
-        let badgeRadius = badgeSize / 2
-        let buffer = badgeShadowBuffer
-        let halfCanvas = iconSize / 2
-        let overflowRight  =  offset.width  + badgeRadius + buffer - halfCanvas
-        let overflowLeft   = -offset.width  + badgeRadius + buffer - halfCanvas
-        let overflowBottom =  offset.height + badgeRadius + buffer - halfCanvas
-        let overflowTop    = -offset.height + badgeRadius + buffer - halfCanvas
-        return max(0, overflowRight, overflowLeft, overflowBottom, overflowTop)
-    }
-
-    /// Total canvas size including badge overflow margin
-    var totalCanvasSize: CGFloat {
-        displaySize + 2 * badgeOverflow
-    }
-
-    /// Computes total canvas size without creating the full view (for export/preview sizing).
-    /// Mirrors the instance `badgeOverflow`/`totalCanvasSize` pair; both draw all
-    /// badge geometry from `BadgeGeometry`, so only the inset/overflow framing here
-    /// must be kept in sync with the instance properties.
-    static func totalCanvasSize(for settings: IconSettings, displaySize: CGFloat) -> CGFloat {
-        guard settings.showBadge else { return displaySize }
-        let backgroundInset = 25 * (displaySize / 256) // baseBackgroundInset * scaleFactor
-        let enclosureSize = displaySize - 2 * backgroundInset
-        let center = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
-        let extent = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale) / 2
-            + enclosureSize * BadgeGeometry.shadowBufferRatio
-
-        let halfCanvas = displaySize / 2
-        let overflow = max(0,
-            center.width + extent - halfCanvas,
-            -center.width + extent - halfCanvas,
-            center.height + extent - halfCanvas,
-            -center.height + extent - halfCanvas
-        )
-        return displaySize + 2 * overflow
-    }
 
     var body: some View {
         ZStack {
@@ -425,7 +460,9 @@ struct IconContentView: View {
                 .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
             }
         }
-        .frame(width: totalCanvasSize, height: totalCanvasSize)
+        // Always the display size: BadgeGeometry keeps the badge inside the
+        // canvas rather than the canvas growing to fit the badge.
+        .frame(width: displaySize, height: displaySize)
     }
 
     @ViewBuilder

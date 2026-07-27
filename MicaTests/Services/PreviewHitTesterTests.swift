@@ -30,9 +30,10 @@ struct PreviewHitTesterTests {
         PreviewHitTester.enclosureSize(displaySize: displaySize)
     }
 
+    /// The canvas is always the display size — a badge that would overhang it is
+    /// moved inward by `BadgeGeometry` rather than growing the canvas.
     private static func canvasCentre(_ settings: IconSettings, _ displaySize: CGFloat = displaySize) -> CGPoint {
-        let side = IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
-        return CGPoint(x: side / 2, y: side / 2)
+        CGPoint(x: displaySize / 2, y: displaySize / 2)
     }
 
     /// Badge centre and radius in canvas coordinates, straight from BadgeGeometry.
@@ -180,12 +181,20 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(oldCentre, s) != .badgeForeground)
     }
 
-    @Test("Badge still resolves when a large scale overflows the canvas")
+    /// An oversized badge is pulled inward to stay on the canvas; the hit tester
+    /// has to follow it there, or the badge would stop being clickable at exactly
+    /// the sizes where it's most visible.
+    @Test("A clamped large badge is still clickable at its new centre")
     func badgeLargeScale_stillResolves() {
         var s = Self.settingsWithBadge()
         s.badgeScale = 2.0
-        let canvas = IconContentView.totalCanvasSize(for: s, displaySize: Self.displaySize)
-        #expect(canvas > Self.displaySize) // overflow actually happened
+
+        // Precondition: the clamp actually moved it.
+        let enclosure = Self.enclosure()
+        let clamped = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
+        #expect(clamped.width < enclosure * BadgeGeometry.anchorXRatio - 1,
+                "Precondition: badgeScale 2.0 must pull the badge inward")
+
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
     }
 

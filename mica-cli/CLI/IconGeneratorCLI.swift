@@ -48,8 +48,9 @@ class IconGeneratorCLI {
         reporter.detail("Saving to \(outputURL.path)…")
         let pixelSize = try await saveImageWithValidation(image, to: outputURL, settings: settings)
 
-        // Phase 5: Describe the result (actual written dimensions — the canvas
-        // exceeds exportSize × scale when a badge overflows).
+        // Phase 5: Describe the result. Reports the dimensions actually measured
+        // off the file rather than restating the request, so a rendering bug
+        // shows up in the output instead of being papered over.
         return OutputFileJSON(
             path: outputURL.path,
             width: pixelSize.width,
@@ -455,9 +456,10 @@ class IconGeneratorCLI {
     }
     
     /// Encode via the shared `PNGExporter` (same DPI metadata as GUI exports)
-    /// and write the file. Returns the written pixel dimensions — the canvas can
-    /// exceed the export size when a badge overflows, so callers must not assume
-    /// `exportSize × scale`.
+    /// and write the file. Returns the pixel dimensions measured off the encoded
+    /// image; these should always be `exportSize × scale` (the canvas is fixed —
+    /// `BadgeGeometry` moves an oversized badge inward rather than growing it),
+    /// but they're reported as measured rather than assumed.
     private func saveImageWithValidation(_ image: NSImage, to url: URL, settings: IconSettings) async throws -> (width: Int, height: Int) {
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             throw CLIError.imageConversion("Failed to create bitmap representation of rendered image")

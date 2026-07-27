@@ -119,10 +119,10 @@ enum PreviewHitTester {
     /// Resolves a click in `ScaledIconPreview`.
     ///
     /// - Parameters:
-    ///   - point: Location in the square canvas whose side is
-    ///     `IconContentView.totalCanvasSize(for:displaySize:)`, origin top-left.
-    ///     The icon's center is the canvas center: badge overflow is added
-    ///     symmetrically on all four sides.
+    ///   - point: Location in the `displaySize` square canvas, origin top-left,
+    ///     with the icon centered in it. The canvas never grows for a badge —
+    ///     `BadgeGeometry` moves an oversized badge inward instead — so this is
+    ///     the same square the export is written at.
     ///   - symbolSizing: Injection seam for tests. Production omits it and the
     ///     sizing is resolved from `SymbolSizingService`.
     /// - Returns: The layer hit, or nil for a click that landed on nothing
@@ -133,8 +133,7 @@ enum PreviewHitTester {
         displaySize: CGFloat,
         symbolSizing: ResolvedSymbolSizing? = nil
     ) -> PreviewHitTarget? {
-        let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
-        let center = CGPoint(x: canvasSize / 2, y: canvasSize / 2)
+        let center = CGPoint(x: displaySize / 2, y: displaySize / 2)
         let enclosure = enclosureSize(displaySize: displaySize)
 
         // Badge first — it draws over the icon, so a hit there never falls through.
@@ -184,10 +183,9 @@ enum PreviewHitTester {
 
     // MARK: - Selection outline
 
-    /// The shape to outline for `selection`, in the coordinates of the square
-    /// canvas returned by `IconContentView.totalCanvasSize(for:displaySize:)`.
-    /// Deliberately the same geometry the hit tests use, so what's outlined is
-    /// exactly what's clickable.
+    /// The shape to outline for `selection`, in the coordinates of the
+    /// `displaySize` square canvas. Deliberately the same geometry the hit tests
+    /// use, so what's outlined is exactly what's clickable.
     ///
     /// Returns nil when there's nothing to outline — a badge selection with the
     /// badge switched off, or a foreground with no symbol or image drawn.
@@ -199,18 +197,16 @@ enum PreviewHitTester {
     /// circle drawn through the middle of a badge glyph reads as a mistake.
     /// Everything else traces exactly what a click resolves to.
     ///
-    /// Pass `iconSize` instead of a canvas size for the System-mode preview,
-    /// whose canvas is the appex image itself.
+    /// For the System-mode preview, pass the appex image's side as `displaySize`
+    /// — that pane's canvas is the image itself, which is the same square.
     static func selectionShape(
         for selection: PreviewSelection,
         settings: IconSettings,
         displaySize: CGFloat,
-        canvasSize: CGFloat? = nil,
         symbolSizing: ResolvedSymbolSizing? = nil,
         badgeSymbolSizing: ResolvedSymbolSizing? = nil
     ) -> PreviewSelectionShape? {
-        let canvas = canvasSize ?? IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
-        let center = CGPoint(x: canvas / 2, y: canvas / 2)
+        let center = CGPoint(x: displaySize / 2, y: displaySize / 2)
         let enclosure = enclosureSize(displaySize: displaySize)
 
         switch selection {

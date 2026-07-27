@@ -11,10 +11,11 @@ import SwiftUI
 /// region a click resolves to.
 struct SelectionOutline: View {
     let shape: PreviewSelectionShape
-    /// Canvas side length; the shape's coordinates are relative to this square.
-    let canvasSize: CGFloat
-    /// Scales the stroke with the preview so it stays hairline-thin when zoomed out
-    /// and doesn't turn into a thick band when zoomed in.
+    /// Canvas side length — the shape's coordinates are relative to this square —
+    /// and the scale for the stroke, so it stays hairline-thin when zoomed out and
+    /// doesn't turn into a thick band when zoomed in. One value for both because
+    /// the canvas is always the display size: a badge that would overhang it is
+    /// moved inward by `BadgeGeometry` rather than growing the canvas.
     var displaySize: CGFloat
     /// Which layer this outline is for. Changing it restarts the fade.
     var selection: PreviewSelection
@@ -59,7 +60,7 @@ struct SelectionOutline: View {
 
             context.stroke(path, with: .color(.accentColor), lineWidth: lineWidth)
         }
-        .frame(width: canvasSize, height: canvasSize)
+        .frame(width: displaySize, height: displaySize)
         .allowsHitTesting(false)
         .opacity(isVisible ? 1 : 0)
         // Reduce Motion keeps the behaviour but drops the cross-fade.
@@ -102,7 +103,6 @@ struct SelectionOutline: View {
                     ) {
                         SelectionOutline(
                             shape: shape,
-                            canvasSize: IconContentView.totalCanvasSize(for: settings, displaySize: displaySize),
                             displaySize: displaySize,
                             selection: selection,
                             // Hold them so the preview is inspectable.

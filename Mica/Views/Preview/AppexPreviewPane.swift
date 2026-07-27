@@ -122,12 +122,10 @@ struct AppexPreviewPane: View {
                    let shape = PreviewHitTester.selectionShape(
                        for: selection,
                        settings: viewModel.iconSettings,
-                       displaySize: size,
-                       canvasSize: size
+                       displaySize: size
                    ) {
                     SelectionOutline(
                         shape: shape,
-                        canvasSize: size,
                         displaySize: size,
                         selection: selection,
                         pulse: selectionPulse

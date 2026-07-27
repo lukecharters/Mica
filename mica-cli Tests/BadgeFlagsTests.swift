@@ -129,6 +129,24 @@ struct BadgeFlagsTests {
         #expect(settings.badgeSymbolScale == 1.5)
     }
 
+    /// Size and offset are stored verbatim, however extreme. Keeping the badge on
+    /// the canvas is `BadgeGeometry`'s job at render time, so the CLI neither
+    /// rejects nor silently rewrites what the user asked for.
+    @Test("--badge-scale and --badge-offset-* are stored unclamped")
+    func scaleAndOffsetStoredVerbatim() throws {
+        // `--badge-offset-y=-1.0`, not a space: ArgumentParser reads a
+        // space-separated leading-dash value as another option name.
+        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand([
+            "star.fill", "--badge-fg", "symbol:plus",
+            "--badge-scale", "2.0",
+            "--badge-offset-x", "1.0",
+            "--badge-offset-y=-1.0"
+        ]))
+        #expect(settings.badgeScale == 2.0)
+        #expect(settings.badgeManualOffsetX == 1.0)
+        #expect(settings.badgeManualOffsetY == -1.0)
+    }
+
     @Test("--badge-bg-gradient off disables the badge background gradient")
     func bgGradientToggle() throws {
         let on = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))

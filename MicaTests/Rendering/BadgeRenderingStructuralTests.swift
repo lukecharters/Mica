@@ -223,15 +223,14 @@ struct BadgeRenderingStructuralTests {
         (512, false)
     ]
 
-    /// A badge overflowing the chiclet expands the canvas beyond
-    /// finalExportSize; the rendered pixel dimensions must match
-    /// totalCanvasSize, not finalExportSize. The default anchor stays
-    /// inside the canvas, so a manual offset pushes the badge out.
-    /// (No-badge renders pin dims == finalExportSize in
+    /// The canvas never grows for a badge. An oversized or heavily offset badge
+    /// is moved inward by `BadgeGeometry` instead, so an export is always exactly
+    /// the size that was asked for — this used to write a 561×561 PNG for a 512px
+    /// request. (No-badge renders pin the same thing in
     /// IconRenderingStructuralTests.)
-    @Test("Badged render pixel dimensions equal totalCanvasSize, not finalExportSize",
+    @Test("A badged render is exactly finalExportSize, however large the badge",
           arguments: badgedDimsMatrix)
-    func badgedCanvas_pixelDimensionsMatchTotalCanvasSize(_ arg: (size: CGFloat, retina: Bool)) throws {
+    func badgedCanvas_pixelDimensionsMatchExportSize(_ arg: (size: CGFloat, retina: Bool)) throws {
         var settings = IconSettings()
         settings.symbolName = "folder.fill"
         settings.exportSize = arg.size
@@ -240,23 +239,60 @@ struct BadgeRenderingStructuralTests {
         settings.showBadge = true
         settings.badgePosition = .bottomRight
         settings.badgeSymbolName = "gearshape.fill"
+        // Both would have overflowed the canvas under the old behaviour.
+        settings.badgeScale = 2.0
         settings.badgeManualOffsetX = 0.3
         settings.badgeManualOffsetY = 0.3
 
-        let expectedCanvas = IconContentView.totalCanvasSize(
-            for: settings, displaySize: settings.finalExportSize)
-        #expect(expectedCanvas > settings.finalExportSize,
-                "Precondition: a default bottom-right badge must overflow the canvas")
+        let expected = settings.finalExportSize
 
         let image = IconRenderer.renderIconSafely(settings: settings)
         let data = try #require(image.tiffRepresentation)
         let rep = try #require(NSBitmapImageRep(data: data))
 
-        // ±1px: totalCanvasSize can be fractional; ImageRenderer rounds.
-        #expect(abs(Double(rep.pixelsWide) - Double(expectedCanvas)) <= 1,
-                "Pixel width \(rep.pixelsWide) must equal totalCanvasSize \(expectedCanvas) for (size=\(Int(arg.size)),retina=\(arg.retina))")
-        #expect(abs(Double(rep.pixelsHigh) - Double(expectedCanvas)) <= 1,
-                "Pixel height \(rep.pixelsHigh) must equal totalCanvasSize \(expectedCanvas) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+        #expect(abs(Double(rep.pixelsWide) - Double(expected)) <= 1,
+                "Pixel width \(rep.pixelsWide) must equal finalExportSize \(expected) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+        #expect(abs(Double(rep.pixelsHigh) - Double(expected)) <= 1,
+                "Pixel height \(rep.pixelsHigh) must equal finalExportSize \(expected) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+    }
+
+    /// Pixel proof that the clamp is doing its job rather than the canvas merely
+    /// being cropped: at max size with the offset slammed into the corner, the
+    /// outermost row and column are still empty, so nothing is clipped.
+    @Test("A maxed-out badge doesn't touch the canvas edge")
+    func maxBadge_doesNotReachTheCanvasEdge() throws {
+        var settings = IconSettings()
+        settings.exportSize = 512
+        settings.exportRetinaSize = false
+        // Leave the badge as the only thing on the canvas.
+        settings.iconBackgroundHidden = true
+        settings.iconForegroundHidden = true
+        settings.showBadge = true
+        settings.badgePosition = .bottomRight
+        settings.badgeSymbolName = "gearshape.fill"
+        settings.badgeScale = 2.0
+        settings.badgeManualOffsetX = 1.0
+        settings.badgeManualOffsetY = 1.0
+
+        let side = settings.finalExportSize
+        let image = IconRenderer.renderIconSafely(settings: settings)
+
+        // The badge has to actually be on the canvas, or an all-clear image would
+        // pass this trivially.
+        let whole = IconRenderingAssertions.clearPixelFraction(
+            in: image, rect: CGRect(x: 0, y: 0, width: side, height: side))
+        #expect(whole < 0.99, "Precondition: the badge must be drawn somewhere")
+
+        for (name, rect) in [
+            ("top", CGRect(x: 0, y: 0, width: side, height: 1)),
+            ("bottom", CGRect(x: 0, y: side - 1, width: side, height: 1)),
+            ("left", CGRect(x: 0, y: 0, width: 1, height: side)),
+            ("right", CGRect(x: side - 1, y: 0, width: 1, height: side))
+        ] {
+            let clear = IconRenderingAssertions.clearPixelFraction(in: image, rect: rect)
+            #expect(clear > 0.999,
+                    "The \(name) edge is \(String(format: "%.1f", (1 - clear) * 100))% covered — the badge is being clipped, not clamped")
+        }
     }
 
     // MARK: - Imported badge background is unclipped
@@ -286,8 +322,7 @@ struct BadgeRenderingStructuralTests {
         settings.badgeImportedBackgroundPaddingCompensation = false
         settings.badgeEnableBackgroundShadow = false
 
-        let canvas = IconContentView.totalCanvasSize(
-            for: settings, displaySize: settings.finalExportSize)
+        let canvas = settings.finalExportSize
         let diameter = BadgeGeometry.diameter(
             enclosureSize: PreviewHitTester.enclosureSize(displaySize: settings.finalExportSize),
             badgeScale: settings.badgeScale

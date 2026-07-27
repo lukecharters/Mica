@@ -302,10 +302,6 @@ struct ScaledIconPreview: View {
     /// The single cursor this view currently has on NSCursor's stack, if any.
     @State private var pushedCursor: NSCursor? = nil
 
-    private var canvasSize: CGFloat {
-        IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
-    }
-
     /// Enclosure size at the current display scale
     private var enclosureSize: CGFloat {
         displaySize - 2 * (25 * displaySize / 256) // backgroundInset * scaleFactor
@@ -339,7 +335,6 @@ struct ScaledIconPreview: View {
                ) {
                 SelectionOutline(
                     shape: shape,
-                    canvasSize: canvasSize,
                     displaySize: displaySize,
                     selection: selection,
                     pulse: selectionPulse
@@ -351,7 +346,7 @@ struct ScaledIconPreview: View {
                 badgeDragOverlay
             }
         }
-        .frame(width: canvasSize, height: canvasSize, alignment: .center)
+        .frame(width: displaySize, height: displaySize, alignment: .center)
         // Attached after the frame so the tap location is in canvas coordinates,
         // which is what PreviewHitTester expects.
         //
@@ -429,9 +424,14 @@ struct ScaledIconPreview: View {
                         }
                         let normalizedDX = value.translation.width / enclosureSize
                         let normalizedDY = value.translation.height / enclosureSize
-                        let range = IconSettings.badgeOffsetRange
-                        settings.badgeManualOffsetX = min(max(dragStart.width + normalizedDX, range.lowerBound), range.upperBound)
-                        settings.badgeManualOffsetY = min(max(dragStart.height + normalizedDY, range.lowerBound), range.upperBound)
+                        // Clamp to what the badge can actually use, not the raw
+                        // badgeOffsetRange: BadgeGeometry keeps the badge inside
+                        // the canvas, so writing an offset past that limit would
+                        // bank up dead travel the user has to unwind before the
+                        // badge moves back.
+                        let range = BadgeGeometry.manualOffsetRange(for: settings, enclosureSize: enclosureSize)
+                        settings.badgeManualOffsetX = min(max(dragStart.width + normalizedDX, range.x.lowerBound), range.x.upperBound)
+                        settings.badgeManualOffsetY = min(max(dragStart.height + normalizedDY, range.y.lowerBound), range.y.upperBound)
                     }
                     .onEnded { _ in
                         isDragging = false

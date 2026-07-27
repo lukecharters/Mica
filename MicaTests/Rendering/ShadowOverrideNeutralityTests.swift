@@ -23,9 +23,8 @@ struct ShadowOverrideNeutralityTests {
 
     private func render(_ settings: IconSettings, override: ShadowStyle?) throws -> Data {
         let displaySize: CGFloat = 256
-        let canvasSize = IconContentView.totalCanvasSize(for: settings, displaySize: displaySize)
         let view = IconContentView(settings: settings, displaySize: displaySize, shadowOverride: override)
-            .frame(width: canvasSize, height: canvasSize)
+            .frame(width: displaySize, height: displaySize)
         let renderer = ImageRenderer(content: view)
         renderer.isOpaque = false
         let image = try #require(renderer.nsImage)
