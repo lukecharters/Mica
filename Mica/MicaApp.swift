@@ -13,7 +13,7 @@ struct MicaApp: App {
                 .frame(minWidth: 800, idealWidth: 1200, minHeight: 500, idealHeight: 800)
         }
         .defaultSize(width: 1200, height: 800)
-        .windowStyle(.hiddenTitleBar)
+        .windowStyle(.automatic)
 //        .windowToolbarLabelStyle(fixed: .titleAndIcon)
         .windowToolbarStyle(.unified)
         .commands {
