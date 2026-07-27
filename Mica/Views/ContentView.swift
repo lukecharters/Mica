@@ -347,6 +347,8 @@ struct ScaledIconPreview: View {
             }
         }
         .frame(width: displaySize, height: displaySize, alignment: .center)
+        // A drag space that does *not* move with the badge. See `badgeDragOverlay`.
+        .coordinateSpace(.named(Self.dragSpace))
         // Attached after the frame so the tap location is in canvas coordinates,
         // which is what PreviewHitTester expects.
         //
@@ -392,6 +394,15 @@ struct ScaledIconPreview: View {
         }
     }
 
+    /// Canvas-fixed space the badge drag is measured in.
+    ///
+    /// The drag must NOT be measured in the overlay's own `.local` space: the
+    /// overlay is `.offset` by the very value the drag writes, so the space the
+    /// pointer is measured in moves with it. That makes each frame's translation
+    /// `Δpointer − Δoffset`, i.e. `t(n+1) = Δpointer − t(n)` — an oscillation that
+    /// reads as a badge lagging the cursor and juddering back and forth.
+    private static let dragSpace = "badgeDrag"
+
     /// Transparent circle at the badge position that captures drag gestures.
     /// Diameter matches the rendered badge, so the hover/drag region doesn't
     /// extend past the visible badge.
@@ -412,7 +423,7 @@ struct ScaledIconPreview: View {
                 }
             }
             .gesture(
-                DragGesture(minimumDistance: 2)
+                DragGesture(minimumDistance: 2, coordinateSpace: .named(Self.dragSpace))
                     .onChanged { value in
                         if !isDragging {
                             isDragging = true
