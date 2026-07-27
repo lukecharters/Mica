@@ -89,32 +89,31 @@ struct BadgeGeometryTests {
     nonisolated static let scales: [CGFloat] = [0.3, 0.5, 1.0, 1.19, 1.5, 2.0]
     nonisolated static let manualOffsets: [Double] = [-1.0, -0.5, 0, 0.5, 1.0]
 
-    /// How far the badge's own edge sits from the icon center, shadow included.
-    private static func extent(enclosureSize: CGFloat, badgeScale: CGFloat) -> CGFloat {
-        BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: badgeScale) / 2
-            + enclosureSize * BadgeGeometry.shadowBufferRatio
-    }
-
     /// The invariant the whole change exists for: whatever the position, size or
-    /// manual offset, the badge and its shadow buffer stay inside the canvas. If
-    /// this fails, an export would clip the badge (the canvas no longer grows to
-    /// rescue it).
+    /// manual offset, the badge and everything it draws stays inside the canvas.
+    /// If this fails, an export would clip the badge (the canvas no longer grows
+    /// to rescue it).
     @Test("The badge never leaves the canvas, at any position, size or offset",
           arguments: positionSigns.map(\.position))
     func clamp_badgeStaysInsideTheCanvas(_ position: BadgePosition) {
         for enclosure in Self.enclosures {
             let halfCanvas = enclosure * BadgeGeometry.enclosureToCanvasRatio / 2
             for scale in Self.scales {
-                let reach = Self.extent(enclosureSize: enclosure, badgeScale: scale)
                 for mx in Self.manualOffsets {
                     for my in Self.manualOffsets {
                         let s = Self.settings(position: position, manualOffset: (mx, my), badgeScale: scale)
                         let offset = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
+                        let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
                         let context = "\(position) enclosure=\(enclosure) scale=\(scale) manual=(\(mx),\(my))"
-                        #expect(abs(offset.width) + reach <= halfCanvas + 0.0001,
-                                "Badge escapes horizontally by \(abs(offset.width) + reach - halfCanvas)pt — \(context)")
-                        #expect(abs(offset.height) + reach <= halfCanvas + 0.0001,
-                                "Badge escapes vertically by \(abs(offset.height) + reach - halfCanvas)pt — \(context)")
+
+                        #expect(abs(offset.width) + ext.horizontal <= halfCanvas + 0.0001,
+                                "Badge escapes horizontally by \(abs(offset.width) + ext.horizontal - halfCanvas)pt — \(context)")
+                        // Vertical is checked per direction: the shadow falls
+                        // downward, so the two edges have different budgets.
+                        #expect(offset.height + ext.down <= halfCanvas + 0.0001,
+                                "Badge escapes off the bottom by \(offset.height + ext.down - halfCanvas)pt — \(context)")
+                        #expect(-offset.height + ext.up <= halfCanvas + 0.0001,
+                                "Badge escapes off the top by \(-offset.height + ext.up - halfCanvas)pt — \(context)")
                     }
                 }
             }
@@ -127,9 +126,9 @@ struct BadgeGeometryTests {
     @Test("A badge that fits is not moved", arguments: positionSigns)
     func clamp_leavesAFittingBadgeAlone(_ arg: (position: BadgePosition, xSign: CGFloat, ySign: CGFloat)) {
         for enclosure in Self.enclosures {
-            // 1.15 sits just under the ≈1.19 threshold with margin to spare, so
-            // this can't fail on a floating-point hair.
-            for scale in [CGFloat(0.3), 0.5, 1.0, 1.15] {
+            // 1.05 clears the earliest crossover (≈1.11, on a bottom-anchored
+            // badge) with margin, so this can't fail on a floating-point hair.
+            for scale in [CGFloat(0.3), 0.5, 1.0, 1.05] {
                 let s = Self.settings(position: arg.position, badgeScale: scale)
                 let offset = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
                 let expectedX = arg.xSign * enclosure * BadgeGeometry.anchorXRatio
@@ -142,18 +141,97 @@ struct BadgeGeometryTests {
         }
     }
 
-    /// Documents the ≈1.19 crossover without asserting on its exact value, which
-    /// would be fragile. Below it nothing moves; above it the badge marches in.
-    @Test("The badge starts moving inward between badgeScale 1.15 and 1.25")
-    func clamp_thresholdIsAroundNineteenPercentOversize() {
+    /// Brackets the crossover without asserting an exact value, which would be
+    /// fragile. A bottom-anchored badge hits it first because the shadow falls
+    /// that way.
+    @Test("A bottom-anchored badge starts moving inward between scale 1.05 and 1.20")
+    func clamp_thresholdBracket() {
         let enclosure: CGFloat = 206
-        let anchor = enclosure * BadgeGeometry.anchorXRatio
+        let anchor = enclosure * BadgeGeometry.anchorYRatio
 
-        let below = BadgeGeometry.maxCenterOffset(enclosureSize: enclosure, badgeScale: 1.15)
-        #expect(below > anchor, "At 1.15 the default anchor should still fit")
+        let below = BadgeGeometry.centreLimits(
+            for: Self.settings(position: .bottomRight, badgeScale: 1.05), enclosureSize: enclosure)
+        #expect(below.down > anchor, "At 1.05 the default anchor should still fit")
 
-        let above = BadgeGeometry.maxCenterOffset(enclosureSize: enclosure, badgeScale: 1.25)
-        #expect(above < anchor, "At 1.25 the badge must be pulled inward")
+        let above = BadgeGeometry.centreLimits(
+            for: Self.settings(position: .bottomRight, badgeScale: 1.20), enclosureSize: enclosure)
+        #expect(above.down < anchor, "At 1.20 the badge must be pulled inward")
+    }
+
+    // MARK: - Extents track the badge, not the enclosure
+
+    /// The bug this replaced: the shadow buffer was a fixed fraction of the
+    /// *enclosure*, while the shadow itself scales with the badge diameter. The
+    /// two decouple the moment badgeScale leaves 1.0 — too much room at small
+    /// sizes (a visible gap), too little at large ones (a clipped shadow).
+    ///
+    /// Everything past the badge's own edge must therefore be proportional to the
+    /// diameter, i.e. a constant ratio across scales.
+    @Test("The shadow allowance is a constant fraction of the badge diameter")
+    func extents_scaleWithTheBadgeNotTheEnclosure() {
+        let enclosure: CGFloat = 206
+        var ratios: [CGFloat] = []
+
+        for scale in Self.scales {
+            let s = Self.settings(position: .bottomRight, badgeScale: scale)
+            let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: scale)
+            let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
+            // How far the shadow reaches past the badge's own edge.
+            ratios.append((ext.down - diameter / 2) / diameter)
+        }
+
+        let first = try! #require(ratios.first)
+        for (scale, ratio) in zip(Self.scales, ratios) {
+            #expect(abs(ratio - first) < 0.0001,
+                    "Shadow allowance is \(ratio) of the diameter at scale \(scale) but \(first) at \(Self.scales[0]) — it isn't tracking the badge")
+        }
+    }
+
+    /// The vertical asymmetry: the shadow is offset downward, so the bottom needs
+    /// more clearance than the top. Treating them the same either clips the
+    /// bottom or wastes room at the top.
+    @Test("The bottom needs more clearance than the top, by twice the y offset")
+    func extents_areAsymmetricByTheShadowOffset() {
+        let enclosure: CGFloat = 206
+        let s = Self.settings(position: .bottomRight, badgeScale: 1.5)
+        let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
+        let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.5)
+        let dy = diameter * ShadowStyle.macOS26.badgeBackground.offsetYMultiplier
+
+        #expect(ext.down > ext.up, "The downward shadow must claim more room below than above")
+        #expect(abs((ext.down - ext.up) - 2 * dy) < 0.0001,
+                "down - up should be exactly twice the shadow's y offset")
+        #expect(ext.horizontal > diameter / 2, "The blur still reaches sideways")
+    }
+
+    /// With no shadow drawn there is nothing past the badge's edge, so it should
+    /// be free to sit flush against the canvas. The old constant buffer applied
+    /// regardless, holding the badge off the edge for a shadow that wasn't there.
+    @Test("A badge with no shadow gets no allowance",
+          arguments: [BadgePosition.bottomRight, .topLeft])
+    func extents_noShadowMeansNoAllowance(_ position: BadgePosition) {
+        let enclosure: CGFloat = 206
+        var s = Self.settings(position: position, badgeScale: 1.0)
+        s.badgeEnableBackgroundShadow = false
+
+        let half = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.0) / 2
+        let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
+        #expect(abs(ext.horizontal - half) < 0.0001)
+        #expect(abs(ext.up - half) < 0.0001)
+        #expect(abs(ext.down - half) < 0.0001)
+    }
+
+    /// A System-mode badge is a bare appex raster; Mica draws no shadow behind it.
+    @Test("A System-mode badge gets no shadow allowance")
+    func extents_systemBadgeHasNoShadow() {
+        let enclosure: CGFloat = 206
+        var s = Self.settings(position: .bottomRight, badgeScale: 1.0)
+        s.badgeIconSource = .system
+
+        let half = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.0) / 2
+        let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
+        #expect(abs(ext.horizontal - half) < 0.0001)
+        #expect(abs(ext.down - half) < 0.0001)
     }
 
     /// A badge wider than the canvas can't be placed legally; it centers rather
@@ -173,13 +251,11 @@ struct BadgeGeometryTests {
           arguments: positionSigns.map(\.position))
     func manualOffsetRange_agreesWithOffset(_ position: BadgePosition) {
         let enclosure: CGFloat = 206
-        let limit = { (scale: CGFloat) in
-            BadgeGeometry.maxCenterOffset(enclosureSize: enclosure, badgeScale: scale)
-        }
 
         for scale in Self.scales {
             let base = Self.settings(position: position, badgeScale: scale)
             let range = BadgeGeometry.manualOffsetRange(for: base, enclosureSize: enclosure)
+            let limits = BadgeGeometry.centreLimits(for: base, enclosureSize: enclosure)
             #expect(range.x.lowerBound <= range.x.upperBound)
             #expect(range.y.lowerBound <= range.y.upperBound)
 
@@ -189,10 +265,12 @@ struct BadgeGeometryTests {
                 for my in [range.y.lowerBound, range.y.upperBound] {
                     let s = Self.settings(position: position, manualOffset: (mx, my), badgeScale: scale)
                     let offset = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
-                    #expect(abs(offset.width) <= limit(scale) + 0.0001,
+                    #expect(abs(offset.width) <= limits.horizontal + 0.0001,
                             "range endpoint \(mx) exceeded the clamp at scale \(scale), \(position)")
-                    #expect(abs(offset.height) <= limit(scale) + 0.0001,
-                            "range endpoint \(my) exceeded the clamp at scale \(scale), \(position)")
+                    #expect(offset.height <= limits.down + 0.0001,
+                            "range endpoint \(my) exceeded the bottom clamp at scale \(scale), \(position)")
+                    #expect(-offset.height <= limits.up + 0.0001,
+                            "range endpoint \(my) exceeded the top clamp at scale \(scale), \(position)")
                 }
             }
         }

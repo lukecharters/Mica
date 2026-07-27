@@ -99,6 +99,28 @@ struct IconSettings: Equatable {
         }
     }
 
+    /// True only when an imported badge background will actually draw. The
+    /// "use imported" flag can be set before any image is chosen (the Type picker
+    /// writes it directly); in that state the badge falls back to its colour
+    /// background and keeps its symbol instead of rendering nothing.
+    ///
+    /// Shared by `BadgeView` (what to draw) and `BadgeGeometry` (how much room it
+    /// needs) — they must agree, or the badge is clamped against a footprint it
+    /// doesn't have.
+    var badgeDrawsImportedBackground: Bool {
+        !badgeBackgroundHidden && badgeUseImportedBackground && badgeImportedBackground != nil
+    }
+
+    /// The imported badge background is drawn into a frame this many times the
+    /// badge diameter — import scale, plus the padding compensation that scales a
+    /// native app icon's chiclet up to fill the frame. Can exceed 1, so the badge's
+    /// drawn footprint is not bounded by its nominal diameter.
+    var badgeImportedBackgroundEffectiveScale: CGFloat {
+        badgeImportedBackgroundScale
+            * (badgeImportedBackgroundPaddingCompensation
+                ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
+    }
+
     // Per-layer visibility (driven by the eye toggles in the layer sidebar).
     // `showBadge` is computed from these so existing call sites still work.
     var iconForegroundHidden: Bool = false

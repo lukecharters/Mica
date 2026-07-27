@@ -14,8 +14,20 @@ enum BadgeGeometry {
     /// Badge anchor from enclosure center, matching native macOS.
     static let anchorXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
     static let anchorYRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
-    /// Shadow buffer beyond the badge edge (proportional to the 80px badge).
-    static let shadowBufferRatio: CGFloat = 5.6 / 208.0 // ≈ 0.0269
+    /// A SwiftUI `.shadow(radius: r)` reaches this many times `r` past the shape
+    /// before its alpha hits zero.
+    ///
+    /// Measured, not derived: a shadowed circle rendered on an oversized canvas
+    /// puts its outermost non-transparent pixel at 2.083r horizontally, with the
+    /// vertical edges exactly that ± the y offset. The ratio was identical at
+    /// diameters 80 and 160, so the relationship is linear. Rounded up to 2.1 for
+    /// the pixel quantisation in that measurement.
+    ///
+    /// Budgets the whole tail, not just the visible core, so a badge pushed to
+    /// the edge lands with only its faintest 1/255 pixel on the boundary —
+    /// verified by `BadgeShadowExtentTests`, which asserts the alpha *at* the
+    /// canvas edge stays negligible rather than that the badge stops short of it.
+    static let shadowBlurExtentFactor: CGFloat = 2.1
 
     /// The canvas is the enclosure plus `2 * backgroundInset` (25 at the 256pt
     /// reference), so the enclosure is 206/256 of it. Every caller works in
@@ -28,21 +40,87 @@ enum BadgeGeometry {
         enclosureSize * diameterRatio * badgeScale
     }
 
-    /// How far the badge center may sit from the icon center on either axis
-    /// before the badge (plus its shadow buffer) would leave the canvas.
+    /// How far the badge's drawn content — shadow included — reaches from the
+    /// badge centre. Asymmetric vertically: the shadow is offset downward, so the
+    /// bottom needs more room than the top.
+    struct Extents: Equatable {
+        var horizontal: CGFloat
+        var up: CGFloat
+        var down: CGFloat
+    }
+
+    /// The badge's true drawn footprint, used to keep it inside the canvas.
+    ///
+    /// Everything here scales with the badge diameter, because that is what the
+    /// badge's shadow scales with (`BadgeView` passes `badgeSize * multiplier` to
+    /// `.shadow`). A buffer expressed as a fraction of the *enclosure* — which is
+    /// what this used to be — decouples from the shadow as soon as `badgeScale`
+    /// leaves 1.0: too generous when the badge shrinks (a visible gap at the
+    /// edge), too mean when it grows (a clipped shadow).
+    ///
+    /// Resolves the shadow style from `settings` rather than any injected
+    /// override; `BadgeView`'s `shadowOverride` is a Debug-playground hook and
+    /// geometry can't see it.
+    static func extents(for settings: IconSettings, enclosureSize: CGFloat) -> Extents {
+        let diameter = diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let half = diameter / 2
+
+        // A System-mode badge is a bare appex raster — Mica draws no shadow
+        // behind it, and the frame is exactly the diameter.
+        guard settings.badgeIconSource != .system else {
+            return Extents(horizontal: half, up: half, down: half)
+        }
+
+        // An imported background is drawn unclipped into a frame that the import
+        // scale and padding compensation can push past the nominal diameter, so
+        // it, not the circle, can be the widest thing on screen.
+        var base = half
+        if settings.badgeDrawsImportedBackground {
+            base = max(base, half * settings.badgeImportedBackgroundEffectiveScale)
+        }
+
+        // Only the background carries the outer shadow. With it hidden or its
+        // shadow switched off there is nothing past the shape, and the badge
+        // should be free to sit flush against the edge.
+        let drawsBackground = !settings.badgeBackgroundHidden
+        guard drawsBackground, settings.badgeEnableBackgroundShadow else {
+            return Extents(horizontal: base, up: base, down: base)
+        }
+
+        let style = ShadowStyle.preset(for: settings.backgroundShadowStyle).badgeBackground
+        let blur = diameter * style.radiusMultiplier * shadowBlurExtentFactor
+        let dy = diameter * style.offsetYMultiplier
+
+        return Extents(
+            horizontal: base + blur,
+            // The shape itself still reaches `base` upward however far the shadow
+            // is pushed down, so the top can never need less room than the shape.
+            up: base + max(0, blur - dy),
+            down: base + blur + dy
+        )
+    }
+
+    /// How far the badge centre may sit from the icon centre before its drawn
+    /// content would leave the canvas, per direction (`up` is negative y).
     ///
     /// The canvas never grows to accommodate a badge — an export is always
     /// exactly its requested size — so an oversized badge moves inward instead.
-    /// With the default anchor this only bites past `badgeScale ≈ 1.19`; below
-    /// that the badge sits exactly where native macOS puts it.
-    static func maxCenterOffset(enclosureSize: CGFloat, badgeScale: CGFloat) -> CGFloat {
+    /// At default settings this only bites past `badgeScale ≈ 1.10`; below that
+    /// the badge sits exactly where native macOS puts it.
+    static func centreLimits(
+        for settings: IconSettings,
+        enclosureSize: CGFloat
+    ) -> (horizontal: CGFloat, up: CGFloat, down: CGFloat) {
         let halfCanvas = enclosureSize * enclosureToCanvasRatio / 2
-        let extent = diameter(enclosureSize: enclosureSize, badgeScale: badgeScale) / 2
-            + enclosureSize * shadowBufferRatio
-        // Clamped at 0: a badge wider than the canvas can't be placed legally,
-        // so it centers. Unreachable at the 2.0 scale cap, but the caller of a
-        // geometry primitive shouldn't have to know that.
-        return max(0, halfCanvas - extent)
+        let ext = extents(for: settings, enclosureSize: enclosureSize)
+        // Clamped at 0: a badge wider than the canvas can't be placed legally, so
+        // it centres. Unreachable at the 2.0 scale cap for a plain badge, but an
+        // imported background at 2.0 with padding compensation can get there.
+        return (
+            horizontal: max(0, halfCanvas - ext.horizontal),
+            up: max(0, halfCanvas - ext.up),
+            down: max(0, halfCanvas - ext.down)
+        )
     }
 
     /// Which corner a position anchors to, in SwiftUI's top-origin coordinates
@@ -77,14 +155,15 @@ enum BadgeGeometry {
             height: anchor.height + enclosureSize * settings.badgeManualOffsetY
         )
 
-        // Per axis, not radially: both anchors are equal and the extent is the
-        // same on both axes, so a badge with no manual offset stays on its
-        // diagonal anyway, and a dragged one slides along the edge it hit
-        // rather than being dragged around a circle.
-        let limit = maxCenterOffset(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        // Per axis, not radially: a badge with no manual offset stays on its
+        // diagonal anyway, and a dragged one slides along the edge it hit rather
+        // than being dragged around a circle. Y is asymmetric because the shadow
+        // falls downward, so the badge can sit closer to the top edge than the
+        // bottom (negative height is up).
+        let limits = centreLimits(for: settings, enclosureSize: enclosureSize)
         return CGSize(
-            width: min(max(unclamped.width, -limit), limit),
-            height: min(max(unclamped.height, -limit), limit)
+            width: min(max(unclamped.width, -limits.horizontal), limits.horizontal),
+            height: min(max(unclamped.height, -limits.up), limits.down)
         )
     }
 
@@ -92,7 +171,7 @@ enum BadgeGeometry {
     /// offset units, so a control can stop at the limit instead of banking up a
     /// value the badge can't use. Intersected with `IconSettings.badgeOffsetRange`.
     ///
-    /// The range is asymmetric, and past `badgeScale ≈ 1.19` it no longer
+    /// The range is asymmetric, and past `badgeScale ≈ 1.10` it no longer
     /// contains zero — the badge *must* sit inward of its anchor by then. That's
     /// why this only clamps live gestures; re-clamping stored settings against it
     /// would silently rewrite a user's 0% into -6%.
@@ -100,20 +179,23 @@ enum BadgeGeometry {
         for settings: IconSettings,
         enclosureSize: CGFloat
     ) -> (x: ClosedRange<Double>, y: ClosedRange<Double>) {
-        let limit = maxCenterOffset(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let limits = centreLimits(for: settings, enclosureSize: enclosureSize)
         // The point the manual offset is measured from.
         let anchor = anchor(for: settings.badgePosition, enclosureSize: enclosureSize)
 
-        func range(anchor: CGFloat) -> ClosedRange<Double> {
+        func range(anchor: CGFloat, negative: CGFloat, positive: CGFloat) -> ClosedRange<Double> {
             let outer = IconSettings.badgeOffsetRange
-            let lower = max(Double((-limit - anchor) / enclosureSize), outer.lowerBound)
-            let upper = min(Double((limit - anchor) / enclosureSize), outer.upperBound)
+            let lower = max(Double((-negative - anchor) / enclosureSize), outer.lowerBound)
+            let upper = min(Double((positive - anchor) / enclosureSize), outer.upperBound)
             // The two clamps can cross when the geometric window falls entirely
             // outside badgeOffsetRange; collapse rather than trap on an invalid range.
             return lower <= upper ? lower...upper : lower...lower
         }
 
-        return (x: range(anchor: anchor.width), y: range(anchor: anchor.height))
+        return (
+            x: range(anchor: anchor.width, negative: limits.horizontal, positive: limits.horizontal),
+            y: range(anchor: anchor.height, negative: limits.up, positive: limits.down)
+        )
     }
 }
 
@@ -625,14 +707,11 @@ struct BadgeView: View {
         settings.badgeSymbolWeight.fontWeight ?? resolvedBadgeSizing.weight
     }
 
-    /// True only when an imported badge background will actually draw. The
-    /// "use imported" flag can be set before any image is chosen (the Type picker
-    /// writes it directly); in that state the badge falls back to its color
-    /// background and keeps its symbol instead of rendering nothing.
+    /// Whether an imported badge background will actually draw. Shared with
+    /// `BadgeGeometry.extents(for:enclosureSize:)`, which sizes the badge's
+    /// footprint off the same answer.
     private var showsImportedBackground: Bool {
-        !settings.badgeBackgroundHidden
-            && settings.badgeUseImportedBackground
-            && settings.badgeImportedBackground != nil
+        settings.badgeDrawsImportedBackground
     }
 
     var body: some View {
@@ -652,9 +731,7 @@ struct BadgeView: View {
             // Existing rendering for SF Symbol and Imported modes
             ZStack {
                 if showsImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
-                    let effectiveScale = settings.badgeImportedBackgroundScale
-                        * (settings.badgeImportedBackgroundPaddingCompensation
-                            ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
+                    let effectiveScale = settings.badgeImportedBackgroundEffectiveScale
                     Image(nsImage: nsImage)
                         .resizable()
                         .interpolation(.high)
