@@ -86,6 +86,8 @@ Supplying `--badge-fg` is what activates the badge.
 | `--badge-offset-x` | −1.0–1.0 | 0.0 | Horizontal fine offset from the anchor (fraction of icon size). |
 | `--badge-offset-y` | −1.0–1.0 | 0.0 | Vertical fine offset from the anchor. |
 
+Write negative offsets as `--badge-offset-y=-0.05`. Given a space, `-0.05` is read as another flag and the command fails with `Missing value for '--badge-offset-y <offset>'`.
+
 ### Export
 
 | Flag | Values | Default | Description |

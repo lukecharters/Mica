@@ -73,7 +73,9 @@ mica-cli star.fill --badge-fg symbol:plus.circle.fill
 
 # Position, size, and fine offset
 mica-cli star.fill --badge-fg symbol:trash.fill --badge-position top-right --badge-scale 1.2
-mica-cli star.fill --badge-fg symbol:gear --badge-offset-x 0.1 --badge-offset-y -0.05
+
+# Attach a negative offset with =, or -0.05 is read as another flag
+mica-cli star.fill --badge-fg symbol:gear --badge-offset-x 0.1 --badge-offset-y=-0.05
 
 # Styled badge background
 mica-cli folder.fill --badge-fg symbol:gearshape.fill \

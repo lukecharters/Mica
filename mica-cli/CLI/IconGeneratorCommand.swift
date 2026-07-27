@@ -540,16 +540,34 @@ struct BadgeOptions: ParsableArguments {
     )
     var scale: Double = 1.0
 
+    // These are the only two flags that take a negative value, and a negative
+    // value must be attached with `=`. Given a space, ArgumentParser reads the
+    // leading dash and treats `-0.2` as another flag, so parsing fails before
+    // the transform below ever runs — the hint cannot live in a ValidationError.
+    //
+    // It goes in the *abstract*, not the discussion: the resulting "Missing
+    // value for '--badge-offset-x <offset>'" error prints the abstract only
+    // (ArgumentParser's `missingValueForOptionHelpMessage`), and that error is
+    // the exact moment the hint is needed. The discussion carries the reason,
+    // which only `--help` readers need.
     @Option(
         name: .customLong("badge-offset-x"),
-        help: ArgumentHelp("Badge horizontal offset (-1.0 to 1.0)", valueName: "offset"),
+        help: ArgumentHelp(
+            "Badge horizontal offset (-1.0 to 1.0). Write negative values as --badge-offset-x=-0.2",
+            discussion: "Written with a space, -0.2 is read as another flag rather than a value.",
+            valueName: "offset"
+        ),
         transform: { try validateOffset($0, name: "Badge offset X") }
     )
     var offsetX: Double = 0.0
 
     @Option(
         name: .customLong("badge-offset-y"),
-        help: ArgumentHelp("Badge vertical offset (-1.0 to 1.0)", valueName: "offset"),
+        help: ArgumentHelp(
+            "Badge vertical offset (-1.0 to 1.0). Write negative values as --badge-offset-y=-0.2",
+            discussion: "Written with a space, -0.2 is read as another flag rather than a value.",
+            valueName: "offset"
+        ),
         transform: { try validateOffset($0, name: "Badge offset Y") }
     )
     var offsetY: Double = 0.0
@@ -643,6 +661,8 @@ struct IconGeneratorCommand: AsyncParsableCommand {
               mica-cli folder.fill --badge-fg symbol:gearshape.fill \\
                 --badge-bg custom-gradient --badge-bg-gradient-colors "red,orange"
               mica-cli star.fill --badge-fg ~/overlay.png --badge-scale 1.2 --badge-offset-x 0.1
+              # attach a negative offset with =, or -0.15 is read as another flag
+              mica-cli star.fill --badge-fg symbol:plus --badge-offset-y=-0.15
 
             High-resolution export:
               mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
