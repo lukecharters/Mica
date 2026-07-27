@@ -14,20 +14,37 @@ enum BadgeGeometry {
     /// Badge anchor from enclosure center, matching native macOS.
     static let anchorXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
     static let anchorYRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
-    /// A SwiftUI `.shadow(radius: r)` reaches this many times `r` past the shape
-    /// before its alpha hits zero.
+    /// The faintest alpha an 8-bit render can hold. Past this the shadow is
+    /// literally not in the image, so there is nothing left to make room for.
+    static let shadowAlphaFloor: CGFloat = 0.5 / 255.0
+
+    /// How far a SwiftUI `.shadow(radius:)` reaches past the shape before its
+    /// alpha falls below `shadowAlphaFloor`.
     ///
-    /// Measured, not derived: a shadowed circle rendered on an oversized canvas
-    /// puts its outermost non-transparent pixel at 2.083r horizontally, with the
-    /// vertical edges exactly that ± the y offset. The ratio was identical at
-    /// diameters 80 and 160, so the relationship is linear. Rounded up to 2.1 for
-    /// the pixel quantisation in that measurement.
+    /// Scales with the radius and *also* with the opacity: a stronger shadow's
+    /// tail stays above the floor for longer. Gaussian falloff puts that second
+    /// term at `sqrt(ln(opacity / floor))`, which matches measurement closely —
+    /// a shadowed circle's outermost non-transparent pixel sits at:
     ///
-    /// Budgets the whole tail, not just the visible core, so a badge pushed to
-    /// the edge lands with only its faintest 1/255 pixel on the boundary —
-    /// verified by `BadgeShadowExtentTests`, which asserts the alpha *at* the
-    /// canvas edge stays negligible rather than that the badge stops short of it.
-    static let shadowBlurExtentFactor: CGFloat = 2.1
+    ///     opacity   0.10   0.23   0.40   0.60   1.00
+    ///     measured  1.875  2.083  2.222  2.292  2.361   (x radius)
+    ///     formula   1.982  2.183  2.307  2.392  2.497
+    ///
+    /// …times a 5% margin, because the curve tracks the trend but not every
+    /// point: at full opacity a small radius measured 2.500 against a predicted
+    /// 2.497. Erring high costs a fraction of a point of clearance; erring low
+    /// clips the shadow.
+    ///
+    /// Deriving the opacity term instead of hardcoding one factor is what lets
+    /// the `badgeBackground` shadow be retuned freely: change `radiusMultiplier`,
+    /// `offsetYMultiplier` or `opacity` in `ShadowStyle` and the badge's
+    /// clearance follows on its own. `BadgeShadowExtentTests` pins the table.
+    static let shadowBlurExtentMargin: CGFloat = 1.05
+
+    static func shadowBlurExtent(radius: CGFloat, opacity: CGFloat) -> CGFloat {
+        guard radius > 0, opacity > shadowAlphaFloor else { return 0 }
+        return radius * sqrt(log(opacity / shadowAlphaFloor)) * shadowBlurExtentMargin
+    }
 
     /// The canvas is the enclosure plus `2 * backgroundInset` (25 at the 256pt
     /// reference), so the enclosure is 206/256 of it. Every caller works in
@@ -88,7 +105,10 @@ enum BadgeGeometry {
         }
 
         let style = ShadowStyle.preset(for: settings.backgroundShadowStyle).badgeBackground
-        let blur = diameter * style.radiusMultiplier * shadowBlurExtentFactor
+        let blur = shadowBlurExtent(
+            radius: diameter * style.radiusMultiplier,
+            opacity: style.opacity
+        )
         let dy = diameter * style.offsetYMultiplier
 
         return Extents(
@@ -105,7 +125,7 @@ enum BadgeGeometry {
     ///
     /// The canvas never grows to accommodate a badge — an export is always
     /// exactly its requested size — so an oversized badge moves inward instead.
-    /// At default settings this only bites past `badgeScale ≈ 1.10`; below that
+    /// At default settings this only bites past `badgeScale ≈ 1.09`; below that
     /// the badge sits exactly where native macOS puts it.
     static func centreLimits(
         for settings: IconSettings,
@@ -171,7 +191,7 @@ enum BadgeGeometry {
     /// offset units, so a control can stop at the limit instead of banking up a
     /// value the badge can't use. Intersected with `IconSettings.badgeOffsetRange`.
     ///
-    /// The range is asymmetric, and past `badgeScale ≈ 1.10` it no longer
+    /// The range is asymmetric, and past `badgeScale ≈ 1.09` it no longer
     /// contains zero — the badge *must* sit inward of its anchor by then. That's
     /// why this only clamps live gestures; re-clamping stored settings against it
     /// would silently rewrite a user's 0% into -6%.

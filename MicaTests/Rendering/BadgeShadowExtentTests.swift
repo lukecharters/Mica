@@ -125,6 +125,43 @@ struct BadgeShadowExtentTests {
                 "\(bottomGap)px of dead space at the bottom at scale \(scale) — the allowance isn't tracking the badge")
     }
 
+    /// The measured reach of a SwiftUI shadow, as a multiple of its blur radius,
+    /// at each opacity. Taken from the largest radius tested (14.4pt), where
+    /// pixel quantisation matters least.
+    ///
+    /// `shadowBlurExtent` must cover every one of these, or retuning
+    /// `ShadowStyle.badgeBackground.opacity` would start clipping the badge —
+    /// the exact coupling the formula exists to remove.
+    nonisolated static let measuredReach: [(opacity: CGFloat, reachOverRadius: CGFloat)] = [
+        (0.10, 1.875),
+        (0.23, 2.083),
+        (0.40, 2.222),
+        (0.60, 2.292),
+        (1.00, 2.500)   // small radii reached 2.5 at full opacity
+    ]
+
+    @Test("The blur allowance covers the measured reach at every opacity",
+          arguments: measuredReach)
+    func shadowBlurExtent_coversMeasuredReach(_ point: (opacity: CGFloat, reachOverRadius: CGFloat)) {
+        for radius in [CGFloat(2.4), 4.8, 14.4] {
+            let allowed = BadgeGeometry.shadowBlurExtent(radius: radius, opacity: point.opacity)
+            let needed = radius * point.reachOverRadius
+            #expect(allowed >= needed,
+                    "At opacity \(point.opacity), radius \(radius): allowing \(allowed)pt but the shadow reaches \(needed)pt")
+            // …and not wildly more, or the badge floats off the edge again.
+            #expect(allowed <= needed * 1.35,
+                    "At opacity \(point.opacity): allowing \(allowed)pt for a \(needed)pt shadow — over-reserving")
+        }
+    }
+
+    /// A shadow too faint to render at all needs no allowance.
+    @Test("A sub-visible shadow gets no allowance")
+    func shadowBlurExtent_zeroBelowTheAlphaFloor() {
+        #expect(BadgeGeometry.shadowBlurExtent(radius: 10, opacity: 0) == 0)
+        #expect(BadgeGeometry.shadowBlurExtent(radius: 10, opacity: 0.001) == 0)
+        #expect(BadgeGeometry.shadowBlurExtent(radius: 0, opacity: 0.5) == 0)
+    }
+
     /// With the shadow switched off there is nothing past the badge's own edge,
     /// so it should sit flush — its circle tangent to the canvas boundary. The
     /// old constant buffer applied regardless, holding the badge off the edge for
