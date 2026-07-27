@@ -100,3 +100,6 @@ docs/plans/
 code-review/
 # Apple-derived data exports (never commit)
 research/container_recipes/
+
+# skills.sh lock file
+skills-lock.json
