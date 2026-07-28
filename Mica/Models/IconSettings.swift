@@ -2,84 +2,279 @@
 import SwiftUI
 
 struct IconSettings: Equatable {
-    var symbolName: String = "command"
-    var baseColor: Color = .blue
-    var enableBackgroundGradient: Bool = true
-    var useCustomColors: Bool = false
-    var customPrimaryColor: Color = .blue
-    var customSecondaryColor: Color = .purple
-    var exportSize: CGFloat = 512
-    var exportRetinaSize: Bool = false
-    var symbolRenderingMode: SymbolRenderingStyle = .monochrome
-    var symbolColorRenderingMode: SymbolFillStyle = .flat
-    var backgroundMode: IconBackgroundSource = .color
-    var preRenderedColorName: String = "Blue"
-    var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
-    var exportColorSpace: ExportColorSpace = .sRGB
+    // MARK: - Storage
+    //
+    // Grouped as the UI, the CLI flag namespaces and the `.mica` document all
+    // group it: two layer groups, each with a foreground and a background, plus
+    // export settings. Icon and badge foregrounds share one type because their
+    // property sets are identical — 15 each, one-to-one — which is what stops a
+    // new foreground feature being added to one and forgotten on the other.
 
-    var manualSymbolScale: Double = 1.0
-    var symbolWeight: SymbolWeight = .auto
-    var badgeSymbolWeight: SymbolWeight = .auto
+    var export: ExportSpec = ExportSpec()
+    var icon: IconSpec = IconSpec()
+    var badge: BadgeSpec = BadgeSpec()
 
-    // Shadow settings
-    var backgroundShadowStyle: BackgroundShadowStyle = .macOS26
-    var enableSymbolShadow: Bool = true
-    
-    // Symbol colors
-    var symbolColor: Color = .white
-    var hierarchicalSymbolColor: Color = .white
-    var paletteSymbolPrimaryColor: Color = .white
-    var paletteSymbolSecondaryColor: Color = .mint
-    var paletteSymbolTertiaryColor: Color = .yellow
-    
-    // Badge settings
-    var badgePosition: BadgePosition = .bottomRight
-    var badgeSymbolName: String = "gearshape.fill"
-    var badgeUseCustomColors: Bool = false
-    var badgeBaseColor: Color = .gray
-    var badgeCustomPrimaryColor: Color = .white
-    var badgeCustomSecondaryColor: Color = .indigo
-    var badgeSymbolColor: Color = .white
-    var badgeSymbolRenderingMode: SymbolRenderingStyle = .monochrome
-    var badgeHierarchicalSymbolColor: Color = .white
-    var badgePaletteSymbolPrimaryColor: Color = .white
-    var badgePaletteSymbolSecondaryColor: Color = .mint
-    var badgePaletteSymbolTertiaryColor: Color = .yellow
-    var badgeEnableBackgroundGradient: Bool = true
-    var badgeEnableBackgroundShadow: Bool = true
-    var badgeEnableSymbolShadow: Bool = true
-    var badgeSymbolScale: Double = 1.0
-    var badgeScale: Double = 1.0
-    var badgeManualOffsetX: Double = 0.0
-    var badgeManualOffsetY: Double = 0.0
+    // MARK: - Compatibility accessors
+    //
+    // The 62 flat property names this struct used to store, forwarding to the
+    // specs above. Added so the storage could be regrouped without touching any
+    // of the ~1,780 call sites in the same commit; they are deleted surface by
+    // surface as callers migrate. Do not add new ones.
+    // See docs/plans/naming-and-structure-review-2026-07-28.md Appendix A.
 
-    // Badge Symbol Color Rendering Mode (macOS 26+)
-    var badgeSymbolColorRenderingMode: SymbolFillStyle = .flat
+    var exportSize: CGFloat {
+        get { export.size }
+        set { export.size = newValue }
+    }
+    var exportRetinaSize: Bool {
+        get { export.isRetina }
+        set { export.isRetina = newValue }
+    }
+    var exportColorSpace: ExportColorSpace {
+        get { export.colorSpace }
+        set { export.colorSpace = newValue }
+    }
+    var iconGenerationMode: GenerationMode {
+        get { icon.mode }
+        set { icon.mode = newValue }
+    }
+    var symbolName: String {
+        get { icon.foreground.symbolName }
+        set { icon.foreground.symbolName = newValue }
+    }
+    var symbolWeight: SymbolWeight {
+        get { icon.foreground.symbolWeight }
+        set { icon.foreground.symbolWeight = newValue }
+    }
+    var manualSymbolScale: Double {
+        get { icon.foreground.symbolScale }
+        set { icon.foreground.symbolScale = newValue }
+    }
+    var iconSource: ForegroundSource {
+        get { icon.foreground.source }
+        set { icon.foreground.source = newValue }
+    }
+    var importedImage: ImportedImage? {
+        get { icon.foreground.image }
+        set { icon.foreground.image = newValue }
+    }
+    var importedImageScale: Double {
+        get { icon.foreground.imageScale }
+        set { icon.foreground.imageScale = newValue }
+    }
+    var symbolColor: Color {
+        get { icon.foreground.color }
+        set { icon.foreground.color = newValue }
+    }
+    var symbolRenderingMode: SymbolRenderingStyle {
+        get { icon.foreground.renderingStyle }
+        set { icon.foreground.renderingStyle = newValue }
+    }
+    var symbolColorRenderingMode: SymbolFillStyle {
+        get { icon.foreground.fillStyle }
+        set { icon.foreground.fillStyle = newValue }
+    }
+    var hierarchicalSymbolColor: Color {
+        get { icon.foreground.hierarchicalColor }
+        set { icon.foreground.hierarchicalColor = newValue }
+    }
+    var paletteSymbolPrimaryColor: Color {
+        get { icon.foreground.palettePrimaryColor }
+        set { icon.foreground.palettePrimaryColor = newValue }
+    }
+    var paletteSymbolSecondaryColor: Color {
+        get { icon.foreground.paletteSecondaryColor }
+        set { icon.foreground.paletteSecondaryColor = newValue }
+    }
+    var paletteSymbolTertiaryColor: Color {
+        get { icon.foreground.paletteTertiaryColor }
+        set { icon.foreground.paletteTertiaryColor = newValue }
+    }
+    var enableSymbolShadow: Bool {
+        get { icon.foreground.drawsShadow }
+        set { icon.foreground.drawsShadow = newValue }
+    }
+    var iconForegroundHidden: Bool {
+        get { icon.foreground.isHidden }
+        set { icon.foreground.isHidden = newValue }
+    }
+    var backgroundMode: IconBackgroundSource {
+        get { icon.background.source }
+        set { icon.background.source = newValue }
+    }
+    var baseColor: Color {
+        get { icon.background.color }
+        set { icon.background.color = newValue }
+    }
+    var enableBackgroundGradient: Bool {
+        get { icon.background.usesGradient }
+        set { icon.background.usesGradient = newValue }
+    }
+    var useCustomColors: Bool {
+        get { icon.background.usesCustomGradient }
+        set { icon.background.usesCustomGradient = newValue }
+    }
+    var customPrimaryColor: Color {
+        get { icon.background.gradientStartColor }
+        set { icon.background.gradientStartColor = newValue }
+    }
+    var customSecondaryColor: Color {
+        get { icon.background.gradientEndColor }
+        set { icon.background.gradientEndColor = newValue }
+    }
+    var preRenderedColorName: String {
+        get { icon.background.preRenderedColorName }
+        set { icon.background.preRenderedColorName = newValue }
+    }
+    var cornerRadiusStyle: IconCornerRadiusStyle {
+        get { icon.background.cornerRadiusStyle }
+        set { icon.background.cornerRadiusStyle = newValue }
+    }
+    var backgroundShadowStyle: BackgroundShadowStyle {
+        get { icon.background.shadowStyle }
+        set { icon.background.shadowStyle = newValue }
+    }
+    var importedBackground: ImportedImage? {
+        get { icon.background.image }
+        set { icon.background.image = newValue }
+    }
+    var importedBackgroundScale: Double {
+        get { icon.background.imageScale }
+        set { icon.background.imageScale = newValue }
+    }
+    var importedBackgroundPaddingCompensation: Bool {
+        get { icon.background.compensatesForPadding }
+        set { icon.background.compensatesForPadding = newValue }
+    }
+    var iconBackgroundHidden: Bool {
+        get { icon.background.isHidden }
+        set { icon.background.isHidden = newValue }
+    }
+    var badgePosition: BadgePosition {
+        get { badge.position }
+        set { badge.position = newValue }
+    }
+    var badgeScale: Double {
+        get { badge.scale }
+        set { badge.scale = newValue }
+    }
+    var badgeManualOffsetX: Double {
+        get { badge.offsetX }
+        set { badge.offsetX = newValue }
+    }
+    var badgeManualOffsetY: Double {
+        get { badge.offsetY }
+        set { badge.offsetY = newValue }
+    }
+    var badgeSymbolName: String {
+        get { badge.foreground.symbolName }
+        set { badge.foreground.symbolName = newValue }
+    }
+    var badgeSymbolWeight: SymbolWeight {
+        get { badge.foreground.symbolWeight }
+        set { badge.foreground.symbolWeight = newValue }
+    }
+    var badgeSymbolScale: Double {
+        get { badge.foreground.symbolScale }
+        set { badge.foreground.symbolScale = newValue }
+    }
+    var badgeIconSource: ForegroundSource {
+        get { badge.foreground.source }
+        set { badge.foreground.source = newValue }
+    }
+    var badgeImportedImage: ImportedImage? {
+        get { badge.foreground.image }
+        set { badge.foreground.image = newValue }
+    }
+    var badgeImportedImageScale: Double {
+        get { badge.foreground.imageScale }
+        set { badge.foreground.imageScale = newValue }
+    }
+    var badgeSymbolColor: Color {
+        get { badge.foreground.color }
+        set { badge.foreground.color = newValue }
+    }
+    var badgeSymbolRenderingMode: SymbolRenderingStyle {
+        get { badge.foreground.renderingStyle }
+        set { badge.foreground.renderingStyle = newValue }
+    }
+    var badgeSymbolColorRenderingMode: SymbolFillStyle {
+        get { badge.foreground.fillStyle }
+        set { badge.foreground.fillStyle = newValue }
+    }
+    var badgeHierarchicalSymbolColor: Color {
+        get { badge.foreground.hierarchicalColor }
+        set { badge.foreground.hierarchicalColor = newValue }
+    }
+    var badgePaletteSymbolPrimaryColor: Color {
+        get { badge.foreground.palettePrimaryColor }
+        set { badge.foreground.palettePrimaryColor = newValue }
+    }
+    var badgePaletteSymbolSecondaryColor: Color {
+        get { badge.foreground.paletteSecondaryColor }
+        set { badge.foreground.paletteSecondaryColor = newValue }
+    }
+    var badgePaletteSymbolTertiaryColor: Color {
+        get { badge.foreground.paletteTertiaryColor }
+        set { badge.foreground.paletteTertiaryColor = newValue }
+    }
+    var badgeEnableSymbolShadow: Bool {
+        get { badge.foreground.drawsShadow }
+        set { badge.foreground.drawsShadow = newValue }
+    }
+    var badgeForegroundHidden: Bool {
+        get { badge.foreground.isHidden }
+        set { badge.foreground.isHidden = newValue }
+    }
+    var badgeBaseColor: Color {
+        get { badge.background.color }
+        set { badge.background.color = newValue }
+    }
+    var badgeEnableBackgroundGradient: Bool {
+        get { badge.background.usesGradient }
+        set { badge.background.usesGradient = newValue }
+    }
+    var badgeUseCustomColors: Bool {
+        get { badge.background.usesCustomGradient }
+        set { badge.background.usesCustomGradient = newValue }
+    }
+    var badgeCustomPrimaryColor: Color {
+        get { badge.background.gradientStartColor }
+        set { badge.background.gradientStartColor = newValue }
+    }
+    var badgeCustomSecondaryColor: Color {
+        get { badge.background.gradientEndColor }
+        set { badge.background.gradientEndColor = newValue }
+    }
+    var badgeEnableBackgroundShadow: Bool {
+        get { badge.background.drawsShadow }
+        set { badge.background.drawsShadow = newValue }
+    }
+    var badgeImportedBackground: ImportedImage? {
+        get { badge.background.image }
+        set { badge.background.image = newValue }
+    }
+    var badgeImportedBackgroundScale: Double {
+        get { badge.background.imageScale }
+        set { badge.background.imageScale = newValue }
+    }
+    var badgeImportedBackgroundPaddingCompensation: Bool {
+        get { badge.background.compensatesForPadding }
+        set { badge.background.compensatesForPadding = newValue }
+    }
+    var badgeBackgroundHidden: Bool {
+        get { badge.background.isHidden }
+        set { badge.background.isHidden = newValue }
+    }
 
-    // Custom image source (main icon symbol)
-    var iconSource: ForegroundSource = .symbol
-    var importedImage: ImportedImage? = nil
-    var importedImageScale: Double = 1.0
-
-    // Custom image source (main icon background)
-    var importedBackground: ImportedImage? = nil
-    var importedBackgroundPaddingCompensation: Bool = false
-    var importedBackgroundScale: Double = 1.0
-
-    // Custom image source (badge symbol)
-    var badgeIconSource: ForegroundSource = .symbol
-    var badgeImportedImage: ImportedImage? = nil
-    var badgeImportedImageScale: Double = 1.0
-
-    // Custom image source (badge background)
-    var badgeUseImportedBackground: Bool = false
-    var badgeImportedBackground: ImportedImage? = nil
-    var badgeImportedBackgroundPaddingCompensation: Bool = false
-    var badgeImportedBackgroundScale: Double = 1.0
-
-    // Per-group generation mode. Icon and Badge are independent — e.g. Custom icon
-    // with a System (Apple Reference) badge, or vice versa.
-    var iconGenerationMode: GenerationMode = .mica
+    /// Bool ⇄ enum bridge: the badge background used to carry a free `Bool`
+    /// where the icon used a mode enum — the same idea expressed two ways, which
+    /// is why `BadgeBackgroundSource` now exists. Two cases, so the round-trip is
+    /// exact.
+    var badgeUseImportedBackground: Bool {
+        get { badge.background.source == .image }
+        set { badge.background.source = newValue ? .image : .color }
+    }
 
     /// Badge generation mode derived from `badgeIconSource`. Setting `.system`
     /// locks the badge source to `.system`; setting `.mica` falls back to
@@ -120,13 +315,6 @@ struct IconSettings: Equatable {
             * (badgeImportedBackgroundPaddingCompensation
                 ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
     }
-
-    // Per-layer visibility (driven by the eye toggles in the layer sidebar).
-    // `showBadge` is computed from these so existing call sites still work.
-    var iconForegroundHidden: Bool = false
-    var iconBackgroundHidden: Bool = false
-    var badgeForegroundHidden: Bool = true
-    var badgeBackgroundHidden: Bool = true
 
     /// True when at least one badge layer is visible. Setting this updates both
     /// `badgeForegroundHidden` and `badgeBackgroundHidden` together.
@@ -203,6 +391,123 @@ struct IconSettings: Equatable {
         let trimmed = base.trimmingCharacters(in: .whitespaces)
         return "\(trimmed.isEmpty ? "CustomIcon" : trimmed)-mica"
     }
+}
+
+// MARK: - Specs
+//
+// The structs `IconSettings` actually stores. Shapes match the `.mica` document
+// DTO in docs/plans/mica-document-format.md, so that mapping is field-for-field
+// rather than a translation layer.
+
+/// Export settings: what size, at what scale, in which colour space.
+struct ExportSpec: Equatable {
+    var size: CGFloat = 512
+    var isRetina: Bool = false
+    var colorSpace: ExportColorSpace = .sRGB
+
+    /// The exported pixel dimension — `size` after the retina multiplier.
+    var pixelSize: CGFloat { isRetina ? size * 2 : size }
+}
+
+/// The Icon group: how it is rendered, and its two layers.
+struct IconSpec: Equatable {
+    var mode: GenerationMode = .mica
+    var foreground: ForegroundSpec = .iconDefault
+    var background: IconBackgroundSpec = IconBackgroundSpec()
+}
+
+/// The Badge group: where it sits, how big, and its two layers.
+struct BadgeSpec: Equatable {
+    var position: BadgePosition = .bottomRight
+    var scale: Double = 1.0
+    /// Manual nudge, as a fraction of enclosure size so it scales to any export.
+    /// Deliberately two `Double`s rather than a `CGSize`: `BadgeGeometry.offset`
+    /// already returns a `CGSize` meaning the *resolved, clamped* offset in
+    /// points, and two same-typed values meaning different things in one call
+    /// chain is the confusion this naming pass exists to remove.
+    var offsetX: Double = 0.0
+    var offsetY: Double = 0.0
+    var foreground: ForegroundSpec = .badgeDefault
+    var background: BadgeBackgroundSpec = BadgeBackgroundSpec()
+}
+
+/// A foreground layer — the symbol-or-image on top. Shared by the icon and the
+/// badge, whose property sets are identical.
+///
+/// `symbolName` and `isHidden` have no defaults because the two groups genuinely
+/// differ (the icon starts on `command` and visible, the badge on
+/// `gearshape.fill` and hidden). Use `.iconDefault` / `.badgeDefault`.
+struct ForegroundSpec: Equatable {
+    var source: ForegroundSource = .symbol
+    var symbolName: String
+    var symbolWeight: SymbolWeight = .auto
+    var symbolScale: Double = 1.0
+    var image: ImportedImage? = nil
+    var imageScale: Double = 1.0
+    var color: Color = .white
+    var renderingStyle: SymbolRenderingStyle = .monochrome
+    var fillStyle: SymbolFillStyle = .flat
+    var hierarchicalColor: Color = .white
+    var palettePrimaryColor: Color = .white
+    var paletteSecondaryColor: Color = .mint
+    var paletteTertiaryColor: Color = .yellow
+    var drawsShadow: Bool = true
+    var isHidden: Bool
+
+    static let iconDefault = ForegroundSpec(symbolName: "command", isHidden: false)
+    static let badgeDefault = ForegroundSpec(symbolName: "gearshape.fill", isHidden: true)
+}
+
+/// The icon's background layer. Separate from the badge's because it has two
+/// things the badge does not: pre-rendered Liquid Glass assets, and a corner
+/// radius (the badge's shape is fixed by `BadgeGeometry.badgeCornerRadiusRatio`).
+struct IconBackgroundSpec: Equatable {
+    var source: IconBackgroundSource = .color
+    var color: Color = .blue
+    var usesGradient: Bool = true
+    var usesCustomGradient: Bool = false
+    var gradientStartColor: Color = .blue
+    var gradientEndColor: Color = .purple
+    var preRenderedColorName: String = "Blue"
+    var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
+    var shadowStyle: BackgroundShadowStyle = .macOS26
+    var image: ImportedImage? = nil
+    var imageScale: Double = 1.0
+    var compensatesForPadding: Bool = false
+    var isHidden: Bool = false
+
+    var gradientColors: [Color] { [gradientStartColor, gradientEndColor] }
+
+    var preRenderedAssetName: String {
+        "background-\(preRenderedColorName.lowercased())-\(usesGradient ? "gradient" : "solid")"
+    }
+}
+
+/// The badge's background layer. Its shadow is on/off rather than a preset enum,
+/// because a badge only ever has one shadow shape.
+struct BadgeBackgroundSpec: Equatable {
+    var source: BadgeBackgroundSource = .color
+    var color: Color = .gray
+    var usesGradient: Bool = true
+    var usesCustomGradient: Bool = false
+    var gradientStartColor: Color = .white
+    var gradientEndColor: Color = .indigo
+    var drawsShadow: Bool = true
+    var image: ImportedImage? = nil
+    var imageScale: Double = 1.0
+    var compensatesForPadding: Bool = false
+    var isHidden: Bool = true
+
+    var gradientColors: [Color] { [gradientStartColor, gradientEndColor] }
+}
+
+/// What the badge's background layer draws. Smaller than `IconBackgroundSource`
+/// — there are no pre-rendered badge assets — so the two are separate types
+/// rather than one with cases the badge ignores.
+enum BadgeBackgroundSource: String, CaseIterable, Identifiable {
+    case color = "Custom"
+    case image = "Image"
+    var id: String { rawValue }
 }
 
 enum SymbolRenderingStyle: String, CaseIterable, Identifiable {
