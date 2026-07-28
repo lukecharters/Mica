@@ -183,10 +183,6 @@ struct MicaApp: App {
             #endif
             #if DEBUG
             CommandGroup(after: .help) {
-                Button("Run Export Tests") {
-                    runExportTests()
-                }
-                .keyboardShortcut("T", modifiers: [.command, .shift])
                 Button("Run Shadow Variation Tests") {
                     Task {
                         do {
