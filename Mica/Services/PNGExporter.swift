@@ -3,7 +3,7 @@ import AppKit
 import UniformTypeIdentifiers
 import ImageIO
 
-/// Single source of truth for PNG encoding. Both the GUI (`IconDocument`) and
+/// Single source of truth for PNG encoding. Both the GUI (`PNGExportDocument`) and
 /// the CLI (`IconGeneratorCLI`) serialize through here so DPI metadata cannot
 /// drift between the two interfaces.
 enum PNGExporter {

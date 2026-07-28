@@ -174,7 +174,7 @@ struct ContentView: View {
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
             document: viewModel.iconSettings.iconGenerationMode == .system
-                ? IconDocument(appexExport: .init(
+                ? PNGExportDocument(appexExport: .init(
                     symbolName: viewModel.iconSettings.symbolName,
                     enclosureColor: viewModel.appexEnclosureColor.plistValue,
                     symbolColor: viewModel.appexSymbolColor.plistValue,
@@ -184,7 +184,7 @@ struct ContentView: View {
                   ),
                   settings: viewModel.iconSettings,
                   badgeAppexImage: viewModel.badgeAppexRenderedImage)
-                : IconDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
+                : PNGExportDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
             contentType: .png,
             defaultFilename: viewModel.iconSettings.exportBaseName
         ) { result in

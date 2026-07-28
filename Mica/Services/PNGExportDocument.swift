@@ -1,13 +1,13 @@
-// IconDocument.swift - FileDocument conformance for exporting
+// PNGExportDocument.swift - FileDocument conformance for exporting
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO
 
-struct IconDocument: FileDocument {
+struct PNGExportDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.png] }
 
     var settings: IconSettings
-    var preRenderedImage: NSImage?
+    var renderedImage: NSImage?
     var appexExportParams: AppexExportParams?
     var badgeAppexImage: NSImage?
 
@@ -23,21 +23,21 @@ struct IconDocument: FileDocument {
 
     init(settings: IconSettings, badgeAppexImage: NSImage? = nil) {
         self.settings = settings
-        self.preRenderedImage = nil
+        self.renderedImage = nil
         self.appexExportParams = nil
         self.badgeAppexImage = badgeAppexImage
     }
 
-    init(preRenderedImage: NSImage) {
+    init(renderedImage: NSImage) {
         self.settings = IconSettings()
-        self.preRenderedImage = preRenderedImage
+        self.renderedImage = renderedImage
         self.appexExportParams = nil
         self.badgeAppexImage = nil
     }
 
     init(appexExport: AppexExportParams, settings: IconSettings = IconSettings(), badgeAppexImage: NSImage? = nil) {
         self.settings = settings
-        self.preRenderedImage = nil
+        self.renderedImage = nil
         self.appexExportParams = appexExport
         self.badgeAppexImage = badgeAppexImage
     }
@@ -45,7 +45,7 @@ struct IconDocument: FileDocument {
     init(configuration: ReadConfiguration) throws {
         // We don't support reading icons back in, only exporting them
         self.settings = IconSettings()
-        self.preRenderedImage = nil
+        self.renderedImage = nil
         self.appexExportParams = nil
         self.badgeAppexImage = nil
     }
@@ -94,8 +94,8 @@ struct IconDocument: FileDocument {
                 image = appexImage
             }
             scaleFactor = params.scaleFactor
-        } else if let preRendered = preRenderedImage {
-            image = preRendered
+        } else if let rendered = renderedImage {
+            image = rendered
             scaleFactor = 2
         } else {
             image = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: badgeAppexImage)

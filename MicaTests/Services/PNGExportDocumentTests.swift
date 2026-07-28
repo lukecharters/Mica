@@ -1,6 +1,6 @@
-// IconDocumentTests.swift
-// IconDocument is a SwiftUI FileDocument with four inits (settings,
-// preRenderedImage, appexExport, configuration/read) and one advertised
+// PNGExportDocumentTests.swift
+// PNGExportDocument is a SwiftUI FileDocument with four inits (settings,
+// renderedImage, appexExport, configuration/read) and one advertised
 // content type. This suite covers the init-surface dispatch: each
 // constructor must populate the right fields and leave others cleared.
 // The write path (fileWrapper(configuration:)) requires a
@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 
 @Suite(.tags(.unit))
 @MainActor
-struct IconDocumentTests {
+struct PNGExportDocumentTests {
 
     // MARK: - Helpers
 
@@ -33,17 +33,17 @@ struct IconDocumentTests {
     /// Captures the documented state shape for the unsupported read path.
     private struct ReadStateSnapshot: Equatable {
         let settings: IconSettings
-        let hasPreRenderedImage: Bool
+        let hasRenderedImage: Bool
         let hasAppexExportParams: Bool
         let hasBadgeAppexImage: Bool
     }
 
     /// Extracts the unsupported-read state shape without depending on a
     /// comparator document or a constructible ReadConfiguration.
-    private static func snapshot(of document: IconDocument) -> ReadStateSnapshot {
+    private static func snapshot(of document: PNGExportDocument) -> ReadStateSnapshot {
         ReadStateSnapshot(
             settings: document.settings,
-            hasPreRenderedImage: document.preRenderedImage != nil,
+            hasRenderedImage: document.renderedImage != nil,
             hasAppexExportParams: document.appexExportParams != nil,
             hasBadgeAppexImage: document.badgeAppexImage != nil
         )
@@ -53,7 +53,7 @@ struct IconDocumentTests {
 
     @Test("readableContentTypes advertises exactly PNG")
     func readableContentTypes_png() {
-        #expect(IconDocument.readableContentTypes == [.png])
+        #expect(PNGExportDocument.readableContentTypes == [.png])
     }
 
     // MARK: - init(settings:badgeAppexImage:)
@@ -64,10 +64,10 @@ struct IconDocumentTests {
         settings.symbolName = "star.fill"
         settings.exportSize = 512
 
-        let doc = IconDocument(settings: settings)
+        let doc = PNGExportDocument(settings: settings)
 
         #expect(doc.settings == settings)
-        #expect(doc.preRenderedImage == nil)
+        #expect(doc.renderedImage == nil)
         #expect(doc.appexExportParams == nil)
         #expect(doc.badgeAppexImage == nil)
     }
@@ -75,26 +75,26 @@ struct IconDocumentTests {
     @Test("settings-based init threads badgeAppexImage through")
     func init_settings_storesBadgeAppexImage() {
         let badge = Self.makeSentinelImage()
-        let doc = IconDocument(settings: IconSettings(), badgeAppexImage: badge)
+        let doc = PNGExportDocument(settings: IconSettings(), badgeAppexImage: badge)
 
         #expect(doc.badgeAppexImage === badge,
                 "badgeAppexImage must be the same NSImage instance passed to init")
-        #expect(doc.preRenderedImage == nil)
+        #expect(doc.renderedImage == nil)
         #expect(doc.appexExportParams == nil)
     }
 
-    // MARK: - init(preRenderedImage:)
+    // MARK: - init(renderedImage:)
 
-    @Test("preRenderedImage init stores the image and uses default settings")
+    @Test("renderedImage init stores the image and uses default settings")
     func init_preRenderedImage() {
         let image = Self.makeSentinelImage(sized: 128)
 
-        let doc = IconDocument(preRenderedImage: image)
+        let doc = PNGExportDocument(renderedImage: image)
 
-        #expect(doc.preRenderedImage === image,
-                "preRenderedImage must be the same NSImage instance passed to init")
+        #expect(doc.renderedImage === image,
+                "renderedImage must be the same NSImage instance passed to init")
         #expect(doc.settings == IconSettings(),
-                "preRenderedImage init must leave settings at their defaults")
+                "renderedImage init must leave settings at their defaults")
         #expect(doc.appexExportParams == nil)
         #expect(doc.badgeAppexImage == nil)
     }
@@ -103,7 +103,7 @@ struct IconDocumentTests {
 
     @Test("appexExport init stores appexExportParams and preserves settings + badge")
     func init_appexExport_storesParams() throws {
-        let params = IconDocument.AppexExportParams(
+        let params = PNGExportDocument.AppexExportParams(
             symbolName: "gear",
             enclosureColor: "green",
             symbolColor: "white",
@@ -115,7 +115,7 @@ struct IconDocumentTests {
         settings.showBadge = true
         let badge = Self.makeSentinelImage()
 
-        let doc = IconDocument(appexExport: params, settings: settings, badgeAppexImage: badge)
+        let doc = PNGExportDocument(appexExport: params, settings: settings, badgeAppexImage: badge)
 
         let stored = try #require(doc.appexExportParams,
                                    "appexExportParams must be populated after appexExport init")
@@ -128,12 +128,12 @@ struct IconDocumentTests {
 
         #expect(doc.settings == settings)
         #expect(doc.badgeAppexImage === badge)
-        #expect(doc.preRenderedImage == nil)
+        #expect(doc.renderedImage == nil)
     }
 
     @Test("appexExport init without explicit settings uses IconSettings defaults")
     func init_appexExport_defaultSettings() throws {
-        let params = IconDocument.AppexExportParams(
+        let params = PNGExportDocument.AppexExportParams(
             symbolName: "gear",
             enclosureColor: "blue",
             symbolColor: "white",
@@ -142,7 +142,7 @@ struct IconDocumentTests {
             colorSpace: .sRGB
         )
 
-        let doc = IconDocument(appexExport: params)
+        let doc = PNGExportDocument(appexExport: params)
 
         #expect(doc.settings == IconSettings())
         #expect(doc.badgeAppexImage == nil)
@@ -162,13 +162,13 @@ struct IconDocumentTests {
         // manually assembled stand-in document.
         let expected = ReadStateSnapshot(
             settings: IconSettings(),
-            hasPreRenderedImage: false,
+            hasRenderedImage: false,
             hasAppexExportParams: false,
             hasBadgeAppexImage: false
         )
-        var standIn = IconDocument(preRenderedImage: Self.makeSentinelImage())
+        var standIn = PNGExportDocument(renderedImage: Self.makeSentinelImage())
         standIn.settings = IconSettings()
-        standIn.preRenderedImage = nil
+        standIn.renderedImage = nil
         standIn.appexExportParams = nil
         standIn.badgeAppexImage = nil
         let actual = Self.snapshot(of: standIn)
