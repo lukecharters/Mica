@@ -28,9 +28,9 @@ struct IconBackgroundFlagsTests {
     @Test("Standard background uses --icon-bg-color as the base color")
     func standardBaseColor() throws {
         let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-color", "red"]))
-        #expect(settings.backgroundMode == .color)
-        #expect(settings.useCustomColors == false)
-        #expect(settings.baseColor == (try ColorParser.parse("red")))
+        #expect(settings.icon.background.source == .color)
+        #expect(settings.icon.background.usesCustomGradient == false)
+        #expect(settings.icon.background.color == (try ColorParser.parse("red")))
     }
 
     // MARK: - Custom gradient
@@ -40,10 +40,10 @@ struct IconBackgroundFlagsTests {
         let settings = try IconGeneratorCLI().buildTestSettings(
             from: parseCommand(["star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"])
         )
-        #expect(settings.backgroundMode == .color)
-        #expect(settings.useCustomColors == true)
-        #expect(settings.customPrimaryColor == (try ColorParser.parse("red")))
-        #expect(settings.customSecondaryColor == (try ColorParser.parse("blue")))
+        #expect(settings.icon.background.source == .color)
+        #expect(settings.icon.background.usesCustomGradient == true)
+        #expect(settings.icon.background.gradientStartColor == (try ColorParser.parse("red")))
+        #expect(settings.icon.background.gradientEndColor == (try ColorParser.parse("blue")))
     }
 
     // MARK: - Pre-rendered (Liquid Glass)
@@ -53,13 +53,13 @@ struct IconBackgroundFlagsTests {
         let gradient = try IconGeneratorCLI().buildTestSettings(
             from: parseCommand(["star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray"])
         )
-        #expect(gradient.backgroundMode == .preRendered)
-        #expect(gradient.preRenderedAssetName == "background-darkgray-gradient")
+        #expect(gradient.icon.background.source == .preRendered)
+        #expect(gradient.icon.background.preRenderedAssetName == "background-darkgray-gradient")
 
         let solid = try IconGeneratorCLI().buildTestSettings(
             from: parseCommand(["star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray", "--icon-bg-gradient", "off"])
         )
-        #expect(solid.preRenderedAssetName == "background-darkgray-solid")
+        #expect(solid.icon.background.preRenderedAssetName == "background-darkgray-solid")
     }
 
     // MARK: - Style toggles

@@ -32,7 +32,7 @@ struct SpellingAliasTests {
     func colourSpaceAlias() throws {
         let settings = try IconGeneratorCLI().buildTestSettings(
             from: parseCommand(["star.fill", "--colour-space", "displayP3"]))
-        #expect(settings.exportColorSpace == .displayP3)
+        #expect(settings.export.colorSpace == .displayP3)
     }
 
     @Test("--icon-symbol-colour is an alias for --icon-symbol-color")
@@ -111,7 +111,7 @@ struct SpellingAliasTests {
         ])
         try command.performValidationForTesting()
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.preRenderedColorName == normalizeBritishSpelling(name))
+        #expect(settings.icon.background.preRenderedColorName == normalizeBritishSpelling(name))
     }
 
     // MARK: - Appex tokens accept grey

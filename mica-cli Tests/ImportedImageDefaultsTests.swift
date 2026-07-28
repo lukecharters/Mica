@@ -57,14 +57,14 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["--icon-fg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.iconSource == .image)
-        #expect(settings.enableSymbolShadow == false)
+        #expect(settings.icon.foreground.source == .image)
+        #expect(settings.icon.foreground.drawsShadow == false)
     }
 
     @Test("SF Symbol icon keeps its shadow on")
     func iconSymbol_shadowOn() throws {
         let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"]))
-        #expect(settings.enableSymbolShadow == true)
+        #expect(settings.icon.foreground.drawsShadow == true)
     }
 
     @Test("--icon-fg-shadow on forces the shadow back on for an imported image")
@@ -72,7 +72,7 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["--icon-fg", path, "--icon-fg-shadow", "on"])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.enableSymbolShadow == true)
+        #expect(settings.icon.foreground.drawsShadow == true)
     }
 
     @Test("Image icon background (--icon-bg <path>) fills the frame and drops its shadow")
@@ -80,9 +80,9 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["star.fill", "--icon-bg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.backgroundMode == .image)
-        #expect(settings.importedBackgroundPaddingCompensation == true)
-        #expect(settings.backgroundShadowStyle == .off)
+        #expect(settings.icon.background.source == .image)
+        #expect(settings.icon.background.compensatesForPadding == true)
+        #expect(settings.icon.background.shadowStyle == .off)
     }
 
     @Test("Imported badge foreground (--badge-fg <path>) turns the badge symbol shadow off")
@@ -90,8 +90,8 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["star.fill", "--badge-fg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.badgeIconSource == .image)
-        #expect(settings.badgeEnableSymbolShadow == false)
+        #expect(settings.badge.foreground.source == .image)
+        #expect(settings.badge.foreground.drawsShadow == false)
     }
 
     @Test("Image badge background (--badge-bg <path>) fills the frame and drops its shadow")
@@ -99,8 +99,8 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.badgeUseImportedBackground == true)
-        #expect(settings.badgeImportedBackgroundPaddingCompensation == true)
-        #expect(settings.badgeEnableBackgroundShadow == false)
+        #expect(settings.badge.background.source == .image)
+        #expect(settings.badge.background.compensatesForPadding == true)
+        #expect(settings.badge.background.drawsShadow == false)
     }
 }
