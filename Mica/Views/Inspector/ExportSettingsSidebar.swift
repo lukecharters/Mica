@@ -1,4 +1,4 @@
-// Views/Sidebar/ExportSettingsSidebar.swift
+// Views/Inspector/ExportSettingsSidebar.swift
 import SwiftUI
 
 struct ExportSettingsSidebar: View {

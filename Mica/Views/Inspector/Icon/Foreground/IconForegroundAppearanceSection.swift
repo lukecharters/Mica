@@ -1,4 +1,4 @@
-// Views/Sidebar/IconForegroundAppearanceSection.swift
+// Views/Inspector/Icon/Foreground/IconForegroundAppearanceSection.swift
 import SwiftUI
 
 struct IconForegroundAppearanceSection: View {

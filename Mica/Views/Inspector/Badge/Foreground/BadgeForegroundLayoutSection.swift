@@ -1,4 +1,4 @@
-// Views/Sidebar/Badge/Foreground/BadgeForegroundLayoutSection.swift
+// Views/Inspector/Badge/Foreground/BadgeForegroundLayoutSection.swift
 import SwiftUI
 
 /// Layout controls specific to the **badge foreground layer** (symbol scale or

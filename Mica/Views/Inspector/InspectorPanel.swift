@@ -1,4 +1,4 @@
-// Views/Sidebar/InspectorPanel.swift
+// Views/Inspector/InspectorPanel.swift
 import SwiftUI
 
 /// Right panel: shows either the selected layer's controls or the export controls.

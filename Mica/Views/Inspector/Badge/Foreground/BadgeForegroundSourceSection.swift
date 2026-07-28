@@ -1,4 +1,4 @@
-// Views/Sidebar/BadgeForegroundSourceSection.swift
+// Views/Inspector/Badge/Foreground/BadgeForegroundSourceSection.swift
 import SwiftUI
 
 struct BadgeForegroundSourceSection: View {
