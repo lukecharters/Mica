@@ -32,9 +32,9 @@ class IconGeneratorCLI {
             // Load badge appex image if badge uses the System (appex) source.
             // `let` keeps this in a disconnected region so it can be sent
             // into the @MainActor render task (NSImage is non-Sendable).
-            let badgeAppexImage: NSImage? = (settings.showBadge && settings.badgeIconSource == .system)
+            let badgeAppexImage: NSImage? = (settings.badge.isVisible && settings.badge.foreground.source == .system)
                 ? try renderAppexIcon(
-                    symbolName: settings.badgeSymbolName,
+                    symbolName: settings.badge.foreground.symbolName,
                     enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
                     symbolColor: command.resolvedBadgeAppexSymbolColor(),
                     settings: settings
@@ -83,23 +83,23 @@ class IconGeneratorCLI {
         let appexSymbolColor = try AppexColor.plistValue(fromCLIString: command.iconForeground.symbolColor ?? "white")
         let appexEnclosureColor = try AppexColor.plistValue(fromCLIString: command.background.color ?? "blue")
 
-        let scaleFactor = settings.exportRetinaSize ? 2 : 1
+        let scaleFactor = settings.export.isRetina ? 2 : 1
         let appexImage = try AppexReferenceService.renderForExport(
             symbolName: foregroundSymbol,
             enclosureColor: appexEnclosureColor,
             symbolColor: appexSymbolColor,
-            pointSize: settings.exportSize,
+            pointSize: settings.export.size,
             scaleFactor: scaleFactor,
-            colorSpace: settings.exportColorSpace
+            colorSpace: settings.export.colorSpace
         )
 
         // If badge is present, composite via renderAppexWithBadge
-        if settings.showBadge {
+        if settings.badge.isVisible {
             // `let` keeps this in a disconnected region so it can be sent
             // into the @MainActor render task (NSImage is non-Sendable).
-            let badgeAppexImage: NSImage? = settings.badgeIconSource == .system
+            let badgeAppexImage: NSImage? = settings.badge.foreground.source == .system
                 ? try renderAppexIcon(
-                    symbolName: settings.badgeSymbolName,
+                    symbolName: settings.badge.foreground.symbolName,
                     enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
                     symbolColor: command.resolvedBadgeAppexSymbolColor(),
                     settings: settings
@@ -123,14 +123,14 @@ class IconGeneratorCLI {
     /// `enclosureColor` / `symbolColor` are already-resolved plist values
     /// (named token or `r,g,b,a` string) produced by the argument transforms.
     private func renderAppexIcon(symbolName: String, enclosureColor: String, symbolColor: String, settings: IconSettings) throws -> NSImage {
-        let scaleFactor = settings.exportRetinaSize ? 2 : 1
+        let scaleFactor = settings.export.isRetina ? 2 : 1
         return try AppexReferenceService.renderForExport(
             symbolName: symbolName,
             enclosureColor: enclosureColor,
             symbolColor: symbolColor,
-            pointSize: settings.exportSize,
+            pointSize: settings.export.size,
             scaleFactor: scaleFactor,
-            colorSpace: settings.exportColorSpace
+            colorSpace: settings.export.colorSpace
         )
     }
 
@@ -217,66 +217,66 @@ class IconGeneratorCLI {
 
         do {
             // Export properties
-            settings.exportSize = CGFloat(command.export.size)
-            settings.exportRetinaSize = command.export.scale.factor == 2
-            settings.exportColorSpace = command.export.colorSpace
+            settings.export.size = CGFloat(command.export.size)
+            settings.export.isRetina = command.export.scale.factor == 2
+            settings.export.colorSpace = command.export.colorSpace
 
             // Icon foreground source (folds --icon-fg + --icon-fg-scale)
             switch try command.resolvedForeground() {
             case .symbol(let name):
-                settings.iconSource = .symbol
-                settings.symbolName = name
-                settings.manualSymbolScale = command.iconForeground.scale
+                settings.icon.foreground.source = .symbol
+                settings.icon.foreground.symbolName = name
+                settings.icon.foreground.symbolScale = command.iconForeground.scale
             case .image(let path):
-                settings.iconSource = .image
+                settings.icon.foreground.source = .image
                 // symbolName is cosmetic for image foregrounds; use the basename.
-                settings.symbolName = command.defaultOutputBasename()
+                settings.icon.foreground.symbolName = command.defaultOutputBasename()
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                settings.importedImage = try ImageImportService.importFromURL(url)
-                settings.importedImageScale = command.iconForeground.scale
+                settings.icon.foreground.image = try ImageImportService.importFromURL(url)
+                settings.icon.foreground.imageScale = command.iconForeground.scale
             }
 
             // Icon background (folds --icon-bg + --icon-bg-color + gradient-colors + scale + padding)
             switch command.resolvedBackground() {
             case .standard:
-                settings.backgroundMode = .color
-                settings.useCustomColors = false
+                settings.icon.background.source = .color
+                settings.icon.background.usesCustomGradient = false
                 // In system mode the enclosure colour is resolved separately in
                 // renderAppleReference, so leave the SwiftUI base colour default.
                 if command.generation.iconGenerationMode != .system {
-                    settings.baseColor = try ColorParser.parse(command.background.color ?? "blue")
+                    settings.icon.background.color = try ColorParser.parse(command.background.color ?? "blue")
                 }
             case .customGradient:
-                settings.backgroundMode = .color
-                settings.useCustomColors = true
+                settings.icon.background.source = .color
+                settings.icon.background.usesCustomGradient = true
                 let parts = try splitGradientColors(command.background.gradientColors ?? "blue,purple")
-                settings.customPrimaryColor = try ColorParser.parse(parts[0])
-                settings.customSecondaryColor = try ColorParser.parse(parts[1])
-                settings.baseColor = settings.customPrimaryColor
+                settings.icon.background.gradientStartColor = try ColorParser.parse(parts[0])
+                settings.icon.background.gradientEndColor = try ColorParser.parse(parts[1])
+                settings.icon.background.color = settings.icon.background.gradientStartColor
             case .preRendered:
-                settings.backgroundMode = .preRendered
+                settings.icon.background.source = .preRendered
                 // preRenderedAssetName lowercases this when building the asset name.
-                settings.preRenderedColorName = normalizeBritishSpelling(command.background.color ?? "blue")
+                settings.icon.background.preRenderedColorName = normalizeBritishSpelling(command.background.color ?? "blue")
             case .image(let path):
-                settings.backgroundMode = .image
+                settings.icon.background.source = .image
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                settings.importedBackground = try ImageImportService.importFromURL(url)
-                settings.importedBackgroundScale = command.background.scale
-                settings.importedBackgroundPaddingCompensation = command.background.effectivePaddingCompensation
+                settings.icon.background.image = try ImageImportService.importFromURL(url)
+                settings.icon.background.imageScale = command.background.scale
+                settings.icon.background.compensatesForPadding = command.background.effectivePaddingCompensation
             }
 
             // Background style
-            settings.enableBackgroundGradient = command.background.gradient.isOn
-            settings.cornerRadiusStyle = try parseCornerRadius(command.background.cornerRadius)
-            settings.backgroundShadowStyle = try parseShadowStyle(command.background.effectiveShadowStyle)
+            settings.icon.background.usesGradient = command.background.gradient.isOn
+            settings.icon.background.cornerRadiusStyle = try parseCornerRadius(command.background.cornerRadius)
+            settings.icon.background.shadowStyle = try parseShadowStyle(command.background.effectiveShadowStyle)
 
             // Background visibility (new --icon-bg-visibility → iconBackgroundHidden)
-            settings.iconBackgroundHidden = !command.background.visibility.isOn
+            settings.icon.background.isHidden = !command.background.visibility.isOn
 
             // Symbol rendering
-            settings.symbolRenderingMode = try parseRenderingMode(command.iconForeground.symbolRendering)
+            settings.icon.foreground.renderingStyle = try parseRenderingMode(command.iconForeground.symbolRendering)
 
-            let isImageForeground = settings.iconSource == .image
+            let isImageForeground = settings.icon.foreground.source == .image
 
             // Merged --icon-symbol-color. In mica mode it drives the SwiftUI
             // symbol/hierarchical/multicolor tint; in system mode the colour is
@@ -284,8 +284,8 @@ class IconGeneratorCLI {
             // colour is left at its (unused) default here.
             if command.generation.iconGenerationMode != .system {
                 let parsed = try ColorParser.parse(command.iconForeground.symbolColor ?? "white")
-                settings.symbolColor = parsed
-                settings.hierarchicalSymbolColor = parsed
+                settings.icon.foreground.color = parsed
+                settings.icon.foreground.hierarchicalColor = parsed
             }
 
             // Palette colours (folds --palette-primary/secondary/tertiary).
@@ -293,22 +293,22 @@ class IconGeneratorCLI {
                 command.iconForeground.symbolPalette ?? "white,white:0.5,white:0.26",
                 role: "--icon-symbol-palette"
             )
-            settings.paletteSymbolPrimaryColor = try ColorParser.parse(paletteParts[0])
-            settings.paletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(paletteParts[1])
-            settings.paletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(paletteParts[2])
+            settings.icon.foreground.palettePrimaryColor = try ColorParser.parse(paletteParts[0])
+            settings.icon.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(paletteParts[1])
+            settings.icon.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(paletteParts[2])
 
             // Symbol style
-            settings.enableSymbolShadow = command.iconForeground.shadow?.isOn ?? (isImageForeground ? false : true)
-            settings.symbolWeight = try parseSymbolWeight(command.iconForeground.symbolWeight)
-            settings.symbolColorRenderingMode = command.iconForeground.symbolGradient.isOn ? .gradient : .flat
+            settings.icon.foreground.drawsShadow = command.iconForeground.shadow?.isOn ?? (isImageForeground ? false : true)
+            settings.icon.foreground.symbolWeight = try parseSymbolWeight(command.iconForeground.symbolWeight)
+            settings.icon.foreground.fillStyle = command.iconForeground.symbolGradient.isOn ? .gradient : .flat
 
             // Foreground visibility (new --icon-fg-visibility → iconForegroundHidden)
-            settings.iconForegroundHidden = !command.iconForeground.visibility.isOn
+            settings.icon.foreground.isHidden = !command.iconForeground.visibility.isOn
 
             // Icon generation mode (always set, independent of badge presence — the
             // render path reads command.generation.iconGenerationMode directly, but
             // keeping this in sync is correct and avoids a latent quirk).
-            settings.iconGenerationMode = command.generation.iconGenerationMode
+            settings.icon.mode = command.generation.iconGenerationMode
 
             // Badge settings — gated on --badge-fg activation.
             if let badgeForeground = try command.resolvedBadgeForeground() {
@@ -316,63 +316,63 @@ class IconGeneratorCLI {
                 let isBadgeImageForeground: Bool
                 switch badgeForeground {
                 case .symbol(let name):
-                    settings.badgeIconSource = .symbol
-                    settings.badgeSymbolName = name
-                    settings.badgeSymbolScale = command.badge.foregroundScale
+                    settings.badge.foreground.source = .symbol
+                    settings.badge.foreground.symbolName = name
+                    settings.badge.foreground.symbolScale = command.badge.foregroundScale
                     isBadgeImageForeground = false
                 case .image(let path):
-                    settings.badgeIconSource = .image
+                    settings.badge.foreground.source = .image
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                    settings.badgeImportedImage = try ImageImportService.importFromURL(url)
-                    settings.badgeImportedImageScale = command.badge.foregroundScale
+                    settings.badge.foreground.image = try ImageImportService.importFromURL(url)
+                    settings.badge.foreground.imageScale = command.badge.foregroundScale
                     isBadgeImageForeground = true
                 }
 
                 // Badge background (folds --badge-bg + color + gradient-colors + scale + padding).
                 switch command.resolvedBadgeBackground() {
                 case .standard:
-                    settings.badgeUseImportedBackground = false
-                    settings.badgeUseCustomColors = false
+                    settings.badge.background.source = .color
+                    settings.badge.background.usesCustomGradient = false
                     // In system mode the enclosure colour is resolved separately
                     // via the appex pipeline, so leave the SwiftUI base default.
                     if command.generation.badgeGenerationMode != .system {
-                        settings.badgeBaseColor = try ColorParser.parse(command.badge.backgroundColor ?? "gray")
+                        settings.badge.background.color = try ColorParser.parse(command.badge.backgroundColor ?? "gray")
                     }
                 case .customGradient:
-                    settings.badgeUseImportedBackground = false
-                    settings.badgeUseCustomColors = true
+                    settings.badge.background.source = .color
+                    settings.badge.background.usesCustomGradient = true
                     let parts = try splitGradientColors(command.badge.backgroundGradientColors ?? "white,indigo", role: "--badge-bg-gradient-colors")
-                    settings.badgeCustomPrimaryColor = try ColorParser.parse(parts[0])
-                    settings.badgeCustomSecondaryColor = try ColorParser.parse(parts[1])
-                    settings.badgeBaseColor = settings.badgeCustomPrimaryColor
+                    settings.badge.background.gradientStartColor = try ColorParser.parse(parts[0])
+                    settings.badge.background.gradientEndColor = try ColorParser.parse(parts[1])
+                    settings.badge.background.color = settings.badge.background.gradientStartColor
                 case .image(let path):
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                    settings.badgeUseImportedBackground = true
-                    settings.badgeImportedBackground = try ImageImportService.importFromURL(url)
-                    settings.badgeImportedBackgroundScale = command.badge.backgroundScale
-                    settings.badgeImportedBackgroundPaddingCompensation = command.badge.effectiveBackgroundPaddingCompensation
+                    settings.badge.background.source = .image
+                    settings.badge.background.image = try ImageImportService.importFromURL(url)
+                    settings.badge.background.imageScale = command.badge.backgroundScale
+                    settings.badge.background.compensatesForPadding = command.badge.effectiveBackgroundPaddingCompensation
                 }
 
                 // Badge background style.
-                settings.badgeEnableBackgroundGradient = command.badge.backgroundGradient.isOn
-                settings.badgeEnableBackgroundShadow = command.badge.backgroundShadow?.isOn ?? (command.badge.isImageBackground ? false : true)
+                settings.badge.background.usesGradient = command.badge.backgroundGradient.isOn
+                settings.badge.background.drawsShadow = command.badge.backgroundShadow?.isOn ?? (command.badge.isImageBackground ? false : true)
 
                 // Badge layout.
-                settings.badgePosition = try parseBadgePosition(command.badge.position)
-                settings.badgeScale = command.badge.scale
-                settings.badgeManualOffsetX = command.badge.offsetX
-                settings.badgeManualOffsetY = command.badge.offsetY
+                settings.badge.position = try parseBadgePosition(command.badge.position)
+                settings.badge.scale = command.badge.scale
+                settings.badge.offsetX = command.badge.offsetX
+                settings.badge.offsetY = command.badge.offsetY
 
                 // Badge symbol rendering.
-                settings.badgeSymbolRenderingMode = try parseRenderingMode(command.badge.symbolRendering)
+                settings.badge.foreground.renderingStyle = try parseRenderingMode(command.badge.symbolRendering)
 
                 // Merged --badge-symbol-color. In mica mode it drives the SwiftUI
                 // symbol/hierarchical/multicolor tint; in system mode the colour is
                 // resolved as an appex token, so the SwiftUI colour is left default.
                 if command.generation.badgeGenerationMode != .system {
                     let parsed = try ColorParser.parse(command.badge.symbolColor ?? "white")
-                    settings.badgeSymbolColor = parsed
-                    settings.badgeHierarchicalSymbolColor = parsed
+                    settings.badge.foreground.color = parsed
+                    settings.badge.foreground.hierarchicalColor = parsed
                 }
 
                 // Badge palette (folds --badge-palette-primary/secondary/tertiary).
@@ -380,24 +380,24 @@ class IconGeneratorCLI {
                     command.badge.symbolPalette ?? "white,white:0.5,white:0.26",
                     role: "--badge-symbol-palette"
                 )
-                settings.badgePaletteSymbolPrimaryColor = try ColorParser.parse(badgePaletteParts[0])
-                settings.badgePaletteSymbolSecondaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[1])
-                settings.badgePaletteSymbolTertiaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[2])
+                settings.badge.foreground.palettePrimaryColor = try ColorParser.parse(badgePaletteParts[0])
+                settings.badge.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[1])
+                settings.badge.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[2])
 
-                settings.badgeSymbolWeight = try parseSymbolWeight(command.badge.symbolWeight)
-                settings.badgeSymbolColorRenderingMode = command.badge.symbolGradient.isOn ? .gradient : .flat
+                settings.badge.foreground.symbolWeight = try parseSymbolWeight(command.badge.symbolWeight)
+                settings.badge.foreground.fillStyle = command.badge.symbolGradient.isOn ? .gradient : .flat
 
                 // Badge foreground shadow (off for images, on for SF Symbols by default).
-                settings.badgeEnableSymbolShadow = command.badge.foregroundShadow?.isOn ?? (isBadgeImageForeground ? false : true)
+                settings.badge.foreground.drawsShadow = command.badge.foregroundShadow?.isOn ?? (isBadgeImageForeground ? false : true)
 
                 // Badge generation mode (system → appex pipeline).
                 if command.generation.badgeGenerationMode == .system {
-                    settings.badgeIconSource = .system
+                    settings.badge.foreground.source = .system
                 }
 
                 // Badge layer visibility (default on when the badge is active).
-                settings.badgeForegroundHidden = !command.badge.foregroundVisibility.isOn
-                settings.badgeBackgroundHidden = !command.badge.backgroundVisibility.isOn
+                settings.badge.foreground.isHidden = !command.badge.foregroundVisibility.isOn
+                settings.badge.background.isHidden = !command.badge.backgroundVisibility.isOn
             }
 
         } catch let error as ColorParseError {
@@ -465,7 +465,7 @@ class IconGeneratorCLI {
             throw CLIError.imageConversion("Failed to create bitmap representation of rendered image")
         }
 
-        let scaleFactor = settings.exportRetinaSize ? 2 : 1
+        let scaleFactor = settings.export.isRetina ? 2 : 1
         let pngData: Data
         do {
             pngData = try PNGExporter.pngData(from: cgImage, scaleFactor: scaleFactor)

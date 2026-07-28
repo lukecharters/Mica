@@ -22,7 +22,7 @@ private func validateScale(_ scale: String, name: String) throws -> Double {
     guard let value = Double(scale) else {
         throw ValidationError("\(name) must be a number.")
     }
-    guard IconSettings.manualSymbolScaleRange.contains(value) else {
+    guard ForegroundSpec.symbolScaleRange.contains(value) else {
         throw ValidationError("\(name) must be between 0.3 and 2.0. You provided: \(scale)")
     }
     return value
@@ -32,7 +32,7 @@ private func validateOffset(_ offset: String, name: String) throws -> Double {
     guard let value = Double(offset) else {
         throw ValidationError("\(name) must be a number.")
     }
-    guard IconSettings.badgeOffsetRange.contains(value) else {
+    guard BadgeSpec.offsetRange.contains(value) else {
         throw ValidationError("\(name) must be between -1.0 and 1.0. You provided: \(offset)")
     }
     return value
@@ -62,8 +62,8 @@ struct ExportOptions: ParsableArguments {
             guard let intSize = Int(size) else {
                 throw ValidationError("Size must be a whole number (no decimals).")
             }
-            let minSize = Int(IconSettings.minExportSize)
-            let maxSize = Int(IconSettings.maxExportSize)
+            let minSize = Int(ExportSpec.minSize)
+            let maxSize = Int(ExportSpec.maxSize)
             guard (minSize...maxSize).contains(intSize) else {
                 throw ValidationError("Size must be between \(minSize) and \(maxSize) pixels. You provided: \(intSize)")
             }
