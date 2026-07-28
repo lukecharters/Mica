@@ -12,7 +12,7 @@ struct IconSettings: Equatable {
     var exportRetinaSize: Bool = false
     var symbolRenderingMode: SymbolRenderingStyle = .monochrome
     var symbolColorRenderingMode: SymbolFillStyle = .flat
-    var backgroundMode: BackgroundMode = .custom
+    var backgroundMode: IconBackgroundSource = .color
     var preRenderedColorName: String = "Blue"
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var exportColorSpace: ExportColorSpace = .sRGB
@@ -57,7 +57,7 @@ struct IconSettings: Equatable {
     var badgeSymbolColorRenderingMode: SymbolFillStyle = .flat
 
     // Custom image source (main icon symbol)
-    var iconSource: IconSource = .sfSymbol
+    var iconSource: ForegroundSource = .symbol
     var importedImage: ImportedImage? = nil
     var importedImageScale: Double = 1.0
 
@@ -67,7 +67,7 @@ struct IconSettings: Equatable {
     var importedBackgroundScale: Double = 1.0
 
     // Custom image source (badge symbol)
-    var badgeIconSource: IconSource = .sfSymbol
+    var badgeIconSource: ForegroundSource = .symbol
     var badgeImportedImage: ImportedImage? = nil
     var badgeImportedImageScale: Double = 1.0
 
@@ -83,7 +83,7 @@ struct IconSettings: Equatable {
 
     /// Badge generation mode derived from `badgeIconSource`. Setting `.system`
     /// locks the badge source to `.system`; setting `.mica` falls back to
-    /// `.sfSymbol` when needed. The LayerSidebar keeps a separate UI-state memory of
+    /// `.symbol` when needed. The LayerSidebar keeps a separate UI-state memory of
     /// the previous non-system source so the user's pick is restored on round-trip.
     var badgeGenerationMode: GenerationMode {
         get { badgeIconSource == .system ? .system : .mica }
@@ -93,7 +93,7 @@ struct IconSettings: Equatable {
                 badgeIconSource = .system
             case .mica:
                 if badgeIconSource == .system {
-                    badgeIconSource = .sfSymbol
+                    badgeIconSource = .symbol
                 }
             }
         }
@@ -195,7 +195,7 @@ struct IconSettings: Equatable {
     /// name, with a `-mica` suffix appended.
     var exportBaseName: String {
         let base: String
-        if backgroundMode == .importedImage, let imported = importedBackground {
+        if backgroundMode == .image, let imported = importedBackground {
             base = (imported.sourceName as NSString).deletingPathExtension
         } else {
             base = symbolName
@@ -228,10 +228,28 @@ enum SymbolRenderingStyle: String, CaseIterable, Identifiable {
 }
 
 
-enum BackgroundMode: String, CaseIterable, Identifiable {
-    case custom = "Custom"
+/// What a *foreground* layer draws — an SF Symbol, an imported image, or (icon
+/// group only) the whole thing handed to Apple's appex pipeline.
+///
+/// Raw values are user-visible picker labels, so they deliberately keep their
+/// original wording even though the case names changed: retiring "Custom Image"
+/// from the interface is a copy decision, not a rename.
+enum ForegroundSource: String, CaseIterable, Identifiable, Equatable {
+    case symbol = "SF Symbol"
+    case image = "Custom Image"
+    case system = "System"
+    var id: String { rawValue }
+}
+
+/// What the icon's *background* layer draws. The badge's background has its own,
+/// smaller set — it has no pre-rendered assets — so the two are separate types
+/// rather than one with cases the badge ignores.
+///
+/// Raw values are user-visible picker labels; see `ForegroundSource`.
+enum IconBackgroundSource: String, CaseIterable, Identifiable {
+    case color = "Custom"
     case preRendered = "Pre-rendered"
-    case importedImage = "Image"
+    case image = "Image"
     var id: String { rawValue }
 }
 
@@ -372,14 +390,14 @@ extension IconSettings {
     /// Apply an image as the icon foreground (custom symbol image).
     mutating func applyImportedIconForeground(_ image: ImportedImage) {
         importedImage = image
-        iconSource = .customImage
+        iconSource = .image
         enableSymbolShadow = false
     }
 
     /// Apply an image as the icon background.
     mutating func applyImportedIconBackground(_ image: ImportedImage) {
         importedBackground = image
-        backgroundMode = .importedImage
+        backgroundMode = .image
         importedBackgroundPaddingCompensation = true // "Icon Padding" off → fill frame
         backgroundShadowStyle = .off
     }
@@ -387,7 +405,7 @@ extension IconSettings {
     /// Apply an image as the badge foreground (custom badge symbol image).
     mutating func applyImportedBadgeForeground(_ image: ImportedImage) {
         badgeImportedImage = image
-        badgeIconSource = .customImage
+        badgeIconSource = .image
         badgeEnableSymbolShadow = false
     }
 

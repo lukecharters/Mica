@@ -21,15 +21,15 @@ struct IconSettingsSimpleInspectorTests {
     @Test("Each imported layer is detected")
     func usesImportedSources_perLayer() {
         var iconForeground = IconSettings()
-        iconForeground.iconSource = .customImage
+        iconForeground.iconSource = .image
         #expect(iconForeground.usesImportedSources)
 
         var iconBackground = IconSettings()
-        iconBackground.backgroundMode = .importedImage
+        iconBackground.backgroundMode = .image
         #expect(iconBackground.usesImportedSources)
 
         var badgeForeground = IconSettings()
-        badgeForeground.badgeIconSource = .customImage
+        badgeForeground.badgeIconSource = .image
         #expect(badgeForeground.usesImportedSources)
 
         var badgeBackground = IconSettings()
@@ -51,16 +51,16 @@ struct IconSettingsSimpleInspectorTests {
     @Test("Imported and pre-rendered sources fold back to symbol + colour")
     func reset_foldsSources() throws {
         var settings = IconSettings()
-        settings.iconSource = .customImage
-        settings.backgroundMode = .importedImage
-        settings.badgeIconSource = .customImage
+        settings.iconSource = .image
+        settings.backgroundMode = .image
+        settings.badgeIconSource = .image
         settings.badgeUseImportedBackground = true
 
         settings.resetToSimpleControls()
 
-        #expect(settings.iconSource == .sfSymbol)
-        #expect(settings.backgroundMode == .custom)
-        #expect(settings.badgeIconSource == .sfSymbol)
+        #expect(settings.iconSource == .symbol)
+        #expect(settings.backgroundMode == .color)
+        #expect(settings.badgeIconSource == .symbol)
         #expect(settings.badgeUseImportedBackground == false)
         #expect(settings.usesImportedSources == false)
     }
@@ -72,7 +72,7 @@ struct IconSettingsSimpleInspectorTests {
 
         settings.resetToSimpleControls()
 
-        #expect(settings.backgroundMode == .custom)
+        #expect(settings.backgroundMode == .color)
     }
 
     @Test("Rendering modes and custom gradients fold away, since they add rows")
@@ -96,7 +96,7 @@ struct IconSettingsSimpleInspectorTests {
         var settings = IconSettings()
         let iconImage = try ImportedImage.testFixture(sourceName: "icon.png")
         let badgeImage = try ImportedImage.testFixture(sourceName: "badge.png")
-        settings.iconSource = .customImage
+        settings.iconSource = .image
         settings.importedImage = iconImage
         settings.backgroundMode = .preRendered
         settings.preRenderedColorName = "Orange"
@@ -162,7 +162,7 @@ struct IconSettingsSimpleInspectorTests {
     @Test("Folding is idempotent")
     func reset_isIdempotent() {
         var once = IconSettings()
-        once.iconSource = .customImage
+        once.iconSource = .image
         once.resetToSimpleControls()
 
         var twice = once

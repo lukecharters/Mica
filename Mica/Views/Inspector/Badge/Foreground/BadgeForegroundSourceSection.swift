@@ -7,7 +7,7 @@ struct BadgeForegroundSourceSection: View {
 
     /// Source selection within Custom mode (SF Symbol vs Imported image).
     private enum SourceType: String, CaseIterable, Identifiable {
-        case sfSymbol = "SF Symbol"
+        case symbol = "SF Symbol"
         case imported = "Imported"
         var id: String { rawValue }
     }
@@ -16,17 +16,17 @@ struct BadgeForegroundSourceSection: View {
         Binding(
             get: {
                 switch iconSettings.badgeIconSource {
-                case .sfSymbol: return .sfSymbol
-                case .customImage: return .imported
-                case .system: return .sfSymbol
+                case .symbol: return .symbol
+                case .image: return .imported
+                case .system: return .symbol
                 }
             },
             set: { newValue in
                 switch newValue {
-                case .sfSymbol:
-                    iconSettings.badgeIconSource = .sfSymbol
+                case .symbol:
+                    iconSettings.badgeIconSource = .symbol
                 case .imported:
-                    iconSettings.badgeIconSource = .customImage
+                    iconSettings.badgeIconSource = .image
                 }
             }
         )
@@ -50,7 +50,7 @@ struct BadgeForegroundSourceSection: View {
             .labelsHidden()
 
             switch sourceType.wrappedValue {
-            case .sfSymbol:
+            case .symbol:
                 symbolField
 
             case .imported:

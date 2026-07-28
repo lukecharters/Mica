@@ -9,7 +9,7 @@ struct BadgeForegroundLayoutSection: View {
 
     var body: some View {
         switch iconSettings.badgeIconSource {
-        case .sfSymbol:
+        case .symbol:
             Slider(value: $iconSettings.badgeSymbolScale,
                    in: IconSettings.manualSymbolScaleRange,
                    step: 0.05) {
@@ -19,7 +19,7 @@ struct BadgeForegroundLayoutSection: View {
                     .monospacedDigit()
             }
 
-        case .customImage:
+        case .image:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
                 imageScale: $iconSettings.badgeImportedImageScale,

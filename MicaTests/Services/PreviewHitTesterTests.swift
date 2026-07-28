@@ -264,7 +264,7 @@ struct PreviewHitTesterTests {
     @Test("An imported background replaces the foreground target")
     func importedBackground_centreIsBackground() throws {
         var s = IconSettings()
-        s.backgroundMode = .importedImage
+        s.backgroundMode = .image
         s.importedBackground = try ImportedImage.testFixture()
         // Mirrors IconContentView, which skips the foreground entirely here.
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
@@ -273,7 +273,7 @@ struct PreviewHitTesterTests {
     @Test("A custom foreground image is hit across its 0.85-enclosure box")
     func customImageForeground_hitBox() throws {
         var s = IconSettings()
-        s.iconSource = .customImage
+        s.iconSource = .image
         s.importedImage = try ImportedImage.testFixture()
         let centre = Self.canvasCentre(s)
         let half = Self.enclosure() * 0.85 * s.importedImageScale / 2
@@ -286,7 +286,7 @@ struct PreviewHitTesterTests {
     @Test("A custom foreground with no image chosen is not hittable")
     func customImageWithoutImage_isBackground() {
         var s = IconSettings()
-        s.iconSource = .customImage
+        s.iconSource = .image
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
@@ -576,7 +576,7 @@ struct PreviewHitTesterTests {
 
         // An imported background replaces the icon's foreground.
         var importedBg = IconSettings()
-        importedBg.backgroundMode = .importedImage
+        importedBg.backgroundMode = .image
         importedBg.importedBackground = try ImportedImage.testFixture()
         #expect(Self.shape(.iconForeground, importedBg) == nil)
 

@@ -40,10 +40,10 @@ struct InspectorControls: View {
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     /// Remembers the badge's previously-picked non-system source so toggling
-    /// System → Mica restores the user's choice instead of forcing `.sfSymbol`.
+    /// System → Mica restores the user's choice instead of forcing `.symbol`.
     /// Owned here because `InspectorControls` stays mounted across every group and
     /// tab change, so the tracked value never goes stale.
-    @State private var lastNonSystemBadgeSource: IconSource = .sfSymbol
+    @State private var lastNonSystemBadgeSource: ForegroundSource = .symbol
 
     var body: some View {
         VStack(spacing: 0) {
@@ -436,7 +436,7 @@ struct InspectorControls: View {
                 }
             }
 
-            if iconSettings.backgroundMode == .importedImage {
+            if iconSettings.backgroundMode == .image {
                 sectionForm {
                     Section("Layout", isExpanded: $backgroundLayoutExpanded) {
                         IconBackgroundLayoutSection(iconSettings: $iconSettings)
@@ -583,7 +583,7 @@ private struct InspectorControlsPreview: View {
             settings.showBadge = true
             switch group {
             case .icon:  settings.iconGenerationMode = isSystem ? .system : .mica
-            case .badge: settings.badgeIconSource = isSystem ? .system : .sfSymbol
+            case .badge: settings.badgeIconSource = isSystem ? .system : .symbol
             }
         }
     }

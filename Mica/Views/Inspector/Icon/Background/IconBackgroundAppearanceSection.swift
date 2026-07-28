@@ -11,11 +11,11 @@ struct IconBackgroundAppearanceSection: View {
 
     var body: some View {
         switch iconSettings.backgroundMode {
-        case .importedImage:
+        case .image:
             importedControls
         case .preRendered:
             liquidGlassControls
-        case .custom:
+        case .color:
             standardControls
         }
     }

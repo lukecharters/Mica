@@ -98,7 +98,7 @@ struct IconViewModelTests {
     func badgeAppexGenerationKey_captures_all() {
         let vm = IconViewModel()
         vm.iconSettings.showBadge = true
-        vm.iconSettings.badgeIconSource = .customImage
+        vm.iconSettings.badgeIconSource = .image
         vm.iconSettings.badgeSymbolName = "plus.circle"
         vm.badgeAppexEnclosureColor = .red
         vm.badgeAppexSymbolColor = .black

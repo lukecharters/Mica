@@ -21,7 +21,7 @@ struct IconForegroundAppearanceSection: View {
     var body: some View {
         if isAppleReference {
             appleReferenceControls
-        } else if iconSettings.iconSource == .sfSymbol {
+        } else if iconSettings.iconSource == .symbol {
             sfSymbolControls
         } else {
             importedControls

@@ -57,7 +57,7 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["--icon-fg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.iconSource == .customImage)
+        #expect(settings.iconSource == .image)
         #expect(settings.enableSymbolShadow == false)
     }
 
@@ -80,7 +80,7 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["star.fill", "--icon-bg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.backgroundMode == .importedImage)
+        #expect(settings.backgroundMode == .image)
         #expect(settings.importedBackgroundPaddingCompensation == true)
         #expect(settings.backgroundShadowStyle == .off)
     }
@@ -90,7 +90,7 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["star.fill", "--badge-fg", path])
         let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.badgeIconSource == .customImage)
+        #expect(settings.badgeIconSource == .image)
         #expect(settings.badgeEnableSymbolShadow == false)
     }
 

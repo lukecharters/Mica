@@ -122,7 +122,7 @@ struct LayerVisibilityTests {
     func iconGenerationMode_independent() {
         var s = IconSettings()
         s.iconGenerationMode = .system
-        s.badgeIconSource = .sfSymbol
+        s.badgeIconSource = .symbol
         #expect(s.iconGenerationMode == .system)
         #expect(s.badgeGenerationMode == .mica)
     }
@@ -133,17 +133,17 @@ struct LayerVisibilityTests {
         s.badgeIconSource = .system
         #expect(s.badgeGenerationMode == .system)
 
-        s.badgeIconSource = .sfSymbol
+        s.badgeIconSource = .symbol
         #expect(s.badgeGenerationMode == .mica)
 
-        s.badgeIconSource = .customImage
+        s.badgeIconSource = .image
         #expect(s.badgeGenerationMode == .mica)
     }
 
     @Test("Setting badgeGenerationMode .system locks the source")
     func badgeGenerationMode_setAppleRef_locksSource() {
         var s = IconSettings()
-        s.badgeIconSource = .sfSymbol
+        s.badgeIconSource = .symbol
         s.badgeGenerationMode = .system
         #expect(s.badgeIconSource == .system)
     }
@@ -153,14 +153,14 @@ struct LayerVisibilityTests {
         var s = IconSettings()
         s.badgeIconSource = .system
         s.badgeGenerationMode = .mica
-        #expect(s.badgeIconSource == .sfSymbol)
+        #expect(s.badgeIconSource == .symbol)
     }
 
     @Test("Setting badgeGenerationMode .mica when already non-appleReference is a no-op")
     func badgeGenerationMode_setSwiftUI_preservesNonAppleSource() {
         var s = IconSettings()
-        s.badgeIconSource = .customImage
+        s.badgeIconSource = .image
         s.badgeGenerationMode = .mica
-        #expect(s.badgeIconSource == .customImage)
+        #expect(s.badgeIconSource == .image)
     }
 }

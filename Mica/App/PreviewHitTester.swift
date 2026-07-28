@@ -298,10 +298,10 @@ enum PreviewHitTester {
         enclosureSize: CGFloat,
         symbolSizing: ResolvedSymbolSizing?
     ) -> CGRect? {
-        guard settings.backgroundMode != .importedImage else { return nil }
+        guard settings.backgroundMode != .image else { return nil }
 
         switch settings.iconSource {
-        case .sfSymbol:
+        case .symbol:
             let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.symbolName)
             let side = enclosureSize * sizing.multiplier * settings.manualSymbolScale
             guard side > 0 else { return nil }
@@ -313,7 +313,7 @@ enum PreviewHitTester {
                 side: side
             )
 
-        case .customImage:
+        case .image:
             guard settings.importedImage?.nsImage != nil else { return nil }
             let side = enclosureSize * customImageEnclosureRatio * settings.importedImageScale
             guard side > 0 else { return nil }
@@ -326,7 +326,7 @@ enum PreviewHitTester {
 
     /// Side length of the drawn icon background, or nil to use the enclosure.
     private static func backgroundSide(settings: IconSettings, enclosureSize: CGFloat) -> CGFloat? {
-        guard settings.backgroundMode == .importedImage,
+        guard settings.backgroundMode == .image,
               settings.importedBackground?.nsImage != nil else { return nil }
         let scale = settings.importedBackgroundScale
             * (settings.importedBackgroundPaddingCompensation
@@ -395,12 +395,12 @@ enum PreviewHitTester {
     ) -> Bool {
         // Same gates as IconContentView: an imported background replaces the
         // foreground entirely.
-        guard !settings.iconForegroundHidden, settings.backgroundMode != .importedImage else {
+        guard !settings.iconForegroundHidden, settings.backgroundMode != .image else {
             return false
         }
 
         switch settings.iconSource {
-        case .sfSymbol:
+        case .symbol:
             let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.symbolName)
             // symbolSize is a font point size, so the glyph's ink is somewhat
             // smaller than this box — close enough for picking, and generous in
@@ -412,7 +412,7 @@ enum PreviewHitTester {
             )
             return squareContains(point, center: glyphCenter, side: side)
 
-        case .customImage:
+        case .image:
             // Renderer draws nothing until the data decodes, so neither do we.
             guard settings.importedImage?.nsImage != nil else { return false }
             let side = enclosureSize * customImageEnclosureRatio * settings.importedImageScale
@@ -438,7 +438,7 @@ enum PreviewHitTester {
         guard !settings.iconBackgroundHidden else { return false }
 
         let side: CGFloat
-        if settings.backgroundMode == .importedImage {
+        if settings.backgroundMode == .image {
             guard settings.importedBackground?.nsImage != nil else { return false }
             // Imported backgrounds are framed at a scaled multiple of the
             // enclosure and clipped to the chiclet's corner radius.

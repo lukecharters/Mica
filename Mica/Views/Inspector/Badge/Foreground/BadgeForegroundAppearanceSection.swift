@@ -21,9 +21,9 @@ struct BadgeForegroundAppearanceSection: View {
         switch iconSettings.badgeIconSource {
         case .system:
             appleReferenceControls
-        case .sfSymbol:
+        case .symbol:
             sfSymbolControls
-        case .customImage:
+        case .image:
             importedControls
         }
     }

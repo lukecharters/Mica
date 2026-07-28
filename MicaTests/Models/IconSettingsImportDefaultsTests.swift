@@ -27,7 +27,7 @@ struct IconSettingsImportDefaultsTests {
 
         settings.applyImportedIconForeground(image)
 
-        #expect(settings.iconSource == .customImage)
+        #expect(settings.iconSource == .image)
         #expect(settings.importedImage == image)
         #expect(settings.enableSymbolShadow == false)
     }
@@ -43,7 +43,7 @@ struct IconSettingsImportDefaultsTests {
 
         settings.applyImportedIconBackground(image)
 
-        #expect(settings.backgroundMode == .importedImage)
+        #expect(settings.backgroundMode == .image)
         #expect(settings.importedBackground == image)
         #expect(settings.importedBackgroundPaddingCompensation == true)
         #expect(settings.backgroundShadowStyle == .off)
@@ -66,7 +66,7 @@ struct IconSettingsImportDefaultsTests {
 
         settings.applyImportedBadgeForeground(image)
 
-        #expect(settings.badgeIconSource == .customImage)
+        #expect(settings.badgeIconSource == .image)
         #expect(settings.badgeImportedImage == image)
         #expect(settings.badgeEnableSymbolShadow == false)
     }

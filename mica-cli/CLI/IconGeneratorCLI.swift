@@ -224,11 +224,11 @@ class IconGeneratorCLI {
             // Icon foreground source (folds --icon-fg + --icon-fg-scale)
             switch try command.resolvedForeground() {
             case .symbol(let name):
-                settings.iconSource = .sfSymbol
+                settings.iconSource = .symbol
                 settings.symbolName = name
                 settings.manualSymbolScale = command.iconForeground.scale
             case .image(let path):
-                settings.iconSource = .customImage
+                settings.iconSource = .image
                 // symbolName is cosmetic for image foregrounds; use the basename.
                 settings.symbolName = command.defaultOutputBasename()
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
@@ -239,7 +239,7 @@ class IconGeneratorCLI {
             // Icon background (folds --icon-bg + --icon-bg-color + gradient-colors + scale + padding)
             switch command.resolvedBackground() {
             case .standard:
-                settings.backgroundMode = .custom
+                settings.backgroundMode = .color
                 settings.useCustomColors = false
                 // In system mode the enclosure colour is resolved separately in
                 // renderAppleReference, so leave the SwiftUI base colour default.
@@ -247,7 +247,7 @@ class IconGeneratorCLI {
                     settings.baseColor = try ColorParser.parse(command.background.color ?? "blue")
                 }
             case .customGradient:
-                settings.backgroundMode = .custom
+                settings.backgroundMode = .color
                 settings.useCustomColors = true
                 let parts = try splitGradientColors(command.background.gradientColors ?? "blue,purple")
                 settings.customPrimaryColor = try ColorParser.parse(parts[0])
@@ -258,7 +258,7 @@ class IconGeneratorCLI {
                 // preRenderedAssetName lowercases this when building the asset name.
                 settings.preRenderedColorName = normalizeBritishSpelling(command.background.color ?? "blue")
             case .image(let path):
-                settings.backgroundMode = .importedImage
+                settings.backgroundMode = .image
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                 settings.importedBackground = try ImageImportService.importFromURL(url)
                 settings.importedBackgroundScale = command.background.scale
@@ -276,7 +276,7 @@ class IconGeneratorCLI {
             // Symbol rendering
             settings.symbolRenderingMode = try parseRenderingMode(command.iconForeground.symbolRendering)
 
-            let isImageForeground = settings.iconSource == .customImage
+            let isImageForeground = settings.iconSource == .image
 
             // Merged --icon-symbol-color. In mica mode it drives the SwiftUI
             // symbol/hierarchical/multicolor tint; in system mode the colour is
@@ -316,12 +316,12 @@ class IconGeneratorCLI {
                 let isBadgeImageForeground: Bool
                 switch badgeForeground {
                 case .symbol(let name):
-                    settings.badgeIconSource = .sfSymbol
+                    settings.badgeIconSource = .symbol
                     settings.badgeSymbolName = name
                     settings.badgeSymbolScale = command.badge.foregroundScale
                     isBadgeImageForeground = false
                 case .image(let path):
-                    settings.badgeIconSource = .customImage
+                    settings.badgeIconSource = .image
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                     settings.badgeImportedImage = try ImageImportService.importFromURL(url)
                     settings.badgeImportedImageScale = command.badge.foregroundScale
@@ -515,7 +515,7 @@ class IconGeneratorCLI {
     
     // MARK: - Enhanced Parsing Helpers
 
-    private func parseRenderingMode(_ input: String) throws -> SymbolRenderingMode {
+    private func parseRenderingMode(_ input: String) throws -> SymbolRenderingStyle {
         switch input.lowercased() {
         case "monochrome": return .monochrome
         case "hierarchical": return .hierarchical

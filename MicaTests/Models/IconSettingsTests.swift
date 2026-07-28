@@ -21,7 +21,7 @@ struct IconSettingsTests {
         #expect(s.exportRetinaSize == false)
         #expect(s.symbolRenderingMode == .monochrome)
         #expect(s.symbolColorRenderingMode == .flat)
-        #expect(s.backgroundMode == .custom)
+        #expect(s.backgroundMode == .color)
         #expect(s.preRenderedColorName == "Blue")
         #expect(s.cornerRadiusStyle == .macOS26)
         #expect(s.exportColorSpace == .sRGB)
@@ -30,7 +30,7 @@ struct IconSettingsTests {
         #expect(s.showBadge == false)
         #expect(s.badgePosition == .bottomRight)
         #expect(s.badgeSymbolName == "gearshape.fill")
-        #expect(s.iconSource == .sfSymbol)
+        #expect(s.iconSource == .symbol)
         #expect(s.importedImage == nil)
         #expect(s.manualSymbolScale == 1.0)
         #expect(s.badgeManualOffsetX == 0.0)
@@ -149,9 +149,9 @@ struct IconSettingsTests {
         #expect(rt == pos)
     }
 
-    @Test("BackgroundMode raw-value round-trips", arguments: BackgroundMode.allCases)
-    func backgroundMode_roundTrip(_ mode: BackgroundMode) throws {
-        let rt = try #require(BackgroundMode(rawValue: mode.rawValue))
+    @Test("IconBackgroundSource raw-value round-trips", arguments: IconBackgroundSource.allCases)
+    func backgroundMode_roundTrip(_ mode: IconBackgroundSource) throws {
+        let rt = try #require(IconBackgroundSource(rawValue: mode.rawValue))
         #expect(rt == mode)
     }
 

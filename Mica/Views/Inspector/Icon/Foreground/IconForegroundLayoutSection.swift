@@ -6,7 +6,7 @@ struct IconForegroundLayoutSection: View {
 
     var body: some View {
         switch iconSettings.iconSource {
-        case .sfSymbol:
+        case .symbol:
             HStack {
 
                 //                Spacer()
@@ -21,7 +21,7 @@ struct IconForegroundLayoutSection: View {
                 //                .monospacedDigit()
             }
             }
-        case .customImage:
+        case .image:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
                 imageScale: $iconSettings.importedImageScale,

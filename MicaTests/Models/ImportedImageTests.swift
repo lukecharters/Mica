@@ -78,23 +78,23 @@ struct ImportedImageTests {
         #expect(imported.nsImage == nil)
     }
 
-    // MARK: - IconSource
+    // MARK: - ForegroundSource
 
-    @Test("IconSource has three cases")
+    @Test("ForegroundSource has three cases")
     func iconSource_count() {
-        #expect(IconSource.allCases.count == 3)
+        #expect(ForegroundSource.allCases.count == 3)
     }
 
-    @Test("IconSource raw values match user-facing labels")
+    @Test("ForegroundSource raw values match user-facing labels")
     func iconSource_rawValues() {
-        #expect(IconSource.sfSymbol.rawValue == "SF Symbol")
-        #expect(IconSource.customImage.rawValue == "Custom Image")
-        #expect(IconSource.system.rawValue == "System")
+        #expect(ForegroundSource.symbol.rawValue == "SF Symbol")
+        #expect(ForegroundSource.image.rawValue == "Custom Image")
+        #expect(ForegroundSource.system.rawValue == "System")
     }
 
-    @Test("IconSource rawValue round-trips", arguments: IconSource.allCases)
-    func iconSource_roundTrip(_ source: IconSource) throws {
-        let rt = try #require(IconSource(rawValue: source.rawValue))
+    @Test("ForegroundSource rawValue round-trips", arguments: ForegroundSource.allCases)
+    func iconSource_roundTrip(_ source: ForegroundSource) throws {
+        let rt = try #require(ForegroundSource(rawValue: source.rawValue))
         #expect(rt == source)
         #expect(rt.id == source.rawValue)
     }

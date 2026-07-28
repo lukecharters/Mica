@@ -548,7 +548,7 @@ struct IconContentView: View {
 
             // Icon content (SF Symbol or custom image) — hidden when background is an imported image,
             // or when the foreground layer is explicitly hidden via the layer sidebar's eye toggle.
-            if !settings.iconForegroundHidden, settings.backgroundMode != .importedImage {
+            if !settings.iconForegroundHidden, settings.backgroundMode != .image {
                 iconContent
                     .shadow(
                         color: settings.enableSymbolShadow ? Color.black.opacity(resolvedShadow.symbol.opacity) : Color.clear,
@@ -589,7 +589,7 @@ struct IconContentView: View {
                     )
                     .frame(width: iconSize, height: iconSize)
 
-            case .custom:
+            case .color:
                 if settings.useCustomColors {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(
@@ -622,7 +622,7 @@ struct IconContentView: View {
                         .frame(width: iconSize, height: iconSize)
                 }
 
-            case .importedImage:
+            case .image:
                 if let nsImage = settings.importedBackground?.nsImage {
                     let effectiveScale = settings.importedBackgroundScale
                         * (settings.importedBackgroundPaddingCompensation
@@ -674,7 +674,7 @@ struct IconContentView: View {
     @ViewBuilder
     private var iconContent: some View {
         switch settings.iconSource {
-        case .sfSymbol:
+        case .symbol:
             applySymbolColorRenderingMode(
                 to: applySymbolColor(
                     to: Image(systemName: settings.symbolName)
@@ -686,7 +686,7 @@ struct IconContentView: View {
             .frame(width: iconSize, height: iconSize)
             .padding(-backgroundInset)
 
-        case .customImage:
+        case .image:
             if let nsImage = settings.importedImage?.nsImage {
                 let effectiveScale = settings.importedImageScale
                 Image(nsImage: nsImage)
@@ -821,7 +821,7 @@ struct BadgeView: View {
     @ViewBuilder
     private var badgeContent: some View {
         switch settings.badgeIconSource {
-        case .sfSymbol:
+        case .symbol:
             applyBadgeSymbolColorRenderingMode(
                 to: Group {
                     switch settings.badgeSymbolRenderingMode {
@@ -853,7 +853,7 @@ struct BadgeView: View {
                 }
             )
 
-        case .customImage:
+        case .image:
             if let nsImage = settings.badgeImportedImage?.nsImage {
                 let effectiveScale = settings.badgeImportedImageScale
                 Image(nsImage: nsImage)

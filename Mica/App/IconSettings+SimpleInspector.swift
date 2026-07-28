@@ -20,9 +20,9 @@ extension IconSettings {
     /// when this becomes true — imports can arrive from the File and Edit menus
     /// or a canvas drop while the simple pane is showing.
     var usesImportedSources: Bool {
-        iconSource == .customImage
-            || backgroundMode == .importedImage
-            || badgeIconSource == .customImage
+        iconSource == .image
+            || backgroundMode == .image
+            || badgeIconSource == .image
             || badgeUseImportedBackground
     }
 
@@ -41,20 +41,20 @@ extension IconSettings {
     mutating func resetToSimpleControls() {
         // Icon. `iconSource` is never `.system` — the icon's System mode lives in
         // `iconGenerationMode` — so no guard is needed here.
-        if iconSource == .customImage {
-            iconSource = .sfSymbol
+        if iconSource == .image {
+            iconSource = .symbol
         }
-        if backgroundMode != .custom {
-            backgroundMode = .custom
+        if backgroundMode != .color {
+            backgroundMode = .color
         }
         symbolRenderingMode = .monochrome
         useCustomColors = false
 
         // Badge. `badgeGenerationMode` is derived from `badgeIconSource`, so
-        // writing `.sfSymbol` over `.system` would knock a System badge out of
+        // writing `.symbol` over `.system` would knock a System badge out of
         // System mode.
-        if badgeIconSource == .customImage {
-            badgeIconSource = .sfSymbol
+        if badgeIconSource == .image {
+            badgeIconSource = .symbol
         }
         badgeUseImportedBackground = false
         badgeSymbolRenderingMode = .monochrome

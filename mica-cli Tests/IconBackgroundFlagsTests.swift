@@ -28,7 +28,7 @@ struct IconBackgroundFlagsTests {
     @Test("Standard background uses --icon-bg-color as the base color")
     func standardBaseColor() throws {
         let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-color", "red"]))
-        #expect(settings.backgroundMode == .custom)
+        #expect(settings.backgroundMode == .color)
         #expect(settings.useCustomColors == false)
         #expect(settings.baseColor == (try ColorParser.parse("red")))
     }
@@ -40,7 +40,7 @@ struct IconBackgroundFlagsTests {
         let settings = try IconGeneratorCLI().buildTestSettings(
             from: parseCommand(["star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"])
         )
-        #expect(settings.backgroundMode == .custom)
+        #expect(settings.backgroundMode == .color)
         #expect(settings.useCustomColors == true)
         #expect(settings.customPrimaryColor == (try ColorParser.parse("red")))
         #expect(settings.customSecondaryColor == (try ColorParser.parse("blue")))
