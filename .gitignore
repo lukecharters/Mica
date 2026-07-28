@@ -94,9 +94,9 @@ default.profraw
 # Local git-history backups
 *.bundle
 
-docs/plans/
-docs/scratch/
-research/
+# docs/plans/
+# docs/scratch/
+# research/
 
 # Code-review findings (local-only)
 code-review/
