@@ -8,7 +8,7 @@ import SwiftUI
 /// of controls that matter (Mica mode with advanced controls off), or System
 /// mode's single pane. See `groupPane(mode:tab:isSystem:…)`.
 ///
-/// `SidebarSettings` (in Models) holds the advanced-controls key.
+/// `InspectorPreferences` (in Models) holds the advanced-controls key.
 struct InspectorControls: View {
     let group: IconLayerGroup
     /// Active tab per group, owned by ContentView so a canvas click can drive it.
@@ -37,7 +37,7 @@ struct InspectorControls: View {
     /// Moved here from the dissolved BadgeGroupInspector; key kept so existing
     /// user state carries over.
     @AppStorage("sidebar.badgeGroupLayout.expanded") private var badgeGroupLayoutExpanded = true
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     /// Remembers the badge's previously-picked non-system source so toggling
     /// System → Mica restores the user's choice instead of forcing `.sfSymbol`.

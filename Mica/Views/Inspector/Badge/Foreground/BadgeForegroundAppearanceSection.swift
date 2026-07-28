@@ -9,7 +9,7 @@ struct BadgeForegroundAppearanceSection: View {
     @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var badgeAppexEnclosureColor: AppexColor
 
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     @State private var useCustomBadgeSymbolColor = false
     @State private var useCustomBadgeHierarchicalColor = false

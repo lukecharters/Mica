@@ -52,7 +52,7 @@ struct ZoomMenu: View {
 /// preview renders the icon at — either a standard size or the size used by a
 /// specific MDM self service portal — so you can judge how the icon reads where
 /// users will see it. This is preview-only and never affects export (export size
-/// lives in `ExportSettingsSidebar`). `nil` follows the current export size.
+/// lives in `ExportSettingsSection`). `nil` follows the current export size.
 /// Composes with `ZoomMenu` — the chosen preview size is the base that zoom scales.
 struct PreviewSizeMenu: View {
     @Binding var previewPointSize: CGFloat?

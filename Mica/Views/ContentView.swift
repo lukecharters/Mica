@@ -55,7 +55,7 @@ struct ContentView: View {
     @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
     /// Read here too: the selection outline is an advanced-controls affordance, so
     /// with them off the preview draws none (see `currentPreviewSelection`).
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     private let sidebarRange: ClosedRange<Double> = 220...360
     private let inspectorRange: ClosedRange<Double> = 330...460

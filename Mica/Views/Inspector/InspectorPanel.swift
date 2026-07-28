@@ -36,7 +36,7 @@ struct InspectorPanel: View {
                     colorOptions: colorOptions
                 )
             case .export:
-                ExportSettingsSidebar(
+                ExportSettingsSection(
                     iconSettings: $iconSettings,
                     showExportDialog: $showExportDialog,
                     generationMode: iconSettings.iconGenerationMode,

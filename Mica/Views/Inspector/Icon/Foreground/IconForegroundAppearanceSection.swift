@@ -10,7 +10,7 @@ struct IconForegroundAppearanceSection: View {
     @Binding var appexSymbolColor: AppexColor
     @Binding var appexEnclosureColor: AppexColor
 
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     @State private var useCustomSymbolColor = false
     @State private var useCustomHierarchicalColor = false

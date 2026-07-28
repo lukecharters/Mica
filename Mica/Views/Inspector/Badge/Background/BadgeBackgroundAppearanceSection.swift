@@ -5,7 +5,7 @@ struct BadgeBackgroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     @State private var useCustomBadgeBackgroundColor = false
 

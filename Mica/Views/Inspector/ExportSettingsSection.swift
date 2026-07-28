@@ -1,7 +1,7 @@
-// Views/Inspector/ExportSettingsSidebar.swift
+// Views/Inspector/ExportSettingsSection.swift
 import SwiftUI
 
-struct ExportSettingsSidebar: View {
+struct ExportSettingsSection: View {
     @Binding var iconSettings: IconSettings
     @Binding var showExportDialog: Bool
     var generationMode: GenerationMode = .mica
@@ -11,7 +11,7 @@ struct ExportSettingsSidebar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // MARK: - Export Size Section
-            SidebarSection(title: "Export Size") {
+            InspectorSection(title: "Export Size") {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Size", selection: $iconSettings.exportSize) {
                         Text("16pt").tag(CGFloat(16))
@@ -44,7 +44,7 @@ struct ExportSettingsSidebar: View {
                 .padding(.vertical, 8)
 
             // MARK: - Color Space Section
-            SidebarSection(title: "Color Space") {
+            InspectorSection(title: "Color Space") {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("Color Space", selection: $iconSettings.exportColorSpace) {
                         ForEach(ExportColorSpace.allCases) { colorSpace in
@@ -110,7 +110,7 @@ struct ExportSettingsSidebar: View {
 
 // MARK: - Sidebar Section Helper
 
-struct SidebarSection<Content: View>: View {
+struct InspectorSection<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
 
@@ -129,7 +129,7 @@ struct SidebarSection<Content: View>: View {
 #Preview("Export Sidebar") {
     @Previewable @State var settings = IconSettings()
     @Previewable @State var showExportDialog = false
-    ExportSettingsSidebar(
+    ExportSettingsSection(
         iconSettings: $settings,
         showExportDialog: $showExportDialog
     )
@@ -137,7 +137,7 @@ struct SidebarSection<Content: View>: View {
 }
 
 #Preview("Sidebar Section") {
-    SidebarSection(title: "Export Size") {
+    InspectorSection(title: "Export Size") {
         Text("Section contents")
             .font(.caption)
             .foregroundStyle(.secondary)
