@@ -213,7 +213,7 @@ struct AutoCalibrationPlayground: View {
 
         let symbols = Self.loadSymbolList()
         guard !symbols.isEmpty else {
-            errorMessage = "sf_symbols.txt not found in bundle"
+            errorMessage = "sf-symbols.txt not found in bundle"
             return
         }
 
@@ -259,7 +259,7 @@ struct AutoCalibrationPlayground: View {
     }
 
     private static func loadSymbolList() -> [String] {
-        guard let url = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
+        guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
               let contents = try? String(contentsOf: url, encoding: .utf8)
         else { return [] }
         return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }

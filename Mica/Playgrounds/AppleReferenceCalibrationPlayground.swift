@@ -185,7 +185,7 @@ struct AppleReferenceCalibrationPlayground: View {
     }
 
     private static func loadSymbols() -> [String] {
-        guard let url = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
+        guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
               let contents = try? String(contentsOf: url, encoding: .utf8)
         else { return [] }
         return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }

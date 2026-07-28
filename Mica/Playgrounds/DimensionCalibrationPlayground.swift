@@ -497,7 +497,7 @@ struct DimensionCalibrationPlayground: View {
         let familyOverrides = overrides ?? loadFamilyOverrides()
 
         let orderedSymbols: [String]
-        if let txtURL = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
+        if let txtURL = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
            let contents = try? String(contentsOf: txtURL, encoding: .utf8) {
             orderedSymbols = contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
         } else {
