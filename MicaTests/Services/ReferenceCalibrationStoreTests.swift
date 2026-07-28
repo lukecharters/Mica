@@ -1,5 +1,5 @@
-// CalibrationStoreTests.swift
-// CalibrationStore persists per-symbol calibration to JSON on disk. Tests
+// ReferenceCalibrationStoreTests.swift
+// ReferenceCalibrationStore persists per-symbol calibration to JSON on disk. Tests
 // drive it against an injected fileURL in NSTemporaryDirectory so no real
 // user data in Application Support is ever read or written.
 
@@ -9,7 +9,7 @@ import Foundation
 
 @Suite(.tags(.unit))
 @MainActor
-struct CalibrationStoreTests {
+struct ReferenceCalibrationStoreTests {
 
     // MARK: - Helpers
 
@@ -18,7 +18,7 @@ struct CalibrationStoreTests {
         let url: URL
         init() {
             url = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-                .appendingPathComponent("CalibrationStoreTests-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("ReferenceCalibrationStoreTests-\(UUID().uuidString)", isDirectory: true)
             try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         }
         deinit {
@@ -36,8 +36,8 @@ struct CalibrationStoreTests {
         yOffset: Double = -0.02,
         weight: String = "regular",
         status: String = "calibrated"
-    ) -> CalibrationEntry {
-        CalibrationEntry(
+    ) -> ReferenceCalibrationEntry {
+        ReferenceCalibrationEntry(
             multiplier: multiplier,
             xOffset: xOffset,
             yOffset: yOffset,
@@ -51,7 +51,7 @@ struct CalibrationStoreTests {
     @Test("Fresh store at an empty fileURL has no entries")
     func freshStore_empty() {
         let temp = TempDir()
-        let store = CalibrationStore(fileURL: temp.fileURL())
+        let store = ReferenceCalibrationStore(fileURL: temp.fileURL())
         #expect(store.entries.isEmpty)
         #expect(store.entry(for: "star.fill") == nil)
     }
@@ -61,14 +61,14 @@ struct CalibrationStoreTests {
         let temp = TempDir()
         let path = temp.fileURL()
 
-        let store1 = CalibrationStore(fileURL: path)
+        let store1 = ReferenceCalibrationStore(fileURL: path)
         store1.setEntry(Self.sampleEntry(), for: "star.fill")
 
         // The file must exist after setEntry.
         #expect(FileManager.default.fileExists(atPath: path.path))
 
         // A second store pointed at the same file reads the entry.
-        let store2 = CalibrationStore(fileURL: path)
+        let store2 = ReferenceCalibrationStore(fileURL: path)
         let readBack = try #require(store2.entry(for: "star.fill"))
         #expect(readBack.multiplier == 0.62)
         #expect(readBack.xOffset == 0.01)
@@ -80,7 +80,7 @@ struct CalibrationStoreTests {
     @Test("calibratedCount and skippedCount classify entries by status")
     func stats_classifyByStatus() {
         let temp = TempDir()
-        let store = CalibrationStore(fileURL: temp.fileURL())
+        let store = ReferenceCalibrationStore(fileURL: temp.fileURL())
         store.setEntry(Self.sampleEntry(status: "calibrated"),   for: "a")
         store.setEntry(Self.sampleEntry(status: "calibrated"),   for: "b")
         store.setEntry(Self.sampleEntry(status: "skipped"),      for: "c")
@@ -93,7 +93,7 @@ struct CalibrationStoreTests {
     @Test("Overwriting an entry replaces the previous value")
     func setEntry_overwrites() throws {
         let temp = TempDir()
-        let store = CalibrationStore(fileURL: temp.fileURL())
+        let store = ReferenceCalibrationStore(fileURL: temp.fileURL())
         store.setEntry(Self.sampleEntry(multiplier: 0.40), for: "star.fill")
         store.setEntry(Self.sampleEntry(multiplier: 0.70), for: "star.fill")
         let entry = try #require(store.entry(for: "star.fill"))
@@ -106,7 +106,7 @@ struct CalibrationStoreTests {
         let path = temp.fileURL()
         try "not json".data(using: .utf8)!.write(to: path)
 
-        let store = CalibrationStore(fileURL: path)
+        let store = ReferenceCalibrationStore(fileURL: path)
         #expect(store.entries.isEmpty)
     }
 }

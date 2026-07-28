@@ -5,7 +5,7 @@
 // rendered icon on top and fine-tuning multiplier + offsets until they match.
 //
 // Produces icon-calibration.json in the sandbox container's
-// Application Support/Mica/ (via CalibrationStore), mapping every SF Symbol
+// Application Support/Mica/ (via ReferenceCalibrationStore), mapping every SF Symbol
 // to its calibrated {multiplier, xOffset, yOffset, weight}.
 
 import SwiftUI
@@ -157,7 +157,7 @@ private enum FilterMode: String, CaseIterable {
 // MARK: - Main Playground
 
 struct AppleReferenceCalibrationPlayground: View {
-    @State private var store = CalibrationStore()
+    @State private var store = ReferenceCalibrationStore()
     @State private var service = AppexReferenceService()
     @State private var deduplicator: SymbolDeduplicator
     @State private var allSymbols: [String]
@@ -667,7 +667,7 @@ struct AppleReferenceCalibrationPlayground: View {
 
     private func markCalibratedAndAdvance() {
         guard let symbol = currentSymbol else { return }
-        let entry = CalibrationEntry(
+        let entry = ReferenceCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "calibrated"
@@ -681,7 +681,7 @@ struct AppleReferenceCalibrationPlayground: View {
 
     private func markSkippedAndAdvance() {
         guard let symbol = currentSymbol else { return }
-        let entry = CalibrationEntry(
+        let entry = ReferenceCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "skipped"
@@ -702,7 +702,7 @@ struct AppleReferenceCalibrationPlayground: View {
             yOffset = previous.yOffset
             weight = previous.weight == "medium" ? .medium : .regular
         }
-        let entry = CalibrationEntry(
+        let entry = ReferenceCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "calibrated"
@@ -767,7 +767,7 @@ struct AppleReferenceCalibrationPlayground: View {
     private func saveCurrentValues() {
         guard let symbol = currentSymbol else { return }
         let existingStatus = store.entry(for: symbol)?.status ?? "needs-review"
-        let entry = CalibrationEntry(
+        let entry = ReferenceCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: existingStatus

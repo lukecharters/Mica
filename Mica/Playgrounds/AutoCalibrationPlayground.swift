@@ -2,7 +2,7 @@
 //
 // Auto-calibration review tool built on the tight-bounds box-fit rule
 // (SymbolAutoSizingService). Measures every SF Symbol, predicts its sizing
-// multiplier, and compares against family-calibration.json:
+// multiplier, and compares against symbol-calibration.json:
 //
 //   - Uncalibrated symbols can be batch-filled from predictions.
 //   - Calibrated symbols that disagree with the rule are surfaced as outliers
@@ -137,7 +137,7 @@ private struct AutoCalIconView: View {
 // MARK: - Playground
 
 struct AutoCalibrationPlayground: View {
-    @State private var store = FamilyCalStore()
+    @State private var store = SymbolCalibrationStore()
     @State private var service = AppexReferenceService()
 
     @State private var items: [AutoCalItem] = []
@@ -280,8 +280,9 @@ struct AutoCalibrationPlayground: View {
         else { return [] }
         var result: Set<String> = []
         for (symbol, metrics) in file.symbols {
-            let dimKey = String(format: "%.4f_%.4f", metrics.width, metrics.height)
-            if FamilyCalStore.containerDimKeys.contains(dimKey) {
+            // Containers are recognised by measured size, not by storage key.
+            let signature = String(format: "%.4f_%.4f", metrics.width, metrics.height)
+            if ContainerType.matching(dimensionSignature: signature) != nil {
                 result.insert(symbol)
             }
         }
@@ -713,7 +714,7 @@ struct AutoCalibrationPlayground: View {
     /// Writes the prediction to the store without saving; callers save once.
     private func accept(_ item: AutoCalItem) {
         let existing = store.symbolEntries[item.symbol]
-        let entry = FamilyCalEntry(
+        let entry = SymbolCalibrationEntry(
             multiplier: (item.prediction.multiplier * 1000).rounded() / 1000,
             xOffset: existing?.xOffset ?? 0,
             yOffset: applySuggestedYOffset
@@ -737,7 +738,7 @@ struct AutoCalibrationPlayground: View {
             entry.status = "needs-review"
             store.symbolEntries[item.symbol] = entry
         } else {
-            store.symbolEntries[item.symbol] = FamilyCalEntry(
+            store.symbolEntries[item.symbol] = SymbolCalibrationEntry(
                 multiplier: (item.prediction.multiplier * 1000).rounded() / 1000,
                 xOffset: 0, yOffset: 0, weight: "regular",
                 status: "needs-review", source: "auto-boxfit")

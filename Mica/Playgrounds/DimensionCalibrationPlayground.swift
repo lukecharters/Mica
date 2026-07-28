@@ -5,7 +5,7 @@
 // (.circle 117x114, .square 115x104, .rectangle 141x104) share a single
 // calibration per container type.
 //
-// Saves to the sandbox container's Application Support/Mica/family-calibration.json.
+// Saves to the sandbox container's Application Support/Mica/symbol-calibration.json.
 // Migrates from dim-calibration.json on first load.
 
 import SwiftUI
@@ -13,40 +13,43 @@ import SwiftUI
 // MARK: - Calibration Store
 
 @Observable
-class FamilyCalStore {
-    var symbolEntries: [String: FamilyCalEntry] = [:]
-    var containerEntries: [String: FamilyCalEntry] = [:]
+class SymbolCalibrationStore {
+    var symbolEntries: [String: SymbolCalibrationEntry] = [:]
+    var containerEntries: [String: SymbolCalibrationEntry] = [:]
     var familyOverrides: [String: String] = [:]
     private let fileURL: URL
 
+    /// The three container shapes, their key under `containers` in
+    /// symbol-calibration.json, and the representative dimensions shown in the
+    /// tool's family list. Key and label coincide — see `ContainerType.containerKey`.
     static let containerDims: [(key: String, label: String, width: Double, height: Double)] = [
-        ("117.0000_114.0000", "circle", 117, 114),
-        ("115.0000_104.0000", "square", 115, 104),
-        ("141.0000_104.0000", "rectangle", 141, 104),
+        (ContainerType.circle.containerKey, "circle", 117, 114),
+        (ContainerType.square.containerKey, "square", 115, 104),
+        (ContainerType.rectangle.containerKey, "rectangle", 141, 104),
     ]
-    static let containerDimKeys: Set<String> = Set(containerDims.map(\.key))
+    static let containerKeys: Set<String> = Set(containerDims.map(\.key))
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Mica", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("family-calibration.json")
+        self.fileURL = dir.appendingPathComponent("symbol-calibration.json")
         load()
     }
 
-    static func isContainer(dimKey: String) -> Bool {
-        containerDimKeys.contains(dimKey)
+    static func isContainer(containerKey: String) -> Bool {
+        containerKeys.contains(containerKey)
     }
 
-    func entry(forSymbol symbol: String, dimKey: String?) -> FamilyCalEntry? {
-        if let dk = dimKey, Self.containerDimKeys.contains(dk) {
+    func entry(forSymbol symbol: String, containerKey: String?) -> SymbolCalibrationEntry? {
+        if let dk = containerKey, Self.containerKeys.contains(dk) {
             return containerEntries[dk]
         }
         return symbolEntries[symbol]
     }
 
-    func setEntry(_ entry: FamilyCalEntry, forSymbol symbol: String, dimKey: String?) {
-        if let dk = dimKey, Self.containerDimKeys.contains(dk) {
+    func setEntry(_ entry: SymbolCalibrationEntry, forSymbol symbol: String, containerKey: String?) {
+        if let dk = containerKey, Self.containerKeys.contains(dk) {
             containerEntries[dk] = entry
         } else {
             symbolEntries[symbol] = entry
@@ -54,8 +57,8 @@ class FamilyCalStore {
         save()
     }
 
-    func status(forSymbol symbol: String, dimKey: String?) -> String {
-        entry(forSymbol: symbol, dimKey: dimKey)?.status ?? "uncalibrated"
+    func status(forSymbol symbol: String, containerKey: String?) -> String {
+        entry(forSymbol: symbol, containerKey: containerKey)?.status ?? "uncalibrated"
     }
 
     func familyHasMember(withStatus target: String, members: [String]) -> Bool {
@@ -112,7 +115,7 @@ class FamilyCalStore {
     // MARK: - Persistence
 
     func save() {
-        let file = FamilyCalFile(version: 1, symbols: symbolEntries, containers: containerEntries, familyOverrides: familyOverrides)
+        let file = SymbolCalibration(version: 1, symbols: symbolEntries, containers: containerEntries, familyOverrides: familyOverrides)
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -126,7 +129,7 @@ class FamilyCalStore {
 
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("FamilyCalStore: failed to save — \(error)")
+            print("SymbolCalibrationStore: failed to save — \(error)")
         }
     }
 
@@ -139,28 +142,28 @@ class FamilyCalStore {
         }
         do {
             let data = try Data(contentsOf: fileURL)
-            let file = try JSONDecoder().decode(FamilyCalFile.self, from: data)
+            let file = try JSONDecoder().decode(SymbolCalibration.self, from: data)
             symbolEntries = file.symbols
             containerEntries = file.containers
             familyOverrides = file.familyOverrides
-            print("FamilyCalStore: loaded \(symbolEntries.count) symbols, \(containerEntries.count) containers, \(familyOverrides.count) overrides")
+            print("SymbolCalibrationStore: loaded \(symbolEntries.count) symbols, \(containerEntries.count) containers, \(familyOverrides.count) overrides")
         } catch {
-            print("FamilyCalStore: failed to load — \(error)")
+            print("SymbolCalibrationStore: failed to load — \(error)")
         }
     }
 
-    /// Seeds the working copy from the bundled family-calibration.json
+    /// Seeds the working copy from the bundled symbol-calibration.json
     /// (the same fallback SymbolSizingService uses in production) when no
     /// Application Support copy exists yet.
     private func seedFromBundledCalibration() -> Bool {
-        guard let url = Bundle.main.url(forResource: "family-calibration", withExtension: "json"),
+        guard let url = Bundle.main.url(forResource: "symbol-calibration", withExtension: "json"),
               let data = try? Data(contentsOf: url),
-              let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data)
+              let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
         else { return false }
         symbolEntries = file.symbols
         containerEntries = file.containers
         familyOverrides = file.familyOverrides
-        print("FamilyCalStore: seeded \(symbolEntries.count) symbols from bundled calibration")
+        print("SymbolCalibrationStore: seeded \(symbolEntries.count) symbols from bundled calibration")
         save()
         return true
     }
@@ -175,7 +178,7 @@ class FamilyCalStore {
 
         guard FileManager.default.fileExists(atPath: dimCalURL.path),
               FileManager.default.fileExists(atPath: metricsURL.path) else {
-            print("FamilyCalStore: no migration sources found")
+            print("SymbolCalibrationStore: no migration sources found")
             return
         }
 
@@ -194,7 +197,7 @@ class FamilyCalStore {
               let dimFile = try? JSONDecoder().decode(MigFile.self, from: dimData),
               let metricsData = try? Data(contentsOf: metricsURL),
               let metricsFile = try? JSONDecoder().decode(SymbolMetricsFile.self, from: metricsData) else {
-            print("FamilyCalStore: failed to decode migration files")
+            print("SymbolCalibrationStore: failed to decode migration files")
             return
         }
 
@@ -205,11 +208,15 @@ class FamilyCalStore {
         let overrides = dimFile.overrides ?? [:]
 
         for (symbol, metrics) in metricsFile.symbols {
-            let dimKey = String(format: "%.4f_%.4f", metrics.width, metrics.height)
+            // dim-calibration.json is keyed by dimension signature throughout —
+            // it predates container-name keys — so every lookup below uses the
+            // signature, and only the destination uses the new container key.
+            let signature = String(format: "%.4f_%.4f", metrics.width, metrics.height)
 
-            if Self.containerDimKeys.contains(dimKey) {
-                if containerEntries[dimKey] == nil, let e = dimFile.calibrations[dimKey] {
-                    containerEntries[dimKey] = FamilyCalEntry(
+            if let container = ContainerType.matching(dimensionSignature: signature) {
+                if containerEntries[container.containerKey] == nil,
+                   let e = dimFile.calibrations[signature] {
+                    containerEntries[container.containerKey] = SymbolCalibrationEntry(
                         multiplier: e.multiplier, xOffset: e.xOffset, yOffset: e.yOffset,
                         weight: e.weight, status: e.status)
                 }
@@ -220,17 +227,17 @@ class FamilyCalStore {
                 } else if let subKey = subgroupLookup[symbol], let sub = dimFile.calibrations[subKey] {
                     source = sub
                 } else {
-                    source = dimFile.calibrations[dimKey]
+                    source = dimFile.calibrations[signature]
                 }
                 if let s = source {
-                    symbolEntries[symbol] = FamilyCalEntry(
+                    symbolEntries[symbol] = SymbolCalibrationEntry(
                         multiplier: s.multiplier, xOffset: s.xOffset, yOffset: s.yOffset,
                         weight: s.weight, status: s.status)
                 }
             }
         }
 
-        print("FamilyCalStore: migrated \(symbolEntries.count) symbols, \(containerEntries.count) containers")
+        print("SymbolCalibrationStore: migrated \(symbolEntries.count) symbols, \(containerEntries.count) containers")
         save()
     }
 }
@@ -342,7 +349,7 @@ struct SymbolBaselineData {
 // MARK: - Main Playground
 
 struct DimensionCalibrationPlayground: View {
-    @State private var store = FamilyCalStore()
+    @State private var store = SymbolCalibrationStore()
     @State private var service = AppexReferenceService()
 
     @State private var families: [SymbolFamily] = []
@@ -371,7 +378,7 @@ struct DimensionCalibrationPlayground: View {
     @State private var showGridOverlay = false
 
     /// symbol name -> dim key (for container lookup)
-    @State private var symbolDimKeys: [String: String] = [:]
+    @State private var symbolContainerKeys: [String: String] = [:]
     @State private var symbolMetrics: [String: SymbolMetrics] = [:]
 
     /// Box-fit multipliers computed from the Auto Calibration playground's
@@ -413,9 +420,9 @@ struct DimensionCalibrationPlayground: View {
     private let displaySize: CGFloat = 512
 
     init() {
-        let (fams, dimKeys, metrics) = Self.buildFamilies()
+        let (fams, containerKeyLookup, metrics) = Self.buildFamilies()
         _families = State(initialValue: fams)
-        _symbolDimKeys = State(initialValue: dimKeys)
+        _symbolContainerKeys = State(initialValue: containerKeyLookup)
         _symbolMetrics = State(initialValue: metrics)
     }
 
@@ -425,9 +432,9 @@ struct DimensionCalibrationPlayground: View {
         let currentFamilyId = currentFamily?.id
         let currentSym = currentSymbol
 
-        let (fams, dimKeys, metrics) = Self.buildFamilies(overrides: store.familyOverrides)
+        let (fams, containerKeyLookup, metrics) = Self.buildFamilies(overrides: store.familyOverrides)
         families = fams
-        symbolDimKeys = dimKeys
+        symbolContainerKeys = containerKeyLookup
         symbolMetrics = metrics
 
         // Restore selection if possible
@@ -465,10 +472,10 @@ struct DimensionCalibrationPlayground: View {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let url = appSupport
             .appendingPathComponent("Mica", isDirectory: true)
-            .appendingPathComponent("family-calibration.json")
+            .appendingPathComponent("symbol-calibration.json")
         guard FileManager.default.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url),
-              let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data)
+              let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
         else { return [:] }
         return file.familyOverrides
     }
@@ -499,15 +506,20 @@ struct DimensionCalibrationPlayground: View {
 
         var containerMembers: [String: [String]] = [:]
         var familyMembers: [String: [String]] = [:]
-        var dimKeyLookup: [String: String] = [:]
+        var containerKeyLookup: [String: String] = [:]
 
         for symbol in orderedSymbols {
             guard let metrics = file.symbols[symbol] else { continue }
-            let dimKey = String(format: "%.4f_%.4f", metrics.width, metrics.height)
-            dimKeyLookup[symbol] = dimKey
+            // Recognise a container by its measured size, then key it by name —
+            // the calibration file stores containers under "circle"/"square"/
+            // "rectangle", not under the dimension signature.
+            let signature = String(format: "%.4f_%.4f", metrics.width, metrics.height)
+            let containerKey = ContainerType.matching(dimensionSignature: signature)?.containerKey
+                ?? signature
+            containerKeyLookup[symbol] = containerKey
 
-            if FamilyCalStore.containerDimKeys.contains(dimKey) {
-                containerMembers[dimKey, default: []].append(symbol)
+            if SymbolCalibrationStore.containerKeys.contains(containerKey) {
+                containerMembers[containerKey, default: []].append(symbol)
             } else {
                 let fk = familyOverrides[symbol] ?? familyKey(for: symbol)
                 familyMembers[fk, default: []].append(symbol)
@@ -524,7 +536,7 @@ struct DimensionCalibrationPlayground: View {
                 width: m.width, height: m.height))
         }
 
-        for info in FamilyCalStore.containerDims {
+        for info in SymbolCalibrationStore.containerDims {
             if let members = containerMembers[info.key] {
                 result.append(SymbolFamily(
                     id: "container.\(info.label)", members: members, isContainer: true,
@@ -533,7 +545,7 @@ struct DimensionCalibrationPlayground: View {
         }
 
         result.sort { $0.id < $1.id }
-        return (result, dimKeyLookup, file.symbols)
+        return (result, containerKeyLookup, file.symbols)
     }
 
     // MARK: - Filtered & Sorted Families
@@ -549,32 +561,32 @@ struct DimensionCalibrationPlayground: View {
         case .uncalibrated:
             list = list.filter { family in
                 if family.isContainer {
-                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
-                    return store.entry(forSymbol: "", dimKey: dk) == nil
+                    let dk = SymbolCalibrationStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", containerKey: dk) == nil
                 }
                 return family.members.contains { store.symbolEntries[$0] == nil }
             }
         case .needsReview:
             list = list.filter { family in
                 if family.isContainer {
-                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
-                    return store.entry(forSymbol: "", dimKey: dk)?.status == "needs-review"
+                    let dk = SymbolCalibrationStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", containerKey: dk)?.status == "needs-review"
                 }
                 return store.familyHasMember(withStatus: "needs-review", members: family.members)
             }
         case .calibrated:
             list = list.filter { family in
                 if family.isContainer {
-                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
-                    return store.entry(forSymbol: "", dimKey: dk)?.status == "calibrated"
+                    let dk = SymbolCalibrationStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", containerKey: dk)?.status == "calibrated"
                 }
                 return store.familyAllMembers(withStatus: "calibrated", members: family.members)
             }
         case .skipped:
             list = list.filter { family in
                 if family.isContainer {
-                    let dk = FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key
-                    return store.entry(forSymbol: "", dimKey: dk)?.status == "skipped"
+                    let dk = SymbolCalibrationStore.containerDims.first { $0.label == family.containerLabel }?.key
+                    return store.entry(forSymbol: "", containerKey: dk)?.status == "skipped"
                 }
                 return store.familyAllMembers(withStatus: "skipped", members: family.members)
             }
@@ -646,9 +658,9 @@ struct DimensionCalibrationPlayground: View {
         return family.members[idx]
     }
 
-    private var currentDimKey: String? {
+    private var currentContainerKey: String? {
         guard let symbol = currentSymbol else { return nil }
-        return symbolDimKeys[symbol]
+        return symbolContainerKeys[symbol]
     }
 
     private var effectiveYOffset: CGFloat {
@@ -967,7 +979,7 @@ struct DimensionCalibrationPlayground: View {
                     }
                 }
 
-                let symbolStatus = store.status(forSymbol: currentSymbol ?? "", dimKey: currentDimKey)
+                let symbolStatus = store.status(forSymbol: currentSymbol ?? "", containerKey: currentContainerKey)
                 HStack {
                     Label(symbolStatus.capitalized, systemImage: statusIcon(for: symbolStatus))
                         .font(.caption)
@@ -1418,7 +1430,7 @@ struct DimensionCalibrationPlayground: View {
 
                             HStack(spacing: 2) {
                                 let s = family.isContainer
-                                    ? store.containerEntries[FamilyCalStore.containerDims.first { $0.label == family.containerLabel }?.key ?? ""]?.status
+                                    ? store.containerEntries[SymbolCalibrationStore.containerDims.first { $0.label == family.containerLabel }?.key ?? ""]?.status
                                     : store.symbolEntries[symbol]?.status
                                 Circle()
                                     .fill(statusColor(for: s ?? "uncalibrated"))
@@ -1618,8 +1630,8 @@ struct DimensionCalibrationPlayground: View {
             guard !family.isContainer else { return false }
             let symbolsToMove = allIconsSelection.isEmpty ? Set(droppedSymbols) : allIconsSelection.union(droppedSymbols)
             let nonContainer = symbolsToMove.filter { sym in
-                guard let dk = symbolDimKeys[sym] else { return true }
-                return !FamilyCalStore.containerDimKeys.contains(dk)
+                guard let dk = symbolContainerKeys[sym] else { return true }
+                return !SymbolCalibrationStore.containerKeys.contains(dk)
             }
             guard !nonContainer.isEmpty else { return false }
             moveSymbols(Array(nonContainer), toFamily: family.id)
@@ -1631,8 +1643,8 @@ struct DimensionCalibrationPlayground: View {
     }
 
     private func allIconsThumb(symbol: String, family: SymbolFamily, size: CGFloat) -> some View {
-        let dk = symbolDimKeys[symbol]
-        let cal = store.entry(forSymbol: symbol, dimKey: dk)
+        let dk = symbolContainerKeys[symbol]
+        let cal = store.entry(forSymbol: symbol, containerKey: dk)
         let mul = cal?.multiplier ?? 0.65
         let xOff = cal?.xOffset ?? 0.0
         let yOff: CGFloat = {
@@ -1992,7 +2004,7 @@ struct DimensionCalibrationPlayground: View {
 
     private func galleryIcon(for symbol: String, inFamily family: SymbolFamily, size: CGFloat, tinted: Bool) -> some View {
         // Use saved calibration for each member; current slider values only for selected member
-        let dk = symbolDimKeys[symbol]
+        let dk = symbolContainerKeys[symbol]
         let isSelected = symbol == currentSymbol
 
         let mul: CGFloat
@@ -2010,7 +2022,7 @@ struct DimensionCalibrationPlayground: View {
             }
             yOff = off
         } else {
-            let cal = store.entry(forSymbol: symbol, dimKey: dk)
+            let cal = store.entry(forSymbol: symbol, containerKey: dk)
             mul = cal?.multiplier ?? 0.65
             xOff = cal?.xOffset ?? 0.0
             w = cal?.weight == "medium" ? .medium : .regular
@@ -2360,7 +2372,7 @@ struct DimensionCalibrationPlayground: View {
         rebuildFamilies()
     }
 
-    private func applyCalibration(entry: FamilyCalEntry, toFamily family: SymbolFamily) {
+    private func applyCalibration(entry: SymbolCalibrationEntry, toFamily family: SymbolFamily) {
         for member in family.members {
             store.symbolEntries[member] = entry
         }
@@ -2410,23 +2422,23 @@ struct DimensionCalibrationPlayground: View {
 
     private func markCalibratedAndAdvance() {
         guard let symbol = currentSymbol else { return }
-        let entry = FamilyCalEntry(
+        let entry = SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "calibrated"
         )
-        store.setEntry(entry, forSymbol: symbol, dimKey: currentDimKey)
+        store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
         advanceToNextMember()
     }
 
     private func markSkippedAndAdvance() {
         guard let symbol = currentSymbol else { return }
-        let entry = FamilyCalEntry(
+        let entry = SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: "skipped"
         )
-        store.setEntry(entry, forSymbol: symbol, dimKey: currentDimKey)
+        store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
         advanceToNextMember()
     }
 
@@ -2444,7 +2456,7 @@ struct DimensionCalibrationPlayground: View {
             return
         }
 
-        let existing = store.entry(forSymbol: symbol, dimKey: currentDimKey)
+        let existing = store.entry(forSymbol: symbol, containerKey: currentContainerKey)
         if let existing {
             multiplier = existing.multiplier
             xOffset = existing.xOffset
@@ -2526,13 +2538,13 @@ struct DimensionCalibrationPlayground: View {
 
     private func saveCurrentValues() {
         guard let symbol = currentSymbol else { return }
-        guard let existingStatus = store.entry(forSymbol: symbol, dimKey: currentDimKey)?.status else { return }
-        let entry = FamilyCalEntry(
+        guard let existingStatus = store.entry(forSymbol: symbol, containerKey: currentContainerKey)?.status else { return }
+        let entry = SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
             status: existingStatus
         )
-        store.setEntry(entry, forSymbol: symbol, dimKey: currentDimKey)
+        store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
     }
 
     private func autoSave() {

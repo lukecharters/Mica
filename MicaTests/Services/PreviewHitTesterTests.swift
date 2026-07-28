@@ -23,7 +23,7 @@ struct PreviewHitTesterTests {
         xOffset: 0,
         yOffset: 0,
         weight: .regular,
-        source: .familyCalibration
+        source: .symbolCalibration
     )
 
     private static func enclosure(_ displaySize: CGFloat = displaySize) -> CGFloat {
@@ -242,7 +242,7 @@ struct PreviewHitTesterTests {
     func symbolOffsets_shiftHitBox() {
         let s = IconSettings()
         let offsetSizing = ResolvedSymbolSizing(
-            multiplier: 0.5, xOffset: 0.2, yOffset: 0, weight: .regular, source: .familyCalibration
+            multiplier: 0.5, xOffset: 0.2, yOffset: 0, weight: .regular, source: .symbolCalibration
         )
         let centre = Self.canvasCentre(s)
         let half = Self.enclosure() * 0.5 / 2

@@ -1,7 +1,7 @@
-// CalibrationStore.swift - JSON persistence for per-symbol calibration data
+// ReferenceCalibrationStore.swift - JSON persistence for per-symbol calibration data
 import Foundation
 
-struct CalibrationEntry: Codable, Equatable {
+struct ReferenceCalibrationEntry: Codable, Equatable {
     var multiplier: Double      // absolute pointsize_to_shape_mul (no recipeScaleFactor)
     var xOffset: Double         // fractional offset relative to enclosure
     var yOffset: Double         // fractional offset relative to enclosure
@@ -9,14 +9,14 @@ struct CalibrationEntry: Codable, Equatable {
     var status: String          // "calibrated", "skipped", "needs-review"
 }
 
-struct CalibrationFile: Codable {
+struct ReferenceCalibration: Codable {
     var version: Int = 1
-    var calibrations: [String: CalibrationEntry] = [:]
+    var calibrations: [String: ReferenceCalibrationEntry] = [:]
 }
 
 @Observable
-class CalibrationStore {
-    var entries: [String: CalibrationEntry] = [:]
+class ReferenceCalibrationStore {
+    var entries: [String: ReferenceCalibrationEntry] = [:]
     private let fileURL: URL
 
     init(fileURL: URL? = nil) {
@@ -28,26 +28,26 @@ class CalibrationStore {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             self.fileURL = dir.appendingPathComponent("icon-calibration.json")
         }
-        print("CalibrationStore: \(self.fileURL.path)")
+        print("ReferenceCalibrationStore: \(self.fileURL.path)")
         load()
     }
 
-    func entry(for symbol: String) -> CalibrationEntry? {
+    func entry(for symbol: String) -> ReferenceCalibrationEntry? {
         entries[symbol]
     }
 
-    func setEntry(_ entry: CalibrationEntry, for symbol: String) {
+    func setEntry(_ entry: ReferenceCalibrationEntry, for symbol: String) {
         entries[symbol] = entry
         save()
     }
 
     func save() {
-        let file = CalibrationFile(version: 1, calibrations: entries)
+        let file = ReferenceCalibration(version: 1, calibrations: entries)
         do {
             let data = try JSONEncoder.prettyCalibration.encode(file)
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("CalibrationStore: failed to save — \(error)")
+            print("ReferenceCalibrationStore: failed to save — \(error)")
         }
     }
 
@@ -55,10 +55,10 @@ class CalibrationStore {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         do {
             let data = try Data(contentsOf: fileURL)
-            let file = try JSONDecoder().decode(CalibrationFile.self, from: data)
+            let file = try JSONDecoder().decode(ReferenceCalibration.self, from: data)
             entries = file.calibrations
         } catch {
-            print("CalibrationStore: failed to load — \(error)")
+            print("ReferenceCalibrationStore: failed to load — \(error)")
         }
     }
 

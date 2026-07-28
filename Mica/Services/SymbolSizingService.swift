@@ -3,7 +3,7 @@
 // Resolves the font-size multiplier, offsets, and weight for any SF Symbol.
 // Priority: family calibration -> container calibration -> box-fit prediction
 // -> default (0.55). Calibration data loaded once lazily from
-// family-calibration.json; box-fit measures the symbol's tight bounds at
+// symbol-calibration.json; box-fit measures the symbol's tight bounds at
 // runtime (cached per process) via SymbolAutoSizingService.
 
 import SwiftUI
@@ -20,7 +20,7 @@ struct ResolvedSymbolSizing {
 }
 
 enum SizingSource: String {
-    case familyCalibration
+    case symbolCalibration
     case containerCalibration
     case autoBoxFit
     case defaultFallback
@@ -35,7 +35,7 @@ struct SymbolSizingService {
     /// prefers a user-writable Application Support override.
     static func resolve(
         for symbolName: String,
-        calibration: FamilyCalFile? = nil
+        calibration: SymbolCalibration? = nil
     ) -> ResolvedSymbolSizing {
         let calibrationData = calibration ?? Self.calibrationData
         // 1. Per-symbol calibration
@@ -45,13 +45,13 @@ struct SymbolSizingService {
                 xOffset: entry.xOffset,
                 yOffset: entry.yOffset,
                 weight: fontWeight(from: entry.weight),
-                source: .familyCalibration
+                source: .symbolCalibration
             )
         }
 
         // 2. Container calibration (container keyword in any dot-component)
         if let containerType = detectContainerType(symbolName),
-           let entry = calibrationData.containers[containerType.dimKey],
+           let entry = calibrationData.containers[containerType.containerKey],
            entry.status == "calibrated" {
             return ResolvedSymbolSizing(
                 multiplier: entry.multiplier,
@@ -87,32 +87,32 @@ struct SymbolSizingService {
 
     // MARK: - Private
 
-    /// The bundled family-calibration.json, ignoring any user override.
+    /// The bundled symbol-calibration.json, ignoring any user override.
     /// Internal (not private) so tests can pin assertions to shipped values
     /// regardless of calibration-playground edits in Application Support.
-    static func bundledCalibration() -> FamilyCalFile? {
-        guard let bundleURL = Bundle.main.url(forResource: "family-calibration", withExtension: "json"),
+    static func bundledCalibration() -> SymbolCalibration? {
+        guard let bundleURL = Bundle.main.url(forResource: "symbol-calibration", withExtension: "json"),
               let data = try? Data(contentsOf: bundleURL),
-              let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data) else {
+              let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data) else {
             return nil
         }
         return file
     }
 
     /// 2-tier loading: Application Support (playground edits) → bundled fallback
-    private static let calibrationData: FamilyCalFile = {
+    private static let calibrationData: SymbolCalibration = {
         // 1. Application Support override (written by calibration playground)
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let overrideURL = appSupport
             .appendingPathComponent("Mica", isDirectory: true)
-            .appendingPathComponent("family-calibration.json")
+            .appendingPathComponent("symbol-calibration.json")
         if let data = try? Data(contentsOf: overrideURL),
-           let file = try? JSONDecoder().decode(FamilyCalFile.self, from: data) {
+           let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data) {
             return file
         }
 
         // 2. Bundled fallback
-        return bundledCalibration() ?? FamilyCalFile()
+        return bundledCalibration() ?? SymbolCalibration()
     }()
 
     /// Measured box-fit multipliers, one entry per symbol per process.
