@@ -1,7 +1,7 @@
-// Views/Sidebar/IconAppearanceSection.swift
+// Views/Sidebar/IconForegroundAppearanceSection.swift
 import SwiftUI
 
-struct IconAppearanceSection: View {
+struct IconForegroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
     var isAppleReference: Bool = false
@@ -119,7 +119,7 @@ struct IconAppearanceSection: View {
     @Previewable @State var enclosureColor: AppexColor = .blue
     Form {
         Section("Appearance") {
-            IconAppearanceSection(
+            IconForegroundAppearanceSection(
                 iconSettings: $settings,
                 colorOptions: OptionsCatalog.colorOptions,
                 appexSymbolColor: $symbolColor,

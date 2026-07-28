@@ -1,7 +1,7 @@
-// Views/Sidebar/BackgroundLayoutSection.swift
+// Views/Sidebar/IconBackgroundLayoutSection.swift
 import SwiftUI
 
-struct BackgroundLayoutSection: View {
+struct IconBackgroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
@@ -30,7 +30,7 @@ struct BackgroundLayoutSection: View {
     }()
     Form {
         Section("Layout") {
-            BackgroundLayoutSection(iconSettings: $settings)
+            IconBackgroundLayoutSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

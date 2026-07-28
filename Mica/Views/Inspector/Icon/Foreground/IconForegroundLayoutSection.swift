@@ -1,7 +1,7 @@
-// Views/Sidebar/IconLayoutSection.swift
+// Views/Sidebar/IconForegroundLayoutSection.swift
 import SwiftUI
 
-struct IconLayoutSection: View {
+struct IconForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
@@ -38,7 +38,7 @@ struct IconLayoutSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Layout") {
-            IconLayoutSection(iconSettings: $settings)
+            IconForegroundLayoutSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

@@ -171,7 +171,7 @@ struct InspectorControls: View {
             VStack(spacing: Self.sectionSpacing) {
                 sectionForm {
                     Section("Source", isExpanded: $iconSourceExpanded) {
-                        IconSourceSection(
+                        IconForegroundSourceSection(
                             iconSettings: $iconSettings,
                             isSystem: true
                         )
@@ -181,7 +181,7 @@ struct InspectorControls: View {
 
                 sectionForm {
                     Section("Appearance", isExpanded: $iconAppearanceExpanded) {
-                        IconAppearanceSection(
+                        IconForegroundAppearanceSection(
                             iconSettings: $iconSettings,
                             colorOptions: colorOptions,
                             isAppleReference: true,
@@ -212,7 +212,7 @@ struct InspectorControls: View {
             VStack(spacing: Self.sectionSpacing) {
                 sectionForm {
                     Section("Source", isExpanded: $badgeSourceExpanded) {
-                        BadgeSourceSection(
+                        BadgeForegroundSourceSection(
                             iconSettings: $iconSettings,
                             isSystem: true
                         )
@@ -222,7 +222,7 @@ struct InspectorControls: View {
 
                 sectionForm {
                     Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
-                        BadgeAppearanceSection(
+                        BadgeForegroundAppearanceSection(
                             iconSettings: $iconSettings,
                             colorOptions: colorOptions,
                             badgeAppexSymbolColor: $badgeAppexSymbolColor,
@@ -357,7 +357,7 @@ struct InspectorControls: View {
     }
 
     /// The icon's background shadow as a plain on/off, mapping "on" to the modern
-    /// macOS 26 style — the same mapping `BackgroundAppearanceSection` uses when
+    /// macOS 26 style — the same mapping `IconBackgroundAppearanceSection` uses when
     /// the advanced style picker is hidden.
     private var backgroundShadowEnabled: Binding<Bool> {
         Binding(
@@ -395,7 +395,7 @@ struct InspectorControls: View {
         VStack(spacing: Self.sectionSpacing) {
             sectionForm {
                 Section("Source", isExpanded: $iconSourceExpanded) {
-                    IconSourceSection(
+                    IconForegroundSourceSection(
                         iconSettings: $iconSettings,
                         isSystem: false
                     )
@@ -404,13 +404,13 @@ struct InspectorControls: View {
             }
             sectionForm {
                 Section("Layout", isExpanded: $iconLayoutExpanded) {
-                    IconLayoutSection(iconSettings: $iconSettings)
+                    IconForegroundLayoutSection(iconSettings: $iconSettings)
                     .padding(4)
                 }
             }
             sectionForm {
                 Section("Appearance", isExpanded: $iconAppearanceExpanded) {
-                    IconAppearanceSection(
+                    IconForegroundAppearanceSection(
                         iconSettings: $iconSettings,
                         colorOptions: colorOptions,
                         isAppleReference: false,
@@ -431,7 +431,7 @@ struct InspectorControls: View {
         VStack(spacing: Self.sectionSpacing) {
             sectionForm {
                 Section("Source", isExpanded: $backgroundSourceExpanded) {
-                    BackgroundSourceSection(iconSettings: $iconSettings)
+                    IconBackgroundSourceSection(iconSettings: $iconSettings)
                         .padding(4)
                 }
             }
@@ -439,7 +439,7 @@ struct InspectorControls: View {
             if iconSettings.backgroundMode == .importedImage {
                 sectionForm {
                     Section("Layout", isExpanded: $backgroundLayoutExpanded) {
-                        BackgroundLayoutSection(iconSettings: $iconSettings)
+                        IconBackgroundLayoutSection(iconSettings: $iconSettings)
                         .padding(4)
                     }
                 }
@@ -447,7 +447,7 @@ struct InspectorControls: View {
 
             sectionForm {
                 Section("Appearance", isExpanded: $backgroundAppearanceExpanded) {
-                    BackgroundAppearanceSection(
+                    IconBackgroundAppearanceSection(
                         iconSettings: $iconSettings,
                         colorOptions: colorOptions
                     )
@@ -464,7 +464,7 @@ struct InspectorControls: View {
         VStack(spacing: Self.sectionSpacing) {
             sectionForm {
                 Section("Source", isExpanded: $badgeSourceExpanded) {
-                    BadgeSourceSection(
+                    BadgeForegroundSourceSection(
                         iconSettings: $iconSettings,
                         isSystem: false
                     )
@@ -473,13 +473,13 @@ struct InspectorControls: View {
             }
             sectionForm {
                 Section("Layout", isExpanded: $badgeLayoutExpanded) {
-                    BadgeLayoutSection(iconSettings: $iconSettings)
+                    BadgeForegroundLayoutSection(iconSettings: $iconSettings)
                         .padding(4)
                 }
             }
             sectionForm {
                 Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
-                    BadgeAppearanceSection(
+                    BadgeForegroundAppearanceSection(
                         iconSettings: $iconSettings,
                         colorOptions: colorOptions,
                         badgeAppexSymbolColor: $badgeAppexSymbolColor,

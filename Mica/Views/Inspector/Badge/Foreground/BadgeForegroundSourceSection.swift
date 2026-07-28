@@ -1,7 +1,7 @@
-// Views/Sidebar/BadgeSourceSection.swift
+// Views/Sidebar/BadgeForegroundSourceSection.swift
 import SwiftUI
 
-struct BadgeSourceSection: View {
+struct BadgeForegroundSourceSection: View {
     @Binding var iconSettings: IconSettings
     let isSystem: Bool
 
@@ -74,7 +74,7 @@ struct BadgeSourceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Source") {
-            BadgeSourceSection(iconSettings: $settings, isSystem: false)
+            BadgeForegroundSourceSection(iconSettings: $settings, isSystem: false)
         }
     }
     .formStyle(.grouped)

@@ -1,7 +1,7 @@
-// Views/Sidebar/BadgeAppearanceSection.swift
+// Views/Sidebar/BadgeForegroundAppearanceSection.swift
 import SwiftUI
 
-struct BadgeAppearanceSection: View {
+struct BadgeForegroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
@@ -119,7 +119,7 @@ struct BadgeAppearanceSection: View {
     @Previewable @State var badgeEnclosureColor: AppexColor = .blue
     Form {
         Section("Appearance") {
-            BadgeAppearanceSection(
+            BadgeForegroundAppearanceSection(
                 iconSettings: $settings,
                 colorOptions: OptionsCatalog.colorOptions,
                 badgeAppexSymbolColor: $badgeSymbolColor,

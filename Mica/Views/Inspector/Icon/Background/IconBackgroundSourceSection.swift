@@ -1,7 +1,7 @@
-// Views/Sidebar/BackgroundSourceSection.swift
+// Views/Sidebar/IconBackgroundSourceSection.swift
 import SwiftUI
 
-struct BackgroundSourceSection: View {
+struct IconBackgroundSourceSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
@@ -28,7 +28,7 @@ struct BackgroundSourceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Source") {
-            BackgroundSourceSection(iconSettings: $settings)
+            IconBackgroundSourceSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

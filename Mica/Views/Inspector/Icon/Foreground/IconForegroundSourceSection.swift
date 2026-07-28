@@ -1,7 +1,7 @@
-// Views/Sidebar/IconSourceSection.swift
+// Views/Sidebar/IconForegroundSourceSection.swift
 import SwiftUI
 
-struct IconSourceSection: View {
+struct IconForegroundSourceSection: View {
     @Binding var iconSettings: IconSettings
     let isSystem: Bool
 
@@ -71,7 +71,7 @@ struct IconSourceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Source") {
-            IconSourceSection(iconSettings: $settings, isSystem: false)
+            IconForegroundSourceSection(iconSettings: $settings, isSystem: false)
         }
     }
     .formStyle(.grouped)

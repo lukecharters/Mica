@@ -1,7 +1,7 @@
-// Views/Sidebar/BackgroundAppearanceSection.swift
+// Views/Sidebar/IconBackgroundAppearanceSection.swift
 import SwiftUI
 
-struct BackgroundAppearanceSection: View {
+struct IconBackgroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
@@ -117,7 +117,7 @@ struct BackgroundAppearanceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Appearance") {
-            BackgroundAppearanceSection(
+            IconBackgroundAppearanceSection(
                 iconSettings: $settings,
                 colorOptions: OptionsCatalog.colorOptions
             )

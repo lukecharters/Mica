@@ -4,7 +4,7 @@ import SwiftUI
 /// Layout controls specific to the **badge foreground layer** (symbol scale or
 /// imported-image scale). Badge-wide layout (position, offset, overall size) lives
 /// in `BadgeGroupLayoutSection`, shown when the Badge group header is selected.
-struct BadgeLayoutSection: View {
+struct BadgeForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
@@ -36,7 +36,7 @@ struct BadgeLayoutSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Layout") {
-            BadgeLayoutSection(iconSettings: $settings)
+            BadgeForegroundLayoutSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)
