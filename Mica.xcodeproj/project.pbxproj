@@ -108,10 +108,10 @@
 			membershipExceptions = (
 				Models/AppexColor.swift,
 				Models/AppexEnclosureColor.swift,
-				Models/SymbolCalibration.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
+				Models/SymbolCalibration.swift,
 				Services/AppexReferenceService.swift,
 				Services/IconRenderer.swift,
 				Services/ImageImportService.swift,
@@ -143,10 +143,10 @@
 			membershipExceptions = (
 				Models/AppexColor.swift,
 				Models/AppexEnclosureColor.swift,
-				Models/SymbolCalibration.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
+				Models/SymbolCalibration.swift,
 				Services/AppexReferenceService.swift,
 				Services/IconRenderer.swift,
 				Services/ImageImportService.swift,

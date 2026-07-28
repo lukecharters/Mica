@@ -1,4 +1,12 @@
-// PNGExportDocument.swift - FileDocument conformance for exporting
+// App/PNGExportDocument.swift
+//
+// The FileDocument payload for the PNG fileExporter — not a document model.
+// `readableContentTypes` is [.png], `fileWrapper(configuration:)` renders and
+// returns PNG bytes, and `init(configuration:)` is a stub that discards its
+// input: nothing is ever read back in through this type.
+//
+// Renamed from IconDocument on 2026-07-28. `.mica` documents are a separate
+// thing entirely — see docs/plans/mica-document-format.md.
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO

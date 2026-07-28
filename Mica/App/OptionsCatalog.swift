@@ -1,4 +1,4 @@
-// Models/OptionsCatalog.swift
+// App/OptionsCatalog.swift
 // Centralized catalog for preset options; tuple element types preserved
 import SwiftUI
 

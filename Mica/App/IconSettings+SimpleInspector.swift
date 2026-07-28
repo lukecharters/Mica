@@ -1,4 +1,4 @@
-// Models/IconSettings+SimpleInspector.swift
+// App/IconSettings+SimpleInspector.swift
 //
 // Support for the inspector's simple pane — the single un-tabbed Source +
 // Appearance pane shown in Mica mode when "Show Advanced Controls" is off. It

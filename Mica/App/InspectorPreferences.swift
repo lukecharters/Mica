@@ -1,4 +1,4 @@
-// Models/InspectorPreferences.swift
+// App/InspectorPreferences.swift
 import Foundation
 
 /// Shared UserDefaults keys for inspector-wide preferences read by multiple views

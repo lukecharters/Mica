@@ -1,4 +1,12 @@
-// ReferenceCalibrationStore.swift - JSON persistence for per-symbol calibration data
+// App/ReferenceCalibrationStore.swift
+//
+// JSON persistence for the Apple Reference (⇧⌘K) tool's ground-truth capture —
+// icon-calibration.json, one entry per symbol measured against Apple's appex
+// render.
+//
+// Not to be confused with SymbolCalibration / SymbolCalibrationStore, which is
+// the *shipped sizing* data the renderer reads (symbol-calibration.json). This
+// store feeds that one by hand; the renderer never reads this file.
 import Foundation
 
 struct ReferenceCalibrationEntry: Codable, Equatable {

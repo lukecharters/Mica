@@ -1,4 +1,10 @@
-// Models/LayerTab.swift
+// App/LayerSelection.swift
+//
+// What the inspector is pointed at: which group the sidebar has selected
+// (`IconLayerGroup`) and which layer within it the inspector is editing
+// (`LayerTab`). Two small types in one file because `LayerTab.availableTabs(for:isSystem:)`
+// is defined in terms of the group — the file is named for the pair, not for one
+// of them.
 import Foundation
 
 /// Top-level object selected in the LayerSidebar. Each group owns a generation

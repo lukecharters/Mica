@@ -1,4 +1,4 @@
-// ViewModels/IconViewModel.swift
+// App/IconViewModel.swift
 // MVVM: Holds UI state and simple actions for the Icon Generator
 import SwiftUI
 
