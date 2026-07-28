@@ -22,14 +22,14 @@ struct IconSettingsImportDefaultsTests {
     @Test("Importing an icon foreground sets the source, image, and turns shadow off")
     func iconForeground_appliesDefaults() {
         var settings = IconSettings()
-        settings.enableSymbolShadow = true // explicit on, mirrors struct default
+        settings.icon.foreground.drawsShadow = true // explicit on, mirrors struct default
         let image = makeImage()
 
-        settings.applyImportedIconForeground(image)
+        settings.icon.foreground.apply(image)
 
-        #expect(settings.iconSource == .image)
-        #expect(settings.importedImage == image)
-        #expect(settings.enableSymbolShadow == false)
+        #expect(settings.icon.foreground.source == .image)
+        #expect(settings.icon.foreground.image == image)
+        #expect(settings.icon.foreground.drawsShadow == false)
     }
 
     // MARK: - Icon background
@@ -37,23 +37,23 @@ struct IconSettingsImportDefaultsTests {
     @Test("Importing an icon background fills the frame and turns shadow off")
     func iconBackground_appliesDefaults() {
         var settings = IconSettings()
-        settings.backgroundShadowStyle = .macOS26
-        settings.importedBackgroundPaddingCompensation = false
+        settings.icon.background.shadowStyle = .macOS26
+        settings.icon.background.compensatesForPadding = false
         let image = makeImage()
 
-        settings.applyImportedIconBackground(image)
+        settings.icon.background.apply(image)
 
-        #expect(settings.backgroundMode == .image)
-        #expect(settings.importedBackground == image)
-        #expect(settings.importedBackgroundPaddingCompensation == true)
-        #expect(settings.backgroundShadowStyle == .off)
+        #expect(settings.icon.background.source == .image)
+        #expect(settings.icon.background.image == image)
+        #expect(settings.icon.background.compensatesForPadding == true)
+        #expect(settings.icon.background.shadowStyle == .off)
     }
 
     @Test("Icon background padding compensation defaults on regardless of isFileIcon")
     func iconBackground_paddingOnForNonAppIcon() {
         var settings = IconSettings()
-        settings.applyImportedIconBackground(makeImage(isFileIcon: false))
-        #expect(settings.importedBackgroundPaddingCompensation == true)
+        settings.icon.background.apply(makeImage(isFileIcon: false))
+        #expect(settings.icon.background.compensatesForPadding == true)
     }
 
     // MARK: - Badge foreground
@@ -61,14 +61,14 @@ struct IconSettingsImportDefaultsTests {
     @Test("Importing a badge foreground sets the source, image, and turns shadow off")
     func badgeForeground_appliesDefaults() {
         var settings = IconSettings()
-        settings.badgeEnableSymbolShadow = true
+        settings.badge.foreground.drawsShadow = true
         let image = makeImage()
 
-        settings.applyImportedBadgeForeground(image)
+        settings.badge.foreground.apply(image)
 
-        #expect(settings.badgeIconSource == .image)
-        #expect(settings.badgeImportedImage == image)
-        #expect(settings.badgeEnableSymbolShadow == false)
+        #expect(settings.badge.foreground.source == .image)
+        #expect(settings.badge.foreground.image == image)
+        #expect(settings.badge.foreground.drawsShadow == false)
     }
 
     // MARK: - Badge background
@@ -76,16 +76,16 @@ struct IconSettingsImportDefaultsTests {
     @Test("Importing a badge background fills the frame and turns shadow off")
     func badgeBackground_appliesDefaults() {
         var settings = IconSettings()
-        settings.badgeEnableBackgroundShadow = true
-        settings.badgeImportedBackgroundPaddingCompensation = false
+        settings.badge.background.drawsShadow = true
+        settings.badge.background.compensatesForPadding = false
         let image = makeImage()
 
-        settings.applyImportedBadgeBackground(image)
+        settings.badge.background.apply(image)
 
-        #expect(settings.badgeUseImportedBackground == true)
-        #expect(settings.badgeImportedBackground == image)
-        #expect(settings.badgeImportedBackgroundPaddingCompensation == true)
-        #expect(settings.badgeEnableBackgroundShadow == false)
+        #expect(settings.badge.background.source == .image)
+        #expect(settings.badge.background.image == image)
+        #expect(settings.badge.background.compensatesForPadding == true)
+        #expect(settings.badge.background.drawsShadow == false)
     }
 
     // MARK: - SF Symbol shadow untouched
@@ -94,11 +94,11 @@ struct IconSettingsImportDefaultsTests {
     func helpersDoNotAffectUnrelatedShadows() {
         var settings = IconSettings()
         // A default settings struct keeps symbol shadows on.
-        #expect(settings.enableSymbolShadow == true)
-        #expect(settings.badgeEnableSymbolShadow == true)
+        #expect(settings.icon.foreground.drawsShadow == true)
+        #expect(settings.badge.foreground.drawsShadow == true)
 
         // Importing an icon background must not flip the foreground symbol shadow.
-        settings.applyImportedIconBackground(makeImage())
-        #expect(settings.enableSymbolShadow == true)
+        settings.icon.background.apply(makeImage())
+        #expect(settings.icon.foreground.drawsShadow == true)
     }
 }

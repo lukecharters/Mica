@@ -81,15 +81,15 @@ struct ImportedIconPaddingCompensationTests {
           arguments: [(size: CGFloat(512), retina: true), (size: CGFloat(1024), retina: false)])
     func importedIconBackground_fillsCanvas(_ arg: (size: CGFloat, retina: Bool)) throws {
         var settings = IconSettings()
-        settings.applyImportedIconBackground(try Self.makeImportedFileIcon())
-        settings.showBadge = false
-        settings.exportSize = arg.size
-        settings.exportRetinaSize = arg.retina
+        settings.icon.background.apply(try Self.makeImportedFileIcon())
+        settings.badge.isVisible = false
+        settings.export.size = arg.size
+        settings.export.isRetina = arg.retina
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
         // alphaBoundingBox measures in logical points (image.size), which equals
-        // exportSize regardless of retina.
+        // export.size regardless of retina.
         let bbox = try #require(IconRenderingAssertions.alphaBoundingBox(of: image),
                                 "Imported background must render non-empty content")
 
@@ -113,23 +113,23 @@ struct ImportedIconPaddingCompensationTests {
     @Test("Imported badge background chiclet fills the badge frame")
     func importedBadgeBackground_chicletFillsBadgeFrame() throws {
         var settings = IconSettings()
-        settings.applyImportedBadgeBackground(try Self.makeImportedFileIcon())
-        settings.showBadge = true
-        settings.iconBackgroundHidden = true
-        settings.iconForegroundHidden = true
-        settings.exportSize = 1024
-        settings.exportRetinaSize = false
+        settings.badge.background.apply(try Self.makeImportedFileIcon())
+        settings.badge.isVisible = true
+        settings.icon.background.isHidden = true
+        settings.icon.foreground.isHidden = true
+        settings.export.size = 1024
+        settings.export.isRetina = false
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
         let bbox = try #require(IconRenderingAssertions.alphaBoundingBox(of: image),
                                 "Badge imported background must render non-empty content")
 
-        // At exportSize 1024: enclosure = 1024 − 2·100 = 824,
-        // badgeSize = 824 · (80/208) · badgeScale.
+        // At export.size 1024: enclosure = 1024 − 2·100 = 824,
+        // badgeSize = 824 · (80/208) · badge.scale.
         let enclosureSize: CGFloat = 1024 - 2 * (25 * 1024 / 256)
         let badgeSize = BadgeGeometry.diameter(enclosureSize: enclosureSize,
-                                               badgeScale: settings.badgeScale)
+                                               badgeScale: settings.badge.scale)
         #expect(abs(bbox.width - badgeSize) <= Self.tolerance,
                 "Badge chiclet width must equal badgeSize (\(badgeSize)); got \(bbox.width)")
         #expect(abs(bbox.height - badgeSize) <= Self.tolerance,

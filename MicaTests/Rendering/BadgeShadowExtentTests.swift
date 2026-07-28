@@ -46,17 +46,17 @@ struct BadgeShadowExtentTests {
     /// clamp allows.
     static func cornerBadge(scale: CGFloat, size: CGFloat = 512) -> IconSettings {
         var s = IconSettings()
-        s.exportSize = size
-        s.exportRetinaSize = false
-        s.iconBackgroundHidden = true
-        s.iconForegroundHidden = true
-        s.showBadge = true
-        s.badgePosition = .bottomRight
-        s.badgeSymbolName = "gearshape.fill"
-        s.badgeScale = scale
+        s.export.size = size
+        s.export.isRetina = false
+        s.icon.background.isHidden = true
+        s.icon.foreground.isHidden = true
+        s.badge.isVisible = true
+        s.badge.position = .bottomRight
+        s.badge.foreground.symbolName = "gearshape.fill"
+        s.badge.scale = scale
         // Far past any legal offset, so the clamp is what positions the badge.
-        s.badgeManualOffsetX = 1.0
-        s.badgeManualOffsetY = 1.0
+        s.badge.offsetX = 1.0
+        s.badge.offsetY = 1.0
         return s
     }
 
@@ -109,7 +109,7 @@ struct BadgeShadowExtentTests {
     @Test("A corner badge sits flush against the edge at every size", arguments: scales)
     func cornerBadge_leavesNoGap(_ scale: CGFloat) throws {
         let settings = Self.cornerBadge(scale: scale)
-        let side = settings.finalExportSize
+        let side = settings.export.pixelSize
         let image = IconRenderer.renderIconSafely(settings: settings)
 
         let box = try #require(Self.bbox(of: image, alphaAbove: 0))
@@ -169,9 +169,9 @@ struct BadgeShadowExtentTests {
     @Test("A shadowless badge sits flush against the edge")
     func shadowlessBadge_hasNoAllowance() throws {
         var settings = Self.cornerBadge(scale: 1.0)
-        settings.badgeEnableBackgroundShadow = false
-        settings.badgeEnableSymbolShadow = false
-        let side = settings.finalExportSize
+        settings.badge.background.drawsShadow = false
+        settings.badge.foreground.drawsShadow = false
+        let side = settings.export.pixelSize
 
         let image = IconRenderer.renderIconSafely(settings: settings)
         let box = try #require(Self.bbox(of: image, alphaAbove: 0))
@@ -190,13 +190,13 @@ struct BadgeShadowExtentTests {
     @Test("An oversized imported badge background is not clipped")
     func importedBackground_respectsItsEffectiveScale() throws {
         var settings = Self.cornerBadge(scale: 1.0)
-        settings.badgeUseImportedBackground = true
-        settings.badgeImportedBackground = try ImportedImage.testFixture(
+        settings.badge.background.source = .image
+        settings.badge.background.image = try ImportedImage.testFixture(
             width: 64, height: 64, fill: .systemGreen)
-        settings.badgeImportedBackgroundScale = 1.5
-        settings.badgeImportedBackgroundPaddingCompensation = true
+        settings.badge.background.imageScale = 1.5
+        settings.badge.background.compensatesForPadding = true
 
-        let enclosure = PreviewHitTester.enclosureSize(displaySize: settings.finalExportSize)
+        let enclosure = PreviewHitTester.enclosureSize(displaySize: settings.export.pixelSize)
         let half = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.0) / 2
         let ext = BadgeGeometry.extents(for: settings, enclosureSize: enclosure)
         #expect(ext.horizontal > half * 1.8,

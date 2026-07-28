@@ -30,9 +30,9 @@ struct ShadowOverrideNeutralityTests {
           arguments: BackgroundShadowStyle.allCases)
     func nilOverride_matchesInjectedPreset(_ style: BackgroundShadowStyle) throws {
         var settings = IconSettings()
-        settings.symbolName = "folder.fill"
-        settings.backgroundShadowStyle = style
-        settings.showBadge = true // exercise BadgeView's override path too
+        settings.icon.foreground.symbolName = "folder.fill"
+        settings.icon.background.shadowStyle = style
+        settings.badge.isVisible = true // exercise BadgeView's override path too
 
         let baseline = try render(settings, override: nil)
         let injected = try render(settings, override: .preset(for: style))

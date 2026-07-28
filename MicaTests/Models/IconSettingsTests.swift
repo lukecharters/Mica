@@ -1,7 +1,7 @@
 // IconSettingsTests.swift
 // Unit tests for the IconSettings struct: defaults, computed properties,
 // enum round-trips. Complements IconSettingsValidationTests (which covers
-// the size constants and isExportSizeValid).
+// the size constants and export.isSizeValid).
 
 import Testing
 import SwiftUI
@@ -16,83 +16,83 @@ struct IconSettingsTests {
     @Test("Defaults match the shipped initial configuration")
     func defaults_areStable() {
         let s = IconSettings()
-        #expect(s.symbolName == "command")
-        #expect(s.exportSize == 512)
-        #expect(s.exportRetinaSize == false)
-        #expect(s.symbolRenderingMode == .monochrome)
-        #expect(s.symbolColorRenderingMode == .flat)
-        #expect(s.backgroundMode == .color)
-        #expect(s.preRenderedColorName == "Blue")
-        #expect(s.cornerRadiusStyle == .macOS26)
-        #expect(s.exportColorSpace == .sRGB)
-        #expect(s.enableBackgroundGradient == true)
-        #expect(s.useCustomColors == false)
-        #expect(s.showBadge == false)
-        #expect(s.badgePosition == .bottomRight)
-        #expect(s.badgeSymbolName == "gearshape.fill")
-        #expect(s.iconSource == .symbol)
-        #expect(s.importedImage == nil)
-        #expect(s.manualSymbolScale == 1.0)
-        #expect(s.badgeManualOffsetX == 0.0)
-        #expect(s.badgeManualOffsetY == 0.0)
+        #expect(s.icon.foreground.symbolName == "command")
+        #expect(s.export.size == 512)
+        #expect(s.export.isRetina == false)
+        #expect(s.icon.foreground.renderingStyle == .monochrome)
+        #expect(s.icon.foreground.fillStyle == .flat)
+        #expect(s.icon.background.source == .color)
+        #expect(s.icon.background.preRenderedColorName == "Blue")
+        #expect(s.icon.background.cornerRadiusStyle == .macOS26)
+        #expect(s.export.colorSpace == .sRGB)
+        #expect(s.icon.background.usesGradient == true)
+        #expect(s.icon.background.usesCustomGradient == false)
+        #expect(s.badge.isVisible == false)
+        #expect(s.badge.position == .bottomRight)
+        #expect(s.badge.foreground.symbolName == "gearshape.fill")
+        #expect(s.icon.foreground.source == .symbol)
+        #expect(s.icon.foreground.image == nil)
+        #expect(s.icon.foreground.symbolScale == 1.0)
+        #expect(s.badge.offsetX == 0.0)
+        #expect(s.badge.offsetY == 0.0)
     }
 
-    // MARK: - finalExportSize
+    // MARK: - export.pixelSize
 
-    @Test("finalExportSize equals exportSize without retina")
+    @Test("export.pixelSize equals export.size without retina")
     func finalExportSize_nonRetina() {
         var s = IconSettings()
-        s.exportSize = 256
-        s.exportRetinaSize = false
-        #expect(s.finalExportSize == 256)
+        s.export.size = 256
+        s.export.isRetina = false
+        #expect(s.export.pixelSize == 256)
 
-        s.exportSize = 1024
-        #expect(s.finalExportSize == 1024)
+        s.export.size = 1024
+        #expect(s.export.pixelSize == 1024)
     }
 
-    @Test("finalExportSize doubles with retina")
+    @Test("export.pixelSize doubles with retina")
     func finalExportSize_retina() {
         var s = IconSettings()
-        s.exportSize = 256
-        s.exportRetinaSize = true
-        #expect(s.finalExportSize == 512)
+        s.export.size = 256
+        s.export.isRetina = true
+        #expect(s.export.pixelSize == 512)
 
-        s.exportSize = 1024
-        #expect(s.finalExportSize == 2048)
+        s.export.size = 1024
+        #expect(s.export.pixelSize == 2048)
     }
 
-    // MARK: - preRenderedAssetName
+    // MARK: - icon.background.preRenderedAssetName
 
-    @Test("preRenderedAssetName composes lowercase color + gradient/solid suffix")
+    @Test("icon.background.preRenderedAssetName composes lowercase color + gradient/solid suffix")
     func preRenderedAssetName_gradientAndSolid() {
         var s = IconSettings()
-        s.preRenderedColorName = "Blue"
-        s.enableBackgroundGradient = true
-        #expect(s.preRenderedAssetName == "background-blue-gradient")
+        s.icon.background.preRenderedColorName = "Blue"
+        s.icon.background.usesGradient = true
+        #expect(s.icon.background.preRenderedAssetName == "background-blue-gradient")
 
-        s.enableBackgroundGradient = false
-        #expect(s.preRenderedAssetName == "background-blue-solid")
+        s.icon.background.usesGradient = false
+        #expect(s.icon.background.preRenderedAssetName == "background-blue-solid")
 
-        s.preRenderedColorName = "GraphitE"
-        #expect(s.preRenderedAssetName == "background-graphite-solid")
+        s.icon.background.preRenderedColorName = "GraphitE"
+        #expect(s.icon.background.preRenderedAssetName == "background-graphite-solid")
     }
 
-    // MARK: - gradientColors / badgeGradientColors
+    // MARK: - icon.background.gradientColors / badge.background.gradientColors
 
-    @Test("gradientColors returns [customPrimaryColor, customSecondaryColor]")
+    @Test("icon.background.gradientColors returns [icon.background.gradientStartColor, icon.background.gradientEndColor]")
     func gradientColors_mirrorsCustomColors() {
         var s = IconSettings()
-        s.customPrimaryColor = .red
-        s.customSecondaryColor = .green
-        #expect(s.gradientColors == [.red, .green])
+        s.icon.background.gradientStartColor = .red
+        s.icon.background.gradientEndColor = .green
+        #expect(s.icon.background.gradientColors == [.red, .green])
     }
 
-    @Test("badgeGradientColors returns [badgeCustomPrimaryColor, badgeCustomSecondaryColor]")
+    @Test("badge.background.gradientColors returns [badge.background.gradientStartColor, badge.background.gradientEndColor]")
     func badgeGradientColors_mirrorsBadgeCustomColors() {
         var s = IconSettings()
-        s.badgeCustomPrimaryColor = .white
-        s.badgeCustomSecondaryColor = .indigo
-        #expect(s.badgeGradientColors == [.white, .indigo])
+        s.badge.background.gradientStartColor = .white
+        s.badge.background.gradientEndColor = .indigo
+        #expect(s.badge.background.gradientColors == [.white, .indigo])
     }
 
     // MARK: - Equatable
@@ -108,17 +108,17 @@ struct IconSettingsTests {
         var b = IconSettings()
         #expect(a == b)
 
-        b.symbolName = "star.fill"
+        b.icon.foreground.symbolName = "star.fill"
         #expect(a != b)
 
         a = IconSettings()
         b = IconSettings()
-        b.exportSize = 256  // differ from the default (512) so equality breaks
+        b.export.size = 256  // differ from the default (512) so equality breaks
         #expect(a != b)
 
         a = IconSettings()
         b = IconSettings()
-        b.exportRetinaSize = true
+        b.export.isRetina = true
         #expect(a != b)
     }
 

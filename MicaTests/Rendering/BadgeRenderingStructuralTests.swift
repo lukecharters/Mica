@@ -32,19 +32,19 @@ struct BadgeRenderingStructuralTests {
                            manualOffset: (x: Double, y: Double) = (0, 0),
                            exportSize: CGFloat = 256) -> NSImage {
         var settings = IconSettings()
-        settings.symbolName = "folder.fill"
-        settings.exportSize = exportSize
-        settings.exportRetinaSize = false
-        settings.baseColor = .blue
-        settings.badgeSymbolName = "gearshape.fill"
-        settings.badgeBaseColor = .red // visually distinct from chiclet blue
+        settings.icon.foreground.symbolName = "folder.fill"
+        settings.export.size = exportSize
+        settings.export.isRetina = false
+        settings.icon.background.color = .blue
+        settings.badge.foreground.symbolName = "gearshape.fill"
+        settings.badge.background.color = .red // visually distinct from chiclet blue
         if let position {
-            settings.showBadge = true
-            settings.badgePosition = position
-            settings.badgeManualOffsetX = manualOffset.x
-            settings.badgeManualOffsetY = manualOffset.y
+            settings.badge.isVisible = true
+            settings.badge.position = position
+            settings.badge.offsetX = manualOffset.x
+            settings.badge.offsetY = manualOffset.y
         } else {
-            settings.showBadge = false
+            settings.badge.isVisible = false
         }
         return IconRenderer.renderIconSafely(settings: settings)
     }
@@ -104,17 +104,17 @@ struct BadgeRenderingStructuralTests {
     @Test("Pending System-mode badge draws nothing — no placeholder can reach exports")
     func pendingAppexBadge_drawsNothing() throws {
         var settings = IconSettings()
-        settings.symbolName = "folder.fill"
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.baseColor = .blue
-        settings.showBadge = true
-        settings.badgeIconSource = .system
-        settings.badgePosition = .bottomRight
+        settings.icon.foreground.symbolName = "folder.fill"
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.icon.background.color = .blue
+        settings.badge.isVisible = true
+        settings.badge.foreground.source = .system
+        settings.badge.position = .bottomRight
         // Badge is System mode but its appex image hasn't rendered yet.
         let pendingBadge = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: nil)
 
-        settings.showBadge = false
+        settings.badge.isVisible = false
         let noBadge = IconRenderer.renderIconSafely(settings: settings)
 
         // The canvases may differ (badge overflow buffer), but the drawn content
@@ -136,23 +136,23 @@ struct BadgeRenderingStructuralTests {
 
     @Test("Imported-background flag with no image still renders a visible badge")
     func importedBackgroundFlag_withoutImage_stillRendersBadge() throws {
-        // The Type picker can set badgeUseImportedBackground before an image is
+        // The Type picker can set `badge.background.source` to `.image` before an image is
         // chosen; the badge must fall back to its color background + symbol
         // rather than rendering nothing.
         var settings = IconSettings()
-        settings.symbolName = "folder.fill"
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.baseColor = .blue
-        settings.badgeSymbolName = "gearshape.fill"
-        settings.badgeBaseColor = .red
-        settings.showBadge = true
-        settings.badgePosition = .bottomRight
-        settings.badgeUseImportedBackground = true
-        settings.badgeImportedBackground = nil
+        settings.icon.foreground.symbolName = "folder.fill"
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.icon.background.color = .blue
+        settings.badge.foreground.symbolName = "gearshape.fill"
+        settings.badge.background.color = .red
+        settings.badge.isVisible = true
+        settings.badge.position = .bottomRight
+        settings.badge.background.source = .image
+        settings.badge.background.image = nil
         let withBadge = IconRenderer.renderIconSafely(settings: settings)
 
-        settings.showBadge = false
+        settings.badge.isVisible = false
         let baseline = IconRenderer.renderIconSafely(settings: settings)
 
         let badgedCentroid = try #require(IconRenderingAssertions.centroidOfNonClearPixels(in: withBadge))
@@ -171,7 +171,7 @@ struct BadgeRenderingStructuralTests {
     @Test("Manual offset (normalized fraction) produces proportional centroid shift across sizes")
     func manualOffset_scalesWithCanvasSize() throws {
         // At each canvas size, measure the extra centroid shift from
-        // badgeManualOffsetX = 0.2 compared to badgeManualOffsetX = 0.0
+        // badge.offsetX = 0.2 compared to badge.offsetX = 0.0
         // (both at bottomRight). The two shifts, normalised by their
         // respective canvas widths, should be approximately equal —
         // proving the stored offset is a normalized fraction of
@@ -228,32 +228,32 @@ struct BadgeRenderingStructuralTests {
     /// the size that was asked for — this used to write a 561×561 PNG for a 512px
     /// request. (No-badge renders pin the same thing in
     /// IconRenderingStructuralTests.)
-    @Test("A badged render is exactly finalExportSize, however large the badge",
+    @Test("A badged render is exactly export.pixelSize, however large the badge",
           arguments: badgedDimsMatrix)
     func badgedCanvas_pixelDimensionsMatchExportSize(_ arg: (size: CGFloat, retina: Bool)) throws {
         var settings = IconSettings()
-        settings.symbolName = "folder.fill"
-        settings.exportSize = arg.size
-        settings.exportRetinaSize = arg.retina
-        settings.baseColor = .blue
-        settings.showBadge = true
-        settings.badgePosition = .bottomRight
-        settings.badgeSymbolName = "gearshape.fill"
+        settings.icon.foreground.symbolName = "folder.fill"
+        settings.export.size = arg.size
+        settings.export.isRetina = arg.retina
+        settings.icon.background.color = .blue
+        settings.badge.isVisible = true
+        settings.badge.position = .bottomRight
+        settings.badge.foreground.symbolName = "gearshape.fill"
         // Both would have overflowed the canvas under the old behaviour.
-        settings.badgeScale = 2.0
-        settings.badgeManualOffsetX = 0.3
-        settings.badgeManualOffsetY = 0.3
+        settings.badge.scale = 2.0
+        settings.badge.offsetX = 0.3
+        settings.badge.offsetY = 0.3
 
-        let expected = settings.finalExportSize
+        let expected = settings.export.pixelSize
 
         let image = IconRenderer.renderIconSafely(settings: settings)
         let data = try #require(image.tiffRepresentation)
         let rep = try #require(NSBitmapImageRep(data: data))
 
         #expect(abs(Double(rep.pixelsWide) - Double(expected)) <= 1,
-                "Pixel width \(rep.pixelsWide) must equal finalExportSize \(expected) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+                "Pixel width \(rep.pixelsWide) must equal export.pixelSize \(expected) for (size=\(Int(arg.size)),retina=\(arg.retina))")
         #expect(abs(Double(rep.pixelsHigh) - Double(expected)) <= 1,
-                "Pixel height \(rep.pixelsHigh) must equal finalExportSize \(expected) for (size=\(Int(arg.size)),retina=\(arg.retina))")
+                "Pixel height \(rep.pixelsHigh) must equal export.pixelSize \(expected) for (size=\(Int(arg.size)),retina=\(arg.retina))")
     }
 
     /// Pixel proof that the clamp is doing its job rather than the canvas merely
@@ -262,19 +262,19 @@ struct BadgeRenderingStructuralTests {
     @Test("A maxed-out badge doesn't touch the canvas edge")
     func maxBadge_doesNotReachTheCanvasEdge() throws {
         var settings = IconSettings()
-        settings.exportSize = 512
-        settings.exportRetinaSize = false
+        settings.export.size = 512
+        settings.export.isRetina = false
         // Leave the badge as the only thing on the canvas.
-        settings.iconBackgroundHidden = true
-        settings.iconForegroundHidden = true
-        settings.showBadge = true
-        settings.badgePosition = .bottomRight
-        settings.badgeSymbolName = "gearshape.fill"
-        settings.badgeScale = 2.0
-        settings.badgeManualOffsetX = 1.0
-        settings.badgeManualOffsetY = 1.0
+        settings.icon.background.isHidden = true
+        settings.icon.foreground.isHidden = true
+        settings.badge.isVisible = true
+        settings.badge.position = .bottomRight
+        settings.badge.foreground.symbolName = "gearshape.fill"
+        settings.badge.scale = 2.0
+        settings.badge.offsetX = 1.0
+        settings.badge.offsetY = 1.0
 
-        let side = settings.finalExportSize
+        let side = settings.export.pixelSize
         let image = IconRenderer.renderIconSafely(settings: settings)
 
         // The badge has to actually be on the canvas, or an all-clear image would
@@ -307,25 +307,25 @@ struct BadgeRenderingStructuralTests {
     @Test("An imported badge background keeps its corners")
     func importedBadgeBackground_isNotClippedToACircle() throws {
         var settings = IconSettings()
-        settings.exportSize = 512
-        settings.exportRetinaSize = false
+        settings.export.size = 512
+        settings.export.isRetina = false
         // Leave the badge as the only thing on the canvas.
-        settings.iconBackgroundHidden = true
-        settings.iconForegroundHidden = true
-        settings.showBadge = true
-        settings.badgePosition = .bottomRight
-        settings.badgeUseImportedBackground = true
-        settings.badgeImportedBackground = try ImportedImage.testFixture(
+        settings.icon.background.isHidden = true
+        settings.icon.foreground.isHidden = true
+        settings.badge.isVisible = true
+        settings.badge.position = .bottomRight
+        settings.badge.background.source = .image
+        settings.badge.background.image = try ImportedImage.testFixture(
             width: 64, height: 64, fill: .systemGreen)
         // The fixture fills its own bounds, so it needs no padding compensation —
         // its frame is then exactly the badge diameter.
-        settings.badgeImportedBackgroundPaddingCompensation = false
-        settings.badgeEnableBackgroundShadow = false
+        settings.badge.background.compensatesForPadding = false
+        settings.badge.background.drawsShadow = false
 
-        let canvas = settings.finalExportSize
+        let canvas = settings.export.pixelSize
         let diameter = BadgeGeometry.diameter(
-            enclosureSize: PreviewHitTester.enclosureSize(displaySize: settings.finalExportSize),
-            badgeScale: settings.badgeScale
+            enclosureSize: PreviewHitTester.enclosureSize(displaySize: settings.export.pixelSize),
+            badgeScale: settings.badge.scale
         )
 
         let image = IconRenderer.renderIconSafely(settings: settings)

@@ -61,8 +61,8 @@ struct PNGExportDocumentTests {
     @Test("settings-based init stores settings and defaults other fields")
     func init_settings_storesSettings() {
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.exportSize = 512
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.export.size = 512
 
         let doc = PNGExportDocument(settings: settings)
 
@@ -112,7 +112,7 @@ struct PNGExportDocumentTests {
             colorSpace: .displayP3
         )
         var settings = IconSettings()
-        settings.showBadge = true
+        settings.badge.isVisible = true
         let badge = Self.makeSentinelImage()
 
         let doc = PNGExportDocument(appexExport: params, settings: settings, badgeAppexImage: badge)
