@@ -189,7 +189,7 @@ enum BadgeGeometry {
 
     /// The clamp of `offset(for:enclosureSize:)` expressed back in stored manual
     /// offset units, so a control can stop at the limit instead of banking up a
-    /// value the badge can't use. Intersected with `IconSettings.badgeOffsetRange`.
+    /// value the badge can't use. Intersected with `BadgeSpec.offsetRange`.
     ///
     /// The range is asymmetric, and past `badgeScale ≈ 1.09` it no longer
     /// contains zero — the badge *must* sit inward of its anchor by then. That's
@@ -204,7 +204,7 @@ enum BadgeGeometry {
         let anchor = anchor(for: settings.badge.position, enclosureSize: enclosureSize)
 
         func range(anchor: CGFloat, negative: CGFloat, positive: CGFloat) -> ClosedRange<Double> {
-            let outer = IconSettings.badgeOffsetRange
+            let outer = BadgeSpec.offsetRange
             let lower = max(Double((-negative - anchor) / enclosureSize), outer.lowerBound)
             let upper = min(Double((positive - anchor) / enclosureSize), outer.upperBound)
             // The two clamps can cross when the geometric window falls entirely

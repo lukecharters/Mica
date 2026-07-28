@@ -23,7 +23,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.applyImportedIconBackground(imported)
+                        settings.icon.background.apply(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -36,7 +36,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.applyImportedIconForeground(imported)
+                        settings.icon.foreground.apply(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -49,7 +49,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.applyImportedBadgeBackground(imported)
+                        settings.badge.background.apply(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -62,7 +62,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.applyImportedBadgeForeground(imported)
+                        settings.badge.foreground.apply(imported)
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -83,7 +83,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.applyImportedIconBackground(imported)
+                        settings.icon.background.apply(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -101,7 +101,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.applyImportedIconForeground(imported)
+                        settings.icon.foreground.apply(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -119,7 +119,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.applyImportedBadgeBackground(imported)
+                        settings.badge.background.apply(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -137,7 +137,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.applyImportedBadgeForeground(imported)
+                        settings.badge.foreground.apply(imported)
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
