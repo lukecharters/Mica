@@ -5,18 +5,18 @@ struct IconForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        switch iconSettings.iconSource {
+        switch iconSettings.icon.foreground.source {
         case .symbol:
             HStack {
 
                 //                Spacer()
                 
             
-            Slider(value: $iconSettings.manualSymbolScale,
-                   in: IconSettings.manualSymbolScaleRange,
+            Slider(value: $iconSettings.icon.foreground.symbolScale,
+                   in: ForegroundSpec.symbolScaleRange,
                    step: 0.05) {
                 Text("Symbol Scale")
-                Text("\(Int(iconSettings.manualSymbolScale * 100))%")
+                Text("\(Int(iconSettings.icon.foreground.symbolScale * 100))%")
                     .foregroundStyle(.secondary)
                 //                .monospacedDigit()
             }
@@ -24,7 +24,7 @@ struct IconForegroundLayoutSection: View {
         case .image:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
-                imageScale: $iconSettings.importedImageScale,
+                imageScale: $iconSettings.icon.foreground.imageScale,
                 showPaddingCompensation: false
             )
 

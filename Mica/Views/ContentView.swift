@@ -27,7 +27,7 @@ struct ContentView: View {
 
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
 
-    private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
+    private var actualExportSize: CGFloat { viewModel.iconSettings.export.pixelSize }
 
     @State private var zoomLevel: Double = 1.0
     /// Optional preview-only override of the icon's display point size, used to
@@ -80,11 +80,11 @@ struct ContentView: View {
             )
         } detail: {
             Group {
-                if viewModel.iconSettings.iconGenerationMode == .mica {
+                if viewModel.iconSettings.icon.mode == .mica {
                     previewPane
                         .task(id: viewModel.badgeAppexGenerationKey) {
-                            guard viewModel.iconSettings.showBadge,
-                                  viewModel.iconSettings.badgeGenerationMode == .system else {
+                            guard viewModel.iconSettings.badge.isVisible,
+                                  viewModel.iconSettings.badge.mode == .system else {
                                 return
                             }
                             try? await Task.sleep(for: .milliseconds(400))
@@ -173,14 +173,14 @@ struct ContentView: View {
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: viewModel.iconSettings.iconGenerationMode == .system
+            document: viewModel.iconSettings.icon.mode == .system
                 ? PNGExportDocument(appexExport: .init(
-                    symbolName: viewModel.iconSettings.symbolName,
+                    symbolName: viewModel.iconSettings.icon.foreground.symbolName,
                     enclosureColor: viewModel.appexEnclosureColor.plistValue,
                     symbolColor: viewModel.appexSymbolColor.plistValue,
-                    pointSize: viewModel.iconSettings.exportSize,
-                    scaleFactor: viewModel.iconSettings.exportRetinaSize ? 2 : 1,
-                    colorSpace: viewModel.iconSettings.exportColorSpace
+                    pointSize: viewModel.iconSettings.export.size,
+                    scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
+                    colorSpace: viewModel.iconSettings.export.colorSpace
                   ),
                   settings: viewModel.iconSettings,
                   badgeAppexImage: viewModel.badgeAppexRenderedImage)
@@ -208,8 +208,8 @@ struct ContentView: View {
         guard inspectorTab == .controls, showInspector else { return nil }
         let isSystem: Bool
         switch selectedGroup {
-        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .system
-        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .system
+        case .icon:  isSystem = viewModel.iconSettings.icon.mode == .system
+        case .badge: isSystem = viewModel.iconSettings.badge.mode == .system
         }
         return PreviewSelection.from(
             group: selectedGroup,
@@ -228,9 +228,9 @@ struct ContentView: View {
         selectionPulse += 1
         selectedGroup = target.group
         switch target.group {
-        case .icon where viewModel.iconSettings.iconGenerationMode == .mica:
+        case .icon where viewModel.iconSettings.icon.mode == .mica:
             iconTab = target.tab
-        case .badge where viewModel.iconSettings.badgeGenerationMode == .mica:
+        case .badge where viewModel.iconSettings.badge.mode == .mica:
             badgeTab = target.tab
         default:
             break
@@ -304,31 +304,31 @@ struct ContentView_Previews: PreviewProvider {
 
     @MainActor private static var customVM: IconViewModel {
         let vm = IconViewModel()
-        vm.iconSettings.iconGenerationMode = .mica
-        vm.iconSettings.symbolName = "gearshape.fill"
-//        vm.iconSettings.useCustomColors = true
-//        vm.iconSettings.customPrimaryColor = .blue
-//        vm.iconSettings.customSecondaryColor = .indigo
-        vm.iconSettings.symbolRenderingMode = .monochrome
-        vm.iconSettings.showBadge = true
-        vm.iconSettings.badgePosition = .bottomRight
-        vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
-        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-        vm.iconSettings.badgeHierarchicalSymbolColor = .white
-        vm.iconSettings.exportSize = 512
-        vm.iconSettings.exportRetinaSize = false
+        vm.iconSettings.icon.mode = .mica
+        vm.iconSettings.icon.foreground.symbolName = "gearshape.fill"
+//        vm.iconSettings.icon.background.usesCustomGradient = true
+//        vm.iconSettings.icon.background.gradientStartColor = .blue
+//        vm.iconSettings.icon.background.gradientEndColor = .indigo
+        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+        vm.iconSettings.badge.isVisible = true
+        vm.iconSettings.badge.position = .bottomRight
+        vm.iconSettings.badge.foreground.symbolName = "checkmark.seal.fill"
+        vm.iconSettings.badge.foreground.renderingStyle = .monochrome
+        vm.iconSettings.badge.foreground.hierarchicalColor = .white
+        vm.iconSettings.export.size = 512
+        vm.iconSettings.export.isRetina = false
         return vm
     }
 //
 //    @MainActor private static var retinaLargeVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "square"
-//        vm.iconSettings.useCustomColors = false
-//        vm.iconSettings.baseColor = .orange
-//        vm.iconSettings.symbolRenderingMode = .monochrome
-//        vm.iconSettings.symbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "square"
+//        vm.iconSettings.icon.background.usesCustomGradient = false
+//        vm.iconSettings.icon.background.color = .orange
+//        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.icon.foreground.color = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //}
@@ -356,56 +356,56 @@ struct ContentView_Previews: PreviewProvider {
 //
 //    @MainActor private static var monoVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "app"
-//        vm.iconSettings.useCustomColors = false
-//        vm.iconSettings.baseColor = .blue
-//        vm.iconSettings.symbolRenderingMode = .monochrome
-//        vm.iconSettings.symbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "app"
+//        vm.iconSettings.icon.background.usesCustomGradient = false
+//        vm.iconSettings.icon.background.color = .blue
+//        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.icon.foreground.color = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //
 //    @MainActor private static var hierarchicalVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "folder.fill.badge.plus"
-//        vm.iconSettings.useCustomColors = true
-//        vm.iconSettings.customPrimaryColor = .green
-//        vm.iconSettings.customSecondaryColor = .blue
-//        vm.iconSettings.symbolRenderingMode = .hierarchical
-//        vm.iconSettings.hierarchicalSymbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "folder.fill.badge.plus"
+//        vm.iconSettings.icon.background.usesCustomGradient = true
+//        vm.iconSettings.icon.background.gradientStartColor = .green
+//        vm.iconSettings.icon.background.gradientEndColor = .blue
+//        vm.iconSettings.icon.foreground.renderingStyle = .hierarchical
+//        vm.iconSettings.icon.foreground.hierarchicalColor = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //
 //    @MainActor private static var multicolorVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "drop.fill"
-//        vm.iconSettings.useCustomColors = false
-//        vm.iconSettings.baseColor = .gray
-//        vm.iconSettings.symbolRenderingMode = .multicolor
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "drop.fill"
+//        vm.iconSettings.icon.background.usesCustomGradient = false
+//        vm.iconSettings.icon.background.color = .gray
+//        vm.iconSettings.icon.foreground.renderingStyle = .multicolor
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //
 //    @MainActor private static var paletteVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "paintpalette.fill"
-//        vm.iconSettings.useCustomColors = true
-//        vm.iconSettings.customPrimaryColor = .pink
-//        vm.iconSettings.customSecondaryColor = .purple
-//        vm.iconSettings.symbolRenderingMode = .palette
-//        vm.iconSettings.paletteSymbolPrimaryColor = .white
-//        vm.iconSettings.paletteSymbolSecondaryColor = .blue
-//        vm.iconSettings.paletteSymbolTertiaryColor = .red
-//        vm.iconSettings.showBadge = true
-//        vm.iconSettings.badgeSymbolName = "star.fill"
-//        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-//        vm.iconSettings.badgeSymbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "paintpalette.fill"
+//        vm.iconSettings.icon.background.usesCustomGradient = true
+//        vm.iconSettings.icon.background.gradientStartColor = .pink
+//        vm.iconSettings.icon.background.gradientEndColor = .purple
+//        vm.iconSettings.icon.foreground.renderingStyle = .palette
+//        vm.iconSettings.icon.foreground.palettePrimaryColor = .white
+//        vm.iconSettings.icon.foreground.paletteSecondaryColor = .blue
+//        vm.iconSettings.icon.foreground.paletteTertiaryColor = .red
+//        vm.iconSettings.badge.isVisible = true
+//        vm.iconSettings.badge.foreground.symbolName = "star.fill"
+//        vm.iconSettings.badge.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.badge.foreground.color = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 }

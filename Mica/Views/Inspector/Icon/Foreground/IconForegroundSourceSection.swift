@@ -15,7 +15,7 @@ struct IconForegroundSourceSection: View {
     private var sourceType: Binding<SourceType> {
         Binding(
             get: {
-                switch iconSettings.iconSource {
+                switch iconSettings.icon.foreground.source {
                 case .symbol: return .symbol
                 case .image: return .imported
                 case .system: return .symbol
@@ -24,9 +24,9 @@ struct IconForegroundSourceSection: View {
             set: { newValue in
                 switch newValue {
                 case .symbol:
-                    iconSettings.iconSource = .symbol
+                    iconSettings.icon.foreground.source = .symbol
                 case .imported:
-                    iconSettings.iconSource = .image
+                    iconSettings.icon.foreground.source = .image
                 }
             }
         )
@@ -36,10 +36,10 @@ struct IconForegroundSourceSection: View {
         if isSystem {
             // System mode renders the icon as one appex image, so visibility is
             // all-or-nothing for the group rather than per layer.
-            LayerVisibleToggle(isHidden: $iconSettings.iconHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.icon.isHidden)
             symbolField
         } else {
-            LayerVisibleToggle(isHidden: $iconSettings.iconForegroundHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.icon.foreground.isHidden)
 
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in
@@ -55,15 +55,15 @@ struct IconForegroundSourceSection: View {
 
             case .imported:
                 ImageImportControls(
-                    importedImage: $iconSettings.importedImage,
-                    onImport: { iconSettings.applyImportedIconForeground($0) }
+                    importedImage: $iconSettings.icon.foreground.image,
+                    onImport: { iconSettings.icon.foreground.apply($0) }
                 )
             }
         }
     }
 
     private var symbolField: some View {
-        SymbolNameField(symbolName: $iconSettings.symbolName)
+        SymbolNameField(symbolName: $iconSettings.icon.foreground.symbolName)
     }
 }
 

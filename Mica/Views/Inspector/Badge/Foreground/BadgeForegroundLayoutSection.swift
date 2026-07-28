@@ -8,13 +8,13 @@ struct BadgeForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        switch iconSettings.badgeIconSource {
+        switch iconSettings.badge.foreground.source {
         case .symbol:
-            Slider(value: $iconSettings.badgeSymbolScale,
-                   in: IconSettings.manualSymbolScaleRange,
+            Slider(value: $iconSettings.badge.foreground.symbolScale,
+                   in: ForegroundSpec.symbolScaleRange,
                    step: 0.05) {
                 Text("Symbol Scale")
-                Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
+                Text("\(Int(iconSettings.badge.foreground.symbolScale * 100))%")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -22,7 +22,7 @@ struct BadgeForegroundLayoutSection: View {
         case .image:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
-                imageScale: $iconSettings.badgeImportedImageScale,
+                imageScale: $iconSettings.badge.foreground.imageScale,
                 showPaddingCompensation: false
             )
 

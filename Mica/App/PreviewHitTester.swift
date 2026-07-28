@@ -225,18 +225,18 @@ enum PreviewHitTester {
             return .roundedRect(box, cornerRadius: min(box.width, box.height) * 0.08)
 
         case .badge, .badgeBackground, .badgeForeground:
-            guard settings.showBadge else { return nil }
+            guard settings.badge.isVisible else { return nil }
             let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosure)
             let badgeCenter = CGPoint(x: center.x + offset.width, y: center.y + offset.height)
-            let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badgeScale)
+            let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badge.scale)
             guard diameter > 0 else { return nil }
 
             if selection == .badgeForeground {
                 // Box the badge glyph, sized as BadgeView sizes it (badgeSize ×
                 // multiplier × badgeSymbolScale, centred, no offsets).
-                guard settings.badgeIconSource != .system else { return nil }
-                let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badgeSymbolName)
-                let side = diameter * sizing.multiplier * settings.badgeSymbolScale
+                guard settings.badge.foreground.source != .system else { return nil }
+                let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
+                let side = diameter * sizing.multiplier * settings.badge.foreground.symbolScale
                 guard side > 0 else { return nil }
                 let box = centeredSquare(center: badgeCenter, side: side)
                 return .roundedRect(box, cornerRadius: min(box.width, box.height) * 0.08)
@@ -274,7 +274,7 @@ enum PreviewHitTester {
         // canvas exactly as the icon's chiclet sits inside the icon canvas. So the
         // visible squircle is the *enclosure* of the badge frame (≈0.80 of it),
         // not the frame — the rest is the padding the appex render carries.
-        if settings.badgeIconSource == .system {
+        if settings.badge.foreground.source == .system {
             return enclosureSize(displaySize: diameter)
         }
 
@@ -285,10 +285,10 @@ enum PreviewHitTester {
         // Artwork that doesn't match that assumption can defeat this — the
         // compensation toggle is the user's claim about the image, not a
         // measurement of it.
-        guard !settings.badgeBackgroundHidden,
-              settings.badgeUseImportedBackground,
-              settings.badgeImportedBackground?.nsImage != nil else { return nil }
-        return diameter * settings.badgeImportedBackgroundScale
+        guard !settings.badge.background.isHidden,
+              settings.badge.background.source == .image,
+              settings.badge.background.image?.nsImage != nil else { return nil }
+        return diameter * settings.badge.background.imageScale
     }
 
     /// Bounding box of the icon's drawn foreground, or nil when nothing is drawn.
@@ -298,12 +298,12 @@ enum PreviewHitTester {
         enclosureSize: CGFloat,
         symbolSizing: ResolvedSymbolSizing?
     ) -> CGRect? {
-        guard settings.backgroundMode != .image else { return nil }
+        guard settings.icon.background.source != .image else { return nil }
 
-        switch settings.iconSource {
+        switch settings.icon.foreground.source {
         case .symbol:
-            let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.symbolName)
-            let side = enclosureSize * sizing.multiplier * settings.manualSymbolScale
+            let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
+            let side = enclosureSize * sizing.multiplier * settings.icon.foreground.symbolScale
             guard side > 0 else { return nil }
             return centeredSquare(
                 center: CGPoint(
@@ -314,8 +314,8 @@ enum PreviewHitTester {
             )
 
         case .image:
-            guard settings.importedImage?.nsImage != nil else { return nil }
-            let side = enclosureSize * customImageEnclosureRatio * settings.importedImageScale
+            guard settings.icon.foreground.image?.nsImage != nil else { return nil }
+            let side = enclosureSize * customImageEnclosureRatio * settings.icon.foreground.imageScale
             guard side > 0 else { return nil }
             return centeredSquare(center: center, side: side)
 
@@ -326,10 +326,10 @@ enum PreviewHitTester {
 
     /// Side length of the drawn icon background, or nil to use the enclosure.
     private static func backgroundSide(settings: IconSettings, enclosureSize: CGFloat) -> CGFloat? {
-        guard settings.backgroundMode == .image,
-              settings.importedBackground?.nsImage != nil else { return nil }
-        let scale = settings.importedBackgroundScale
-            * (settings.importedBackgroundPaddingCompensation
+        guard settings.icon.background.source == .image,
+              settings.icon.background.image?.nsImage != nil else { return nil }
+        let scale = settings.icon.background.imageScale
+            * (settings.icon.background.compensatesForPadding
                 ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
         return enclosureSize * scale
     }
@@ -347,7 +347,7 @@ enum PreviewHitTester {
     }
 
     private static func cornerRadius(for settings: IconSettings, displaySize: CGFloat) -> CGFloat {
-        let base: CGFloat = settings.cornerRadiusStyle == .macOS26 ? 54 : 46
+        let base: CGFloat = settings.icon.background.cornerRadiusStyle == .macOS26 ? 54 : 46
         return base * (displaySize / 256)
     }
 
@@ -359,11 +359,11 @@ enum PreviewHitTester {
         settings: IconSettings,
         enclosureSize: CGFloat
     ) -> PreviewHitTarget? {
-        guard settings.showBadge else { return nil }
+        guard settings.badge.isVisible else { return nil }
 
         let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
         let badgeCenter = CGPoint(x: center.x + offset.width, y: center.y + offset.height)
-        let diameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let diameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badge.scale)
         guard diameter > 0 else { return nil }
 
         let shape = badgeShape(settings: settings, center: badgeCenter, diameter: diameter)
@@ -377,11 +377,11 @@ enum PreviewHitTester {
 
         let distance = hypot(point.x - badgeCenter.x, point.y - badgeCenter.y)
         if distance <= radius * badgeInnerHitRatio {
-            return settings.badgeForegroundHidden ? .badgeBackground : .badgeForeground
+            return settings.badge.foreground.isHidden ? .badgeBackground : .badgeForeground
         }
         // `showBadge` guarantees at least one badge layer is visible, so a hidden
         // background means the glyph is what's on screen out here.
-        return settings.badgeBackgroundHidden ? .badgeForeground : .badgeBackground
+        return settings.badge.background.isHidden ? .badgeForeground : .badgeBackground
     }
 
     // MARK: - Icon foreground
@@ -395,17 +395,17 @@ enum PreviewHitTester {
     ) -> Bool {
         // Same gates as IconContentView: an imported background replaces the
         // foreground entirely.
-        guard !settings.iconForegroundHidden, settings.backgroundMode != .image else {
+        guard !settings.icon.foreground.isHidden, settings.icon.background.source != .image else {
             return false
         }
 
-        switch settings.iconSource {
+        switch settings.icon.foreground.source {
         case .symbol:
-            let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.symbolName)
+            let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
             // symbolSize is a font point size, so the glyph's ink is somewhat
             // smaller than this box — close enough for picking, and generous in
             // the direction that matters (it's the topmost icon layer).
-            let side = enclosureSize * sizing.multiplier * settings.manualSymbolScale
+            let side = enclosureSize * sizing.multiplier * settings.icon.foreground.symbolScale
             let glyphCenter = CGPoint(
                 x: center.x + enclosureSize * sizing.xOffset,
                 y: center.y + enclosureSize * sizing.yOffset
@@ -414,8 +414,8 @@ enum PreviewHitTester {
 
         case .image:
             // Renderer draws nothing until the data decodes, so neither do we.
-            guard settings.importedImage?.nsImage != nil else { return false }
-            let side = enclosureSize * customImageEnclosureRatio * settings.importedImageScale
+            guard settings.icon.foreground.image?.nsImage != nil else { return false }
+            let side = enclosureSize * customImageEnclosureRatio * settings.icon.foreground.imageScale
             return squareContains(point, center: center, side: side)
 
         case .system:
@@ -435,15 +435,15 @@ enum PreviewHitTester {
     ) -> Bool {
         // Click what you see: a hidden background isn't on screen, so clicking
         // where it would be selects nothing. Its tab is still one click away.
-        guard !settings.iconBackgroundHidden else { return false }
+        guard !settings.icon.background.isHidden else { return false }
 
         let side: CGFloat
-        if settings.backgroundMode == .image {
-            guard settings.importedBackground?.nsImage != nil else { return false }
+        if settings.icon.background.source == .image {
+            guard settings.icon.background.image?.nsImage != nil else { return false }
             // Imported backgrounds are framed at a scaled multiple of the
             // enclosure and clipped to the chiclet's corner radius.
-            let scale = settings.importedBackgroundScale
-                * (settings.importedBackgroundPaddingCompensation
+            let scale = settings.icon.background.imageScale
+                * (settings.icon.background.compensatesForPadding
                     ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
             side = enclosureSize * scale
         } else {

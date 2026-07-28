@@ -10,39 +10,39 @@ struct BadgeBackgroundAppearanceSection: View {
     @State private var useCustomBadgeBackgroundColor = false
 
     var body: some View {
-        if !iconSettings.badgeUseImportedBackground {
+        if iconSettings.badge.background.source != .image {
             if advancedControlsEnabled {
                 Toggle("Custom Gradient", isOn: Binding(
-                    get: { iconSettings.badgeUseCustomColors },
+                    get: { iconSettings.badge.background.usesCustomGradient },
                     set: { newValue in
-                        iconSettings.badgeUseCustomColors = newValue
+                        iconSettings.badge.background.usesCustomGradient = newValue
                         if newValue {
-                            iconSettings.badgeEnableBackgroundGradient = true
+                            iconSettings.badge.background.usesGradient = true
                         }
                     }
                 ))
             }
 
-            if iconSettings.badgeUseCustomColors {
-                ColorPicker("Primary", selection: $iconSettings.badgeCustomPrimaryColor)
-                ColorPicker("Secondary", selection: $iconSettings.badgeCustomSecondaryColor)
+            if iconSettings.badge.background.usesCustomGradient {
+                ColorPicker("Primary", selection: $iconSettings.badge.background.gradientStartColor)
+                ColorPicker("Secondary", selection: $iconSettings.badge.background.gradientEndColor)
             } else {
                 // Shared preset/custom flow — self-heals the reset `useCustom`
                 // flag and shows the actual color as the fallback swatch.
                 ColorPickerWithDropdown(
                     label: "Color",
-                    color: $iconSettings.badgeBaseColor,
+                    color: $iconSettings.badge.background.color,
                     useCustom: $useCustomBadgeBackgroundColor,
                     colorOptions: colorOptions
                 )
             }
 
-            if advancedControlsEnabled && !iconSettings.badgeUseCustomColors {
-                Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.badgeEnableBackgroundGradient)
+            if advancedControlsEnabled && !iconSettings.badge.background.usesCustomGradient {
+                Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.badge.background.usesGradient)
             }
         }
 
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableBackgroundShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.background.drawsShadow)
     }
 }
 

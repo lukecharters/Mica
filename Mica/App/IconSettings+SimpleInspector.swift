@@ -20,10 +20,10 @@ extension IconSettings {
     /// when this becomes true — imports can arrive from the File and Edit menus
     /// or a canvas drop while the simple pane is showing.
     var usesImportedSources: Bool {
-        iconSource == .image
-            || backgroundMode == .image
-            || badgeIconSource == .image
-            || badgeUseImportedBackground
+        icon.foreground.source == .image
+            || icon.background.source == .image
+            || badge.foreground.source == .image
+            || badge.background.source == .image
     }
 
     // MARK: - Folding state back into the simple pane
@@ -39,39 +39,39 @@ extension IconSettings {
     /// (gradients, symbol weight, corner style, symbol scale) are left alone;
     /// they stay hidden-but-applied exactly as they always have.
     mutating func resetToSimpleControls() {
-        // Icon. `iconSource` is never `.system` — the icon's System mode lives in
-        // `iconGenerationMode` — so no guard is needed here.
-        if iconSource == .image {
-            iconSource = .symbol
+        // Icon. `icon.foreground.source` is never `.system` — the icon's System
+        // mode lives in `icon.mode` — so no guard is needed here.
+        if icon.foreground.source == .image {
+            icon.foreground.source = .symbol
         }
-        if backgroundMode != .color {
-            backgroundMode = .color
+        if icon.background.source != .color {
+            icon.background.source = .color
         }
-        symbolRenderingMode = .monochrome
-        useCustomColors = false
+        icon.foreground.renderingStyle = .monochrome
+        icon.background.usesCustomGradient = false
 
-        // Badge. `badgeGenerationMode` is derived from `badgeIconSource`, so
+        // Badge. `badge.mode` is derived from `badge.foreground.source`, so
         // writing `.symbol` over `.system` would knock a System badge out of
         // System mode.
-        if badgeIconSource == .image {
-            badgeIconSource = .symbol
+        if badge.foreground.source == .image {
+            badge.foreground.source = .symbol
         }
-        badgeUseImportedBackground = false
-        badgeSymbolRenderingMode = .monochrome
-        badgeUseCustomColors = false
+        badge.background.source = .color
+        badge.foreground.renderingStyle = .monochrome
+        badge.background.usesCustomGradient = false
     }
 
     // MARK: - Group visibility
 
     /// Whether every layer in a group is visible. Stricter than the inverse of
-    /// `iconHidden`/`badgeHidden`, which only report a *fully* hidden group: a
-    /// group with one layer hidden reads as not fully visible, so the simple
-    /// pane's single Visible toggle sits off and one flick of it brings the whole
-    /// group back.
+    /// `IconSpec.isHidden`/`BadgeSpec.isHidden`, which only report a *fully*
+    /// hidden group: a group with one layer hidden reads as not fully visible, so
+    /// the simple pane's single Visible toggle sits off and one flick of it brings
+    /// the whole group back.
     func isGroupFullyVisible(_ group: IconLayerGroup) -> Bool {
         switch group {
-        case .icon:  return !iconForegroundHidden && !iconBackgroundHidden
-        case .badge: return !badgeForegroundHidden && !badgeBackgroundHidden
+        case .icon:  return icon.visibility == .on
+        case .badge: return badge.visibility == .on
         }
     }
 
@@ -80,8 +80,8 @@ extension IconSettings {
     /// mode, which the simple pane has no other way to reach.
     mutating func setGroupVisible(_ visible: Bool, for group: IconLayerGroup) {
         switch group {
-        case .icon:  iconHidden = !visible
-        case .badge: badgeHidden = !visible
+        case .icon:  icon.isHidden = !visible
+        case .badge: badge.isHidden = !visible
         }
     }
 }

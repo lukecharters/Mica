@@ -21,7 +21,7 @@ struct IconForegroundAppearanceSection: View {
     var body: some View {
         if isAppleReference {
             appleReferenceControls
-        } else if iconSettings.iconSource == .symbol {
+        } else if iconSettings.icon.foreground.source == .symbol {
             sfSymbolControls
         } else {
             importedControls
@@ -37,7 +37,7 @@ struct IconForegroundAppearanceSection: View {
     @ViewBuilder
     private var sfSymbolControls: some View {
         if advancedControlsEnabled {
-            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.symbolRenderingMode) {
+            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.icon.foreground.renderingStyle) {
                 ForEach(SymbolRenderingStyle.allCases) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
@@ -48,7 +48,7 @@ struct IconForegroundAppearanceSection: View {
         symbolColorControls
 
         if advancedControlsEnabled {
-            Picker("Weight", systemImage: "bold", selection: $iconSettings.symbolWeight) {
+            Picker("Weight", systemImage: "bold", selection: $iconSettings.icon.foreground.symbolWeight) {
                 ForEach(SymbolWeight.allCases) { weight in
                     Text(weight.rawValue).tag(weight)
                 }
@@ -57,55 +57,55 @@ struct IconForegroundAppearanceSection: View {
 
             if #available(macOS 26.0, *) {
                 Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
-                    get: { iconSettings.symbolColorRenderingMode == .gradient },
-                    set: { iconSettings.symbolColorRenderingMode = $0 ? .gradient : .flat }
+                    get: { iconSettings.icon.foreground.fillStyle == .gradient },
+                    set: { iconSettings.icon.foreground.fillStyle = $0 ? .gradient : .flat }
                 ))
             }
         }
 
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableSymbolShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.icon.foreground.drawsShadow)
     }
 
     /// Imported image: only shadow applies
     @ViewBuilder
     private var importedControls: some View {
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.enableSymbolShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.icon.foreground.drawsShadow)
             .help("Toggle the drop shadow behind the imported image")
     }
 
     @ViewBuilder
     private var symbolColorControls: some View {
-        switch iconSettings.symbolRenderingMode {
+        switch iconSettings.icon.foreground.renderingStyle {
         case .monochrome, .multicolor:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.symbolColor,
+                color: $iconSettings.icon.foreground.color,
                 useCustom: $useCustomSymbolColor,
                 colorOptions: colorOptions
             )
         case .hierarchical:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.hierarchicalSymbolColor,
+                color: $iconSettings.icon.foreground.hierarchicalColor,
                 useCustom: $useCustomHierarchicalColor,
                 colorOptions: colorOptions
             )
         case .palette:
             ColorPickerWithDropdown(
                 label: "Primary",
-                color: $iconSettings.paletteSymbolPrimaryColor,
+                color: $iconSettings.icon.foreground.palettePrimaryColor,
                 useCustom: $useCustomPalettePrimaryColor,
                 colorOptions: colorOptions
             )
             ColorPickerWithDropdown(
                 label: "Secondary",
-                color: $iconSettings.paletteSymbolSecondaryColor,
+                color: $iconSettings.icon.foreground.paletteSecondaryColor,
                 useCustom: $useCustomPaletteSecondaryColor,
                 colorOptions: colorOptions
             )
             ColorPickerWithDropdown(
                 label: "Tertiary",
-                color: $iconSettings.paletteSymbolTertiaryColor,
+                color: $iconSettings.icon.foreground.paletteTertiaryColor,
                 useCustom: $useCustomPaletteTertiaryColor,
                 colorOptions: colorOptions
             )

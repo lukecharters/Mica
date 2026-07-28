@@ -18,7 +18,7 @@ struct BadgeForegroundAppearanceSection: View {
     @State private var useCustomBadgePaletteTertiaryColor = false
 
     var body: some View {
-        switch iconSettings.badgeIconSource {
+        switch iconSettings.badge.foreground.source {
         case .system:
             appleReferenceControls
         case .symbol:
@@ -37,7 +37,7 @@ struct BadgeForegroundAppearanceSection: View {
     @ViewBuilder
     private var sfSymbolControls: some View {
         if advancedControlsEnabled {
-            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
+            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badge.foreground.renderingStyle) {
                 ForEach(SymbolRenderingStyle.allCases) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
@@ -48,7 +48,7 @@ struct BadgeForegroundAppearanceSection: View {
         badgeSymbolColorControls
 
         if advancedControlsEnabled {
-            Picker("Weight", systemImage: "bold", selection: $iconSettings.badgeSymbolWeight) {
+            Picker("Weight", systemImage: "bold", selection: $iconSettings.badge.foreground.symbolWeight) {
                 ForEach(SymbolWeight.allCases) { weight in
                     Text(weight.rawValue).tag(weight)
                 }
@@ -57,55 +57,55 @@ struct BadgeForegroundAppearanceSection: View {
 
             if #available(macOS 26.0, *) {
                 Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
-                    get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
-                    set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
+                    get: { iconSettings.badge.foreground.fillStyle == .gradient },
+                    set: { iconSettings.badge.foreground.fillStyle = $0 ? .gradient : .flat }
                 ))
             }
         }
 
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.foreground.drawsShadow)
     }
 
     /// Imported image: only shadow applies
     @ViewBuilder
     private var importedControls: some View {
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.foreground.drawsShadow)
             .help("Toggle the drop shadow behind the badge image")
     }
 
     @ViewBuilder
     private var badgeSymbolColorControls: some View {
-        switch iconSettings.badgeSymbolRenderingMode {
+        switch iconSettings.badge.foreground.renderingStyle {
         case .monochrome, .multicolor:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.badgeSymbolColor,
+                color: $iconSettings.badge.foreground.color,
                 useCustom: $useCustomBadgeSymbolColor,
                 colorOptions: colorOptions
             )
         case .hierarchical:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.badgeHierarchicalSymbolColor,
+                color: $iconSettings.badge.foreground.hierarchicalColor,
                 useCustom: $useCustomBadgeHierarchicalColor,
                 colorOptions: colorOptions
             )
         case .palette:
             ColorPickerWithDropdown(
                 label: "Primary",
-                color: $iconSettings.badgePaletteSymbolPrimaryColor,
+                color: $iconSettings.badge.foreground.palettePrimaryColor,
                 useCustom: $useCustomBadgePalettePrimaryColor,
                 colorOptions: colorOptions
             )
             ColorPickerWithDropdown(
                 label: "Secondary",
-                color: $iconSettings.badgePaletteSymbolSecondaryColor,
+                color: $iconSettings.badge.foreground.paletteSecondaryColor,
                 useCustom: $useCustomBadgePaletteSecondaryColor,
                 colorOptions: colorOptions
             )
             ColorPickerWithDropdown(
                 label: "Tertiary",
-                color: $iconSettings.badgePaletteSymbolTertiaryColor,
+                color: $iconSettings.badge.foreground.paletteTertiaryColor,
                 useCustom: $useCustomBadgePaletteTertiaryColor,
                 colorOptions: colorOptions
             )

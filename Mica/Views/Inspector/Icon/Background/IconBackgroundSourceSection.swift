@@ -5,9 +5,9 @@ struct IconBackgroundSourceSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        LayerVisibleToggle(isHidden: $iconSettings.iconBackgroundHidden)
+        LayerVisibleToggle(isHidden: $iconSettings.icon.background.isHidden)
 
-        Picker("Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
+        Picker("Type", systemImage: "app.grid", selection: $iconSettings.icon.background.source) {
             Text("Color").tag(IconBackgroundSource.color)
             Text("Pre-Rendered").tag(IconBackgroundSource.preRendered)
             Text("Imported").tag(IconBackgroundSource.image)
@@ -15,10 +15,10 @@ struct IconBackgroundSourceSection: View {
         .pickerStyle(.segmented)
         .labelsHidden()
 
-        if iconSettings.backgroundMode == .image {
+        if iconSettings.icon.background.source == .image {
             ImageImportControls(
-                importedImage: $iconSettings.importedBackground,
-                onImport: { iconSettings.applyImportedIconBackground($0) }
+                importedImage: $iconSettings.icon.background.image,
+                onImport: { iconSettings.icon.background.apply($0) }
             )
         }
     }

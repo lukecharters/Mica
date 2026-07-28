@@ -81,12 +81,12 @@ struct InspectorControls: View {
             .id("\(group.rawValue).\(advancedControlsEnabled ? activeTab.rawValue : "simple")")
         }
         .onAppear {
-            if iconSettings.badgeIconSource != .system {
-                lastNonSystemBadgeSource = iconSettings.badgeIconSource
+            if iconSettings.badge.foreground.source != .system {
+                lastNonSystemBadgeSource = iconSettings.badge.foreground.source
             }
             revealAdvancedControlsIfNeeded()
         }
-        .onChange(of: iconSettings.badgeIconSource) { _, newValue in
+        .onChange(of: iconSettings.badge.foreground.source) { _, newValue in
             if newValue != .system {
                 lastNonSystemBadgeSource = newValue
             }
@@ -125,18 +125,18 @@ struct InspectorControls: View {
     }
 
     private var isIconAppleReference: Bool {
-        iconSettings.iconGenerationMode == .system
+        iconSettings.icon.mode == .system
     }
 
     private var isBadgeAppleReference: Bool {
-        iconSettings.badgeGenerationMode == .system
+        iconSettings.badge.mode == .system
     }
 
     /// Drives the icon group's Mica/System picker.
     private var iconModeBinding: Binding<Bool> {
         Binding(
-            get: { iconSettings.iconGenerationMode == .system },
-            set: { iconSettings.iconGenerationMode = $0 ? .system : .mica }
+            get: { iconSettings.icon.mode == .system },
+            set: { iconSettings.icon.mode = $0 ? .system : .mica }
         )
     }
 
@@ -145,15 +145,15 @@ struct InspectorControls: View {
     /// the source and restores the prior Mica choice on the way back.
     private var badgeModeBinding: Binding<Bool> {
         Binding(
-            get: { iconSettings.badgeGenerationMode == .system },
+            get: { iconSettings.badge.mode == .system },
             set: { newValue in
                 if newValue {
-                    if iconSettings.badgeIconSource != .system {
-                        lastNonSystemBadgeSource = iconSettings.badgeIconSource
+                    if iconSettings.badge.foreground.source != .system {
+                        lastNonSystemBadgeSource = iconSettings.badge.foreground.source
                     }
-                    iconSettings.badgeIconSource = .system
+                    iconSettings.badge.foreground.source = .system
                 } else {
-                    iconSettings.badgeIconSource = lastNonSystemBadgeSource
+                    iconSettings.badge.foreground.source = lastNonSystemBadgeSource
                 }
             }
         )
@@ -290,7 +290,7 @@ struct InspectorControls: View {
                 Section("Source", isExpanded: $iconSourceExpanded) {
                     SimpleSourceSection(
                         isVisible: groupVisibleBinding(for: .icon),
-                        symbolName: $iconSettings.symbolName
+                        symbolName: $iconSettings.icon.foreground.symbolName
                     )
                     .padding(4)
                 }
@@ -299,9 +299,9 @@ struct InspectorControls: View {
             sectionForm {
                 Section("Appearance", isExpanded: $iconAppearanceExpanded) {
                     SimpleAppearanceSection(
-                        symbolColor: $iconSettings.symbolColor,
-                        symbolShadow: $iconSettings.enableSymbolShadow,
-                        backgroundColor: $iconSettings.baseColor,
+                        symbolColor: $iconSettings.icon.foreground.color,
+                        symbolShadow: $iconSettings.icon.foreground.drawsShadow,
+                        backgroundColor: $iconSettings.icon.background.color,
                         backgroundShadow: backgroundShadowEnabled,
                         colorOptions: colorOptions
                     )
@@ -322,7 +322,7 @@ struct InspectorControls: View {
                 Section("Source", isExpanded: $badgeSourceExpanded) {
                     SimpleSourceSection(
                         isVisible: groupVisibleBinding(for: .badge),
-                        symbolName: $iconSettings.badgeSymbolName,
+                        symbolName: $iconSettings.badge.foreground.symbolName,
                         symbolHelp: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"
                     )
                     .padding(4)
@@ -332,10 +332,10 @@ struct InspectorControls: View {
             sectionForm {
                 Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                     SimpleAppearanceSection(
-                        symbolColor: $iconSettings.badgeSymbolColor,
-                        symbolShadow: $iconSettings.badgeEnableSymbolShadow,
-                        backgroundColor: $iconSettings.badgeBaseColor,
-                        backgroundShadow: $iconSettings.badgeEnableBackgroundShadow,
+                        symbolColor: $iconSettings.badge.foreground.color,
+                        symbolShadow: $iconSettings.badge.foreground.drawsShadow,
+                        backgroundColor: $iconSettings.badge.background.color,
+                        backgroundShadow: $iconSettings.badge.background.drawsShadow,
                         colorOptions: colorOptions
                     )
                     .padding(4)
@@ -361,8 +361,8 @@ struct InspectorControls: View {
     /// the advanced style picker is hidden.
     private var backgroundShadowEnabled: Binding<Bool> {
         Binding(
-            get: { iconSettings.backgroundShadowStyle != .off },
-            set: { iconSettings.backgroundShadowStyle = $0 ? .macOS26 : .off }
+            get: { iconSettings.icon.background.shadowStyle != .off },
+            set: { iconSettings.icon.background.shadowStyle = $0 ? .macOS26 : .off }
         )
     }
 
@@ -436,7 +436,7 @@ struct InspectorControls: View {
                 }
             }
 
-            if iconSettings.backgroundMode == .image {
+            if iconSettings.icon.background.source == .image {
                 sectionForm {
                     Section("Layout", isExpanded: $backgroundLayoutExpanded) {
                         IconBackgroundLayoutSection(iconSettings: $iconSettings)
@@ -504,7 +504,7 @@ struct InspectorControls: View {
                 }
             }
 
-            if iconSettings.badgeUseImportedBackground {
+            if iconSettings.badge.background.source == .image {
                 sectionForm {
                     Section("Layout", isExpanded: $badgeBackgroundLayoutExpanded) {
                         BadgeBackgroundLayoutSection(iconSettings: $iconSettings)
@@ -580,10 +580,10 @@ private struct InspectorControlsPreview: View {
         )
         .frame(width: 380, height: 700)
         .onAppear {
-            settings.showBadge = true
+            settings.badge.isVisible = true
             switch group {
-            case .icon:  settings.iconGenerationMode = isSystem ? .system : .mica
-            case .badge: settings.badgeIconSource = isSystem ? .system : .symbol
+            case .icon:  settings.icon.mode = isSystem ? .system : .mica
+            case .badge: settings.badge.foreground.source = isSystem ? .system : .symbol
             }
         }
     }

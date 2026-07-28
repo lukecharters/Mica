@@ -15,7 +15,7 @@ struct BadgeForegroundSourceSection: View {
     private var sourceType: Binding<SourceType> {
         Binding(
             get: {
-                switch iconSettings.badgeIconSource {
+                switch iconSettings.badge.foreground.source {
                 case .symbol: return .symbol
                 case .image: return .imported
                 case .system: return .symbol
@@ -24,9 +24,9 @@ struct BadgeForegroundSourceSection: View {
             set: { newValue in
                 switch newValue {
                 case .symbol:
-                    iconSettings.badgeIconSource = .symbol
+                    iconSettings.badge.foreground.source = .symbol
                 case .imported:
-                    iconSettings.badgeIconSource = .image
+                    iconSettings.badge.foreground.source = .image
                 }
             }
         )
@@ -36,10 +36,10 @@ struct BadgeForegroundSourceSection: View {
         if isSystem {
             // System mode renders the badge as one appex image, so visibility is
             // all-or-nothing for the group rather than per layer.
-            LayerVisibleToggle(isHidden: $iconSettings.badgeHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.badge.isHidden)
             symbolField
         } else {
-            LayerVisibleToggle(isHidden: $iconSettings.badgeForegroundHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.badge.foreground.isHidden)
 
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in
@@ -55,8 +55,8 @@ struct BadgeForegroundSourceSection: View {
 
             case .imported:
                 ImageImportControls(
-                    importedImage: $iconSettings.badgeImportedImage,
-                    onImport: { iconSettings.applyImportedBadgeForeground($0) }
+                    importedImage: $iconSettings.badge.foreground.image,
+                    onImport: { iconSettings.badge.foreground.apply($0) }
                 )
             }
         }
@@ -64,7 +64,7 @@ struct BadgeForegroundSourceSection: View {
 
     private var symbolField: some View {
         SymbolNameField(
-            symbolName: $iconSettings.badgeSymbolName,
+            symbolName: $iconSettings.badge.foreground.symbolName,
             help: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"
         )
     }

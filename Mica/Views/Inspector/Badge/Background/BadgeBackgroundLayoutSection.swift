@@ -6,8 +6,8 @@ struct BadgeBackgroundLayoutSection: View {
 
     var body: some View {
         ImageImportLayoutControls(
-            paddingCompensation: $iconSettings.badgeImportedBackgroundPaddingCompensation,
-            imageScale: $iconSettings.badgeImportedBackgroundScale
+            paddingCompensation: $iconSettings.badge.background.compensatesForPadding,
+            imageScale: $iconSettings.badge.background.imageScale
         )
     }
 }

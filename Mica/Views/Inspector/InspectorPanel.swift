@@ -39,7 +39,7 @@ struct InspectorPanel: View {
                 ExportSettingsSection(
                     iconSettings: $iconSettings,
                     showExportDialog: $showExportDialog,
-                    generationMode: iconSettings.iconGenerationMode,
+                    generationMode: iconSettings.icon.mode,
                     appexHasImage: appexHasImage,
                     badgeAppexHasImage: badgeAppexHasImage
                 )

@@ -5,15 +5,15 @@ struct IconBackgroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        switch iconSettings.backgroundMode {
+        switch iconSettings.icon.background.source {
         case .color:
             EmptyView()
 
             
         case .image:
             ImageImportLayoutControls(
-                paddingCompensation: $iconSettings.importedBackgroundPaddingCompensation,
-                imageScale: $iconSettings.importedBackgroundScale
+                paddingCompensation: $iconSettings.icon.background.compensatesForPadding,
+                imageScale: $iconSettings.icon.background.imageScale
             )
 
         case .preRendered:
@@ -25,7 +25,7 @@ struct IconBackgroundLayoutSection: View {
 #Preview {
     @Previewable @State var settings: IconSettings = {
         var s = IconSettings()
-        s.backgroundMode = .image
+        s.icon.background.source = .image
         return s
     }()
     Form {

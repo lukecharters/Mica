@@ -12,8 +12,8 @@ final class IconViewModel: ObservableObject {
     // badgeGenerationMode). A computed convenience for any code that still wants
     // a single "are we in Apple Reference?" answer for the icon.
     var generationMode: GenerationMode {
-        get { iconSettings.iconGenerationMode }
-        set { iconSettings.iconGenerationMode = newValue }
+        get { iconSettings.icon.mode }
+        set { iconSettings.icon.mode = newValue }
     }
     @Published var appexEnclosureColor: AppexColor = .blue
     @Published var appexSymbolColor: AppexColor = .white
@@ -29,7 +29,7 @@ final class IconViewModel: ObservableObject {
     @Published var badgeAppexError: String? = nil
 
     // Derived values (no type changes)
-    var actualExportSize: CGFloat { iconSettings.finalExportSize }
+    var actualExportSize: CGFloat { iconSettings.export.pixelSize }
 
     // MARK: - Appex Generation
 
@@ -40,7 +40,7 @@ final class IconViewModel: ObservableObject {
     }
 
     var appexGenerationKey: AppexGenerationKey {
-        AppexGenerationKey(symbolName: iconSettings.symbolName, enclosureColor: appexEnclosureColor, symbolColor: appexSymbolColor)
+        AppexGenerationKey(symbolName: iconSettings.icon.foreground.symbolName, enclosureColor: appexEnclosureColor, symbolColor: appexSymbolColor)
     }
 
     func generateAppexIcon(service: AppexReferenceService) async {
@@ -48,7 +48,7 @@ final class IconViewModel: ObservableObject {
         appexError = nil
         do {
             let image = try await service.referenceIcon(
-                for: iconSettings.symbolName,
+                for: iconSettings.icon.foreground.symbolName,
                 enclosureColor: appexEnclosureColor.plistValue,
                 symbolColor: appexSymbolColor.plistValue
             )
@@ -76,9 +76,9 @@ final class IconViewModel: ObservableObject {
 
     var badgeAppexGenerationKey: BadgeAppexGenerationKey {
         BadgeAppexGenerationKey(
-            showBadge: iconSettings.showBadge,
-            badgeGenerationMode: iconSettings.badgeGenerationMode,
-            symbolName: iconSettings.badgeSymbolName,
+            showBadge: iconSettings.badge.isVisible,
+            badgeGenerationMode: iconSettings.badge.mode,
+            symbolName: iconSettings.badge.foreground.symbolName,
             enclosureColor: badgeAppexEnclosureColor,
             symbolColor: badgeAppexSymbolColor
         )
@@ -89,7 +89,7 @@ final class IconViewModel: ObservableObject {
         badgeAppexError = nil
         do {
             let image = try await service.referenceIcon(
-                for: iconSettings.badgeSymbolName,
+                for: iconSettings.badge.foreground.symbolName,
                 enclosureColor: badgeAppexEnclosureColor.plistValue,
                 symbolColor: badgeAppexSymbolColor.plistValue
             )

@@ -74,7 +74,7 @@ struct PNGExportDocument: FileDocument {
             // A hidden icon group also needs the compositing path: the raw appex
             // raster can only be used as-is when the icon is visible and there's
             // no badge to overlay.
-            if settings.showBadge || settings.iconHidden {
+            if settings.badge.isVisible || settings.icon.isHidden {
                 if Thread.isMainThread {
                     image = MainActor.assumeIsolated {
                         IconRenderer.renderAppexWithBadge(
@@ -107,7 +107,7 @@ struct PNGExportDocument: FileDocument {
             scaleFactor = 2
         } else {
             image = IconRenderer.renderIconSafely(settings: settings, badgeAppexImage: badgeAppexImage)
-            scaleFactor = settings.exportRetinaSize ? 2 : 1
+            scaleFactor = settings.export.isRetina ? 2 : 1
         }
 
         return try makePNGFileWrapper(image: image, scaleFactor: scaleFactor)

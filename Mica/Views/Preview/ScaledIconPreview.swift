@@ -44,11 +44,11 @@ struct ScaledIconPreview: View {
             // Preview-only spinner/error where the System-mode badge will render.
             // BadgeView itself draws nothing until the appex image exists, so this
             // stand-in never reaches exports.
-            if settings.showBadge,
-               settings.badgeIconSource == .system,
+            if settings.badge.isVisible,
+               settings.badge.foreground.source == .system,
                badgeAppexImage == nil {
                 BadgeAppexStatusView(
-                    badgeSize: BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale),
+                    badgeSize: BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badge.scale),
                     error: badgeAppexError
                 )
                 .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
@@ -72,7 +72,7 @@ struct ScaledIconPreview: View {
             }
 
             // Draggable badge overlay
-            if settings.showBadge {
+            if settings.badge.isVisible {
                 badgeDragOverlay
             }
         }
@@ -109,17 +109,17 @@ struct ScaledIconPreview: View {
             handleDrop(providers: providers)
             return true
         }
-        .onChange(of: settings.badgeManualOffsetX) { _, newValue in
+        .onChange(of: settings.badge.offsetX) { _, newValue in
             // Only track external offset changes (sliders, reset). Re-seeding on the
             // drag's own writes compounds the offset: DragGesture.translation is
             // cumulative from gesture start, so the baseline must stay fixed mid-drag.
             if !isDragging {
-                dragStart = CGSize(width: newValue, height: settings.badgeManualOffsetY)
+                dragStart = CGSize(width: newValue, height: settings.badge.offsetY)
             }
         }
-        .onChange(of: settings.badgeManualOffsetY) { _, newValue in
+        .onChange(of: settings.badge.offsetY) { _, newValue in
             if !isDragging {
-                dragStart = CGSize(width: settings.badgeManualOffsetX, height: newValue)
+                dragStart = CGSize(width: settings.badge.offsetX, height: newValue)
             }
         }
     }
@@ -137,7 +137,7 @@ struct ScaledIconPreview: View {
     /// Diameter matches the rendered badge, so the hover/drag region doesn't
     /// extend past the visible badge.
     private var badgeDragOverlay: some View {
-        let badgeDiameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let badgeDiameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badge.scale)
         let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
 
         return Circle()
@@ -158,8 +158,8 @@ struct ScaledIconPreview: View {
                         if !isDragging {
                             isDragging = true
                             dragStart = CGSize(
-                                width: settings.badgeManualOffsetX,
-                                height: settings.badgeManualOffsetY
+                                width: settings.badge.offsetX,
+                                height: settings.badge.offsetY
                             )
                             setPushedCursor(.closedHand)
                         }
@@ -171,15 +171,15 @@ struct ScaledIconPreview: View {
                         // bank up dead travel the user has to unwind before the
                         // badge moves back.
                         let range = BadgeGeometry.manualOffsetRange(for: settings, enclosureSize: enclosureSize)
-                        settings.badgeManualOffsetX = min(max(dragStart.width + normalizedDX, range.x.lowerBound), range.x.upperBound)
-                        settings.badgeManualOffsetY = min(max(dragStart.height + normalizedDY, range.y.lowerBound), range.y.upperBound)
+                        settings.badge.offsetX = min(max(dragStart.width + normalizedDX, range.x.lowerBound), range.x.upperBound)
+                        settings.badge.offsetY = min(max(dragStart.height + normalizedDY, range.y.lowerBound), range.y.upperBound)
                     }
                     .onEnded { _ in
                         isDragging = false
                         setPushedCursor(isHoveringBadge ? .openHand : nil)
                         dragStart = CGSize(
-                            width: settings.badgeManualOffsetX,
-                            height: settings.badgeManualOffsetY
+                            width: settings.badge.offsetX,
+                            height: settings.badge.offsetY
                         )
                     }
             )
@@ -218,7 +218,7 @@ struct ScaledIconPreview: View {
                             let imported = try ImageImportService.importFromURL(url)
                             // Dropped files → icon background, padding compensation on
                             // (fill the frame) and shadow off by default.
-                            settings.applyImportedIconBackground(imported)
+                            settings.icon.background.apply(imported)
                         } catch {
                             print("Drop import failed: \(error.localizedDescription)")
                         }

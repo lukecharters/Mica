@@ -13,7 +13,7 @@ struct ExportSettingsSection: View {
             // MARK: - Export Size Section
             InspectorSection(title: "Export Size") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Picker("Size", selection: $iconSettings.exportSize) {
+                    Picker("Size", selection: $iconSettings.export.size) {
                         Text("16pt").tag(CGFloat(16))
                         Text("32pt").tag(CGFloat(32))
                         Text("64pt").tag(CGFloat(64))
@@ -25,7 +25,7 @@ struct ExportSettingsSection: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
 
-                    Toggle("2x (Retina)", isOn: $iconSettings.exportRetinaSize)
+                    Toggle("2x (Retina)", isOn: $iconSettings.export.isRetina)
                         .font(.subheadline)
 
                     Text(retinaSizeDescription)
@@ -46,7 +46,7 @@ struct ExportSettingsSection: View {
             // MARK: - Color Space Section
             InspectorSection(title: "Color Space") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Picker("Color Space", selection: $iconSettings.exportColorSpace) {
+                    Picker("Color Space", selection: $iconSettings.export.colorSpace) {
                         ForEach(ExportColorSpace.allCases) { colorSpace in
                             Text(colorSpace.displayName).tag(colorSpace)
                         }
@@ -84,14 +84,14 @@ struct ExportSettingsSection: View {
     }
 
     private var waitingOnBadgeAppex: Bool {
-        iconSettings.showBadge
-            && iconSettings.badgeIconSource == .system
+        iconSettings.badge.isVisible
+            && iconSettings.badge.foreground.source == .system
             && !badgeAppexHasImage
     }
 
     private var retinaSizeDescription: String {
-        let baseSize = Int(iconSettings.exportSize)
-        if iconSettings.exportRetinaSize {
+        let baseSize = Int(iconSettings.export.size)
+        if iconSettings.export.isRetina {
             return "Exports at \(baseSize * 2)×\(baseSize * 2)px"
         } else {
             return "Exports at \(baseSize)×\(baseSize)px"
@@ -99,7 +99,7 @@ struct ExportSettingsSection: View {
     }
 
     private var colorSpaceDescription: String {
-        switch iconSettings.exportColorSpace {
+        switch iconSettings.export.colorSpace {
         case .sRGB:
             return "Standard color space for web and most displays."
         case .displayP3:
