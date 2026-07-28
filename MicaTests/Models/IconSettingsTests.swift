@@ -11,11 +11,6 @@ import SwiftUI
 @MainActor
 struct IconSettingsTests {
 
-    // SwiftUI also defines a public `SymbolRenderingMode`, which collides
-    // with the app's enum when both modules are imported. Nest an alias
-    // so every test in this suite resolves to the app's enum.
-    typealias SymbolRenderingMode = Mica.SymbolRenderingMode
-
     // MARK: - Defaults
 
     @Test("Defaults match the shipped initial configuration")
@@ -129,9 +124,9 @@ struct IconSettingsTests {
 
     // MARK: - Enum round-trips
 
-    @Test("SymbolRenderingMode raw-value round-trips", arguments: SymbolRenderingMode.allCases)
-    func symbolRenderingMode_roundTrip(_ mode: SymbolRenderingMode) throws {
-        let rt = try #require(SymbolRenderingMode(rawValue: mode.rawValue))
+    @Test("SymbolRenderingStyle raw-value round-trips", arguments: SymbolRenderingStyle.allCases)
+    func symbolRenderingMode_roundTrip(_ mode: SymbolRenderingStyle) throws {
+        let rt = try #require(SymbolRenderingStyle(rawValue: mode.rawValue))
         #expect(rt == mode)
         #expect(rt.id == mode.rawValue)
     }

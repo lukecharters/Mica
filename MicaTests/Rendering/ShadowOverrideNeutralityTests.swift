@@ -16,12 +16,7 @@ import SwiftUI
 @MainActor
 struct ShadowOverrideNeutralityTests {
 
-    // SwiftUI also defines a public `ShadowStyle`, which collides with the
-    // app's struct when both modules are imported (same pattern as the
-    // SymbolRenderingMode alias in IconRenderingStructuralTests).
-    typealias ShadowStyle = Mica.ShadowStyle
-
-    private func render(_ settings: IconSettings, override: ShadowStyle?) throws -> Data {
+    private func render(_ settings: IconSettings, override: ResolvedShadow?) throws -> Data {
         let displaySize: CGFloat = 256
         let view = IconContentView(settings: settings, displaySize: displaySize, shadowOverride: override)
             .frame(width: displaySize, height: displaySize)

@@ -24,7 +24,7 @@ struct IconComparisonPlayground: View {
     @State private var renderSize: CGFloat = 256
 
     // Tunable shadow override — drives the real IconContentView/BadgeView.
-    @State private var shadow: ShadowStyle = .macOS26
+    @State private var shadow: ResolvedShadow = .macOS26
     // Background shadow has no per-settings enable flag (only the style enum),
     // so the on/off toggle is playground-local. The other three toggles bind
     // to the real gates in IconSettings.
@@ -292,7 +292,7 @@ struct IconComparisonPlayground: View {
     private func canvasShadowSection(
         title: String,
         enabled: Binding<Bool>,
-        shadow: Binding<ShadowStyle.CanvasShadow>
+        shadow: Binding<ResolvedShadow.CanvasShadow>
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle(title, isOn: enabled)
@@ -310,7 +310,7 @@ struct IconComparisonPlayground: View {
     private func badgeShadowSection(
         title: String,
         enabled: Binding<Bool>,
-        shadow: Binding<ShadowStyle.BadgeShadow>
+        shadow: Binding<ResolvedShadow.BadgeShadow>
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle(title, isOn: enabled)
@@ -325,12 +325,12 @@ struct IconComparisonPlayground: View {
         }
     }
 
-    /// Paste-ready ShadowStyle initializer — the artifact a future
+    /// Paste-ready ResolvedShadow initializer — the artifact a future
     /// `.macOS27` preset gets built from.
     private var shadowValuesText: String {
         String(
             format: """
-            ShadowStyle(
+            ResolvedShadow(
                 background: CanvasShadow(radius: %.2f, offsetY: %.2f, opacity: %.2f),
                 symbol: CanvasShadow(radius: %.2f, offsetY: %.2f, opacity: %.2f),
                 badgeBackground: BadgeShadow(radiusMultiplier: %.3f, offsetYMultiplier: %.3f, opacity: %.2f),
@@ -628,7 +628,7 @@ struct IconComparisonPlayground: View {
         .frame(width: renderSize, height: renderSize)
     }
 
-    private var effectiveShadow: ShadowStyle {
+    private var effectiveShadow: ResolvedShadow {
         var style = shadow
         if !bgShadowEnabled {
             style.background = .none

@@ -38,7 +38,7 @@ struct IconForegroundAppearanceSection: View {
     private var sfSymbolControls: some View {
         if advancedControlsEnabled {
             Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.symbolRenderingMode) {
-                ForEach(SymbolRenderingMode.allCases) { mode in
+                ForEach(SymbolRenderingStyle.allCases) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
             }

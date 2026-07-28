@@ -130,7 +130,7 @@ struct BadgeShadowExtentTests {
     /// pixel quantisation matters least.
     ///
     /// `shadowBlurExtent` must cover every one of these, or retuning
-    /// `ShadowStyle.badgeBackground.opacity` would start clipping the badge —
+    /// `ResolvedShadow.badgeBackground.opacity` would start clipping the badge —
     /// the exact coupling the formula exists to remove.
     nonisolated static let measuredReach: [(opacity: CGFloat, reachOverRadius: CGFloat)] = [
         (0.10, 1.875),

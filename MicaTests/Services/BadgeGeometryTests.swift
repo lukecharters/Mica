@@ -196,7 +196,7 @@ struct BadgeGeometryTests {
         let s = Self.settings(position: .bottomRight, badgeScale: 1.5)
         let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
         let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.5)
-        let dy = diameter * ShadowStyle.macOS26.badgeBackground.offsetYMultiplier
+        let dy = diameter * ResolvedShadow.macOS26.badgeBackground.offsetYMultiplier
 
         #expect(ext.down > ext.up, "The downward shadow must claim more room below than above")
         #expect(abs((ext.down - ext.up) - 2 * dy) < 0.0001,

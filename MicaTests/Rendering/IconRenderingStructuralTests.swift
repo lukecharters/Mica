@@ -21,11 +21,6 @@ import CoreGraphics
 @MainActor
 struct IconRenderingStructuralTests {
 
-    // SwiftUI also defines a public `SymbolRenderingMode`, which collides
-    // with the app's enum when both modules are imported. Nest an alias
-    // so every test in this suite resolves to the app's enum.
-    typealias SymbolRenderingMode = Mica.SymbolRenderingMode
-
     // MARK: - (exportSize, retina) matrix
 
     /// (exportSize, retina) tuples. Cover minimum (16), a mid value,
@@ -92,12 +87,12 @@ struct IconRenderingStructuralTests {
 
     @Test("Rendering mode produces measurably different quadrant averages",
           arguments: [
-            SymbolRenderingMode.monochrome,
-            SymbolRenderingMode.hierarchical,
-            SymbolRenderingMode.palette,
-            SymbolRenderingMode.multicolor
+            SymbolRenderingStyle.monochrome,
+            SymbolRenderingStyle.hierarchical,
+            SymbolRenderingStyle.palette,
+            SymbolRenderingStyle.multicolor
           ])
-    func renderingMode_producesMeasurableOutput(_ mode: SymbolRenderingMode) throws {
+    func renderingMode_producesMeasurableOutput(_ mode: SymbolRenderingStyle) throws {
         var settings = IconSettings()
         settings.symbolName = "person.3.sequence.fill" // non-trivial symbol with
         // multiple glyph layers so hierarchical/palette modes render differently
@@ -133,7 +128,7 @@ struct IconRenderingStructuralTests {
 
     @Test("Hierarchical and monochrome render person.3.sequence.fill differently")
     func renderingMode_hierarchical_differsFromMonochrome() throws {
-        func render(_ mode: SymbolRenderingMode) -> NSImage {
+        func render(_ mode: SymbolRenderingStyle) -> NSImage {
             var settings = IconSettings()
             settings.symbolName = "person.3.sequence.fill"
             settings.exportSize = 256

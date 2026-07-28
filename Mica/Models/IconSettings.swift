@@ -10,8 +10,8 @@ struct IconSettings: Equatable {
     var customSecondaryColor: Color = .purple
     var exportSize: CGFloat = 512
     var exportRetinaSize: Bool = false
-    var symbolRenderingMode: SymbolRenderingMode = .monochrome
-    var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
+    var symbolRenderingMode: SymbolRenderingStyle = .monochrome
+    var symbolColorRenderingMode: SymbolFillStyle = .flat
     var backgroundMode: BackgroundMode = .custom
     var preRenderedColorName: String = "Blue"
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
@@ -40,7 +40,7 @@ struct IconSettings: Equatable {
     var badgeCustomPrimaryColor: Color = .white
     var badgeCustomSecondaryColor: Color = .indigo
     var badgeSymbolColor: Color = .white
-    var badgeSymbolRenderingMode: SymbolRenderingMode = .monochrome
+    var badgeSymbolRenderingMode: SymbolRenderingStyle = .monochrome
     var badgeHierarchicalSymbolColor: Color = .white
     var badgePaletteSymbolPrimaryColor: Color = .white
     var badgePaletteSymbolSecondaryColor: Color = .mint
@@ -54,7 +54,7 @@ struct IconSettings: Equatable {
     var badgeManualOffsetY: Double = 0.0
 
     // Badge Symbol Color Rendering Mode (macOS 26+)
-    var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
+    var badgeSymbolColorRenderingMode: SymbolFillStyle = .flat
 
     // Custom image source (main icon symbol)
     var iconSource: IconSource = .sfSymbol
@@ -205,7 +205,7 @@ struct IconSettings: Equatable {
     }
 }
 
-enum SymbolRenderingMode: String, CaseIterable, Identifiable {
+enum SymbolRenderingStyle: String, CaseIterable, Identifiable {
     case monochrome = "Monochrome"
     case hierarchical = "Hierarchical"
     case palette = "Palette"
@@ -235,7 +235,7 @@ enum BackgroundMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-enum SymbolColorRenderingMode: String, CaseIterable, Identifiable {
+enum SymbolFillStyle: String, CaseIterable, Identifiable {
     case flat = "Flat"
     case gradient = "Gradient"
     
