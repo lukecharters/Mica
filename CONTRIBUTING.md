@@ -38,9 +38,9 @@ There is no SwiftPM package; the CLI is an Xcode target whose sources live in `m
 
 | Path | Contents |
 |---|---|
-| `Mica/Models/` | Configuration models shared by the app and CLI (`IconSettings`, `GenerationMode`, …) |
+| `Mica/Models/` | Configuration models shared by the app and CLI (`IconSettings`, `GenerationMode`, …). Adding a file here means editing two `membershipExceptions` lists in `project.pbxproj` — if the CLI doesn't need it, put it in `Mica/App/` |
 | `Mica/Services/` | The rendering engine (`IconRenderer`), export, symbol sizing, image import |
-| `Mica/ViewModels/` | `IconViewModel`, the app's state coordinator |
+| `Mica/App/` | App-target-only code: `IconViewModel` (state coordinator), the PNG export payload, preview hit testing, inspector state |
 | `Mica/Views/` | All SwiftUI views (sidebar, preview, symbol picker, controls) |
 | `mica-cli/CLI/` | CLI argument parsing and command implementations |
 | `MicaTests/`, `MicaUITests/`, `mica-cli Tests/` | Test targets |

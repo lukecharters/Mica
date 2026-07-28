@@ -160,11 +160,6 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("M", modifiers: [.command, .shift])
 
-                Button("Metrics Sizing Playground") {
-                    openWindow(id: "metrics-sizing")
-                }
-                .keyboardShortcut("J", modifiers: [.command, .shift])
-
                 Button("Dimension Calibration Playground") {
                     openWindow(id: "dim-calibration")
                 }
@@ -206,11 +201,6 @@ struct MicaApp: App {
             SymbolMetricsGeneratorView()
         }
         .defaultSize(width: 420, height: 220)
-
-        Window("Metrics Sizing Playground", id: "metrics-sizing") {
-            MetricsSizingPlayground()
-        }
-        .defaultSize(width: 1200, height: 800)
 
         Window("Dimension Calibration Playground", id: "dim-calibration") {
             DimensionCalibrationPlayground()
