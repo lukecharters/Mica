@@ -79,12 +79,12 @@ enum BadgeGeometry {
     /// override; `BadgeView`'s `shadowOverride` is a Debug-playground hook and
     /// geometry can't see it.
     static func extents(for settings: IconSettings, enclosureSize: CGFloat) -> Extents {
-        let diameter = diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let diameter = diameter(enclosureSize: enclosureSize, badgeScale: settings.badge.scale)
         let half = diameter / 2
 
         // A System-mode badge is a bare appex raster — Mica draws no shadow
         // behind it, and the frame is exactly the diameter.
-        guard settings.badgeIconSource != .system else {
+        guard settings.badge.foreground.source != .system else {
             return Extents(horizontal: half, up: half, down: half)
         }
 
@@ -92,19 +92,19 @@ enum BadgeGeometry {
         // scale and padding compensation can push past the nominal diameter, so
         // it, not the circle, can be the widest thing on screen.
         var base = half
-        if settings.badgeDrawsImportedBackground {
-            base = max(base, half * settings.badgeImportedBackgroundEffectiveScale)
+        if settings.badge.background.drawsImage {
+            base = max(base, half * settings.badge.background.effectiveImageScale)
         }
 
         // Only the background carries the outer shadow. With it hidden or its
         // shadow switched off there is nothing past the shape, and the badge
         // should be free to sit flush against the edge.
-        let drawsBackground = !settings.badgeBackgroundHidden
-        guard drawsBackground, settings.badgeEnableBackgroundShadow else {
+        let drawsBackground = !settings.badge.background.isHidden
+        guard drawsBackground, settings.badge.background.drawsShadow else {
             return Extents(horizontal: base, up: base, down: base)
         }
 
-        let style = ResolvedShadow.preset(for: settings.backgroundShadowStyle).badgeBackground
+        let style = ResolvedShadow.preset(for: settings.icon.background.shadowStyle).badgeBackground
         let blur = shadowBlurExtent(
             radius: diameter * style.radiusMultiplier,
             opacity: style.opacity
@@ -169,10 +169,10 @@ enum BadgeGeometry {
     /// normalized manual offset (stored as fractions of enclosure size),
     /// clamped per axis so the badge stays within the canvas.
     static func offset(for settings: IconSettings, enclosureSize: CGFloat) -> CGSize {
-        let anchor = anchor(for: settings.badgePosition, enclosureSize: enclosureSize)
+        let anchor = anchor(for: settings.badge.position, enclosureSize: enclosureSize)
         let unclamped = CGSize(
-            width: anchor.width + enclosureSize * settings.badgeManualOffsetX,
-            height: anchor.height + enclosureSize * settings.badgeManualOffsetY
+            width: anchor.width + enclosureSize * settings.badge.offsetX,
+            height: anchor.height + enclosureSize * settings.badge.offsetY
         )
 
         // Per axis, not radially: a badge with no manual offset stays on its
@@ -201,7 +201,7 @@ enum BadgeGeometry {
     ) -> (x: ClosedRange<Double>, y: ClosedRange<Double>) {
         let limits = centreLimits(for: settings, enclosureSize: enclosureSize)
         // The point the manual offset is measured from.
-        let anchor = anchor(for: settings.badgePosition, enclosureSize: enclosureSize)
+        let anchor = anchor(for: settings.badge.position, enclosureSize: enclosureSize)
 
         func range(anchor: CGFloat, negative: CGFloat, positive: CGFloat) -> ClosedRange<Double> {
             let outer = IconSettings.badgeOffsetRange
@@ -235,7 +235,7 @@ enum ImportedImageGeometry {
 /// (background chiclet, symbol) are base-256pt values scaled by
 /// `displaySize / 256`; badge shadows are multipliers of the badge diameter.
 /// `IconContentView`/`BadgeView` resolve their style from
-/// `settings.backgroundShadowStyle` unless an explicit override is injected
+/// `settings.icon.background.shadowStyle` unless an explicit override is injected
 /// (Debug playgrounds only).
 ///
 /// Named `ResolvedShadow` rather than `ShadowStyle` for two reasons: it shadowed
@@ -315,7 +315,7 @@ struct IconRenderer {
     // Public entry – must run on MainActor due to SwiftUI/ImageRenderer isolation
     @MainActor
     static func renderIcon(settings: IconSettings, badgeAppexImage: NSImage? = nil) -> NSImage {
-        let exportSize = settings.finalExportSize
+        let exportSize = settings.export.pixelSize
         let iconView = IconContentView(settings: settings, displaySize: exportSize, badgeAppexImage: badgeAppexImage)
             .frame(width: exportSize, height: exportSize)
 
@@ -327,7 +327,7 @@ struct IconRenderer {
         if let nsImage = renderer.nsImage {
             let colorSpaceConverted = convertToColorSpace(
                 image: nsImage,
-                colorSpace: settings.exportColorSpace,
+                colorSpace: settings.export.colorSpace,
                 downsampleFactor: factor
             )
             return setImageDPI(image: colorSpaceConverted, settings: settings)
@@ -342,16 +342,16 @@ struct IconRenderer {
         settings: IconSettings,
         badgeAppexImage: NSImage? = nil
     ) -> NSImage {
-        let exportSize = settings.finalExportSize
+        let exportSize = settings.export.pixelSize
         let scaleFactor = exportSize / 256.0
         let backgroundInset = 25 * scaleFactor
         let enclosureSize = exportSize - 2 * backgroundInset
-        let badgeSize = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        let badgeSize = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badge.scale)
 
         let compositeView = ZStack {
             // Mirrors the Mica path: a hidden icon group isn't drawn, leaving just
             // the badge on a transparent canvas.
-            if !settings.iconHidden {
+            if !settings.icon.isHidden {
                 Image(nsImage: appexImage)
                     .resizable()
                     .interpolation(.high)
@@ -361,7 +361,7 @@ struct IconRenderer {
                     .frame(width: exportSize, height: exportSize)
             }
 
-            if settings.showBadge {
+            if settings.badge.isVisible {
                 BadgeView(
                     settings: settings,
                     badgeSize: badgeSize,
@@ -375,7 +375,7 @@ struct IconRenderer {
         // Supersample only when a badge overlay is drawn — without one the view
         // is a straight passthrough of the appex raster, and an upsample/downsample
         // round trip would soften it for no benefit.
-        let factor = settings.showBadge ? supersampleFactor(forPixelSize: exportSize) : 1
+        let factor = settings.badge.isVisible ? supersampleFactor(forPixelSize: exportSize) : 1
         let renderer = ImageRenderer(content: compositeView)
         renderer.scale = CGFloat(factor)
         renderer.isOpaque = false
@@ -383,7 +383,7 @@ struct IconRenderer {
         if let nsImage = renderer.nsImage {
             let colorSpaceConverted = convertToColorSpace(
                 image: nsImage,
-                colorSpace: settings.exportColorSpace,
+                colorSpace: settings.export.colorSpace,
                 downsampleFactor: factor
             )
             return setImageDPI(image: colorSpaceConverted, settings: settings)
@@ -396,7 +396,7 @@ struct IconRenderer {
         if Thread.isMainThread {
             return MainActor.assumeIsolated { renderIcon(settings: settings, badgeAppexImage: badgeAppexImage) }
         }
-        var output = NSImage(size: CGSize(width: settings.finalExportSize, height: settings.finalExportSize))
+        var output = NSImage(size: CGSize(width: settings.export.pixelSize, height: settings.export.pixelSize))
         DispatchQueue.main.sync {
             output = MainActor.assumeIsolated { renderIcon(settings: settings, badgeAppexImage: badgeAppexImage) }
         }
@@ -409,9 +409,9 @@ struct IconRenderer {
             return image
         }
         // Logical size derives from the actual raster and the export scale rather
-        // than settings.exportSize, so a supersampled render that has already been
+        // than settings.export.size, so a supersampled render that has already been
         // reduced isn't re-labelled with a point size it no longer has.
-        let scale: CGFloat = settings.exportRetinaSize ? 2 : 1
+        let scale: CGFloat = settings.export.isRetina ? 2 : 1
         let logicalSize = CGSize(
             width: CGFloat(originalCGImage.width) / scale,
             height: CGFloat(originalCGImage.height) / scale
@@ -472,7 +472,7 @@ struct IconContentView: View {
     let displaySize: CGFloat
     var badgeAppexImage: NSImage? = nil
     /// Debug-playground hook: when non-nil, replaces the preset derived from
-    /// `settings.backgroundShadowStyle`. Production paths leave this nil.
+    /// `settings.icon.background.shadowStyle`. Production paths leave this nil.
     var shadowOverride: ResolvedShadow? = nil
     /// Debug-playground hook: when true, the custom-colour icon background is
     /// filled with SwiftUI's automatic `Color.gradient` (top-light → bottom-dark),
@@ -494,7 +494,7 @@ struct IconContentView: View {
     // Scaled layout constants
     private var iconSize: CGFloat { displaySize }
     private var cornerRadius: CGFloat {
-        let baseRadius = settings.cornerRadiusStyle == .macOS26 ? baseCornerRadius : baseCornerRadiusSequoia
+        let baseRadius = settings.icon.background.cornerRadiusStyle == .macOS26 ? baseCornerRadius : baseCornerRadiusSequoia
         return baseRadius * scaleFactor
     }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
@@ -506,15 +506,15 @@ struct IconContentView: View {
 
     /// Resolved sizing from family calibration data (always used as baseline)
     private var resolvedSizing: ResolvedSymbolSizing {
-        SymbolSizingService.resolve(for: settings.symbolName)
+        SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
     }
 
     private var symbolSize: CGFloat {
-        enclosureSize * resolvedSizing.multiplier * settings.manualSymbolScale
+        enclosureSize * resolvedSizing.multiplier * settings.icon.foreground.symbolScale
     }
 
     private var symbolFontWeight: Font.Weight {
-        settings.symbolWeight.fontWeight ?? resolvedSizing.weight
+        settings.icon.foreground.symbolWeight.fontWeight ?? resolvedSizing.weight
     }
 
     private var symbolXOffset: CGFloat {
@@ -526,7 +526,7 @@ struct IconContentView: View {
     }
 
     private var resolvedShadow: ResolvedShadow {
-        shadowOverride ?? .preset(for: settings.backgroundShadowStyle)
+        shadowOverride ?? .preset(for: settings.icon.background.shadowStyle)
     }
 
     private var backgroundShadowRadius: CGFloat { resolvedShadow.background.radius * scaleFactor }
@@ -537,27 +537,27 @@ struct IconContentView: View {
 
     // Badge scaled values — all derived from enclosure size
     private var badgeSize: CGFloat {
-        BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
+        BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badge.scale)
     }
 
     var body: some View {
         ZStack {
-            if !settings.iconBackgroundHidden {
+            if !settings.icon.background.isHidden {
                 backgroundLayer
             }
 
             // Icon content (SF Symbol or custom image) — hidden when background is an imported image,
             // or when the foreground layer is explicitly hidden via the layer sidebar's eye toggle.
-            if !settings.iconForegroundHidden, settings.backgroundMode != .image {
+            if !settings.icon.foreground.isHidden, settings.icon.background.source != .image {
                 iconContent
                     .shadow(
-                        color: settings.enableSymbolShadow ? Color.black.opacity(resolvedShadow.symbol.opacity) : Color.clear,
-                        radius: settings.enableSymbolShadow ? symbolShadowRadius : 0,
-                        y: settings.enableSymbolShadow ? symbolShadowOffset : 0
+                        color: settings.icon.foreground.drawsShadow ? Color.black.opacity(resolvedShadow.symbol.opacity) : Color.clear,
+                        radius: settings.icon.foreground.drawsShadow ? symbolShadowRadius : 0,
+                        y: settings.icon.foreground.drawsShadow ? symbolShadowOffset : 0
                     )
             }
 
-            if settings.showBadge {
+            if settings.badge.isVisible {
                 BadgeView(
                     settings: settings,
                     badgeSize: badgeSize,
@@ -575,9 +575,9 @@ struct IconContentView: View {
     @ViewBuilder
     private var backgroundLayer: some View {
         ZStack {
-            switch settings.backgroundMode {
+            switch settings.icon.background.source {
             case .preRendered:
-                Image(settings.preRenderedAssetName)
+                Image(settings.icon.background.preRenderedAssetName)
                     .resizable()
                     .interpolation(.high)
                     .aspectRatio(contentMode: .fit)
@@ -590,18 +590,18 @@ struct IconContentView: View {
                     .frame(width: iconSize, height: iconSize)
 
             case .color:
-                if settings.useCustomColors {
+                if settings.icon.background.usesCustomGradient {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(
                             forceAutoBackgroundGradient
-                                ? AnyShapeStyle(settings.customPrimaryColor.gradient)
-                                : settings.enableBackgroundGradient
+                                ? AnyShapeStyle(settings.icon.background.gradientStartColor.gradient)
+                                : settings.icon.background.usesGradient
                                     ? AnyShapeStyle(LinearGradient(
-                                        gradient: Gradient(colors: settings.gradientColors),
+                                        gradient: Gradient(colors: settings.icon.background.gradientColors),
                                         startPoint: .top,
                                         endPoint: .bottom
                                     ))
-                                    : AnyShapeStyle(settings.customPrimaryColor)
+                                    : AnyShapeStyle(settings.icon.background.gradientStartColor)
                         )
                         .padding(backgroundInset)
                         .shadow(
@@ -612,7 +612,7 @@ struct IconContentView: View {
                         .frame(width: iconSize, height: iconSize)
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(settings.enableBackgroundGradient ? AnyShapeStyle(settings.baseColor.gradient) : AnyShapeStyle(settings.baseColor))
+                        .fill(settings.icon.background.usesGradient ? AnyShapeStyle(settings.icon.background.color.gradient) : AnyShapeStyle(settings.icon.background.color))
                         .shadow(
                             color: Color.black.opacity(backgroundShadowOpacity),
                             radius: backgroundShadowRadius,
@@ -623,9 +623,9 @@ struct IconContentView: View {
                 }
 
             case .image:
-                if let nsImage = settings.importedBackground?.nsImage {
-                    let effectiveScale = settings.importedBackgroundScale
-                        * (settings.importedBackgroundPaddingCompensation
+                if let nsImage = settings.icon.background.image?.nsImage {
+                    let effectiveScale = settings.icon.background.imageScale
+                        * (settings.icon.background.compensatesForPadding
                             ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
                     Image(nsImage: nsImage)
                         .resizable()
@@ -648,16 +648,16 @@ struct IconContentView: View {
 
     @ViewBuilder
     private func applySymbolColor<Content: View>(to view: Content) -> some View {
-        switch settings.symbolRenderingMode {
+        switch settings.icon.foreground.renderingStyle {
         case .monochrome, .multicolor:
-            view.foregroundColor(settings.symbolColor)
+            view.foregroundColor(settings.icon.foreground.color)
         case .hierarchical:
-            view.foregroundStyle(settings.hierarchicalSymbolColor)
+            view.foregroundStyle(settings.icon.foreground.hierarchicalColor)
         case .palette:
             view.foregroundStyle(
-                settings.paletteSymbolPrimaryColor,
-                settings.paletteSymbolSecondaryColor,
-                settings.paletteSymbolTertiaryColor
+                settings.icon.foreground.palettePrimaryColor,
+                settings.icon.foreground.paletteSecondaryColor,
+                settings.icon.foreground.paletteTertiaryColor
             )
         }
     }
@@ -665,7 +665,7 @@ struct IconContentView: View {
     @ViewBuilder
     private func applySymbolColorRenderingMode<Content: View>(to view: Content) -> some View {
         if #available(macOS 26.0, *) {
-            view.symbolColorRenderingMode(settings.symbolColorRenderingMode.symbolColorRenderingMode)
+            view.symbolColorRenderingMode(settings.icon.foreground.fillStyle.symbolColorRenderingMode)
         } else {
             view
         }
@@ -673,22 +673,22 @@ struct IconContentView: View {
 
     @ViewBuilder
     private var iconContent: some View {
-        switch settings.iconSource {
+        switch settings.icon.foreground.source {
         case .symbol:
             applySymbolColorRenderingMode(
                 to: applySymbolColor(
-                    to: Image(systemName: settings.symbolName)
+                    to: Image(systemName: settings.icon.foreground.symbolName)
                         .font(.system(size: symbolSize, weight: symbolFontWeight))
                 )
-                .symbolRenderingMode(settings.symbolRenderingMode.symbolRenderingMode)
+                .symbolRenderingMode(settings.icon.foreground.renderingStyle.symbolRenderingMode)
             )
             .offset(x: symbolXOffset, y: symbolYOffset)
             .frame(width: iconSize, height: iconSize)
             .padding(-backgroundInset)
 
         case .image:
-            if let nsImage = settings.importedImage?.nsImage {
-                let effectiveScale = settings.importedImageScale
+            if let nsImage = settings.icon.foreground.image?.nsImage {
+                let effectiveScale = settings.icon.foreground.imageScale
                 Image(nsImage: nsImage)
                     .resizable()
                     .interpolation(.high)
@@ -714,33 +714,33 @@ struct BadgeView: View {
     var shadowOverride: ResolvedShadow? = nil
 
     // Badge shadow values are identical across all presets today, so resolving
-    // through `settings.backgroundShadowStyle` is behavior-neutral here; a
+    // through `settings.icon.background.shadowStyle` is behavior-neutral here; a
     // future `.macOS27` preset is where badge shadows would start to differ.
     private var resolvedShadow: ResolvedShadow {
-        shadowOverride ?? .preset(for: settings.backgroundShadowStyle)
+        shadowOverride ?? .preset(for: settings.icon.background.shadowStyle)
     }
 
     private var resolvedBadgeSizing: ResolvedSymbolSizing {
-        SymbolSizingService.resolve(for: settings.badgeSymbolName)
+        SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
     }
 
     private var badgeSymbolSize: CGFloat {
-        badgeSize * resolvedBadgeSizing.multiplier * settings.badgeSymbolScale
+        badgeSize * resolvedBadgeSizing.multiplier * settings.badge.foreground.symbolScale
     }
 
     private var badgeSymbolWeight: Font.Weight {
-        settings.badgeSymbolWeight.fontWeight ?? resolvedBadgeSizing.weight
+        settings.badge.foreground.symbolWeight.fontWeight ?? resolvedBadgeSizing.weight
     }
 
     /// Whether an imported badge background will actually draw. Shared with
     /// `BadgeGeometry.extents(for:enclosureSize:)`, which sizes the badge's
     /// footprint off the same answer.
     private var showsImportedBackground: Bool {
-        settings.badgeDrawsImportedBackground
+        settings.badge.background.drawsImage
     }
 
     var body: some View {
-        if settings.badgeIconSource == .system {
+        if settings.badge.foreground.source == .system {
             // System-mode badge: draw only the rendered appex image. While it is
             // still generating (nil) draw nothing — this is the shared export
             // render path, so preview-only affordances (spinner, error) live in
@@ -755,8 +755,8 @@ struct BadgeView: View {
         } else {
             // Existing rendering for SF Symbol and Imported modes
             ZStack {
-                if showsImportedBackground, let nsImage = settings.badgeImportedBackground?.nsImage {
-                    let effectiveScale = settings.badgeImportedBackgroundEffectiveScale
+                if showsImportedBackground, let nsImage = settings.badge.background.image?.nsImage {
+                    let effectiveScale = settings.badge.background.effectiveImageScale
                     Image(nsImage: nsImage)
                         .resizable()
                         .interpolation(.high)
@@ -773,44 +773,44 @@ struct BadgeView: View {
                         // padded app icon untouched. The shadow follows the
                         // artwork's shape for the same reason.
                         .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * resolvedShadow.badgeBackground.offsetYMultiplier : 0
+                            color: settings.badge.background.drawsShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
+                            radius: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
+                            y: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.offsetYMultiplier : 0
                         )
-                } else if !settings.badgeBackgroundHidden, settings.badgeUseCustomColors {
+                } else if !settings.badge.background.isHidden, settings.badge.background.usesCustomGradient {
                     Circle()
                         .fill(
-                            settings.badgeEnableBackgroundGradient
+                            settings.badge.background.usesGradient
                                 ? AnyShapeStyle(LinearGradient(
-                                    gradient: Gradient(colors: settings.badgeGradientColors),
+                                    gradient: Gradient(colors: settings.badge.background.gradientColors),
                                     startPoint: .top,
                                     endPoint: .bottom
                                 ))
-                                : AnyShapeStyle(settings.badgeCustomPrimaryColor)
+                                : AnyShapeStyle(settings.badge.background.gradientStartColor)
                         )
                         .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * resolvedShadow.badgeBackground.offsetYMultiplier : 0
+                            color: settings.badge.background.drawsShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
+                            radius: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
+                            y: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.offsetYMultiplier : 0
                         )
-                } else if !settings.badgeBackgroundHidden {
+                } else if !settings.badge.background.isHidden {
                     Circle()
-                        .fill(settings.badgeEnableBackgroundGradient ? AnyShapeStyle(settings.badgeBaseColor.gradient) : AnyShapeStyle(settings.badgeBaseColor))
+                        .fill(settings.badge.background.usesGradient ? AnyShapeStyle(settings.badge.background.color.gradient) : AnyShapeStyle(settings.badge.background.color))
                         .shadow(
-                            color: settings.badgeEnableBackgroundShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
-                            radius: settings.badgeEnableBackgroundShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
-                            y: settings.badgeEnableBackgroundShadow ? badgeSize * resolvedShadow.badgeBackground.offsetYMultiplier : 0
+                            color: settings.badge.background.drawsShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
+                            radius: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
+                            y: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.offsetYMultiplier : 0
                         )
                 }
 
                 // Badge symbol — gated on the foreground visibility toggle, and (preserving the old
                 // behavior) suppressed when the badge background is an imported image that is itself visible.
-                if !settings.badgeForegroundHidden, !showsImportedBackground {
+                if !settings.badge.foreground.isHidden, !showsImportedBackground {
                     badgeContent
                         .shadow(
-                            color: settings.badgeEnableSymbolShadow ? Color.black.opacity(resolvedShadow.badgeSymbol.opacity) : Color.clear,
-                            radius: settings.badgeEnableSymbolShadow ? badgeSize * resolvedShadow.badgeSymbol.radiusMultiplier : 0,
-                            y: settings.badgeEnableSymbolShadow ? badgeSize * resolvedShadow.badgeSymbol.offsetYMultiplier : 0
+                            color: settings.badge.foreground.drawsShadow ? Color.black.opacity(resolvedShadow.badgeSymbol.opacity) : Color.clear,
+                            radius: settings.badge.foreground.drawsShadow ? badgeSize * resolvedShadow.badgeSymbol.radiusMultiplier : 0,
+                            y: settings.badge.foreground.drawsShadow ? badgeSize * resolvedShadow.badgeSymbol.offsetYMultiplier : 0
                         )
                 }
             }
@@ -820,33 +820,33 @@ struct BadgeView: View {
 
     @ViewBuilder
     private var badgeContent: some View {
-        switch settings.badgeIconSource {
+        switch settings.badge.foreground.source {
         case .symbol:
             applyBadgeSymbolColorRenderingMode(
                 to: Group {
-                    switch settings.badgeSymbolRenderingMode {
+                    switch settings.badge.foreground.renderingStyle {
                     case .monochrome:
-                        Image(systemName: settings.badgeSymbolName)
+                        Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
-                            .foregroundColor(settings.badgeSymbolColor)
+                            .foregroundColor(settings.badge.foreground.color)
                             .symbolRenderingMode(.monochrome)
                     case .hierarchical:
-                        Image(systemName: settings.badgeSymbolName)
+                        Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
-                            .foregroundStyle(settings.badgeHierarchicalSymbolColor)
+                            .foregroundStyle(settings.badge.foreground.hierarchicalColor)
                             .symbolRenderingMode(.hierarchical)
                     case .multicolor:
-                        Image(systemName: settings.badgeSymbolName)
+                        Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
-                            .foregroundColor(settings.badgeSymbolColor)
+                            .foregroundColor(settings.badge.foreground.color)
                             .symbolRenderingMode(.multicolor)
                     case .palette:
-                        Image(systemName: settings.badgeSymbolName)
+                        Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundStyle(
-                                settings.badgePaletteSymbolPrimaryColor,
-                                settings.badgePaletteSymbolSecondaryColor,
-                                settings.badgePaletteSymbolTertiaryColor
+                                settings.badge.foreground.palettePrimaryColor,
+                                settings.badge.foreground.paletteSecondaryColor,
+                                settings.badge.foreground.paletteTertiaryColor
                             )
                             .symbolRenderingMode(.palette)
                     }
@@ -854,8 +854,8 @@ struct BadgeView: View {
             )
 
         case .image:
-            if let nsImage = settings.badgeImportedImage?.nsImage {
-                let effectiveScale = settings.badgeImportedImageScale
+            if let nsImage = settings.badge.foreground.image?.nsImage {
+                let effectiveScale = settings.badge.foreground.imageScale
                 Image(nsImage: nsImage)
                     .resizable()
                     .interpolation(.high)
@@ -874,7 +874,7 @@ struct BadgeView: View {
     @ViewBuilder
     private func applyBadgeSymbolColorRenderingMode<Content: View>(to view: Content) -> some View {
         if #available(macOS 26.0, *) {
-            view.symbolColorRenderingMode(settings.badgeSymbolColorRenderingMode.symbolColorRenderingMode)
+            view.symbolColorRenderingMode(settings.badge.foreground.fillStyle.symbolColorRenderingMode)
         } else {
             view
         }
