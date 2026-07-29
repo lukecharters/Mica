@@ -7,7 +7,7 @@
 //
 // where tw/th are the symbol's tight (alpha-scanned) content extents rendered
 // at the 100pt reference size, as fractions of that reference. Validated
-// against family-calibration.json ground truth at 0.38% median relative error
+// against symbol-calibration.json ground truth at 0.38% median relative error
 // (73% exact to ±0.01) on the 4,432 calibrated symbols outside
 // container_recipes.plist. See research/automated-sizing-and-system-resources-2026-07.md.
 //
@@ -42,7 +42,7 @@ struct SymbolTightBounds: Codable, Equatable, Sendable {
 struct AutoSizingPrediction: Sendable {
     var multiplier: Double
     /// Content-centering hint for the Y offset (normalized enclosure fraction,
-    /// same units as FamilyCalEntry.yOffset). Advisory only — offsets are
+    /// same units as SymbolCalibrationEntry.yOffset). Advisory only — offsets are
     /// partly optical and shouldn't be applied blindly.
     var suggestedYOffset: Double
     var bounds: SymbolTightBounds
@@ -54,7 +54,7 @@ struct AutoSizingPrediction: Sendable {
 // MARK: - Service
 
 enum SymbolAutoSizingService {
-    // Box-fit rule constants (fitted against family-calibration ground truth).
+    // Box-fit rule constants (fitted against symbol-calibration ground truth).
     static let heightFactor = 0.77
     static let widthFactor = 0.79
     // Badge-composite refit (see header note).

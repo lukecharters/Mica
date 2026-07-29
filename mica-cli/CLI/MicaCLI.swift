@@ -6,7 +6,7 @@ struct MicaCLI: AsyncParsableCommand {
         commandName: "mica-cli",
         abstract: "Generate customized macOS app icons and extract icons from app bundles.",
         version: "0.1.0",
-        subcommands: [IconGeneratorCommand.self, GetIconCommand.self],
-        defaultSubcommand: IconGeneratorCommand.self
+        subcommands: [GenerateCommand.self, ExtractCommand.self],
+        defaultSubcommand: GenerateCommand.self
     )
 }

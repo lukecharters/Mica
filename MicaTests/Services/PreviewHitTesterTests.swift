@@ -23,7 +23,7 @@ struct PreviewHitTesterTests {
         xOffset: 0,
         yOffset: 0,
         weight: .regular,
-        source: .familyCalibration
+        source: .symbolCalibration
     )
 
     private static func enclosure(_ displaySize: CGFloat = displaySize) -> CGFloat {
@@ -43,7 +43,7 @@ struct PreviewHitTesterTests {
         let centre = canvasCentre(settings, displaySize)
         return (
             CGPoint(x: centre.x + offset.width, y: centre.y + offset.height),
-            BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badgeScale) / 2
+            BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badge.scale) / 2
         )
     }
 
@@ -54,8 +54,8 @@ struct PreviewHitTesterTests {
     /// Icon with a visible badge, both badge layers on.
     private static func settingsWithBadge() -> IconSettings {
         var s = IconSettings()
-        s.showBadge = true
-        s.badgePosition = .bottomRight
+        s.badge.isVisible = true
+        s.badge.position = .bottomRight
         return s
     }
 
@@ -90,14 +90,14 @@ struct PreviewHitTesterTests {
     @Test("Hidden badge foreground makes the whole badge background")
     func badgeForegroundHidden_centreIsBackground() {
         var s = Self.settingsWithBadge()
-        s.badgeForegroundHidden = true
+        s.badge.foreground.isHidden = true
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeBackground)
     }
 
     @Test("Hidden badge background makes the ring select the glyph")
     func badgeBackgroundHidden_ringIsForeground() {
         var s = Self.settingsWithBadge()
-        s.badgeBackgroundHidden = true
+        s.badge.background.isHidden = true
         let (centre, radius) = Self.badgeCircle(s)
         let point = CGPoint(x: centre.x + radius * 0.9, y: centre.y)
         #expect(Self.hit(point, s) == .badgeForeground)
@@ -106,30 +106,30 @@ struct PreviewHitTesterTests {
     @Test("A visible imported badge background suppresses the glyph target")
     func badgeImportedBackground_centreIsBackground() throws {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true
-        s.badgeImportedBackground = try ImportedImage.testFixture()
+        s.badge.background.source = .image
+        s.badge.background.image = try ImportedImage.testFixture()
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeBackground)
     }
 
     @Test("The imported-background flag alone does not suppress the glyph")
     func badgeImportedFlagWithoutImage_centreStaysForeground() {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true // no image chosen yet
+        s.badge.background.source = .image // no image chosen yet
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
     }
 
     @Test("A System-mode badge is one layer across its whole squircle")
     func badgeSystem_isAllBackground() {
         var s = Self.settingsWithBadge()
-        s.badgeIconSource = .system
+        s.badge.foreground.source = .system
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeBackground)
     }
 
     @Test("An imported badge background is hittable into its squircle corners")
     func badgeImported_cornersAreHittable() throws {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true
-        s.badgeImportedBackground = try ImportedImage.testFixture()
+        s.badge.background.source = .image
+        s.badge.background.image = try ImportedImage.testFixture()
 
         let (centre, radius) = Self.badgeCircle(s)
         // 0.85 of the half-side on both axes: inside the corner arc, but 1.2× the
@@ -143,7 +143,7 @@ struct PreviewHitTesterTests {
     @Test("A System-mode badge stops at the appex tile, not the badge frame")
     func badgeSystem_stopsAtTheTile() {
         var s = Self.settingsWithBadge()
-        s.badgeIconSource = .system
+        s.badge.foreground.source = .system
         let (centre, radius) = Self.badgeCircle(s)
 
         // 0.9 of the radius straight along +x is past the tile edge (0.80) while
@@ -157,26 +157,26 @@ struct PreviewHitTesterTests {
 
     // MARK: - Badge: position, offset, scale
 
-    @Test("Badge hit region follows badgePosition", arguments: BadgePosition.allCases)
+    @Test("Badge hit region follows badge.position", arguments: BadgePosition.allCases)
     func badgePosition_movesHitRegion(position: BadgePosition) {
         var s = Self.settingsWithBadge()
-        s.badgePosition = position
+        s.badge.position = position
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
     }
 
     @Test("Badge hit region follows the manual offset")
     func badgeManualOffset_movesHitRegion() {
         var s = Self.settingsWithBadge()
-        s.badgeManualOffsetX = 0.3
-        s.badgeManualOffsetY = -0.2
+        s.badge.offsetX = 0.3
+        s.badge.offsetY = -0.2
 
         // The offset badge is hit at its new centre...
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
 
         // ...and no longer at the un-offset anchor.
         var unoffset = s
-        unoffset.badgeManualOffsetX = 0
-        unoffset.badgeManualOffsetY = 0
+        unoffset.badge.offsetX = 0
+        unoffset.badge.offsetY = 0
         let oldCentre = Self.badgeCircle(unoffset).centre
         #expect(Self.hit(oldCentre, s) != .badgeForeground)
     }
@@ -187,13 +187,13 @@ struct PreviewHitTesterTests {
     @Test("A clamped large badge is still clickable at its new centre")
     func badgeLargeScale_stillResolves() {
         var s = Self.settingsWithBadge()
-        s.badgeScale = 2.0
+        s.badge.scale = 2.0
 
         // Precondition: the clamp actually moved it.
         let enclosure = Self.enclosure()
         let clamped = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
         #expect(clamped.width < enclosure * BadgeGeometry.anchorXRatio - 1,
-                "Precondition: badgeScale 2.0 must pull the badge inward")
+                "Precondition: badge.scale 2.0 must pull the badge inward")
 
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
     }
@@ -202,7 +202,7 @@ struct PreviewHitTesterTests {
     func badgeHidden_fallsThroughToIcon() {
         var withBadge = Self.settingsWithBadge()
         let badgeCentre = Self.badgeCircle(withBadge).centre
-        withBadge.showBadge = false
+        withBadge.badge.isVisible = false
         // The badge sat over the chiclet's bottom-right corner region.
         let target = Self.hit(badgeCentre, withBadge)
         #expect(target != .badgeForeground)
@@ -221,20 +221,20 @@ struct PreviewHitTesterTests {
     func outsideSymbolBox_isBackground() {
         let s = IconSettings()
         let centre = Self.canvasCentre(s)
-        let half = Self.enclosure() * Self.sizing.multiplier * s.manualSymbolScale / 2
+        let half = Self.enclosure() * Self.sizing.multiplier * s.icon.foreground.symbolScale / 2
         #expect(Self.hit(CGPoint(x: centre.x + half - 0.5, y: centre.y), s) == .iconForeground)
         #expect(Self.hit(CGPoint(x: centre.x + half + 0.5, y: centre.y), s) == .iconBackground)
     }
 
-    @Test("manualSymbolScale grows the foreground hit box")
+    @Test("icon.foreground.symbolScale grows the foreground hit box")
     func manualSymbolScale_growsHitBox() {
         var s = IconSettings()
         let centre = Self.canvasCentre(s)
-        let halfAtDefault = Self.enclosure() * Self.sizing.multiplier * s.manualSymbolScale / 2
+        let halfAtDefault = Self.enclosure() * Self.sizing.multiplier * s.icon.foreground.symbolScale / 2
         let justOutside = CGPoint(x: centre.x + halfAtDefault + 2, y: centre.y)
         #expect(Self.hit(justOutside, s) == .iconBackground)
 
-        s.manualSymbolScale *= 1.5
+        s.icon.foreground.symbolScale *= 1.5
         #expect(Self.hit(justOutside, s) == .iconForeground)
     }
 
@@ -242,7 +242,7 @@ struct PreviewHitTesterTests {
     func symbolOffsets_shiftHitBox() {
         let s = IconSettings()
         let offsetSizing = ResolvedSymbolSizing(
-            multiplier: 0.5, xOffset: 0.2, yOffset: 0, weight: .regular, source: .familyCalibration
+            multiplier: 0.5, xOffset: 0.2, yOffset: 0, weight: .regular, source: .symbolCalibration
         )
         let centre = Self.canvasCentre(s)
         let half = Self.enclosure() * 0.5 / 2
@@ -257,15 +257,15 @@ struct PreviewHitTesterTests {
     @Test("Hidden icon foreground falls through to the background")
     func iconForegroundHidden_isBackground() {
         var s = IconSettings()
-        s.iconForegroundHidden = true
+        s.icon.foreground.isHidden = true
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
     @Test("An imported background replaces the foreground target")
     func importedBackground_centreIsBackground() throws {
         var s = IconSettings()
-        s.backgroundMode = .importedImage
-        s.importedBackground = try ImportedImage.testFixture()
+        s.icon.background.source = .image
+        s.icon.background.image = try ImportedImage.testFixture()
         // Mirrors IconContentView, which skips the foreground entirely here.
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
@@ -273,10 +273,10 @@ struct PreviewHitTesterTests {
     @Test("A custom foreground image is hit across its 0.85-enclosure box")
     func customImageForeground_hitBox() throws {
         var s = IconSettings()
-        s.iconSource = .customImage
-        s.importedImage = try ImportedImage.testFixture()
+        s.icon.foreground.source = .image
+        s.icon.foreground.image = try ImportedImage.testFixture()
         let centre = Self.canvasCentre(s)
-        let half = Self.enclosure() * 0.85 * s.importedImageScale / 2
+        let half = Self.enclosure() * 0.85 * s.icon.foreground.imageScale / 2
 
         #expect(Self.hit(centre, s) == .iconForeground)
         #expect(Self.hit(CGPoint(x: centre.x + half - 0.5, y: centre.y), s) == .iconForeground)
@@ -286,7 +286,7 @@ struct PreviewHitTesterTests {
     @Test("A custom foreground with no image chosen is not hittable")
     func customImageWithoutImage_isBackground() {
         var s = IconSettings()
-        s.iconSource = .customImage
+        s.icon.foreground.source = .image
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
@@ -302,7 +302,7 @@ struct PreviewHitTesterTests {
     @Test("The chiclet's rounded corner is outside the hit region")
     func chicletCorner_isNil() {
         var s = IconSettings()
-        s.cornerRadiusStyle = .macOS26
+        s.icon.background.cornerRadiusStyle = .macOS26
         let centre = Self.canvasCentre(s)
         let half = Self.enclosure() / 2
         // Exact corner of the bounding square, well outside a 54pt corner arc.
@@ -322,7 +322,7 @@ struct PreviewHitTesterTests {
     @Test("Hidden icon background makes chiclet clicks a no-op, symbol clicks still work")
     func iconBackgroundHidden_chicletIsNil() {
         var s = IconSettings()
-        s.iconBackgroundHidden = true
+        s.icon.background.isHidden = true
         let centre = Self.canvasCentre(s)
         let half = Self.enclosure() / 2
 
@@ -340,7 +340,7 @@ struct PreviewHitTesterTests {
         let centre = CGPoint(x: iconSize / 2, y: iconSize / 2)
         let offset = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
         let badgeCentre = CGPoint(x: centre.x + offset.width, y: centre.y + offset.height)
-        let radius = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: s.badgeScale) / 2
+        let radius = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: s.badge.scale) / 2
 
         func systemHit(_ point: CGPoint) -> PreviewHitTarget? {
             PreviewHitTester.systemTarget(at: point, settings: s, iconSize: iconSize)
@@ -419,7 +419,7 @@ struct PreviewHitTesterTests {
     @Test("Icon background outlines the chiclet at the enclosure and corner radius")
     func selectionShape_iconBackground() throws {
         var s = IconSettings()
-        s.cornerRadiusStyle = .macOS26
+        s.icon.background.cornerRadiusStyle = .macOS26
         let centre = Self.canvasCentre(s)
         let enclosure = Self.enclosure()
 
@@ -443,7 +443,7 @@ struct PreviewHitTesterTests {
     @Test("Icon foreground outlines the symbol box")
     func selectionShape_iconForeground() throws {
         let s = IconSettings()
-        let expectedSide = Self.enclosure() * Self.sizing.multiplier * s.manualSymbolScale
+        let expectedSide = Self.enclosure() * Self.sizing.multiplier * s.icon.foreground.symbolScale
 
         guard case .roundedRect(let rect, _)? = Self.shape(.iconForeground, s) else {
             Issue.record("Expected a rounded rect for the icon foreground")
@@ -474,7 +474,7 @@ struct PreviewHitTesterTests {
     @Test("A System-mode badge outlines a squircle, not a circle")
     func selectionShape_badgeSystemIsSquircle() throws {
         var s = Self.settingsWithBadge()
-        s.badgeIconSource = .system
+        s.badge.foreground.source = .system
         let (expectedCentre, radius) = Self.badgeCircle(s)
         // The appex tile, not the badge frame: ≈0.80 of it, matching a rendered
         // 1024pt badge measured at 255pt across a 317pt frame.
@@ -499,11 +499,11 @@ struct PreviewHitTesterTests {
           arguments: [true, false])
     func selectionShape_badgeImportedIsSquircle(compensated: Bool) throws {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true
-        s.badgeImportedBackground = try ImportedImage.testFixture()
-        s.badgeImportedBackgroundPaddingCompensation = compensated
+        s.badge.background.source = .image
+        s.badge.background.image = try ImportedImage.testFixture()
+        s.badge.background.compensatesForPadding = compensated
         let (expectedCentre, radius) = Self.badgeCircle(s)
-        let expectedSide = radius * 2 * s.badgeImportedBackgroundScale
+        let expectedSide = radius * 2 * s.badge.background.imageScale
 
         guard case .roundedRect(let rect, let cornerRadius)? = Self.shape(.badgeBackground, s) else {
             Issue.record("Expected a rounded rect for an imported badge background")
@@ -517,9 +517,9 @@ struct PreviewHitTesterTests {
     @Test("The badge background scale slider resizes the imported outline")
     func selectionShape_badgeImportedFollowsScale() throws {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true
-        s.badgeImportedBackground = try ImportedImage.testFixture()
-        s.badgeImportedBackgroundScale = 1.5
+        s.badge.background.source = .image
+        s.badge.background.image = try ImportedImage.testFixture()
+        s.badge.background.imageScale = 1.5
         let radius = Self.badgeCircle(s).radius
 
         guard case .roundedRect(let rect, _)? = Self.shape(.badgeBackground, s) else {
@@ -532,7 +532,7 @@ struct PreviewHitTesterTests {
     @Test("The imported-background flag alone leaves the badge outline a circle")
     func selectionShape_badgeImportedFlagWithoutImageStaysCircle() {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true // no image chosen yet — colour badge draws
+        s.badge.background.source = .image // no image chosen yet — colour badge draws
         guard case .circle? = Self.shape(.badgeBackground, s) else {
             Issue.record("Expected a circle while no imported image is chosen")
             return
@@ -542,9 +542,9 @@ struct PreviewHitTesterTests {
     @Test("A hidden imported badge background falls back to the circle outline")
     func selectionShape_badgeImportedHiddenStaysCircle() throws {
         var s = Self.settingsWithBadge()
-        s.badgeUseImportedBackground = true
-        s.badgeImportedBackground = try ImportedImage.testFixture()
-        s.badgeBackgroundHidden = true // only the glyph draws, inside the badge circle
+        s.badge.background.source = .image
+        s.badge.background.image = try ImportedImage.testFixture()
+        s.badge.background.isHidden = true // only the glyph draws, inside the badge circle
         guard case .circle? = Self.shape(.badgeBackground, s) else {
             Issue.record("Expected a circle when the imported background is hidden")
             return
@@ -555,7 +555,7 @@ struct PreviewHitTesterTests {
     func selectionShape_badgeForegroundIsGlyphBox() throws {
         let s = Self.settingsWithBadge()
         let (badgeCentre, radius) = Self.badgeCircle(s)
-        let expectedSide = radius * 2 * Self.sizing.multiplier * s.badgeSymbolScale
+        let expectedSide = radius * 2 * Self.sizing.multiplier * s.badge.foreground.symbolScale
 
         guard case .roundedRect(let rect, _)? = Self.shape(.badgeForeground, s) else {
             Issue.record("Expected a rounded rect for the badge foreground")
@@ -569,28 +569,28 @@ struct PreviewHitTesterTests {
     @Test("Nothing drawn means nothing outlined")
     func selectionShape_nilWhenNothingDrawn() throws {
         var noBadge = IconSettings()
-        noBadge.showBadge = false
+        noBadge.badge.isVisible = false
         #expect(Self.shape(.badge, noBadge) == nil)
         #expect(Self.shape(.badgeForeground, noBadge) == nil)
         #expect(Self.shape(.badgeBackground, noBadge) == nil)
 
         // An imported background replaces the icon's foreground.
         var importedBg = IconSettings()
-        importedBg.backgroundMode = .importedImage
-        importedBg.importedBackground = try ImportedImage.testFixture()
+        importedBg.icon.background.source = .image
+        importedBg.icon.background.image = try ImportedImage.testFixture()
         #expect(Self.shape(.iconForeground, importedBg) == nil)
 
         // A System-mode badge has no separate glyph to box.
         var systemBadge = Self.settingsWithBadge()
-        systemBadge.badgeIconSource = .system
+        systemBadge.badge.foreground.source = .system
         #expect(Self.shape(.badgeForeground, systemBadge) == nil)
     }
 
     @Test("A hidden layer still outlines, so the user can see what they're editing")
     func selectionShape_hiddenLayerStillOutlines() {
         var s = IconSettings()
-        s.iconBackgroundHidden = true
-        s.iconForegroundHidden = true
+        s.icon.background.isHidden = true
+        s.icon.foreground.isHidden = true
         #expect(Self.shape(.iconBackground, s) != nil)
         #expect(Self.shape(.iconForeground, s) != nil)
     }

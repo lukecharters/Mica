@@ -41,9 +41,9 @@ struct SupersampleRenderingTests {
     @MainActor
     func badgedExportDimensions(size: Double) throws {
         var settings = IconSettings()
-        settings.exportSize = size
-        settings.exportRetinaSize = false
-        settings.showBadge = true
+        settings.export.size = size
+        settings.export.isRetina = false
+        settings.badge.isVisible = true
 
         let image = IconRenderer.renderIcon(settings: settings)
         let rep = try #require(image.representations.first as? NSBitmapImageRep)
@@ -57,9 +57,9 @@ struct SupersampleRenderingTests {
     @MainActor
     func retinaBadgedExport() throws {
         var settings = IconSettings()
-        settings.exportSize = 256
-        settings.exportRetinaSize = true
-        settings.showBadge = true
+        settings.export.size = 256
+        settings.export.isRetina = true
+        settings.badge.isVisible = true
 
         let image = IconRenderer.renderIcon(settings: settings)
         let rep = try #require(image.representations.first as? NSBitmapImageRep)
@@ -73,14 +73,14 @@ struct SupersampleRenderingTests {
     @MainActor
     func appexCompositeDimensions() throws {
         var settings = IconSettings()
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.showBadge = true
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.badge.isVisible = true
 
         let appexImage = AppexRenderingStructuralTests.solidColorImage(.red, size: 256)
         let image = IconRenderer.renderAppexWithBadge(appexImage: appexImage, settings: settings)
         let rep = try #require(image.representations.first as? NSBitmapImageRep)
-        let expectedCanvas = settings.finalExportSize
+        let expectedCanvas = settings.export.pixelSize
         // ±1px: the supersampled raster is reduced by its integer factor and
         // rounded.
         #expect(abs(Double(rep.pixelsWide) - Double(expectedCanvas)) <= 1)

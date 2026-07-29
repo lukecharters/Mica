@@ -27,7 +27,7 @@ struct ContentView: View {
 
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
 
-    private var actualExportSize: CGFloat { viewModel.iconSettings.finalExportSize }
+    private var actualExportSize: CGFloat { viewModel.iconSettings.export.pixelSize }
 
     @State private var zoomLevel: Double = 1.0
     /// Optional preview-only override of the icon's display point size, used to
@@ -55,7 +55,7 @@ struct ContentView: View {
     @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
     /// Read here too: the selection outline is an advanced-controls affordance, so
     /// with them off the preview draws none (see `currentPreviewSelection`).
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     private let sidebarRange: ClosedRange<Double> = 220...360
     private let inspectorRange: ClosedRange<Double> = 330...460
@@ -80,11 +80,11 @@ struct ContentView: View {
             )
         } detail: {
             Group {
-                if viewModel.iconSettings.iconGenerationMode == .mica {
+                if viewModel.iconSettings.icon.mode == .mica {
                     previewPane
                         .task(id: viewModel.badgeAppexGenerationKey) {
-                            guard viewModel.iconSettings.showBadge,
-                                  viewModel.iconSettings.badgeGenerationMode == .system else {
+                            guard viewModel.iconSettings.badge.isVisible,
+                                  viewModel.iconSettings.badge.mode == .system else {
                                 return
                             }
                             try? await Task.sleep(for: .milliseconds(400))
@@ -173,18 +173,18 @@ struct ContentView: View {
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: viewModel.iconSettings.iconGenerationMode == .system
-                ? IconDocument(appexExport: .init(
-                    symbolName: viewModel.iconSettings.symbolName,
+            document: viewModel.iconSettings.icon.mode == .system
+                ? PNGExportDocument(appexExport: .init(
+                    symbolName: viewModel.iconSettings.icon.foreground.symbolName,
                     enclosureColor: viewModel.appexEnclosureColor.plistValue,
                     symbolColor: viewModel.appexSymbolColor.plistValue,
-                    pointSize: viewModel.iconSettings.exportSize,
-                    scaleFactor: viewModel.iconSettings.exportRetinaSize ? 2 : 1,
-                    colorSpace: viewModel.iconSettings.exportColorSpace
+                    pointSize: viewModel.iconSettings.export.size,
+                    scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
+                    colorSpace: viewModel.iconSettings.export.colorSpace
                   ),
                   settings: viewModel.iconSettings,
                   badgeAppexImage: viewModel.badgeAppexRenderedImage)
-                : IconDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
+                : PNGExportDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
             contentType: .png,
             defaultFilename: viewModel.iconSettings.exportBaseName
         ) { result in
@@ -208,8 +208,8 @@ struct ContentView: View {
         guard inspectorTab == .controls, showInspector else { return nil }
         let isSystem: Bool
         switch selectedGroup {
-        case .icon:  isSystem = viewModel.iconSettings.iconGenerationMode == .system
-        case .badge: isSystem = viewModel.iconSettings.badgeGenerationMode == .system
+        case .icon:  isSystem = viewModel.iconSettings.icon.mode == .system
+        case .badge: isSystem = viewModel.iconSettings.badge.mode == .system
         }
         return PreviewSelection.from(
             group: selectedGroup,
@@ -228,9 +228,9 @@ struct ContentView: View {
         selectionPulse += 1
         selectedGroup = target.group
         switch target.group {
-        case .icon where viewModel.iconSettings.iconGenerationMode == .mica:
+        case .icon where viewModel.iconSettings.icon.mode == .mica:
             iconTab = target.tab
-        case .badge where viewModel.iconSettings.badgeGenerationMode == .mica:
+        case .badge where viewModel.iconSettings.badge.mode == .mica:
             badgeTab = target.tab
         default:
             break
@@ -280,226 +280,6 @@ struct ContentView: View {
     }
 }
 
-// Preview component that scales based on export size
-struct ScaledIconPreview: View {
-    @Binding var settings: IconSettings
-    let displaySize: CGFloat
-    var badgeAppexImage: NSImage? = nil
-    var badgeAppexError: String? = nil
-    /// Click-to-select: reports which layer the click landed on so the owner can
-    /// point the inspector at it. See `PreviewHitTester`.
-    var onSelect: ((PreviewHitTarget) -> Void)? = nil
-    /// The layer the inspector is editing, outlined in the preview. nil draws nothing.
-    var selection: PreviewSelection? = nil
-    /// Bumped on each canvas click so re-clicking the selected layer re-shows the
-    /// outline after it has faded.
-    var selectionPulse: Int = 0
-
-    @State private var dragStart: CGSize = .zero
-    @State private var isDragging: Bool = false
-    @State private var isDropTargeted: Bool = false
-    @State private var isHoveringBadge: Bool = false
-    /// The single cursor this view currently has on NSCursor's stack, if any.
-    @State private var pushedCursor: NSCursor? = nil
-
-    /// Enclosure size at the current display scale
-    private var enclosureSize: CGFloat {
-        displaySize - 2 * (25 * displaySize / 256) // backgroundInset * scaleFactor
-    }
-
-    var body: some View {
-        ZStack {
-            IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
-
-            // Preview-only spinner/error where the System-mode badge will render.
-            // BadgeView itself draws nothing until the appex image exists, so this
-            // stand-in never reaches exports.
-            if settings.showBadge,
-               settings.badgeIconSource == .system,
-               badgeAppexImage == nil {
-                BadgeAppexStatusView(
-                    badgeSize: BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale),
-                    error: badgeAppexError
-                )
-                .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
-                .allowsHitTesting(false)
-            }
-
-            // Selection outline sits above the icon but below the badge overlay so
-            // it never intercepts a drag.
-            if let selection,
-               let shape = PreviewHitTester.selectionShape(
-                   for: selection,
-                   settings: settings,
-                   displaySize: displaySize
-               ) {
-                SelectionOutline(
-                    shape: shape,
-                    displaySize: displaySize,
-                    selection: selection,
-                    pulse: selectionPulse
-                )
-            }
-
-            // Draggable badge overlay
-            if settings.showBadge {
-                badgeDragOverlay
-            }
-        }
-        .frame(width: displaySize, height: displaySize, alignment: .center)
-        // A drag space that does *not* move with the badge. See `badgeDragOverlay`.
-        .coordinateSpace(.named(Self.dragSpace))
-        // Attached after the frame so the tap location is in canvas coordinates,
-        // which is what PreviewHitTester expects.
-        //
-        // simultaneousGesture, not .onTapGesture: the badge overlay is a child with
-        // its own DragGesture, and a child's gesture normally wins arbitration
-        // against the parent's. Recognizing simultaneously keeps a click on the
-        // badge from being swallowed. The two still can't fight — a tap needs the
-        // pointer to stay put, so a real drag fails the tap, and a stationary click
-        // never reaches the drag's 2pt minimum.
-        .contentShape(Rectangle())
-        .simultaneousGesture(
-            SpatialTapGesture(coordinateSpace: .local)
-                .onEnded { value in
-                    guard let target = PreviewHitTester.target(
-                        at: value.location,
-                        settings: settings,
-                        displaySize: displaySize
-                    ) else { return }
-                    onSelect?(target)
-                }
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.3),
-                        lineWidth: isDropTargeted ? 2 : 1)
-        )
-        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-            handleDrop(providers: providers)
-            return true
-        }
-        .onChange(of: settings.badgeManualOffsetX) { _, newValue in
-            // Only track external offset changes (sliders, reset). Re-seeding on the
-            // drag's own writes compounds the offset: DragGesture.translation is
-            // cumulative from gesture start, so the baseline must stay fixed mid-drag.
-            if !isDragging {
-                dragStart = CGSize(width: newValue, height: settings.badgeManualOffsetY)
-            }
-        }
-        .onChange(of: settings.badgeManualOffsetY) { _, newValue in
-            if !isDragging {
-                dragStart = CGSize(width: settings.badgeManualOffsetX, height: newValue)
-            }
-        }
-    }
-
-    /// Canvas-fixed space the badge drag is measured in.
-    ///
-    /// The drag must NOT be measured in the overlay's own `.local` space: the
-    /// overlay is `.offset` by the very value the drag writes, so the space the
-    /// pointer is measured in moves with it. That makes each frame's translation
-    /// `Δpointer − Δoffset`, i.e. `t(n+1) = Δpointer − t(n)` — an oscillation that
-    /// reads as a badge lagging the cursor and juddering back and forth.
-    private static let dragSpace = "badgeDrag"
-
-    /// Transparent circle at the badge position that captures drag gestures.
-    /// Diameter matches the rendered badge, so the hover/drag region doesn't
-    /// extend past the visible badge.
-    private var badgeDragOverlay: some View {
-        let badgeDiameter = BadgeGeometry.diameter(enclosureSize: enclosureSize, badgeScale: settings.badgeScale)
-        let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize)
-
-        return Circle()
-            .fill(Color.clear)
-            .frame(width: badgeDiameter, height: badgeDiameter)
-            .contentShape(Circle())
-            .onHover { hovering in
-                isHoveringBadge = hovering
-                // Mid-drag the closed hand stays put even when the pointer
-                // outruns the moving circle; onEnded restores the right cursor.
-                if !isDragging {
-                    setPushedCursor(hovering ? .openHand : nil)
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 2, coordinateSpace: .named(Self.dragSpace))
-                    .onChanged { value in
-                        if !isDragging {
-                            isDragging = true
-                            dragStart = CGSize(
-                                width: settings.badgeManualOffsetX,
-                                height: settings.badgeManualOffsetY
-                            )
-                            setPushedCursor(.closedHand)
-                        }
-                        let normalizedDX = value.translation.width / enclosureSize
-                        let normalizedDY = value.translation.height / enclosureSize
-                        // Clamp to what the badge can actually use, not the raw
-                        // badgeOffsetRange: BadgeGeometry keeps the badge inside
-                        // the canvas, so writing an offset past that limit would
-                        // bank up dead travel the user has to unwind before the
-                        // badge moves back.
-                        let range = BadgeGeometry.manualOffsetRange(for: settings, enclosureSize: enclosureSize)
-                        settings.badgeManualOffsetX = min(max(dragStart.width + normalizedDX, range.x.lowerBound), range.x.upperBound)
-                        settings.badgeManualOffsetY = min(max(dragStart.height + normalizedDY, range.y.lowerBound), range.y.upperBound)
-                    }
-                    .onEnded { _ in
-                        isDragging = false
-                        setPushedCursor(isHoveringBadge ? .openHand : nil)
-                        dragStart = CGSize(
-                            width: settings.badgeManualOffsetX,
-                            height: settings.badgeManualOffsetY
-                        )
-                    }
-            )
-            .onDisappear {
-                // Badge hidden (or preview unmounted) while hovered/dragging —
-                // don't leave our cursor on the global stack.
-                isHoveringBadge = false
-                isDragging = false
-                setPushedCursor(nil)
-            }
-            .offset(offset)
-    }
-
-    /// Replaces whatever cursor this view previously pushed with `cursor`
-    /// (nil = pop back to the default). Funneling every cursor change through
-    /// here keeps NSCursor's global push/pop stack balanced regardless of the
-    /// hover/drag/disappear event order.
-    private func setPushedCursor(_ cursor: NSCursor?) {
-        guard pushedCursor !== cursor else { return }
-        if pushedCursor != nil { NSCursor.pop() }
-        cursor?.push()
-        pushedCursor = cursor
-    }
-
-    // MARK: - Drag and Drop
-
-    private func handleDrop(providers: [NSItemProvider]) {
-        for provider in providers {
-            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
-                    guard let urlData = data as? Data,
-                          let url = URL(dataRepresentation: urlData, relativeTo: nil)
-                    else { return }
-                    Task { @MainActor in
-                        do {
-                            let imported = try ImageImportService.importFromURL(url)
-                            // Dropped files → icon background, padding compensation on
-                            // (fill the frame) and shadow off by default.
-                            settings.applyImportedIconBackground(imported)
-                        } catch {
-                            print("Drop import failed: \(error.localizedDescription)")
-                        }
-                    }
-                }
-                return // Only process first item
-            }
-        }
-    }
-}
-
 struct ContentView_Previews: PreviewProvider {
     @MainActor static var previews: some View {
         Group {
@@ -524,31 +304,31 @@ struct ContentView_Previews: PreviewProvider {
 
     @MainActor private static var customVM: IconViewModel {
         let vm = IconViewModel()
-        vm.iconSettings.iconGenerationMode = .mica
-        vm.iconSettings.symbolName = "gearshape.fill"
-//        vm.iconSettings.useCustomColors = true
-//        vm.iconSettings.customPrimaryColor = .blue
-//        vm.iconSettings.customSecondaryColor = .indigo
-        vm.iconSettings.symbolRenderingMode = .monochrome
-        vm.iconSettings.showBadge = true
-        vm.iconSettings.badgePosition = .bottomRight
-        vm.iconSettings.badgeSymbolName = "checkmark.seal.fill"
-        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-        vm.iconSettings.badgeHierarchicalSymbolColor = .white
-        vm.iconSettings.exportSize = 512
-        vm.iconSettings.exportRetinaSize = false
+        vm.iconSettings.icon.mode = .mica
+        vm.iconSettings.icon.foreground.symbolName = "gearshape.fill"
+//        vm.iconSettings.icon.background.usesCustomGradient = true
+//        vm.iconSettings.icon.background.gradientStartColor = .blue
+//        vm.iconSettings.icon.background.gradientEndColor = .indigo
+        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+        vm.iconSettings.badge.isVisible = true
+        vm.iconSettings.badge.position = .bottomRight
+        vm.iconSettings.badge.foreground.symbolName = "checkmark.seal.fill"
+        vm.iconSettings.badge.foreground.renderingStyle = .monochrome
+        vm.iconSettings.badge.foreground.hierarchicalColor = .white
+        vm.iconSettings.export.size = 512
+        vm.iconSettings.export.isRetina = false
         return vm
     }
 //
 //    @MainActor private static var retinaLargeVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "square"
-//        vm.iconSettings.useCustomColors = false
-//        vm.iconSettings.baseColor = .orange
-//        vm.iconSettings.symbolRenderingMode = .monochrome
-//        vm.iconSettings.symbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "square"
+//        vm.iconSettings.icon.background.usesCustomGradient = false
+//        vm.iconSettings.icon.background.color = .orange
+//        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.icon.foreground.color = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //}
@@ -576,56 +356,56 @@ struct ContentView_Previews: PreviewProvider {
 //
 //    @MainActor private static var monoVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "app"
-//        vm.iconSettings.useCustomColors = false
-//        vm.iconSettings.baseColor = .blue
-//        vm.iconSettings.symbolRenderingMode = .monochrome
-//        vm.iconSettings.symbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "app"
+//        vm.iconSettings.icon.background.usesCustomGradient = false
+//        vm.iconSettings.icon.background.color = .blue
+//        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.icon.foreground.color = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //
 //    @MainActor private static var hierarchicalVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "folder.fill.badge.plus"
-//        vm.iconSettings.useCustomColors = true
-//        vm.iconSettings.customPrimaryColor = .green
-//        vm.iconSettings.customSecondaryColor = .blue
-//        vm.iconSettings.symbolRenderingMode = .hierarchical
-//        vm.iconSettings.hierarchicalSymbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "folder.fill.badge.plus"
+//        vm.iconSettings.icon.background.usesCustomGradient = true
+//        vm.iconSettings.icon.background.gradientStartColor = .green
+//        vm.iconSettings.icon.background.gradientEndColor = .blue
+//        vm.iconSettings.icon.foreground.renderingStyle = .hierarchical
+//        vm.iconSettings.icon.foreground.hierarchicalColor = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //
 //    @MainActor private static var multicolorVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "drop.fill"
-//        vm.iconSettings.useCustomColors = false
-//        vm.iconSettings.baseColor = .gray
-//        vm.iconSettings.symbolRenderingMode = .multicolor
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "drop.fill"
+//        vm.iconSettings.icon.background.usesCustomGradient = false
+//        vm.iconSettings.icon.background.color = .gray
+//        vm.iconSettings.icon.foreground.renderingStyle = .multicolor
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 //
 //    @MainActor private static var paletteVM: IconViewModel {
 //        let vm = IconViewModel()
-//        vm.iconSettings.symbolName = "paintpalette.fill"
-//        vm.iconSettings.useCustomColors = true
-//        vm.iconSettings.customPrimaryColor = .pink
-//        vm.iconSettings.customSecondaryColor = .purple
-//        vm.iconSettings.symbolRenderingMode = .palette
-//        vm.iconSettings.paletteSymbolPrimaryColor = .white
-//        vm.iconSettings.paletteSymbolSecondaryColor = .blue
-//        vm.iconSettings.paletteSymbolTertiaryColor = .red
-//        vm.iconSettings.showBadge = true
-//        vm.iconSettings.badgeSymbolName = "star.fill"
-//        vm.iconSettings.badgeSymbolRenderingMode = .monochrome
-//        vm.iconSettings.badgeSymbolColor = .white
-//        vm.iconSettings.exportSize = 256
-//        vm.iconSettings.exportRetinaSize = false
+//        vm.iconSettings.icon.foreground.symbolName = "paintpalette.fill"
+//        vm.iconSettings.icon.background.usesCustomGradient = true
+//        vm.iconSettings.icon.background.gradientStartColor = .pink
+//        vm.iconSettings.icon.background.gradientEndColor = .purple
+//        vm.iconSettings.icon.foreground.renderingStyle = .palette
+//        vm.iconSettings.icon.foreground.palettePrimaryColor = .white
+//        vm.iconSettings.icon.foreground.paletteSecondaryColor = .blue
+//        vm.iconSettings.icon.foreground.paletteTertiaryColor = .red
+//        vm.iconSettings.badge.isVisible = true
+//        vm.iconSettings.badge.foreground.symbolName = "star.fill"
+//        vm.iconSettings.badge.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.badge.foreground.color = .white
+//        vm.iconSettings.export.size = 256
+//        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
 }

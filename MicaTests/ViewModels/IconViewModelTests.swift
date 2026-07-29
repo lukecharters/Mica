@@ -33,19 +33,19 @@ struct IconViewModelTests {
 
     // MARK: - Derived mirror property
 
-    @Test("actualExportSize mirrors iconSettings.finalExportSize without retina")
+    @Test("actualExportSize mirrors iconSettings.export.pixelSize without retina")
     func actualExportSize_mirrors_nonRetina() {
         let vm = IconViewModel()
-        vm.iconSettings.exportSize = 512
-        vm.iconSettings.exportRetinaSize = false
+        vm.iconSettings.export.size = 512
+        vm.iconSettings.export.isRetina = false
         #expect(vm.actualExportSize == 512)
     }
 
-    @Test("actualExportSize doubles when exportRetinaSize flips on")
+    @Test("actualExportSize doubles when export.isRetina flips on")
     func actualExportSize_mirrors_retina() {
         let vm = IconViewModel()
-        vm.iconSettings.exportSize = 512
-        vm.iconSettings.exportRetinaSize = true
+        vm.iconSettings.export.size = 512
+        vm.iconSettings.export.isRetina = true
         #expect(vm.actualExportSize == 1024)
     }
 
@@ -54,7 +54,7 @@ struct IconViewModelTests {
     @Test("appexGenerationKey captures symbol name, enclosure color, symbol color")
     func appexGenerationKey_captures_fields() {
         let vm = IconViewModel()
-        vm.iconSettings.symbolName = "star.fill"
+        vm.iconSettings.icon.foreground.symbolName = "star.fill"
         vm.appexEnclosureColor = .green
         vm.appexSymbolColor = .yellow
 
@@ -97,9 +97,9 @@ struct IconViewModelTests {
     @Test("badgeAppexGenerationKey captures all five fields")
     func badgeAppexGenerationKey_captures_all() {
         let vm = IconViewModel()
-        vm.iconSettings.showBadge = true
-        vm.iconSettings.badgeIconSource = .customImage
-        vm.iconSettings.badgeSymbolName = "plus.circle"
+        vm.iconSettings.badge.isVisible = true
+        vm.iconSettings.badge.foreground.source = .image
+        vm.iconSettings.badge.foreground.symbolName = "plus.circle"
         vm.badgeAppexEnclosureColor = .red
         vm.badgeAppexSymbolColor = .black
 

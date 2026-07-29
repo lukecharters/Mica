@@ -1,9 +1,9 @@
 // IconRenderingStructuralTests.swift
 // Structural (non-pixel-exact) assertions for IconRenderer.renderIcon.
 // Three parameterised axes:
-//   1. (exportSize, retina) -> logical vs pixel dimensions.
-//   2. exportColorSpace     -> CGColorSpace name round-trip.
-//   3. symbolRenderingMode  -> quadrant-average differentiation.
+//   1. (export.size, retina) -> logical vs pixel dimensions.
+//   2. export.colorSpace     -> CGColorSpace name round-trip.
+//   3. icon.foreground.renderingStyle  -> quadrant-average differentiation.
 // Plus one non-parameterised test: alpha-coverage bounding box
 // sits inside the backgroundInset-padded enclosure region.
 //
@@ -21,14 +21,9 @@ import CoreGraphics
 @MainActor
 struct IconRenderingStructuralTests {
 
-    // SwiftUI also defines a public `SymbolRenderingMode`, which collides
-    // with the app's enum when both modules are imported. Nest an alias
-    // so every test in this suite resolves to the app's enum.
-    typealias SymbolRenderingMode = Mica.SymbolRenderingMode
+    // MARK: - (export.size, retina) matrix
 
-    // MARK: - (exportSize, retina) matrix
-
-    /// (exportSize, retina) tuples. Cover minimum (16), a mid value,
+    /// (export.size, retina) tuples. Cover minimum (16), a mid value,
     /// the default 256 logical size with retina 512, and the maximum 1024.
     nonisolated static let sizeRetinaMatrix: [(size: CGFloat, retina: Bool)] = [
         (16, false),
@@ -42,36 +37,36 @@ struct IconRenderingStructuralTests {
           arguments: sizeRetinaMatrix)
     func dimensions_matchSizeRetinaMatrix(_ arg: (size: CGFloat, retina: Bool)) throws {
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.exportSize = arg.size
-        settings.exportRetinaSize = arg.retina
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.export.size = arg.size
+        settings.export.isRetina = arg.retina
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
-        // Logical size is always exportSize (DPI-aware retina).
+        // Logical size is always export.size (DPI-aware retina).
         #expect(Int(image.size.width) == Int(arg.size),
-                "Logical width must equal exportSize (\(Int(arg.size))) for retina=\(arg.retina), got \(Int(image.size.width))")
+                "Logical width must equal export.size (\(Int(arg.size))) for retina=\(arg.retina), got \(Int(image.size.width))")
         #expect(Int(image.size.height) == Int(arg.size),
-                "Logical height must equal exportSize (\(Int(arg.size))) for retina=\(arg.retina), got \(Int(image.size.height))")
+                "Logical height must equal export.size (\(Int(arg.size))) for retina=\(arg.retina), got \(Int(image.size.height))")
 
         let data = try #require(image.tiffRepresentation)
         let rep = try #require(NSBitmapImageRep(data: data))
-        #expect(rep.pixelsWide == Int(settings.finalExportSize),
-                "Pixel width must equal finalExportSize (\(Int(settings.finalExportSize))) for (size=\(Int(arg.size)),retina=\(arg.retina)), got \(rep.pixelsWide)")
-        #expect(rep.pixelsHigh == Int(settings.finalExportSize),
-                "Pixel height must equal finalExportSize (\(Int(settings.finalExportSize))) for (size=\(Int(arg.size)),retina=\(arg.retina)), got \(rep.pixelsHigh)")
+        #expect(rep.pixelsWide == Int(settings.export.pixelSize),
+                "Pixel width must equal export.pixelSize (\(Int(settings.export.pixelSize))) for (size=\(Int(arg.size)),retina=\(arg.retina)), got \(rep.pixelsWide)")
+        #expect(rep.pixelsHigh == Int(settings.export.pixelSize),
+                "Pixel height must equal export.pixelSize (\(Int(settings.export.pixelSize))) for (size=\(Int(arg.size)),retina=\(arg.retina)), got \(rep.pixelsHigh)")
     }
 
-    // MARK: - exportColorSpace matrix
+    // MARK: - export.colorSpace matrix
 
-    @Test("Output CGImage color-space name matches requested exportColorSpace",
+    @Test("Output CGImage color-space name matches requested export.colorSpace",
           arguments: [ExportColorSpace.sRGB, ExportColorSpace.displayP3])
     func colorSpace_matchesRequested(_ colorSpace: ExportColorSpace) throws {
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.exportColorSpace = colorSpace
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.export.colorSpace = colorSpace
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
@@ -81,32 +76,32 @@ struct IconRenderingStructuralTests {
         switch colorSpace {
         case .sRGB:
             #expect(name == (CGColorSpace.sRGB as String),
-                    "exportColorSpace=.sRGB must produce a kCGColorSpaceSRGB image, got \(name)")
+                    "export.colorSpace=.sRGB must produce a kCGColorSpaceSRGB image, got \(name)")
         case .displayP3:
             #expect(name == (CGColorSpace.displayP3 as String),
-                    "exportColorSpace=.displayP3 must produce a kCGColorSpaceDisplayP3 image, got \(name)")
+                    "export.colorSpace=.displayP3 must produce a kCGColorSpaceDisplayP3 image, got \(name)")
         }
     }
 
-    // MARK: - symbolRenderingMode matrix
+    // MARK: - icon.foreground.renderingStyle matrix
 
     @Test("Rendering mode produces measurably different quadrant averages",
           arguments: [
-            SymbolRenderingMode.monochrome,
-            SymbolRenderingMode.hierarchical,
-            SymbolRenderingMode.palette,
-            SymbolRenderingMode.multicolor
+            SymbolRenderingStyle.monochrome,
+            SymbolRenderingStyle.hierarchical,
+            SymbolRenderingStyle.palette,
+            SymbolRenderingStyle.multicolor
           ])
-    func renderingMode_producesMeasurableOutput(_ mode: SymbolRenderingMode) throws {
+    func renderingMode_producesMeasurableOutput(_ mode: SymbolRenderingStyle) throws {
         var settings = IconSettings()
-        settings.symbolName = "person.3.sequence.fill" // non-trivial symbol with
+        settings.icon.foreground.symbolName = "person.3.sequence.fill" // non-trivial symbol with
         // multiple glyph layers so hierarchical/palette modes render differently
         // from monochrome. folder.fill and star.fill render identically across modes.
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.symbolRenderingMode = mode
-        settings.baseColor = .blue
-        settings.symbolColor = .white
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.icon.foreground.renderingStyle = mode
+        settings.icon.background.color = .blue
+        settings.icon.foreground.color = .white
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
@@ -133,14 +128,14 @@ struct IconRenderingStructuralTests {
 
     @Test("Hierarchical and monochrome render person.3.sequence.fill differently")
     func renderingMode_hierarchical_differsFromMonochrome() throws {
-        func render(_ mode: SymbolRenderingMode) -> NSImage {
+        func render(_ mode: SymbolRenderingStyle) -> NSImage {
             var settings = IconSettings()
-            settings.symbolName = "person.3.sequence.fill"
-            settings.exportSize = 256
-            settings.exportRetinaSize = false
-            settings.symbolRenderingMode = mode
-            settings.baseColor = .blue
-            settings.symbolColor = .white
+            settings.icon.foreground.symbolName = "person.3.sequence.fill"
+            settings.export.size = 256
+            settings.export.isRetina = false
+            settings.icon.foreground.renderingStyle = mode
+            settings.icon.background.color = .blue
+            settings.icon.foreground.color = .white
             return IconRenderer.renderIconSafely(settings: settings)
         }
 
@@ -170,18 +165,18 @@ struct IconRenderingStructuralTests {
     @Test("Alpha bounding box falls inside the backgroundInset-padded enclosure")
     func alphaBoundingBox_insideEnclosure() throws {
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.export.size = 256
+        settings.export.isRetina = false
         // No badge — canvas == enclosureCanvas (no overflow).
-        settings.showBadge = false
+        settings.badge.isVisible = false
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
         let bbox = try #require(IconRenderingAssertions.alphaBoundingBox(of: image),
                                 "Expected non-empty alpha bbox for a filled icon")
 
-        // backgroundInset at exportSize=256 is 25 (from IconContentView).
+        // backgroundInset at export.size=256 is 25 (from IconContentView).
         // Allow a small tolerance (shadows + antialiasing can spill a few pixels
         // past the chiclet edge).
         let canvasWidth = image.size.width

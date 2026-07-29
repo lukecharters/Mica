@@ -114,5 +114,5 @@ struct SelectionOutline: View {
         }
     }
     .padding()
-    .onAppear { settings.showBadge = true }
+    .onAppear { settings.badge.isVisible = true }
 }

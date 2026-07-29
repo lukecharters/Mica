@@ -1,7 +1,7 @@
-// Views/Sidebar/BadgeAppearanceSection.swift
+// Views/Inspector/Badge/Foreground/BadgeForegroundAppearanceSection.swift
 import SwiftUI
 
-struct BadgeAppearanceSection: View {
+struct BadgeForegroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
@@ -9,7 +9,7 @@ struct BadgeAppearanceSection: View {
     @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var badgeAppexEnclosureColor: AppexColor
 
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     @State private var useCustomBadgeSymbolColor = false
     @State private var useCustomBadgeHierarchicalColor = false
@@ -18,12 +18,12 @@ struct BadgeAppearanceSection: View {
     @State private var useCustomBadgePaletteTertiaryColor = false
 
     var body: some View {
-        switch iconSettings.badgeIconSource {
+        switch iconSettings.badge.foreground.source {
         case .system:
             appleReferenceControls
-        case .sfSymbol:
+        case .symbol:
             sfSymbolControls
-        case .customImage:
+        case .image:
             importedControls
         }
     }
@@ -37,8 +37,8 @@ struct BadgeAppearanceSection: View {
     @ViewBuilder
     private var sfSymbolControls: some View {
         if advancedControlsEnabled {
-            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badgeSymbolRenderingMode) {
-                ForEach(SymbolRenderingMode.allCases) { mode in
+            Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badge.foreground.renderingStyle) {
+                ForEach(SymbolRenderingStyle.allCases) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
             }
@@ -48,7 +48,7 @@ struct BadgeAppearanceSection: View {
         badgeSymbolColorControls
 
         if advancedControlsEnabled {
-            Picker("Weight", systemImage: "bold", selection: $iconSettings.badgeSymbolWeight) {
+            Picker("Weight", systemImage: "bold", selection: $iconSettings.badge.foreground.symbolWeight) {
                 ForEach(SymbolWeight.allCases) { weight in
                     Text(weight.rawValue).tag(weight)
                 }
@@ -57,55 +57,55 @@ struct BadgeAppearanceSection: View {
 
             if #available(macOS 26.0, *) {
                 Toggle("Gradient", systemImage: "app.translucent", isOn: Binding(
-                    get: { iconSettings.badgeSymbolColorRenderingMode == .gradient },
-                    set: { iconSettings.badgeSymbolColorRenderingMode = $0 ? .gradient : .flat }
+                    get: { iconSettings.badge.foreground.fillStyle == .gradient },
+                    set: { iconSettings.badge.foreground.fillStyle = $0 ? .gradient : .flat }
                 ))
             }
         }
 
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.foreground.drawsShadow)
     }
 
     /// Imported image: only shadow applies
     @ViewBuilder
     private var importedControls: some View {
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badgeEnableSymbolShadow)
+        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.foreground.drawsShadow)
             .help("Toggle the drop shadow behind the badge image")
     }
 
     @ViewBuilder
     private var badgeSymbolColorControls: some View {
-        switch iconSettings.badgeSymbolRenderingMode {
+        switch iconSettings.badge.foreground.renderingStyle {
         case .monochrome, .multicolor:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.badgeSymbolColor,
+                color: $iconSettings.badge.foreground.color,
                 useCustom: $useCustomBadgeSymbolColor,
                 colorOptions: colorOptions
             )
         case .hierarchical:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.badgeHierarchicalSymbolColor,
+                color: $iconSettings.badge.foreground.hierarchicalColor,
                 useCustom: $useCustomBadgeHierarchicalColor,
                 colorOptions: colorOptions
             )
         case .palette:
             ColorPickerWithDropdown(
                 label: "Primary",
-                color: $iconSettings.badgePaletteSymbolPrimaryColor,
+                color: $iconSettings.badge.foreground.palettePrimaryColor,
                 useCustom: $useCustomBadgePalettePrimaryColor,
                 colorOptions: colorOptions
             )
             ColorPickerWithDropdown(
                 label: "Secondary",
-                color: $iconSettings.badgePaletteSymbolSecondaryColor,
+                color: $iconSettings.badge.foreground.paletteSecondaryColor,
                 useCustom: $useCustomBadgePaletteSecondaryColor,
                 colorOptions: colorOptions
             )
             ColorPickerWithDropdown(
                 label: "Tertiary",
-                color: $iconSettings.badgePaletteSymbolTertiaryColor,
+                color: $iconSettings.badge.foreground.paletteTertiaryColor,
                 useCustom: $useCustomBadgePaletteTertiaryColor,
                 colorOptions: colorOptions
             )
@@ -119,7 +119,7 @@ struct BadgeAppearanceSection: View {
     @Previewable @State var badgeEnclosureColor: AppexColor = .blue
     Form {
         Section("Appearance") {
-            BadgeAppearanceSection(
+            BadgeForegroundAppearanceSection(
                 iconSettings: $settings,
                 colorOptions: OptionsCatalog.colorOptions,
                 badgeAppexSymbolColor: $badgeSymbolColor,

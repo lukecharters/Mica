@@ -1,4 +1,4 @@
-// Views/Sidebar/BadgeBackgroundLayoutSection.swift
+// Views/Inspector/Badge/Background/BadgeBackgroundLayoutSection.swift
 import SwiftUI
 
 struct BadgeBackgroundLayoutSection: View {
@@ -6,8 +6,8 @@ struct BadgeBackgroundLayoutSection: View {
 
     var body: some View {
         ImageImportLayoutControls(
-            paddingCompensation: $iconSettings.badgeImportedBackgroundPaddingCompensation,
-            imageScale: $iconSettings.badgeImportedBackgroundScale
+            paddingCompensation: $iconSettings.badge.background.compensatesForPadding,
+            imageScale: $iconSettings.badge.background.imageScale
         )
     }
 }

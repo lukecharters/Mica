@@ -30,8 +30,8 @@ struct AppexPreviewPane: View {
             await viewModel.generateAppexIcon(service: appexService)
         }
         .task(id: viewModel.badgeAppexGenerationKey) {
-            guard viewModel.iconSettings.showBadge,
-                  viewModel.iconSettings.badgeIconSource == .system else {
+            guard viewModel.iconSettings.badge.isVisible,
+                  viewModel.iconSettings.badge.foreground.source == .system else {
                 return
             }
             try? await Task.sleep(for: .milliseconds(400))
@@ -59,7 +59,7 @@ struct AppexPreviewPane: View {
 
     @ViewBuilder
     private var iconContent: some View {
-        let size = (previewPointSize ?? viewModel.iconSettings.exportSize) * zoomLevel
+        let size = (previewPointSize ?? viewModel.iconSettings.export.size) * zoomLevel
         if viewModel.appexIsGenerating {
             VStack(spacing: 12) {
                 ProgressView()
@@ -74,7 +74,7 @@ struct AppexPreviewPane: View {
                 // Hiding the icon group hides the appex render, same as hiding both
                 // layers does in Mica mode. Without this gate the sidebar's group
                 // eye and the Visible toggle would appear to do nothing here.
-                if !viewModel.iconSettings.iconHidden {
+                if !viewModel.iconSettings.icon.isHidden {
                     Image(nsImage: image)
                         .resizable()
                         .interpolation(.high)
@@ -85,17 +85,17 @@ struct AppexPreviewPane: View {
                         .frame(width: size, height: size)
                 }
 
-                if viewModel.iconSettings.showBadge {
+                if viewModel.iconSettings.badge.isVisible {
                     let enclosureSize = size * (1 - 50.0 / 256.0)
                     let badgeSize = BadgeGeometry.diameter(
                         enclosureSize: enclosureSize,
-                        badgeScale: viewModel.iconSettings.badgeScale
+                        badgeScale: viewModel.iconSettings.badge.scale
                     )
                     let badgeOffset = BadgeGeometry.offset(
                         for: viewModel.iconSettings,
                         enclosureSize: enclosureSize
                     )
-                    if viewModel.iconSettings.badgeIconSource == .system,
+                    if viewModel.iconSettings.badge.foreground.source == .system,
                        viewModel.badgeAppexRenderedImage == nil {
                         // Preview-only stand-in; BadgeView draws nothing until the
                         // badge's appex image exists.

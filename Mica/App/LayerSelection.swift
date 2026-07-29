@@ -1,0 +1,67 @@
+// App/LayerSelection.swift
+//
+// What the inspector is pointed at: which group the sidebar has selected
+// (`IconLayerGroup`) and which layer within it the inspector is editing
+// (`LayerTab`). Two small types in one file because `LayerTab.availableTabs(for:isSystem:)`
+// is defined in terms of the group — the file is named for the pair, not for one
+// of them.
+import Foundation
+
+/// Top-level object selected in the LayerSidebar. Each group owns a generation
+/// mode and, in Mica mode, a set of editable layers exposed as inspector tabs
+/// (see `LayerTab`).
+enum IconLayerGroup: String, CaseIterable, Identifiable, Hashable {
+    case icon
+    case badge
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .icon: "Icon"
+        case .badge: "Badge"
+        }
+    }
+}
+
+/// Which aspect of the selected group the inspector is editing. Rendered as a
+/// segmented tab bar at the top of the inspector (Keynote's Format-inspector
+/// pattern) rather than as child rows in the sidebar.
+///
+/// `.layout` only applies to the badge — the icon's own layout lives inside its
+/// foreground/background sections. See `availableTabs(for:isSystem:)`.
+enum LayerTab: String, CaseIterable, Identifiable, Hashable {
+    case layout
+    case foreground
+    case background
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .layout: "Layout"
+        case .foreground: "Foreground"
+        case .background: "Background"
+        }
+    }
+
+    /// Tabs offered for a group. Empty in System mode: the appex pipeline renders
+    /// the whole group as one image, so there are no separately editable layers
+    /// and the inspector shows a single un-tabbed pane.
+    static func availableTabs(for group: IconLayerGroup, isSystem: Bool) -> [LayerTab] {
+        guard !isSystem else { return [] }
+        switch group {
+        case .icon:  return [.foreground, .background]
+        case .badge: return [.layout, .foreground, .background]
+        }
+    }
+
+    /// The tab a group starts on. Badge opens on Layout (position/size is the
+    /// most common badge edit); icon opens on Foreground (the symbol).
+    static func defaultTab(for group: IconLayerGroup) -> LayerTab {
+        switch group {
+        case .icon:  return .foreground
+        case .badge: return .layout
+        }
+    }
+}

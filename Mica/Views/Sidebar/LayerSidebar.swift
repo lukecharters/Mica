@@ -38,8 +38,8 @@ struct LayerSidebar: View {
 
     private func visibility(for group: IconLayerGroup) -> LayerGroupVisibility {
         switch group {
-        case .icon:  return iconSettings.iconVisibility()
-        case .badge: return iconSettings.badgeVisibility()
+        case .icon:  return iconSettings.icon.visibility
+        case .badge: return iconSettings.badge.visibility
         }
     }
 
@@ -50,13 +50,13 @@ struct LayerSidebar: View {
         switch group {
         case .icon:
             return Binding(
-                get: { iconSettings.iconVisibility() != .off },
-                set: { iconSettings.iconHidden = !$0 }
+                get: { iconSettings.icon.visibility != .off },
+                set: { iconSettings.icon.isHidden = !$0 }
             )
         case .badge:
             return Binding(
-                get: { iconSettings.badgeVisibility() != .off },
-                set: { iconSettings.badgeHidden = !$0 }
+                get: { iconSettings.badge.visibility != .off },
+                set: { iconSettings.badge.isHidden = !$0 }
             )
         }
     }

@@ -20,7 +20,7 @@ extension AppexColor {
         }
 
         // 1. Named appex token ("grey" resolves to Apple's curated "gray").
-        if let token = AppexEnclosureColor(rawValue: normalizeBritishSpelling(trimmed)) {
+        if let token = AppexNamedColor(rawValue: normalizeBritishSpelling(trimmed)) {
             return token.rawValue
         }
 

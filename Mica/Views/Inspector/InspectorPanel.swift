@@ -1,4 +1,4 @@
-// Views/Sidebar/InspectorPanel.swift
+// Views/Inspector/InspectorPanel.swift
 import SwiftUI
 
 /// Right panel: shows either the selected layer's controls or the export controls.
@@ -36,10 +36,10 @@ struct InspectorPanel: View {
                     colorOptions: colorOptions
                 )
             case .export:
-                ExportSettingsSidebar(
+                ExportSettingsSection(
                     iconSettings: $iconSettings,
                     showExportDialog: $showExportDialog,
-                    generationMode: iconSettings.iconGenerationMode,
+                    generationMode: iconSettings.icon.mode,
                     appexHasImage: appexHasImage,
                     badgeAppexHasImage: badgeAppexHasImage
                 )

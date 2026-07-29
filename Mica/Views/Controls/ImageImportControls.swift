@@ -71,7 +71,7 @@ struct ImageImportLayoutControls: View {
         }
 
         Slider(value: $imageScale,
-               in: IconSettings.importedImageScaleRange,
+               in: ForegroundSpec.imageScaleRange,
                step: 0.05){
             Text("Image Scale")
             Text("\(Int(imageScale * 100))%")

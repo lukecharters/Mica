@@ -1,21 +1,21 @@
-// Views/Sidebar/BackgroundAppearanceSection.swift
+// Views/Inspector/Icon/Background/IconBackgroundAppearanceSection.swift
 import SwiftUI
 
-struct BackgroundAppearanceSection: View {
+struct IconBackgroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
     let colorOptions: [(name: String, color: Color)]
 
-    @AppStorage(SidebarSettings.advancedControlsKey) private var advancedControlsEnabled = false
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     @State private var useCustomBackgroundColor = false
 
     var body: some View {
-        switch iconSettings.backgroundMode {
-        case .importedImage:
+        switch iconSettings.icon.background.source {
+        case .image:
             importedControls
         case .preRendered:
             liquidGlassControls
-        case .custom:
+        case .color:
             standardControls
         }
     }
@@ -30,7 +30,7 @@ struct BackgroundAppearanceSection: View {
     @ViewBuilder
     private var shadowControl: some View {
         if advancedControlsEnabled {
-            Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.backgroundShadowStyle) {
+            Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.icon.background.shadowStyle) {
                 ForEach(BackgroundShadowStyle.allCases) { style in
                     Text(style.rawValue).tag(style)
                 }
@@ -38,8 +38,8 @@ struct BackgroundAppearanceSection: View {
             .pickerStyle(.segmented)
         } else {
             Toggle("Shadow", systemImage: "app.shadow", isOn: Binding(
-                get: { iconSettings.backgroundShadowStyle != .off },
-                set: { iconSettings.backgroundShadowStyle = $0 ? .macOS26 : .off }
+                get: { iconSettings.icon.background.shadowStyle != .off },
+                set: { iconSettings.icon.background.shadowStyle = $0 ? .macOS26 : .off }
             ))
         }
     }
@@ -47,11 +47,11 @@ struct BackgroundAppearanceSection: View {
     @ViewBuilder
     private var liquidGlassControls: some View {
         Picker(
-            selection: $iconSettings.preRenderedColorName,
+            selection: $iconSettings.icon.background.preRenderedColorName,
             label: HStack(spacing: 12) {
                 Circle()
                     .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                    .fill(OptionsCatalog.color(named: iconSettings.preRenderedColorName))
+                    .fill(OptionsCatalog.color(named: iconSettings.icon.background.preRenderedColorName))
                     .frame(width: 12, height: 12)
                 Text("Color")
             }
@@ -63,7 +63,7 @@ struct BackgroundAppearanceSection: View {
         .pickerStyle(.menu)
 
         if advancedControlsEnabled {
-            Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
+            Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.icon.background.usesGradient)
         }
 
         shadowControl
@@ -73,7 +73,7 @@ struct BackgroundAppearanceSection: View {
     private var standardControls: some View {
 
         if advancedControlsEnabled {
-            Picker("Corners", systemImage: "viewfinder", selection: $iconSettings.cornerRadiusStyle) {
+            Picker("Corners", systemImage: "viewfinder", selection: $iconSettings.icon.background.cornerRadiusStyle) {
                 ForEach(IconCornerRadiusStyle.allCases) { style in
                     Text(style.rawValue).tag(style)
                 }
@@ -81,32 +81,32 @@ struct BackgroundAppearanceSection: View {
             .pickerStyle(.segmented)
 
             Toggle("Custom Gradient", isOn: Binding(
-                get: { iconSettings.useCustomColors },
+                get: { iconSettings.icon.background.usesCustomGradient },
                 set: { newValue in
-                    iconSettings.useCustomColors = newValue
+                    iconSettings.icon.background.usesCustomGradient = newValue
                     if newValue {
-                        iconSettings.enableBackgroundGradient = true
+                        iconSettings.icon.background.usesGradient = true
                     }
                 }
             ))
         }
 
-        if iconSettings.useCustomColors {
-            ColorPicker("Primary", selection: $iconSettings.customPrimaryColor)
-            ColorPicker("Secondary", selection: $iconSettings.customSecondaryColor)
+        if iconSettings.icon.background.usesCustomGradient {
+            ColorPicker("Primary", selection: $iconSettings.icon.background.gradientStartColor)
+            ColorPicker("Secondary", selection: $iconSettings.icon.background.gradientEndColor)
         } else {
             // Shared preset/custom flow — self-heals the reset `useCustom` flag
             // and shows the actual color as the fallback swatch.
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.baseColor,
+                color: $iconSettings.icon.background.color,
                 useCustom: $useCustomBackgroundColor,
                 colorOptions: colorOptions
             )
         }
 
-        if advancedControlsEnabled && !iconSettings.useCustomColors {
-            Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.enableBackgroundGradient)
+        if advancedControlsEnabled && !iconSettings.icon.background.usesCustomGradient {
+            Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.icon.background.usesGradient)
         }
 
         shadowControl
@@ -117,7 +117,7 @@ struct BackgroundAppearanceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Appearance") {
-            BackgroundAppearanceSection(
+            IconBackgroundAppearanceSection(
                 iconSettings: $settings,
                 colorOptions: OptionsCatalog.colorOptions
             )

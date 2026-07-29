@@ -30,9 +30,9 @@ struct SpellingAliasTests {
 
     @Test("--colour-space is an alias for --color-space")
     func colourSpaceAlias() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["star.fill", "--colour-space", "displayP3"]))
-        #expect(settings.exportColorSpace == .displayP3)
+        #expect(settings.export.colorSpace == .displayP3)
     }
 
     @Test("--icon-symbol-colour is an alias for --icon-symbol-color")
@@ -110,8 +110,8 @@ struct SpellingAliasTests {
             "--icon-bg-colour", name,
         ])
         try command.performValidationForTesting()
-        let settings = try IconGeneratorCLI().buildTestSettings(from: command)
-        #expect(settings.preRenderedColorName == normalizeBritishSpelling(name))
+        let settings = try IconGenerationRunner().buildTestSettings(from: command)
+        #expect(settings.icon.background.preRenderedColorName == normalizeBritishSpelling(name))
     }
 
     // MARK: - Appex tokens accept grey
@@ -126,7 +126,7 @@ struct SpellingAliasTests {
 
     @Test("extract accepts --colour-space as an alias for --color-space")
     func extractColourSpaceAlias() throws {
-        let command = try GetIconCommand.parse(["/some/path", "--colour-space", "displayP3"])
+        let command = try ExtractCommand.parse(["/some/path", "--colour-space", "displayP3"])
         #expect(command.colorSpace == .displayP3)
     }
 }

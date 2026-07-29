@@ -1,28 +1,28 @@
-// Views/Sidebar/Badge/Foreground/BadgeForegroundLayoutSection.swift
+// Views/Inspector/Badge/Foreground/BadgeForegroundLayoutSection.swift
 import SwiftUI
 
 /// Layout controls specific to the **badge foreground layer** (symbol scale or
 /// imported-image scale). Badge-wide layout (position, offset, overall size) lives
 /// in `BadgeGroupLayoutSection`, shown when the Badge group header is selected.
-struct BadgeLayoutSection: View {
+struct BadgeForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        switch iconSettings.badgeIconSource {
-        case .sfSymbol:
-            Slider(value: $iconSettings.badgeSymbolScale,
-                   in: IconSettings.manualSymbolScaleRange,
+        switch iconSettings.badge.foreground.source {
+        case .symbol:
+            Slider(value: $iconSettings.badge.foreground.symbolScale,
+                   in: ForegroundSpec.symbolScaleRange,
                    step: 0.05) {
                 Text("Symbol Scale")
-                Text("\(Int(iconSettings.badgeSymbolScale * 100))%")
+                Text("\(Int(iconSettings.badge.foreground.symbolScale * 100))%")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
 
-        case .customImage:
+        case .image:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
-                imageScale: $iconSettings.badgeImportedImageScale,
+                imageScale: $iconSettings.badge.foreground.imageScale,
                 showPaddingCompensation: false
             )
 
@@ -36,7 +36,7 @@ struct BadgeLayoutSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Layout") {
-            BadgeLayoutSection(iconSettings: $settings)
+            BadgeForegroundLayoutSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

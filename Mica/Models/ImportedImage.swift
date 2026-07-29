@@ -1,14 +1,10 @@
-// Models/ImportedImage.swift — Icon source mode and imported image data
+// Models/ImportedImage.swift — imported image data
+//
+// `ForegroundSource`, which used to live here as `IconSource`, moved to
+// IconSettings.swift with the other configuration enums (2026-07-28).
+
 import SwiftUI
 import UniformTypeIdentifiers
-
-/// Determines whether an icon or badge uses an SF Symbol or a custom imported image.
-enum IconSource: String, CaseIterable, Identifiable, Equatable {
-    case sfSymbol = "SF Symbol"
-    case customImage = "Custom Image"
-    case system = "System"
-    var id: String { rawValue }
-}
 
 /// Holds a PNG-normalized imported image with metadata about its origin.
 struct ImportedImage: Equatable {

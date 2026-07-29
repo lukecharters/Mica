@@ -2,210 +2,291 @@
 import SwiftUI
 
 struct IconSettings: Equatable {
-    var symbolName: String = "command"
-    var baseColor: Color = .blue
-    var enableBackgroundGradient: Bool = true
-    var useCustomColors: Bool = false
-    var customPrimaryColor: Color = .blue
-    var customSecondaryColor: Color = .purple
-    var exportSize: CGFloat = 512
-    var exportRetinaSize: Bool = false
-    var symbolRenderingMode: SymbolRenderingMode = .monochrome
-    var symbolColorRenderingMode: SymbolColorRenderingMode = .flat
-    var backgroundMode: BackgroundMode = .custom
-    var preRenderedColorName: String = "Blue"
-    var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
-    var exportColorSpace: ExportColorSpace = .sRGB
+    // MARK: - Storage
+    //
+    // Grouped as the UI, the CLI flag namespaces and the `.mica` document all
+    // group it: two layer groups, each with a foreground and a background, plus
+    // export settings. Icon and badge foregrounds share one type because their
+    // property sets are identical — 15 each, one-to-one — which is what stops a
+    // new foreground feature being added to one and forgotten on the other.
 
-    var manualSymbolScale: Double = 1.0
-    var symbolWeight: SymbolWeight = .auto
-    var badgeSymbolWeight: SymbolWeight = .auto
-
-    // Shadow settings
-    var backgroundShadowStyle: BackgroundShadowStyle = .macOS26
-    var enableSymbolShadow: Bool = true
-    
-    // Symbol colors
-    var symbolColor: Color = .white
-    var hierarchicalSymbolColor: Color = .white
-    var paletteSymbolPrimaryColor: Color = .white
-    var paletteSymbolSecondaryColor: Color = .mint
-    var paletteSymbolTertiaryColor: Color = .yellow
-    
-    // Badge settings
-    var badgePosition: BadgePosition = .bottomRight
-    var badgeSymbolName: String = "gearshape.fill"
-    var badgeUseCustomColors: Bool = false
-    var badgeBaseColor: Color = .gray
-    var badgeCustomPrimaryColor: Color = .white
-    var badgeCustomSecondaryColor: Color = .indigo
-    var badgeSymbolColor: Color = .white
-    var badgeSymbolRenderingMode: SymbolRenderingMode = .monochrome
-    var badgeHierarchicalSymbolColor: Color = .white
-    var badgePaletteSymbolPrimaryColor: Color = .white
-    var badgePaletteSymbolSecondaryColor: Color = .mint
-    var badgePaletteSymbolTertiaryColor: Color = .yellow
-    var badgeEnableBackgroundGradient: Bool = true
-    var badgeEnableBackgroundShadow: Bool = true
-    var badgeEnableSymbolShadow: Bool = true
-    var badgeSymbolScale: Double = 1.0
-    var badgeScale: Double = 1.0
-    var badgeManualOffsetX: Double = 0.0
-    var badgeManualOffsetY: Double = 0.0
-
-    // Badge Symbol Color Rendering Mode (macOS 26+)
-    var badgeSymbolColorRenderingMode: SymbolColorRenderingMode = .flat
-
-    // Custom image source (main icon symbol)
-    var iconSource: IconSource = .sfSymbol
-    var importedImage: ImportedImage? = nil
-    var importedImageScale: Double = 1.0
-
-    // Custom image source (main icon background)
-    var importedBackground: ImportedImage? = nil
-    var importedBackgroundPaddingCompensation: Bool = false
-    var importedBackgroundScale: Double = 1.0
-
-    // Custom image source (badge symbol)
-    var badgeIconSource: IconSource = .sfSymbol
-    var badgeImportedImage: ImportedImage? = nil
-    var badgeImportedImageScale: Double = 1.0
-
-    // Custom image source (badge background)
-    var badgeUseImportedBackground: Bool = false
-    var badgeImportedBackground: ImportedImage? = nil
-    var badgeImportedBackgroundPaddingCompensation: Bool = false
-    var badgeImportedBackgroundScale: Double = 1.0
-
-    // Per-group generation mode. Icon and Badge are independent — e.g. Custom icon
-    // with a System (Apple Reference) badge, or vice versa.
-    var iconGenerationMode: GenerationMode = .mica
-
-    /// Badge generation mode derived from `badgeIconSource`. Setting `.system`
-    /// locks the badge source to `.system`; setting `.mica` falls back to
-    /// `.sfSymbol` when needed. The LayerSidebar keeps a separate UI-state memory of
-    /// the previous non-system source so the user's pick is restored on round-trip.
-    var badgeGenerationMode: GenerationMode {
-        get { badgeIconSource == .system ? .system : .mica }
-        set {
-            switch newValue {
-            case .system:
-                badgeIconSource = .system
-            case .mica:
-                if badgeIconSource == .system {
-                    badgeIconSource = .sfSymbol
-                }
-            }
-        }
-    }
-
-    /// True only when an imported badge background will actually draw. The
-    /// "use imported" flag can be set before any image is chosen (the Type picker
-    /// writes it directly); in that state the badge falls back to its colour
-    /// background and keeps its symbol instead of rendering nothing.
-    ///
-    /// Shared by `BadgeView` (what to draw) and `BadgeGeometry` (how much room it
-    /// needs) — they must agree, or the badge is clamped against a footprint it
-    /// doesn't have.
-    var badgeDrawsImportedBackground: Bool {
-        !badgeBackgroundHidden && badgeUseImportedBackground && badgeImportedBackground != nil
-    }
-
-    /// The imported badge background is drawn into a frame this many times the
-    /// badge diameter — import scale, plus the padding compensation that scales a
-    /// native app icon's chiclet up to fill the frame. Can exceed 1, so the badge's
-    /// drawn footprint is not bounded by its nominal diameter.
-    var badgeImportedBackgroundEffectiveScale: CGFloat {
-        badgeImportedBackgroundScale
-            * (badgeImportedBackgroundPaddingCompensation
-                ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
-    }
-
-    // Per-layer visibility (driven by the eye toggles in the layer sidebar).
-    // `showBadge` is computed from these so existing call sites still work.
-    var iconForegroundHidden: Bool = false
-    var iconBackgroundHidden: Bool = false
-    var badgeForegroundHidden: Bool = true
-    var badgeBackgroundHidden: Bool = true
-
-    /// True when at least one badge layer is visible. Setting this updates both
-    /// `badgeForegroundHidden` and `badgeBackgroundHidden` together.
-    var showBadge: Bool {
-        get { !badgeForegroundHidden || !badgeBackgroundHidden }
-        set {
-            badgeForegroundHidden = !newValue
-            badgeBackgroundHidden = !newValue
-        }
-    }
-
-    /// Group-level visibility for the Icon (both layers). Setting it mirrors the
-    /// value into both `iconForegroundHidden` and `iconBackgroundHidden`.
-    var iconHidden: Bool {
-        get { iconForegroundHidden && iconBackgroundHidden }
-        set {
-            iconForegroundHidden = newValue
-            iconBackgroundHidden = newValue
-        }
-    }
-
-    /// Group-level visibility for the Badge (both layers). Inverse of `showBadge`.
-    var badgeHidden: Bool {
-        get { badgeForegroundHidden && badgeBackgroundHidden }
-        set {
-            badgeForegroundHidden = newValue
-            badgeBackgroundHidden = newValue
-        }
-    }
-
-    /// Tri-state visibility for use in group header eye toggles.
-    func iconVisibility() -> LayerGroupVisibility {
-        switch (iconForegroundHidden, iconBackgroundHidden) {
-        case (true, true):   return .off
-        case (false, false): return .on
-        default:             return .mixed
-        }
-    }
-
-    func badgeVisibility() -> LayerGroupVisibility {
-        switch (badgeForegroundHidden, badgeBackgroundHidden) {
-        case (true, true):   return .off
-        case (false, false): return .on
-        default:             return .mixed
-        }
-    }
-
-    var gradientColors: [Color] {
-        [customPrimaryColor, customSecondaryColor]
-    }
-    
-    var badgeGradientColors: [Color] {
-        [badgeCustomPrimaryColor, badgeCustomSecondaryColor]
-    }
-    
-    var preRenderedAssetName: String {
-        "background-\(preRenderedColorName.lowercased())-\(enableBackgroundGradient ? "gradient" : "solid")"
-    }
-
-    var finalExportSize: CGFloat {
-        return exportRetinaSize ? exportSize * 2 : exportSize
-    }
+    var export: ExportSpec = ExportSpec()
+    var icon: IconSpec = IconSpec()
+    var badge: BadgeSpec = BadgeSpec()
 
     /// Default export filename (without extension): the imported background image's
     /// file name when the icon uses a custom background, otherwise the SF Symbol
     /// name, with a `-mica` suffix appended.
+    ///
+    /// One of the few things that has to live up here: it reads the icon's
+    /// background *and* its foreground, so it cannot move onto either spec.
     var exportBaseName: String {
         let base: String
-        if backgroundMode == .importedImage, let imported = importedBackground {
+        if icon.background.source == .image, let imported = icon.background.image {
             base = (imported.sourceName as NSString).deletingPathExtension
         } else {
-            base = symbolName
+            base = icon.foreground.symbolName
         }
         let trimmed = base.trimmingCharacters(in: .whitespaces)
         return "\(trimmed.isEmpty ? "CustomIcon" : trimmed)-mica"
     }
 }
 
-enum SymbolRenderingMode: String, CaseIterable, Identifiable {
+// MARK: - Specs
+//
+// The structs `IconSettings` actually stores. Shapes match the `.mica` document
+// DTO in docs/plans/mica-document-format.md, so that mapping is field-for-field
+// rather than a translation layer.
+//
+// **Imported image defaults.** Each layer spec has an `apply(_:)` carrying the
+// import-time defaults: the drop shadow off, and — on the two backgrounds, which
+// are the specs with the toggle — "Icon Padding" compensation on, scaling a native
+// app icon's chiclet up to fill the frame. The user can change either afterwards;
+// SF Symbol shadows are unaffected, because those default from the struct rather
+// than from an import. Keeping the defaults on the specs is what makes every entry
+// point agree — menu, paste, drag, inspector and CLI — whichever layer it reaches
+// and however it gets there.
+
+/// Export settings: what size, at what scale, in which colour space.
+struct ExportSpec: Equatable {
+    static let minSize: CGFloat = 16
+    static let maxSize: CGFloat = 1024
+    static let defaultSize: CGFloat = 512
+
+    var size: CGFloat = ExportSpec.defaultSize
+    var isRetina: Bool = false
+    var colorSpace: ExportColorSpace = .sRGB
+
+    /// The exported pixel dimension — `size` after the retina multiplier.
+    var pixelSize: CGFloat { isRetina ? size * 2 : size }
+
+    var isSizeValid: Bool { (ExportSpec.minSize...ExportSpec.maxSize).contains(size) }
+}
+
+/// The Icon group: how it is rendered, and its two layers.
+struct IconSpec: Equatable {
+    var mode: GenerationMode = .mica
+    var foreground: ForegroundSpec = .iconDefault
+    var background: IconBackgroundSpec = IconBackgroundSpec()
+
+    /// Group-level visibility: hidden only when *both* layers are. Setting it
+    /// writes both, so it clears a per-layer flag rather than leaving one behind.
+    var isHidden: Bool {
+        get { foreground.isHidden && background.isHidden }
+        set {
+            foreground.isHidden = newValue
+            background.isHidden = newValue
+        }
+    }
+
+    /// Tri-state for the sidebar's group eye, where the two layers may disagree.
+    var visibility: LayerGroupVisibility {
+        LayerGroupVisibility(foregroundHidden: foreground.isHidden,
+                             backgroundHidden: background.isHidden)
+    }
+}
+
+/// The Badge group: where it sits, how big, and its two layers.
+struct BadgeSpec: Equatable {
+    /// Bounds for `offsetX` / `offsetY`, in enclosure fractions. Also the
+    /// accepted range for `--badge-offset-x` / `--badge-offset-y`. Deliberately
+    /// not the *clamped* range — see `BadgeGeometry.manualOffsetRange`, which is
+    /// what the canvas drag uses.
+    static let offsetRange: ClosedRange<Double> = -1.0...1.0
+
+    var position: BadgePosition = .bottomRight
+    var scale: Double = 1.0
+    /// Manual nudge, as a fraction of enclosure size so it scales to any export.
+    /// Deliberately two `Double`s rather than a `CGSize`: `BadgeGeometry.offset`
+    /// already returns a `CGSize` meaning the *resolved, clamped* offset in
+    /// points, and two same-typed values meaning different things in one call
+    /// chain is the confusion this naming pass exists to remove.
+    var offsetX: Double = 0.0
+    var offsetY: Double = 0.0
+    var foreground: ForegroundSpec = .badgeDefault
+    var background: BadgeBackgroundSpec = BadgeBackgroundSpec()
+
+    /// Derived from the foreground source: a badge is in System mode exactly when
+    /// its foreground is the appex raster. Setting `.system` locks the source
+    /// there; setting `.mica` falls back to `.symbol`. `LayerSidebar` keeps its own
+    /// UI-state memory of the previous non-system source so a round-trip restores
+    /// the user's pick.
+    var mode: GenerationMode {
+        get { foreground.source == .system ? .system : .mica }
+        set {
+            switch newValue {
+            case .system:
+                foreground.source = .system
+            case .mica:
+                if foreground.source == .system {
+                    foreground.source = .symbol
+                }
+            }
+        }
+    }
+
+    /// True when at least one badge layer is visible — the badge is on screen.
+    /// Setting it writes both layers.
+    var isVisible: Bool {
+        get { !foreground.isHidden || !background.isHidden }
+        set {
+            foreground.isHidden = !newValue
+            background.isHidden = !newValue
+        }
+    }
+
+    /// Group-level visibility: hidden only when *both* layers are. The inverse of
+    /// `isVisible`; both spellings exist because call sites read better one way or
+    /// the other.
+    var isHidden: Bool {
+        get { foreground.isHidden && background.isHidden }
+        set {
+            foreground.isHidden = newValue
+            background.isHidden = newValue
+        }
+    }
+
+    /// Tri-state for the sidebar's group eye, where the two layers may disagree.
+    var visibility: LayerGroupVisibility {
+        LayerGroupVisibility(foregroundHidden: foreground.isHidden,
+                             backgroundHidden: background.isHidden)
+    }
+}
+
+/// A foreground layer — the symbol-or-image on top. Shared by the icon and the
+/// badge, whose property sets are identical.
+///
+/// `symbolName` and `isHidden` have no defaults because the two groups genuinely
+/// differ (the icon starts on `command` and visible, the badge on
+/// `gearshape.fill` and hidden). Use `.iconDefault` / `.badgeDefault`.
+struct ForegroundSpec: Equatable {
+    static let symbolScaleRange: ClosedRange<Double> = 0.3...2.0
+    static let imageScaleRange: ClosedRange<Double> = 0.3...2.0
+
+    var source: ForegroundSource = .symbol
+    var symbolName: String
+    var symbolWeight: SymbolWeight = .auto
+    var symbolScale: Double = 1.0
+    var image: ImportedImage? = nil
+    var imageScale: Double = 1.0
+    var color: Color = .white
+    var renderingStyle: SymbolRenderingStyle = .monochrome
+    var fillStyle: SymbolFillStyle = .flat
+    var hierarchicalColor: Color = .white
+    var palettePrimaryColor: Color = .white
+    var paletteSecondaryColor: Color = .mint
+    var paletteTertiaryColor: Color = .yellow
+    var drawsShadow: Bool = true
+    var isHidden: Bool
+
+    static let iconDefault = ForegroundSpec(symbolName: "command", isHidden: false)
+    static let badgeDefault = ForegroundSpec(symbolName: "gearshape.fill", isHidden: true)
+
+    /// Import an image as this layer's artwork, with the import-time defaults: the
+    /// drop shadow off, because an imported graphic usually carries its own.
+    /// One implementation for both groups — the icon's and the badge's imports
+    /// were two identical methods before the specs collapsed them.
+    mutating func apply(_ image: ImportedImage) {
+        self.image = image
+        source = .image
+        drawsShadow = false
+    }
+}
+
+/// The icon's background layer. Separate from the badge's because it has two
+/// things the badge does not: pre-rendered Liquid Glass assets, and a corner
+/// radius (the badge's shape is fixed by `BadgeGeometry.badgeCornerRadiusRatio`).
+struct IconBackgroundSpec: Equatable {
+    var source: IconBackgroundSource = .color
+    var color: Color = .blue
+    var usesGradient: Bool = true
+    var usesCustomGradient: Bool = false
+    var gradientStartColor: Color = .blue
+    var gradientEndColor: Color = .purple
+    var preRenderedColorName: String = "Blue"
+    var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
+    var shadowStyle: BackgroundShadowStyle = .macOS26
+    var image: ImportedImage? = nil
+    var imageScale: Double = 1.0
+    var compensatesForPadding: Bool = false
+    var isHidden: Bool = false
+
+    var gradientColors: [Color] { [gradientStartColor, gradientEndColor] }
+
+    var preRenderedAssetName: String {
+        "background-\(preRenderedColorName.lowercased())-\(usesGradient ? "gradient" : "solid")"
+    }
+
+    /// Import an image as this background, with the import-time defaults: "Icon
+    /// Padding" compensation on (scaling a native app icon's chiclet up to fill
+    /// the frame) and the shadow off.
+    mutating func apply(_ image: ImportedImage) {
+        self.image = image
+        source = .image
+        compensatesForPadding = true
+        shadowStyle = .off
+    }
+}
+
+/// The badge's background layer. Its shadow is on/off rather than a preset enum,
+/// because a badge only ever has one shadow shape.
+struct BadgeBackgroundSpec: Equatable {
+    var source: BadgeBackgroundSource = .color
+    var color: Color = .gray
+    var usesGradient: Bool = true
+    var usesCustomGradient: Bool = false
+    var gradientStartColor: Color = .white
+    var gradientEndColor: Color = .indigo
+    var drawsShadow: Bool = true
+    var image: ImportedImage? = nil
+    var imageScale: Double = 1.0
+    var compensatesForPadding: Bool = false
+    var isHidden: Bool = true
+
+    var gradientColors: [Color] { [gradientStartColor, gradientEndColor] }
+
+    /// True only when an imported background will actually draw. `source` can be
+    /// `.image` before any image is chosen (the Type picker writes it directly); in
+    /// that state the badge falls back to its colour background rather than
+    /// rendering nothing.
+    ///
+    /// Shared by `BadgeView` (what to draw) and `BadgeGeometry` (how much room it
+    /// needs) — they must agree, or the badge is clamped against a footprint it
+    /// doesn't have. Being a property of the spec itself, they now cannot disagree.
+    var drawsImage: Bool {
+        !isHidden && source == .image && image != nil
+    }
+
+    /// The imported background is drawn into a frame this many times the badge
+    /// diameter — import scale, plus the padding compensation that scales a native
+    /// app icon's chiclet up to fill the frame. Can exceed 1, so the badge's drawn
+    /// footprint is not bounded by its nominal diameter.
+    var effectiveImageScale: CGFloat {
+        imageScale
+            * (compensatesForPadding ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
+    }
+
+    /// Import an image as this background, with the import-time defaults: "Icon
+    /// Padding" compensation on (scaling a native app icon's chiclet up to fill
+    /// the frame) and the shadow off.
+    mutating func apply(_ image: ImportedImage) {
+        self.image = image
+        source = .image
+        compensatesForPadding = true
+        drawsShadow = false
+    }
+}
+
+/// What the badge's background layer draws. Smaller than `IconBackgroundSource`
+/// — there are no pre-rendered badge assets — so the two are separate types
+/// rather than one with cases the badge ignores.
+enum BadgeBackgroundSource: String, CaseIterable, Identifiable {
+    case color = "Custom"
+    case image = "Image"
+    var id: String { rawValue }
+}
+
+enum SymbolRenderingStyle: String, CaseIterable, Identifiable {
     case monochrome = "Monochrome"
     case hierarchical = "Hierarchical"
     case palette = "Palette"
@@ -228,14 +309,32 @@ enum SymbolRenderingMode: String, CaseIterable, Identifiable {
 }
 
 
-enum BackgroundMode: String, CaseIterable, Identifiable {
-    case custom = "Custom"
-    case preRendered = "Pre-rendered"
-    case importedImage = "Image"
+/// What a *foreground* layer draws — an SF Symbol, an imported image, or (icon
+/// group only) the whole thing handed to Apple's appex pipeline.
+///
+/// Raw values are user-visible picker labels, so they deliberately keep their
+/// original wording even though the case names changed: retiring "Custom Image"
+/// from the interface is a copy decision, not a rename.
+enum ForegroundSource: String, CaseIterable, Identifiable, Equatable {
+    case symbol = "SF Symbol"
+    case image = "Custom Image"
+    case system = "System"
     var id: String { rawValue }
 }
 
-enum SymbolColorRenderingMode: String, CaseIterable, Identifiable {
+/// What the icon's *background* layer draws. The badge's background has its own,
+/// smaller set — it has no pre-rendered assets — so the two are separate types
+/// rather than one with cases the badge ignores.
+///
+/// Raw values are user-visible picker labels; see `ForegroundSource`.
+enum IconBackgroundSource: String, CaseIterable, Identifiable {
+    case color = "Custom"
+    case preRendered = "Pre-rendered"
+    case image = "Image"
+    var id: String { rawValue }
+}
+
+enum SymbolFillStyle: String, CaseIterable, Identifiable {
     case flat = "Flat"
     case gradient = "Gradient"
     
@@ -344,58 +443,16 @@ enum LayerGroupVisibility {
     case off    // all child layers hidden
     case mixed  // some children hidden, some visible
     case on     // all child layers visible
-}
 
-extension IconSettings {
-    static let minExportSize: CGFloat = 16
-    static let maxExportSize: CGFloat = 1024
-    static let defaultExportSize: CGFloat = 512
-    static let manualSymbolScaleRange: ClosedRange<Double> = 0.3...2.0
-    static let badgeOffsetRange: ClosedRange<Double> = -1.0...1.0
-    static let importedImageScaleRange: ClosedRange<Double> = 0.3...2.0
-
-    var isExportSizeValid: Bool {
-        (Self.minExportSize...Self.maxExportSize).contains(exportSize)
+    /// Resolve from a group's two layers. Both groups have exactly a foreground
+    /// and a background, so `IconSpec.visibility` and `BadgeSpec.visibility` share
+    /// this rather than each switching on its own pair.
+    init(foregroundHidden: Bool, backgroundHidden: Bool) {
+        switch (foregroundHidden, backgroundHidden) {
+        case (true, true):   self = .off
+        case (false, false): self = .on
+        default:             self = .mixed
+        }
     }
 }
 
-// MARK: - Imported image defaults
-//
-// When an image is imported into any of the four image slots we default the
-// "Icon Padding" compensation (where the toggle exists — the two background
-// slots) to off, scaling the image up to fill the frame, and turn off the
-// imported-image drop shadow. These are import-time defaults the user can still
-// change afterwards; SF Symbol shadows are unaffected because they default from
-// the struct, not from these helpers. Centralised here so every entry point
-// (menu, paste, drag, sidebar, CLI) stays consistent.
-extension IconSettings {
-    /// Apply an image as the icon foreground (custom symbol image).
-    mutating func applyImportedIconForeground(_ image: ImportedImage) {
-        importedImage = image
-        iconSource = .customImage
-        enableSymbolShadow = false
-    }
-
-    /// Apply an image as the icon background.
-    mutating func applyImportedIconBackground(_ image: ImportedImage) {
-        importedBackground = image
-        backgroundMode = .importedImage
-        importedBackgroundPaddingCompensation = true // "Icon Padding" off → fill frame
-        backgroundShadowStyle = .off
-    }
-
-    /// Apply an image as the badge foreground (custom badge symbol image).
-    mutating func applyImportedBadgeForeground(_ image: ImportedImage) {
-        badgeImportedImage = image
-        badgeIconSource = .customImage
-        badgeEnableSymbolShadow = false
-    }
-
-    /// Apply an image as the badge background.
-    mutating func applyImportedBadgeBackground(_ image: ImportedImage) {
-        badgeImportedBackground = image
-        badgeUseImportedBackground = true
-        badgeImportedBackgroundPaddingCompensation = true // "Icon Padding" off → fill frame
-        badgeEnableBackgroundShadow = false
-    }
-}

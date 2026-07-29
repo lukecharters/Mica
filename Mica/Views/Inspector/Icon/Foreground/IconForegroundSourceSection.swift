@@ -1,13 +1,13 @@
-// Views/Sidebar/IconSourceSection.swift
+// Views/Inspector/Icon/Foreground/IconForegroundSourceSection.swift
 import SwiftUI
 
-struct IconSourceSection: View {
+struct IconForegroundSourceSection: View {
     @Binding var iconSettings: IconSettings
     let isSystem: Bool
 
     /// Source selection within Custom mode (SF Symbol vs Imported image).
     private enum SourceType: String, CaseIterable, Identifiable {
-        case sfSymbol = "SF Symbol"
+        case symbol = "SF Symbol"
         case imported = "Imported"
         var id: String { rawValue }
     }
@@ -15,18 +15,18 @@ struct IconSourceSection: View {
     private var sourceType: Binding<SourceType> {
         Binding(
             get: {
-                switch iconSettings.iconSource {
-                case .sfSymbol: return .sfSymbol
-                case .customImage: return .imported
-                case .system: return .sfSymbol
+                switch iconSettings.icon.foreground.source {
+                case .symbol: return .symbol
+                case .image: return .imported
+                case .system: return .symbol
                 }
             },
             set: { newValue in
                 switch newValue {
-                case .sfSymbol:
-                    iconSettings.iconSource = .sfSymbol
+                case .symbol:
+                    iconSettings.icon.foreground.source = .symbol
                 case .imported:
-                    iconSettings.iconSource = .customImage
+                    iconSettings.icon.foreground.source = .image
                 }
             }
         )
@@ -36,10 +36,10 @@ struct IconSourceSection: View {
         if isSystem {
             // System mode renders the icon as one appex image, so visibility is
             // all-or-nothing for the group rather than per layer.
-            LayerVisibleToggle(isHidden: $iconSettings.iconHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.icon.isHidden)
             symbolField
         } else {
-            LayerVisibleToggle(isHidden: $iconSettings.iconForegroundHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.icon.foreground.isHidden)
 
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in
@@ -50,20 +50,20 @@ struct IconSourceSection: View {
             .labelsHidden()
 
             switch sourceType.wrappedValue {
-            case .sfSymbol:
+            case .symbol:
                 symbolField
 
             case .imported:
                 ImageImportControls(
-                    importedImage: $iconSettings.importedImage,
-                    onImport: { iconSettings.applyImportedIconForeground($0) }
+                    importedImage: $iconSettings.icon.foreground.image,
+                    onImport: { iconSettings.icon.foreground.apply($0) }
                 )
             }
         }
     }
 
     private var symbolField: some View {
-        SymbolNameField(symbolName: $iconSettings.symbolName)
+        SymbolNameField(symbolName: $iconSettings.icon.foreground.symbolName)
     }
 }
 
@@ -71,7 +71,7 @@ struct IconSourceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Source") {
-            IconSourceSection(iconSettings: $settings, isSystem: false)
+            IconForegroundSourceSection(iconSettings: $settings, isSystem: false)
         }
     }
     .formStyle(.grouped)

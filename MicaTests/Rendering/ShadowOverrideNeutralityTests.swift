@@ -16,12 +16,7 @@ import SwiftUI
 @MainActor
 struct ShadowOverrideNeutralityTests {
 
-    // SwiftUI also defines a public `ShadowStyle`, which collides with the
-    // app's struct when both modules are imported (same pattern as the
-    // SymbolRenderingMode alias in IconRenderingStructuralTests).
-    typealias ShadowStyle = Mica.ShadowStyle
-
-    private func render(_ settings: IconSettings, override: ShadowStyle?) throws -> Data {
+    private func render(_ settings: IconSettings, override: ResolvedShadow?) throws -> Data {
         let displaySize: CGFloat = 256
         let view = IconContentView(settings: settings, displaySize: displaySize, shadowOverride: override)
             .frame(width: displaySize, height: displaySize)
@@ -35,9 +30,9 @@ struct ShadowOverrideNeutralityTests {
           arguments: BackgroundShadowStyle.allCases)
     func nilOverride_matchesInjectedPreset(_ style: BackgroundShadowStyle) throws {
         var settings = IconSettings()
-        settings.symbolName = "folder.fill"
-        settings.backgroundShadowStyle = style
-        settings.showBadge = true // exercise BadgeView's override path too
+        settings.icon.foreground.symbolName = "folder.fill"
+        settings.icon.background.shadowStyle = style
+        settings.badge.isVisible = true // exercise BadgeView's override path too
 
         let baseline = try render(settings, override: nil)
         let injected = try render(settings, override: .preset(for: style))

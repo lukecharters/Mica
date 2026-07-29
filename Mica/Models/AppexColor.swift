@@ -3,7 +3,7 @@ import SwiftUI
 import AppKit
 
 /// A colour for the Apple Reference (`.appex`) pipeline. It is either one of
-/// Apple's named system tokens (`AppexEnclosureColor`) or an arbitrary custom
+/// Apple's named system tokens (`AppexNamedColor`) or an arbitrary custom
 /// colour. Both resolve to a string that `ISEnclosureColor` / `ISSymbolColor`
 /// in the appex `Info.plist` accept:
 ///
@@ -18,20 +18,20 @@ import AppKit
 /// that actually affects the output.
 struct AppexColor {
     /// The named preset used when `isCustom == false`.
-    var preset: AppexEnclosureColor
+    var preset: AppexNamedColor
     /// The custom colour used when `isCustom == true`.
     var customColor: Color
     /// Whether the custom colour (vs. the named preset) is active.
     var isCustom: Bool
 
-    init(preset: AppexEnclosureColor = .blue, customColor: Color? = nil, isCustom: Bool = false) {
+    init(preset: AppexNamedColor = .blue, customColor: Color? = nil, isCustom: Bool = false) {
         self.preset = preset
         self.customColor = customColor ?? preset.previewColor
         self.isCustom = isCustom
     }
 
     /// A colour backed by one of Apple's named system tokens.
-    static func named(_ preset: AppexEnclosureColor) -> AppexColor {
+    static func named(_ preset: AppexNamedColor) -> AppexColor {
         AppexColor(preset: preset, isCustom: false)
     }
 

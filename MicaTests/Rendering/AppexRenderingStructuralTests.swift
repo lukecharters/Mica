@@ -4,7 +4,7 @@
 // Fast path (no NSWorkspace): IconRenderer.renderAppexWithBadge(...) takes
 // an appex image as input and composites it with an optional badge. We
 // synthesize the appex image in-test (a solid red NSImage), then verify:
-//   - Output dimensions match finalExportSize (the canvas never grows)
+//   - Output dimensions match export.pixelSize (the canvas never grows)
 //   - Red dominates every quadrant (the synthesized appex fills the canvas)
 //   - Adding a green badge at bottomRight shifts the green signal there
 //
@@ -36,15 +36,15 @@ struct AppexRenderingStructuralTests {
 
     // MARK: - Fast path: renderAppexWithBadge with stubbed appex image
 
-    @Test("Appex composite without badge matches finalExportSize and is red-dominant")
+    @Test("Appex composite without badge matches export.pixelSize and is red-dominant")
     func appexComposite_noBadge_dimensionsAndDominance() throws {
         var settings = IconSettings()
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.showBadge = false
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.badge.isVisible = false
 
-        let expectedCanvas = settings.finalExportSize
-        let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
+        let expectedCanvas = settings.export.pixelSize
+        let appex = Self.solidColorImage(.red, size: settings.export.pixelSize)
 
         let output = IconRenderer.renderAppexWithBadge(
             appexImage: appex,
@@ -52,12 +52,12 @@ struct AppexRenderingStructuralTests {
             badgeAppexImage: nil
         )
 
-        // Logical size tracks the exportSize via setImageDPI.
-        #expect(Int(output.size.width) == Int(settings.exportSize))
-        #expect(Int(output.size.height) == Int(settings.exportSize))
+        // Logical size tracks the export.size via setImageDPI.
+        #expect(Int(output.size.width) == Int(settings.export.size))
+        #expect(Int(output.size.height) == Int(settings.export.size))
 
-        // The returned NSImage after setImageDPI reports logical = exportSize,
-        // pixels = finalExportSize. Validate at the pixel level.
+        // The returned NSImage after setImageDPI reports logical = export.size,
+        // pixels = export.pixelSize. Validate at the pixel level.
         let data = try #require(output.tiffRepresentation)
         let rep = try #require(NSBitmapImageRep(data: data))
         #expect(rep.pixelsWide == Int(expectedCanvas))
@@ -79,16 +79,16 @@ struct AppexRenderingStructuralTests {
         }
     }
 
-    @Test("Appex composite with an appleReference badge adds green in the badge quadrant")
+    @Test("Appex composite with a System-mode badge adds green in the badge quadrant")
     func appexComposite_withAppleReferenceBadge_addsGreenInBadgeQuadrant() throws {
         var settings = IconSettings()
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.showBadge = true
-        settings.badgePosition = .bottomRight
-        settings.badgeIconSource = .system // BadgeView uses badgeAppexImage for this mode
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.badge.isVisible = true
+        settings.badge.position = .bottomRight
+        settings.badge.foreground.source = .system // BadgeView uses badgeAppexImage for this mode
 
-        let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
+        let appex = Self.solidColorImage(.red, size: settings.export.pixelSize)
         // Badge appex is typically provided at 512pt @2x = 1024px per
         // AppexReferenceService.referenceIcon defaults; a smaller stub is
         // fine here — renderAppexWithBadge will scale it to badgeSize.
@@ -117,12 +117,12 @@ struct AppexRenderingStructuralTests {
     @Test("Hiding the icon group drops the appex raster from the composite")
     func appexComposite_iconHidden_isTransparent() throws {
         var settings = IconSettings()
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.showBadge = false
-        settings.iconHidden = true
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.badge.isVisible = false
+        settings.icon.isHidden = true
 
-        let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
+        let appex = Self.solidColorImage(.red, size: settings.export.pixelSize)
         let output = IconRenderer.renderAppexWithBadge(
             appexImage: appex,
             settings: settings,
@@ -145,14 +145,14 @@ struct AppexRenderingStructuralTests {
     @Test("Hiding the icon group keeps the badge, leaving a badge-only render")
     func appexComposite_iconHiddenWithBadge_keepsBadge() throws {
         var settings = IconSettings()
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
-        settings.showBadge = true
-        settings.badgePosition = .bottomRight
-        settings.badgeIconSource = .system
-        settings.iconHidden = true
+        settings.export.size = 256
+        settings.export.isRetina = false
+        settings.badge.isVisible = true
+        settings.badge.position = .bottomRight
+        settings.badge.foreground.source = .system
+        settings.icon.isHidden = true
 
-        let appex = Self.solidColorImage(.red, size: settings.finalExportSize)
+        let appex = Self.solidColorImage(.red, size: settings.export.pixelSize)
         let badgeAppex = Self.solidColorImage(.green, size: 1024)
 
         let output = IconRenderer.renderAppexWithBadge(

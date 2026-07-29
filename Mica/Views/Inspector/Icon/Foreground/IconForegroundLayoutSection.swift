@@ -1,30 +1,30 @@
-// Views/Sidebar/IconLayoutSection.swift
+// Views/Inspector/Icon/Foreground/IconForegroundLayoutSection.swift
 import SwiftUI
 
-struct IconLayoutSection: View {
+struct IconForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        switch iconSettings.iconSource {
-        case .sfSymbol:
+        switch iconSettings.icon.foreground.source {
+        case .symbol:
             HStack {
 
                 //                Spacer()
                 
             
-            Slider(value: $iconSettings.manualSymbolScale,
-                   in: IconSettings.manualSymbolScaleRange,
+            Slider(value: $iconSettings.icon.foreground.symbolScale,
+                   in: ForegroundSpec.symbolScaleRange,
                    step: 0.05) {
                 Text("Symbol Scale")
-                Text("\(Int(iconSettings.manualSymbolScale * 100))%")
+                Text("\(Int(iconSettings.icon.foreground.symbolScale * 100))%")
                     .foregroundStyle(.secondary)
                 //                .monospacedDigit()
             }
             }
-        case .customImage:
+        case .image:
             ImageImportLayoutControls(
                 paddingCompensation: .constant(false),
-                imageScale: $iconSettings.importedImageScale,
+                imageScale: $iconSettings.icon.foreground.imageScale,
                 showPaddingCompensation: false
             )
 
@@ -38,7 +38,7 @@ struct IconLayoutSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Layout") {
-            IconLayoutSection(iconSettings: $settings)
+            IconForegroundLayoutSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

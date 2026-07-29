@@ -16,11 +16,11 @@ struct BadgeGeometryTests {
         badgeScale: CGFloat = 1.0
     ) -> IconSettings {
         var s = IconSettings()
-        s.showBadge = true
-        s.badgePosition = position
-        s.badgeManualOffsetX = manualOffset.x
-        s.badgeManualOffsetY = manualOffset.y
-        s.badgeScale = badgeScale
+        s.badge.isVisible = true
+        s.badge.position = position
+        s.badge.offsetX = manualOffset.x
+        s.badge.offsetY = manualOffset.y
+        s.badge.scale = badgeScale
         return s
     }
 
@@ -75,7 +75,7 @@ struct BadgeGeometryTests {
 
     // MARK: - Diameter
 
-    @Test("Diameter is 80/208 of the enclosure, scaled by badgeScale")
+    @Test("Diameter is 80/208 of the enclosure, scaled by badge.scale")
     func diameter_matchesRatio() {
         #expect(BadgeGeometry.diameter(enclosureSize: 208, badgeScale: 1.0) == 80)
         #expect(BadgeGeometry.diameter(enclosureSize: 208, badgeScale: 1.5) == 120)
@@ -162,7 +162,7 @@ struct BadgeGeometryTests {
 
     /// The bug this replaced: the shadow buffer was a fixed fraction of the
     /// *enclosure*, while the shadow itself scales with the badge diameter. The
-    /// two decouple the moment badgeScale leaves 1.0 — too much room at small
+    /// two decouple the moment badge.scale leaves 1.0 — too much room at small
     /// sizes (a visible gap), too little at large ones (a clipped shadow).
     ///
     /// Everything past the badge's own edge must therefore be proportional to the
@@ -196,7 +196,7 @@ struct BadgeGeometryTests {
         let s = Self.settings(position: .bottomRight, badgeScale: 1.5)
         let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
         let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.5)
-        let dy = diameter * ShadowStyle.macOS26.badgeBackground.offsetYMultiplier
+        let dy = diameter * ResolvedShadow.macOS26.badgeBackground.offsetYMultiplier
 
         #expect(ext.down > ext.up, "The downward shadow must claim more room below than above")
         #expect(abs((ext.down - ext.up) - 2 * dy) < 0.0001,
@@ -212,7 +212,7 @@ struct BadgeGeometryTests {
     func extents_noShadowMeansNoAllowance(_ position: BadgePosition) {
         let enclosure: CGFloat = 206
         var s = Self.settings(position: position, badgeScale: 1.0)
-        s.badgeEnableBackgroundShadow = false
+        s.badge.background.drawsShadow = false
 
         let half = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.0) / 2
         let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
@@ -226,7 +226,7 @@ struct BadgeGeometryTests {
     func extents_systemBadgeHasNoShadow() {
         let enclosure: CGFloat = 206
         var s = Self.settings(position: .bottomRight, badgeScale: 1.0)
-        s.badgeIconSource = .system
+        s.badge.foreground.source = .system
 
         let half = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.0) / 2
         let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
@@ -286,7 +286,7 @@ struct BadgeGeometryTests {
         for scale in Self.scales {
             let base = Self.settings(position: position, badgeScale: scale)
             let range = BadgeGeometry.manualOffsetRange(for: base, enclosureSize: enclosure)
-            guard range.x.upperBound < IconSettings.badgeOffsetRange.upperBound - 0.001 else { continue }
+            guard range.x.upperBound < BadgeSpec.offsetRange.upperBound - 0.001 else { continue }
 
             let atEdge = Self.settings(
                 position: position, manualOffset: (range.x.upperBound, 0), badgeScale: scale)

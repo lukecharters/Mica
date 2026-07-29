@@ -1,13 +1,13 @@
-// Views/Sidebar/BadgeSourceSection.swift
+// Views/Inspector/Badge/Foreground/BadgeForegroundSourceSection.swift
 import SwiftUI
 
-struct BadgeSourceSection: View {
+struct BadgeForegroundSourceSection: View {
     @Binding var iconSettings: IconSettings
     let isSystem: Bool
 
     /// Source selection within Custom mode (SF Symbol vs Imported image).
     private enum SourceType: String, CaseIterable, Identifiable {
-        case sfSymbol = "SF Symbol"
+        case symbol = "SF Symbol"
         case imported = "Imported"
         var id: String { rawValue }
     }
@@ -15,18 +15,18 @@ struct BadgeSourceSection: View {
     private var sourceType: Binding<SourceType> {
         Binding(
             get: {
-                switch iconSettings.badgeIconSource {
-                case .sfSymbol: return .sfSymbol
-                case .customImage: return .imported
-                case .system: return .sfSymbol
+                switch iconSettings.badge.foreground.source {
+                case .symbol: return .symbol
+                case .image: return .imported
+                case .system: return .symbol
                 }
             },
             set: { newValue in
                 switch newValue {
-                case .sfSymbol:
-                    iconSettings.badgeIconSource = .sfSymbol
+                case .symbol:
+                    iconSettings.badge.foreground.source = .symbol
                 case .imported:
-                    iconSettings.badgeIconSource = .customImage
+                    iconSettings.badge.foreground.source = .image
                 }
             }
         )
@@ -36,10 +36,10 @@ struct BadgeSourceSection: View {
         if isSystem {
             // System mode renders the badge as one appex image, so visibility is
             // all-or-nothing for the group rather than per layer.
-            LayerVisibleToggle(isHidden: $iconSettings.badgeHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.badge.isHidden)
             symbolField
         } else {
-            LayerVisibleToggle(isHidden: $iconSettings.badgeForegroundHidden)
+            LayerVisibleToggle(isHidden: $iconSettings.badge.foreground.isHidden)
 
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in
@@ -50,13 +50,13 @@ struct BadgeSourceSection: View {
             .labelsHidden()
 
             switch sourceType.wrappedValue {
-            case .sfSymbol:
+            case .symbol:
                 symbolField
 
             case .imported:
                 ImageImportControls(
-                    importedImage: $iconSettings.badgeImportedImage,
-                    onImport: { iconSettings.applyImportedBadgeForeground($0) }
+                    importedImage: $iconSettings.badge.foreground.image,
+                    onImport: { iconSettings.badge.foreground.apply($0) }
                 )
             }
         }
@@ -64,7 +64,7 @@ struct BadgeSourceSection: View {
 
     private var symbolField: some View {
         SymbolNameField(
-            symbolName: $iconSettings.badgeSymbolName,
+            symbolName: $iconSettings.badge.foreground.symbolName,
             help: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"
         )
     }
@@ -74,7 +74,7 @@ struct BadgeSourceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Source") {
-            BadgeSourceSection(iconSettings: $settings, isSystem: false)
+            BadgeForegroundSourceSection(iconSettings: $settings, isSystem: false)
         }
     }
     .formStyle(.grouped)

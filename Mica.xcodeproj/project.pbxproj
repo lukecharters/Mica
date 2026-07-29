@@ -107,15 +107,19 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Models/AppexColor.swift,
-				Models/AppexEnclosureColor.swift,
-				Models/FamilyCalibration.swift,
+				Models/AppexNamedColor.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
+				Models/SymbolCalibration.swift,
 				Services/AppexReferenceService.swift,
-				Services/IconRenderer.swift,
 				Services/ImageImportService.swift,
 				Services/PNGExporter.swift,
+				Services/Rendering/BadgeGeometry.swift,
+				Services/Rendering/BadgeView.swift,
+				Services/Rendering/IconContentView.swift,
+				Services/Rendering/IconRenderer.swift,
+				Services/Rendering/ResolvedShadow.swift,
 				Services/SymbolAutoSizingService.swift,
 				Services/SymbolSizingService.swift,
 			);
@@ -126,15 +130,15 @@
 			membershipExceptions = (
 				CLI/AppexColorResolver.swift,
 				CLI/ColorParser.swift,
-				CLI/GetIconCommand.swift,
-				CLI/IconGeneratorCLI.swift,
-				CLI/IconGeneratorCommand.swift,
-				CLI/Shared/CLIOutput.swift,
-				"CLI/Shared/ExportColorSpace+CLI.swift",
-				CLI/Shared/ExportScale.swift,
-				CLI/Shared/IconExtractor.swift,
-				CLI/Shared/OutputResolver.swift,
-				CLI/Shared/ToggleState.swift,
+				CLI/ExtractCommand.swift,
+				CLI/GenerateCommand.swift,
+				CLI/IconGenerationRunner.swift,
+				CLI/Support/CLIOutput.swift,
+				"CLI/Support/ExportColorSpace+CLI.swift",
+				CLI/Support/ExportScale.swift,
+				CLI/Support/IconExtractor.swift,
+				CLI/Support/OutputResolver.swift,
+				CLI/Support/ToggleState.swift,
 			);
 			target = 8C75F5802E8D5AC4008FB893 /* mica-cli Tests */;
 		};
@@ -142,15 +146,19 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Models/AppexColor.swift,
-				Models/AppexEnclosureColor.swift,
-				Models/FamilyCalibration.swift,
+				Models/AppexNamedColor.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
+				Models/SymbolCalibration.swift,
 				Services/AppexReferenceService.swift,
-				Services/IconRenderer.swift,
 				Services/ImageImportService.swift,
 				Services/PNGExporter.swift,
+				Services/Rendering/BadgeGeometry.swift,
+				Services/Rendering/BadgeView.swift,
+				Services/Rendering/IconContentView.swift,
+				Services/Rendering/IconRenderer.swift,
+				Services/Rendering/ResolvedShadow.swift,
 				Services/SymbolAutoSizingService.swift,
 				Services/SymbolSizingService.swift,
 			);
@@ -785,8 +793,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"Playgrounds/*",
-					PlaygroundAssets.xcassets,
+					"DevTools/*",
 					Resources/symbol_metrics.json,
 					Resources/symbol_baselines.json,
 				);

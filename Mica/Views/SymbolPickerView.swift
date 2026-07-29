@@ -6,9 +6,9 @@ struct SymbolPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
 
-    /// Every SF Symbol shipped in `sf_symbols.txt`, loaded once and cached.
+    /// Every SF Symbol shipped in `sf-symbols.txt`, loaded once and cached.
     private static let allSymbols: [String] = {
-        guard let url = Bundle.main.url(forResource: "sf_symbols", withExtension: "txt"),
+        guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
               let contents = try? String(contentsOf: url, encoding: .utf8)
         else { return [] }
         return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }

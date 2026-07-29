@@ -161,23 +161,23 @@ struct FamilyCalEntrySourceFieldTests {
 
     @Test func decodesLegacyEntryWithoutSource() throws {
         let json = #"{"multiplier":0.62,"xOffset":0,"yOffset":0,"weight":"regular","status":"calibrated"}"#
-        let entry = try JSONDecoder().decode(FamilyCalEntry.self, from: Data(json.utf8))
+        let entry = try JSONDecoder().decode(SymbolCalibrationEntry.self, from: Data(json.utf8))
         #expect(entry.source == nil)
         #expect(entry.multiplier == 0.62)
     }
 
     @Test func roundTripsSourceField() throws {
-        let entry = FamilyCalEntry(
+        let entry = SymbolCalibrationEntry(
             multiplier: 0.55, xOffset: 0, yOffset: 0,
             weight: "regular", status: "calibrated", source: "auto-boxfit")
         let data = try JSONEncoder().encode(entry)
-        let decoded = try JSONDecoder().decode(FamilyCalEntry.self, from: data)
+        let decoded = try JSONDecoder().decode(SymbolCalibrationEntry.self, from: data)
         #expect(decoded == entry)
         #expect(decoded.source == "auto-boxfit")
     }
 
     @Test func nilSourceIsOmittedFromEncodedJSON() throws {
-        let entry = FamilyCalEntry(
+        let entry = SymbolCalibrationEntry(
             multiplier: 0.55, xOffset: 0, yOffset: 0,
             weight: "regular", status: "calibrated")
         let json = String(decoding: try JSONEncoder().encode(entry), as: UTF8.self)

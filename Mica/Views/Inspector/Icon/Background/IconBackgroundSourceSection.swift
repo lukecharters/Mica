@@ -1,24 +1,24 @@
-// Views/Sidebar/BackgroundSourceSection.swift
+// Views/Inspector/Icon/Background/IconBackgroundSourceSection.swift
 import SwiftUI
 
-struct BackgroundSourceSection: View {
+struct IconBackgroundSourceSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        LayerVisibleToggle(isHidden: $iconSettings.iconBackgroundHidden)
+        LayerVisibleToggle(isHidden: $iconSettings.icon.background.isHidden)
 
-        Picker("Type", systemImage: "app.grid", selection: $iconSettings.backgroundMode) {
-            Text("Color").tag(BackgroundMode.custom)
-            Text("Pre-Rendered").tag(BackgroundMode.preRendered)
-            Text("Imported").tag(BackgroundMode.importedImage)
+        Picker("Type", systemImage: "app.grid", selection: $iconSettings.icon.background.source) {
+            Text("Color").tag(IconBackgroundSource.color)
+            Text("Pre-Rendered").tag(IconBackgroundSource.preRendered)
+            Text("Imported").tag(IconBackgroundSource.image)
         }
         .pickerStyle(.segmented)
         .labelsHidden()
 
-        if iconSettings.backgroundMode == .importedImage {
+        if iconSettings.icon.background.source == .image {
             ImageImportControls(
-                importedImage: $iconSettings.importedBackground,
-                onImport: { iconSettings.applyImportedIconBackground($0) }
+                importedImage: $iconSettings.icon.background.image,
+                onImport: { iconSettings.icon.background.apply($0) }
             )
         }
     }
@@ -28,7 +28,7 @@ struct BackgroundSourceSection: View {
     @Previewable @State var settings = IconSettings()
     Form {
         Section("Source") {
-            BackgroundSourceSection(iconSettings: $settings)
+            IconBackgroundSourceSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

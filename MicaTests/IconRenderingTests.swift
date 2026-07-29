@@ -12,8 +12,8 @@ struct IconRenderingTests {
     func vm_settings_drive_expected_sizes() throws {
         let vm = IconViewModel()
         // non-retina
-        vm.iconSettings.exportSize = 256
-        vm.iconSettings.exportRetinaSize = false
+        vm.iconSettings.export.size = 256
+        vm.iconSettings.export.isRetina = false
         var image = IconRenderer.renderIconSafely(settings: vm.iconSettings)
         #expect(Int(image.size.width) == 256)
         #expect(Int(image.size.height) == 256)
@@ -22,7 +22,7 @@ struct IconRenderingTests {
         #expect(rep.pixelsHigh == 256)
 
         // retina
-        vm.iconSettings.exportRetinaSize = true
+        vm.iconSettings.export.isRetina = true
         image = IconRenderer.renderIconSafely(settings: vm.iconSettings)
         #expect(Int(image.size.width) == 256) // logical
         #expect(Int(image.size.height) == 256)
@@ -33,45 +33,45 @@ struct IconRenderingTests {
     @Test
     func nonRetina_export_has_expected_logical_and_pixel_size() throws {
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 256
-        settings.exportRetinaSize = false
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 256
+        settings.export.isRetina = false
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
-        // Logical size should equal exportSize for non-retina
-        #expect(Int(image.size.width) == Int(settings.exportSize))
-        #expect(Int(image.size.height) == Int(settings.exportSize))
+        // Logical size should equal export.size for non-retina
+        #expect(Int(image.size.width) == Int(settings.export.size))
+        #expect(Int(image.size.height) == Int(settings.export.size))
 
-        // Pixel size should match finalExportSize (same as exportSize for non-retina)
+        // Pixel size should match export.pixelSize (same as export.size for non-retina)
         let rep = NSBitmapImageRep(data: image.tiffRepresentation!)!
-        #expect(rep.pixelsWide == Int(settings.finalExportSize))
-        #expect(rep.pixelsHigh == Int(settings.finalExportSize))
+        #expect(rep.pixelsWide == Int(settings.export.pixelSize))
+        #expect(rep.pixelsHigh == Int(settings.export.pixelSize))
     }
 
     @Test
     func retina_export_has_expected_logical_and_pixel_size() throws {
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 256
-        settings.exportRetinaSize = true // 512px
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 256
+        settings.export.isRetina = true // 512px
 
         let image = IconRenderer.renderIconSafely(settings: settings)
 
-        // Logical size remains exportSize for retina (DPI-scaled)
-        #expect(Int(image.size.width) == Int(settings.exportSize))
-        #expect(Int(image.size.height) == Int(settings.exportSize))
+        // Logical size remains export.size for retina (DPI-scaled)
+        #expect(Int(image.size.width) == Int(settings.export.size))
+        #expect(Int(image.size.height) == Int(settings.export.size))
 
-        // Pixel size should be 2x (finalExportSize)
+        // Pixel size should be 2x (export.pixelSize)
         let rep = NSBitmapImageRep(data: image.tiffRepresentation!)!
-        #expect(rep.pixelsWide == Int(settings.finalExportSize))
-        #expect(rep.pixelsHigh == Int(settings.finalExportSize))
+        #expect(rep.pixelsWide == Int(settings.export.pixelSize))
+        #expect(rep.pixelsHigh == Int(settings.export.pixelSize))
     }
     
     // MARK: - Arbitrary Size Tests (Phase 3.2 - T006)
@@ -82,12 +82,12 @@ struct IconRenderingTests {
         // Test rendering a non-standard 450×450px icon
         // Expected to PASS if scaleFactor already handles arbitrary sizes
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 450
-        settings.exportRetinaSize = false
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 450
+        settings.export.isRetina = false
         
         let image = IconRenderer.renderIconSafely(settings: settings)
         
@@ -105,12 +105,12 @@ struct IconRenderingTests {
         // Test rendering the minimum allowed size (16×16px)
         // Expected to PASS - validates no crash at small sizes
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 16
-        settings.exportRetinaSize = false
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 16
+        settings.export.isRetina = false
         
         let image = IconRenderer.renderIconSafely(settings: settings)
         
@@ -127,12 +127,12 @@ struct IconRenderingTests {
         // Test rendering the maximum allowed size (1024×1024px)
         // Expected to PASS - validates quality at large sizes
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 1024
-        settings.exportRetinaSize = false
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 1024
+        settings.export.isRetina = false
         
         let image = IconRenderer.renderIconSafely(settings: settings)
         
@@ -149,12 +149,12 @@ struct IconRenderingTests {
         // Test 512px + retina flag produces 1024×1024px output
         // Expected to PASS - validates retina multiplier works with arbitrary sizes
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 512
-        settings.exportRetinaSize = true
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 512
+        settings.export.isRetina = true
         
         let image = IconRenderer.renderIconSafely(settings: settings)
         
@@ -173,12 +173,12 @@ struct IconRenderingTests {
         // Test that 512px rendering produces consistent output
         // Expected to PASS - validates no changes to rendering quality
         var settings = IconSettings()
-        settings.symbolName = "star.fill"
-        settings.baseColor = .blue
-        settings.symbolRenderingMode = .monochrome
-        settings.symbolColor = .white
-        settings.exportSize = 512
-        settings.exportRetinaSize = false
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.icon.background.color = .blue
+        settings.icon.foreground.renderingStyle = .monochrome
+        settings.icon.foreground.color = .white
+        settings.export.size = 512
+        settings.export.isRetina = false
         
         let image = IconRenderer.renderIconSafely(settings: settings)
         

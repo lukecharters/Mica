@@ -1,19 +1,19 @@
-// Views/Sidebar/BackgroundLayoutSection.swift
+// Views/Inspector/Icon/Background/IconBackgroundLayoutSection.swift
 import SwiftUI
 
-struct BackgroundLayoutSection: View {
+struct IconBackgroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        switch iconSettings.backgroundMode {
-        case .custom:
+        switch iconSettings.icon.background.source {
+        case .color:
             EmptyView()
 
             
-        case .importedImage:
+        case .image:
             ImageImportLayoutControls(
-                paddingCompensation: $iconSettings.importedBackgroundPaddingCompensation,
-                imageScale: $iconSettings.importedBackgroundScale
+                paddingCompensation: $iconSettings.icon.background.compensatesForPadding,
+                imageScale: $iconSettings.icon.background.imageScale
             )
 
         case .preRendered:
@@ -25,12 +25,12 @@ struct BackgroundLayoutSection: View {
 #Preview {
     @Previewable @State var settings: IconSettings = {
         var s = IconSettings()
-        s.backgroundMode = .importedImage
+        s.icon.background.source = .image
         return s
     }()
     Form {
         Section("Layout") {
-            BackgroundLayoutSection(iconSettings: $settings)
+            IconBackgroundLayoutSection(iconSettings: $settings)
         }
     }
     .formStyle(.grouped)

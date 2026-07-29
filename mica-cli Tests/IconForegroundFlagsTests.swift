@@ -57,44 +57,44 @@ struct IconForegroundFlagsTests {
     @Test("--icon-symbol-color feeds both the monochrome and hierarchical colors")
     func mergedSymbolColor() throws {
         let red = try ColorParser.parse("red")
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-symbol-color", "red"]))
-        #expect(settings.symbolColor == red)
-        #expect(settings.hierarchicalSymbolColor == red)
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-symbol-color", "red"]))
+        #expect(settings.icon.foreground.color == red)
+        #expect(settings.icon.foreground.hierarchicalColor == red)
     }
 
     @Test("--icon-symbol-palette splits into the three palette colors")
     func paletteSingleFlag() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["gear", "--icon-symbol-rendering", "palette", "--icon-symbol-palette", "red,green,blue"])
         )
-        #expect(settings.symbolRenderingMode == .palette)
-        #expect(settings.paletteSymbolPrimaryColor == (try ColorParser.parse("red")))
-        #expect(settings.paletteSymbolSecondaryColor == (try ColorParser.parseWithOpacity("green")))
-        #expect(settings.paletteSymbolTertiaryColor == (try ColorParser.parseWithOpacity("blue")))
+        #expect(settings.icon.foreground.renderingStyle == .palette)
+        #expect(settings.icon.foreground.palettePrimaryColor == (try ColorParser.parse("red")))
+        #expect(settings.icon.foreground.paletteSecondaryColor == (try ColorParser.parseWithOpacity("green")))
+        #expect(settings.icon.foreground.paletteTertiaryColor == (try ColorParser.parseWithOpacity("blue")))
     }
 
     // MARK: - Toggles
 
     @Test("--icon-symbol-gradient on selects the gradient color-rendering mode")
     func gradientToggle() throws {
-        let flat = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"]))
-        #expect(flat.symbolColorRenderingMode == .flat)
-        let gradient = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-symbol-gradient", "on"]))
-        #expect(gradient.symbolColorRenderingMode == .gradient)
+        let flat = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
+        #expect(flat.icon.foreground.fillStyle == .flat)
+        let gradient = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-symbol-gradient", "on"]))
+        #expect(gradient.icon.foreground.fillStyle == .gradient)
     }
 
     @Test("--icon-fg-visibility off hides the foreground")
     func visibilityToggle() throws {
-        let visible = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"]))
-        #expect(visible.iconForegroundHidden == false)
-        let hidden = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-fg-visibility", "off"]))
-        #expect(hidden.iconForegroundHidden == true)
+        let visible = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
+        #expect(visible.icon.foreground.isHidden == false)
+        let hidden = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-fg-visibility", "off"]))
+        #expect(hidden.icon.foreground.isHidden == true)
     }
 
     @Test("--icon-fg-scale drives the symbol scale")
     func fgScaleSymbol() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-fg-scale", "1.5"]))
-        #expect(settings.manualSymbolScale == 1.5)
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-fg-scale", "1.5"]))
+        #expect(settings.icon.foreground.symbolScale == 1.5)
     }
 
     // MARK: - Validation
