@@ -60,6 +60,13 @@ HAPPY_CASES=(
 
     # ---- Icon background ----
     "icon-bg-color-red|star.fill|--icon-bg-color|red"
+    # The .mica document's colour form, accepted anywhere a colour is — so a value
+    # can be copied out of an icon.json straight onto the command line.
+    "icon-bg-color-extended-srgb|star.fill|--icon-bg-color|extended-srgb:0.20000,0.60000,0.90196,1.00000"
+    "icon-bg-color-extended-gray|star.fill|--icon-bg-color|extended-gray:0.50000,1.00000"
+    # Out-of-gamut components are legal: this is Display P3 red in extended sRGB.
+    "icon-bg-color-extended-wide-gamut|star.fill|--icon-bg-color|extended-srgb:1.09300,-0.22670,-0.15010,1.00000"
+    "icon-symbol-color-extended-srgb|star.fill|--icon-symbol-color|extended-srgb:1.00000,1.00000,1.00000,1.00000"
     "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
     "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
     "icon-bg-prerendered-liquid-glass|star.fill|--icon-bg|prerendered-liquid-glass|--icon-bg-color|blue"
@@ -139,6 +146,10 @@ NEGATIVE_CASES=(
     "icon-fg-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--icon-fg-scale|5.0"
     "icon-fg-symbol-empty|requires a symbol name|star.fill|--icon-fg|symbol:"
     "icon-bg-color-invalid|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|not-a-color"
+    # A recognised space name with the wrong component count is a mistake worth
+    # reporting, not a colour name to keep guessing at.
+    "icon-bg-color-extended-wrong-count|extended-srgb requires 4 components|star.fill|--icon-bg-color|extended-srgb:1,1"
+    "icon-bg-color-extended-not-a-number|Components must be finite numbers|star.fill|--icon-bg-color|extended-srgb:oops"
     "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"

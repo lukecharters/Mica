@@ -672,6 +672,25 @@ struct GenerateCommand: AsyncParsableCommand {
               mica-cli star.fill --quiet           # only the path on stdout
               mica-cli star.fill --verbose         # per-phase progress on stderr
 
+            COLOR FORMATS (for options taking a single color):
+              blue, system.blue, label        named and system tokens
+              "#0088FF", "#0088FFCC"         hex, 3/6/8 digits
+              "rgb(0,136,255)"               CSS rgb()/rgba()/hsl()/hsla()
+              "0,136,255" or "0,0.53,1"      bare r,g,b(,a) — 0-255 or 0-1
+              white:0.5                      any of the above, with opacity
+              extended-srgb:0,0.53333,1,1    a .mica document's stored form,
+              extended-gray:1,1              so a colour can be copied from an
+                                             icon.json onto the command line
+
+            Components in the extended forms may fall outside 0-1: that is how a
+            wide-gamut colour is carried, e.g. Display P3 red is
+            extended-srgb:1.09300,-0.22670,-0.15010,1.00000.
+
+            The options taking several colors at once — --icon-bg-gradient-colors,
+            --badge-bg-gradient-colors, --icon-symbol-palette and
+            --badge-symbol-palette — split their value on commas, so the two forms
+            above (and bare r,g,b) cannot be used there. Use a name or hex.
+
             The output file path is written to stdout; diagnostics go to stderr,
             so `mica-cli star.fill -o icon.png` pipes cleanly.
             """

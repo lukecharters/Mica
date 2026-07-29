@@ -108,11 +108,13 @@
 			membershipExceptions = (
 				Models/AppexColor.swift,
 				Models/AppexNamedColor.swift,
+				Models/MicaColor.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
 				Models/SymbolCalibration.swift,
 				Services/AppexReferenceService.swift,
+				Services/ColorParser.swift,
 				Services/ImageImportService.swift,
 				Services/PNGExporter.swift,
 				Services/Rendering/BadgeGeometry.swift,
@@ -129,7 +131,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				CLI/AppexColorResolver.swift,
-				CLI/ColorParser.swift,
 				CLI/ExtractCommand.swift,
 				CLI/GenerateCommand.swift,
 				CLI/IconGenerationRunner.swift,
@@ -147,11 +148,13 @@
 			membershipExceptions = (
 				Models/AppexColor.swift,
 				Models/AppexNamedColor.swift,
+				Models/MicaColor.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
 				Models/SymbolCalibration.swift,
 				Services/AppexReferenceService.swift,
+				Services/ColorParser.swift,
 				Services/ImageImportService.swift,
 				Services/PNGExporter.swift,
 				Services/Rendering/BadgeGeometry.swift,

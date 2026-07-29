@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import AppKit
 
 /// Enhanced color parser supporting multiple formats with comprehensive validation
 /// Supports: Named colors, Hex codes, RGB values, HSL, CSS colors, system colors, and opacity notation
@@ -10,7 +11,14 @@ struct ColorParser {
     /// Parse a color string that may include opacity (e.g., "white:0.5", "rgba(255,255,255,0.5)")
     static func parseWithOpacity(_ input: String) throws -> Color {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
+        // Extended-component forms carry their own alpha and contain a colon, so
+        // they must be recognised before the `name:opacity` split below — which
+        // would otherwise read "extended-srgb" as a colour name.
+        if let components = try ExtendedComponents(parsing: trimmed) {
+            return components.color
+        }
+
         // Handle CSS-style rgba/hsla formats with built-in opacity
         if trimmed.lowercased().hasPrefix("rgba(") {
             return try parseRGBAColor(trimmed)
@@ -47,7 +55,14 @@ struct ColorParser {
         }
         
         // Try different parsing strategies in order of specificity
-        
+
+        // 0. Extended-component form (`extended-srgb:` / `extended-gray:`), the
+        //    form `.mica` documents store. Tried first because it is the only one
+        //    that names its colour space, so a match is unambiguous.
+        if let components = try ExtendedComponents(parsing: trimmed) {
+            return components.color
+        }
+
         // 1. CSS-style functions (rgb, hsl)
         if let color = try? parseCSSStyleColor(trimmed) {
             return color
@@ -500,6 +515,139 @@ struct ColorParser {
     }
 }
 
+// MARK: - Extended Component Form
+
+extension ColorParser {
+    /// A colour written as its colour space's name, a colon, then components —
+    /// `"extended-srgb:0.00000,0.47843,1.00000,1.00000"` or
+    /// `"extended-gray:1.00000,1.00000"`. This is Icon Composer's encoding, and the
+    /// resolved form a `.mica` document stores (see `MicaColor`).
+    ///
+    /// Both spaces are *extended*, so components legitimately fall outside 0–1: a
+    /// Display P3 red is `extended-srgb:1.09300,-0.22670,-0.15010,1.00000`. That is
+    /// what lets one space name carry wide-gamut colours, and why nothing here
+    /// clamps — clamping would quietly desaturate every P3 colour it round-tripped.
+    enum ExtendedComponents: Equatable, Hashable, Sendable {
+        /// Red, green, blue and alpha in extended sRGB.
+        case srgb(r: Double, g: Double, b: Double, a: Double)
+        /// White and alpha in extended gamma-2.2 gray — two components, as Icon
+        /// Composer writes for pure white and black.
+        case gray(white: Double, alpha: Double)
+
+        static let srgbSpaceName = "extended-srgb"
+        static let graySpaceName = "extended-gray"
+
+        // MARK: Parsing
+
+        /// Parse the extended-component form.
+        ///
+        /// Returns `nil` when `input` is not in this form at all, so callers can
+        /// fall through to the other colour syntaxes. Throws when the space name
+        /// matches but the components do not — `"extended-srgb:oops"` is a mistake
+        /// worth reporting, not a colour name to keep guessing at.
+        init?(parsing input: String) throws {
+            let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard let separator = trimmed.firstIndex(of: ":") else { return nil }
+            let space = String(trimmed[trimmed.startIndex..<separator]).lowercased()
+            guard space == Self.srgbSpaceName || space == Self.graySpaceName else { return nil }
+
+            let body = trimmed[trimmed.index(after: separator)...]
+            let parts = body
+                .split(separator: ",", omittingEmptySubsequences: false)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+
+            var values: [Double] = []
+            for part in parts {
+                guard let value = Double(part), value.isFinite else {
+                    throw ColorParseError.invalidExtendedComponents(
+                        trimmed,
+                        "Components must be finite numbers, e.g. \"\(Self.srgbSpaceName):0.00000,0.47843,1.00000,1.00000\""
+                    )
+                }
+                values.append(value)
+            }
+
+            switch (space, values.count) {
+            case (Self.srgbSpaceName, 4):
+                self = .srgb(r: values[0], g: values[1], b: values[2], a: values[3])
+            case (Self.graySpaceName, 2):
+                self = .gray(white: values[0], alpha: values[1])
+            case (Self.srgbSpaceName, let count):
+                throw ColorParseError.invalidExtendedComponents(
+                    trimmed, "\(Self.srgbSpaceName) requires 4 components (r,g,b,a), got \(count)"
+                )
+            case (_, let count):
+                throw ColorParseError.invalidExtendedComponents(
+                    trimmed, "\(Self.graySpaceName) requires 2 components (white,alpha), got \(count)"
+                )
+            }
+        }
+
+        // MARK: Writing
+
+        /// The string form, at five decimal places to match Icon Composer — more
+        /// than enough to survive an 8-bit-per-channel round trip.
+        ///
+        /// `String(format:)` is deliberately called without a locale, so the decimal
+        /// separator is always `.` regardless of the user's region.
+        var stringValue: String {
+            switch self {
+            case .srgb(let r, let g, let b, let a):
+                return "\(Self.srgbSpaceName):\(Self.format(r)),\(Self.format(g)),\(Self.format(b)),\(Self.format(a))"
+            case .gray(let white, let alpha):
+                return "\(Self.graySpaceName):\(Self.format(white)),\(Self.format(alpha))"
+            }
+        }
+
+        private static func format(_ value: Double) -> String {
+            String(format: "%.5f", value)
+        }
+
+        /// Resolve a `Color` to extended sRGB components.
+        ///
+        /// Always `.srgb`, never `.gray`: extended sRGB represents everything the
+        /// gray space can, so one output form keeps the writer's behaviour
+        /// predictable. `.gray` exists to *read* what Icon Composer writes.
+        ///
+        /// A dynamic colour is resolved against the current drawing appearance and
+        /// stops being dynamic. That loss is why `MicaColor` prefers a semantic
+        /// token and only falls back to this.
+        static func resolving(_ color: Color) -> ExtendedComponents {
+            let nsColor = NSColor(color)
+            // `usingColorSpace` returns nil only for pattern colours, which cannot
+            // reach here — every Mica colour is a component colour.
+            guard let resolved = nsColor.usingColorSpace(.extendedSRGB) ?? nsColor.usingColorSpace(.sRGB) else {
+                return .srgb(r: 0, g: 0, b: 0, a: 0)
+            }
+            return .srgb(
+                r: Double(resolved.redComponent),
+                g: Double(resolved.greenComponent),
+                b: Double(resolved.blueComponent),
+                a: Double(resolved.alphaComponent)
+            )
+        }
+
+        /// The colour these components describe.
+        var color: Color {
+            switch self {
+            case .srgb(let r, let g, let b, let a):
+                return Color(nsColor: NSColor(
+                    colorSpace: .extendedSRGB,
+                    components: [CGFloat(r), CGFloat(g), CGFloat(b), CGFloat(a)],
+                    count: 4
+                ))
+            case .gray(let white, let alpha):
+                return Color(nsColor: NSColor(
+                    colorSpace: .extendedGenericGamma22Gray,
+                    components: [CGFloat(white), CGFloat(alpha)],
+                    count: 2
+                ))
+            }
+        }
+    }
+}
+
 // MARK: - Spelling Normalisation
 
 /// Accept British/Australian spellings in CLI token values by normalising
@@ -531,6 +679,7 @@ enum ColorParseError: LocalizedError {
     case invalidAlpha(String, String)
     case invalidOpacity(String, String)
     case invalidGrayscale(String, String = "Invalid grayscale value")
+    case invalidExtendedComponents(String, String)
     case invalidFunctionFormat(String, String)
     case missingPercentageSign(String, String)
     case unknownSystemColor(String)
@@ -568,6 +717,8 @@ enum ColorParseError: LocalizedError {
             return "Invalid opacity value: '\(opacity)'. \(message)"
         case .invalidGrayscale(let input, let message):
             return "Invalid grayscale: '\(input)'. \(message)"
+        case .invalidExtendedComponents(let input, let message):
+            return "Invalid extended color components: '\(input)'. \(message)"
         case .invalidFunctionFormat(let input, let message):
             return "Invalid function format: '\(input)'. \(message)"
         case .missingPercentageSign(let source, let message):
