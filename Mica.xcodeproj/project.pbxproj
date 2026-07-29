@@ -794,8 +794,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					"DevTools/*",
-					DevToolsAssets.xcassets,
-					Resources/symbol_metrics.json,
+						Resources/symbol_metrics.json,
 					Resources/symbol_baselines.json,
 				);
 				GENERATE_INFOPLIST_FILE = YES;
