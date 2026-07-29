@@ -4,18 +4,18 @@ import SwiftUI
 /// A named preview preset for an MDM self service portal, expressed as the point
 /// size the portal displays the icon at. Previewing at this size shows how the
 /// icon reads where users will actually see it; it does not affect export.
-struct MDMPortalPreset: Identifiable {
+struct MDMPortalSizePreset: Identifiable {
     let name: String
     let pointSize: Int
 
     var id: String { name }
 
     /// Known self service portals and the point size they show icons at.
-    static let all: [MDMPortalPreset] = [
-        MDMPortalPreset(name: "Jamf Self Service+ - Catalog View", pointSize: 40),
-        MDMPortalPreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
-        MDMPortalPreset(name: "Jamf Self Service classic - Catalog View", pointSize: 75),
-        MDMPortalPreset(name: "Jamf Self Service classic - Item View", pointSize: 120)
+    static let all: [MDMPortalSizePreset] = [
+        MDMPortalSizePreset(name: "Jamf Self Service+ - Catalog View", pointSize: 40),
+        MDMPortalSizePreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
+        MDMPortalSizePreset(name: "Jamf Self Service classic - Catalog View", pointSize: 75),
+        MDMPortalSizePreset(name: "Jamf Self Service classic - Item View", pointSize: 120)
     ]
 }
 
@@ -79,7 +79,7 @@ struct PreviewSizeMenu: View {
             }
 
             Section() {
-                ForEach(MDMPortalPreset.all) { preset in
+                ForEach(MDMPortalSizePreset.all) { preset in
                     let pointSize = CGFloat(preset.pointSize)
                     Button {
                         previewPointSize = pointSize
