@@ -66,20 +66,20 @@ struct IconBackgroundFlagsTests {
 
     @Test("--icon-bg-gradient toggles the background gradient")
     func gradientToggle() throws {
-        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"])).enableBackgroundGradient == true)
-        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-gradient", "off"])).enableBackgroundGradient == false)
+        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.usesGradient == true)
+        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-gradient", "off"])).icon.background.usesGradient == false)
     }
 
     @Test("--icon-bg-corner-radius maps to the corner-radius style")
     func cornerRadius() throws {
-        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"])).cornerRadiusStyle == .macOS26)
-        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos11"])).cornerRadiusStyle == .macOS11)
+        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.cornerRadiusStyle == .macOS26)
+        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos11"])).icon.background.cornerRadiusStyle == .macOS11)
     }
 
     @Test("--icon-bg-visibility off hides the background")
     func visibilityToggle() throws {
-        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"])).iconBackgroundHidden == false)
-        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-visibility", "off"])).iconBackgroundHidden == true)
+        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.isHidden == false)
+        #expect(try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-visibility", "off"])).icon.background.isHidden == true)
     }
 
     // MARK: - Validation

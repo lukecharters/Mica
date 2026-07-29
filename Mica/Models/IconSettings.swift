@@ -14,304 +14,18 @@ struct IconSettings: Equatable {
     var icon: IconSpec = IconSpec()
     var badge: BadgeSpec = BadgeSpec()
 
-    // MARK: - Compatibility accessors
-    //
-    // The 62 flat property names this struct used to store, plus the derived
-    // properties that have since moved down onto the specs, all forwarding to the
-    // specs above. Added so the storage could be regrouped without touching any
-    // of the ~1,780 call sites in the same commit; they are deleted surface by
-    // surface as callers migrate. Do not add new ones — a new setting belongs on
-    // its spec, and only there.
-    // See docs/plans/naming-and-structure-review-2026-07-28.md Appendix A.
-
-    var exportSize: CGFloat {
-        get { export.size }
-        set { export.size = newValue }
-    }
-    var exportRetinaSize: Bool {
-        get { export.isRetina }
-        set { export.isRetina = newValue }
-    }
-    var exportColorSpace: ExportColorSpace {
-        get { export.colorSpace }
-        set { export.colorSpace = newValue }
-    }
-    var iconGenerationMode: GenerationMode {
-        get { icon.mode }
-        set { icon.mode = newValue }
-    }
-    var symbolName: String {
-        get { icon.foreground.symbolName }
-        set { icon.foreground.symbolName = newValue }
-    }
-    var symbolWeight: SymbolWeight {
-        get { icon.foreground.symbolWeight }
-        set { icon.foreground.symbolWeight = newValue }
-    }
-    var manualSymbolScale: Double {
-        get { icon.foreground.symbolScale }
-        set { icon.foreground.symbolScale = newValue }
-    }
-    var iconSource: ForegroundSource {
-        get { icon.foreground.source }
-        set { icon.foreground.source = newValue }
-    }
-    var importedImage: ImportedImage? {
-        get { icon.foreground.image }
-        set { icon.foreground.image = newValue }
-    }
-    var importedImageScale: Double {
-        get { icon.foreground.imageScale }
-        set { icon.foreground.imageScale = newValue }
-    }
-    var symbolColor: Color {
-        get { icon.foreground.color }
-        set { icon.foreground.color = newValue }
-    }
-    var symbolRenderingMode: SymbolRenderingStyle {
-        get { icon.foreground.renderingStyle }
-        set { icon.foreground.renderingStyle = newValue }
-    }
-    var symbolColorRenderingMode: SymbolFillStyle {
-        get { icon.foreground.fillStyle }
-        set { icon.foreground.fillStyle = newValue }
-    }
-    var hierarchicalSymbolColor: Color {
-        get { icon.foreground.hierarchicalColor }
-        set { icon.foreground.hierarchicalColor = newValue }
-    }
-    var paletteSymbolPrimaryColor: Color {
-        get { icon.foreground.palettePrimaryColor }
-        set { icon.foreground.palettePrimaryColor = newValue }
-    }
-    var paletteSymbolSecondaryColor: Color {
-        get { icon.foreground.paletteSecondaryColor }
-        set { icon.foreground.paletteSecondaryColor = newValue }
-    }
-    var paletteSymbolTertiaryColor: Color {
-        get { icon.foreground.paletteTertiaryColor }
-        set { icon.foreground.paletteTertiaryColor = newValue }
-    }
-    var enableSymbolShadow: Bool {
-        get { icon.foreground.drawsShadow }
-        set { icon.foreground.drawsShadow = newValue }
-    }
-    var iconForegroundHidden: Bool {
-        get { icon.foreground.isHidden }
-        set { icon.foreground.isHidden = newValue }
-    }
-    var backgroundMode: IconBackgroundSource {
-        get { icon.background.source }
-        set { icon.background.source = newValue }
-    }
-    var baseColor: Color {
-        get { icon.background.color }
-        set { icon.background.color = newValue }
-    }
-    var enableBackgroundGradient: Bool {
-        get { icon.background.usesGradient }
-        set { icon.background.usesGradient = newValue }
-    }
-    var useCustomColors: Bool {
-        get { icon.background.usesCustomGradient }
-        set { icon.background.usesCustomGradient = newValue }
-    }
-    var customPrimaryColor: Color {
-        get { icon.background.gradientStartColor }
-        set { icon.background.gradientStartColor = newValue }
-    }
-    var customSecondaryColor: Color {
-        get { icon.background.gradientEndColor }
-        set { icon.background.gradientEndColor = newValue }
-    }
-    var preRenderedColorName: String {
-        get { icon.background.preRenderedColorName }
-        set { icon.background.preRenderedColorName = newValue }
-    }
-    var cornerRadiusStyle: IconCornerRadiusStyle {
-        get { icon.background.cornerRadiusStyle }
-        set { icon.background.cornerRadiusStyle = newValue }
-    }
-    var backgroundShadowStyle: BackgroundShadowStyle {
-        get { icon.background.shadowStyle }
-        set { icon.background.shadowStyle = newValue }
-    }
-    var importedBackground: ImportedImage? {
-        get { icon.background.image }
-        set { icon.background.image = newValue }
-    }
-    var importedBackgroundScale: Double {
-        get { icon.background.imageScale }
-        set { icon.background.imageScale = newValue }
-    }
-    var importedBackgroundPaddingCompensation: Bool {
-        get { icon.background.compensatesForPadding }
-        set { icon.background.compensatesForPadding = newValue }
-    }
-    var iconBackgroundHidden: Bool {
-        get { icon.background.isHidden }
-        set { icon.background.isHidden = newValue }
-    }
-    var badgePosition: BadgePosition {
-        get { badge.position }
-        set { badge.position = newValue }
-    }
-    var badgeScale: Double {
-        get { badge.scale }
-        set { badge.scale = newValue }
-    }
-    var badgeManualOffsetX: Double {
-        get { badge.offsetX }
-        set { badge.offsetX = newValue }
-    }
-    var badgeManualOffsetY: Double {
-        get { badge.offsetY }
-        set { badge.offsetY = newValue }
-    }
-    var badgeSymbolName: String {
-        get { badge.foreground.symbolName }
-        set { badge.foreground.symbolName = newValue }
-    }
-    var badgeSymbolWeight: SymbolWeight {
-        get { badge.foreground.symbolWeight }
-        set { badge.foreground.symbolWeight = newValue }
-    }
-    var badgeSymbolScale: Double {
-        get { badge.foreground.symbolScale }
-        set { badge.foreground.symbolScale = newValue }
-    }
-    var badgeIconSource: ForegroundSource {
-        get { badge.foreground.source }
-        set { badge.foreground.source = newValue }
-    }
-    var badgeImportedImage: ImportedImage? {
-        get { badge.foreground.image }
-        set { badge.foreground.image = newValue }
-    }
-    var badgeImportedImageScale: Double {
-        get { badge.foreground.imageScale }
-        set { badge.foreground.imageScale = newValue }
-    }
-    var badgeSymbolColor: Color {
-        get { badge.foreground.color }
-        set { badge.foreground.color = newValue }
-    }
-    var badgeSymbolRenderingMode: SymbolRenderingStyle {
-        get { badge.foreground.renderingStyle }
-        set { badge.foreground.renderingStyle = newValue }
-    }
-    var badgeSymbolColorRenderingMode: SymbolFillStyle {
-        get { badge.foreground.fillStyle }
-        set { badge.foreground.fillStyle = newValue }
-    }
-    var badgeHierarchicalSymbolColor: Color {
-        get { badge.foreground.hierarchicalColor }
-        set { badge.foreground.hierarchicalColor = newValue }
-    }
-    var badgePaletteSymbolPrimaryColor: Color {
-        get { badge.foreground.palettePrimaryColor }
-        set { badge.foreground.palettePrimaryColor = newValue }
-    }
-    var badgePaletteSymbolSecondaryColor: Color {
-        get { badge.foreground.paletteSecondaryColor }
-        set { badge.foreground.paletteSecondaryColor = newValue }
-    }
-    var badgePaletteSymbolTertiaryColor: Color {
-        get { badge.foreground.paletteTertiaryColor }
-        set { badge.foreground.paletteTertiaryColor = newValue }
-    }
-    var badgeEnableSymbolShadow: Bool {
-        get { badge.foreground.drawsShadow }
-        set { badge.foreground.drawsShadow = newValue }
-    }
-    var badgeForegroundHidden: Bool {
-        get { badge.foreground.isHidden }
-        set { badge.foreground.isHidden = newValue }
-    }
-    var badgeBaseColor: Color {
-        get { badge.background.color }
-        set { badge.background.color = newValue }
-    }
-    var badgeEnableBackgroundGradient: Bool {
-        get { badge.background.usesGradient }
-        set { badge.background.usesGradient = newValue }
-    }
-    var badgeUseCustomColors: Bool {
-        get { badge.background.usesCustomGradient }
-        set { badge.background.usesCustomGradient = newValue }
-    }
-    var badgeCustomPrimaryColor: Color {
-        get { badge.background.gradientStartColor }
-        set { badge.background.gradientStartColor = newValue }
-    }
-    var badgeCustomSecondaryColor: Color {
-        get { badge.background.gradientEndColor }
-        set { badge.background.gradientEndColor = newValue }
-    }
-    var badgeEnableBackgroundShadow: Bool {
-        get { badge.background.drawsShadow }
-        set { badge.background.drawsShadow = newValue }
-    }
-    var badgeImportedBackground: ImportedImage? {
-        get { badge.background.image }
-        set { badge.background.image = newValue }
-    }
-    var badgeImportedBackgroundScale: Double {
-        get { badge.background.imageScale }
-        set { badge.background.imageScale = newValue }
-    }
-    var badgeImportedBackgroundPaddingCompensation: Bool {
-        get { badge.background.compensatesForPadding }
-        set { badge.background.compensatesForPadding = newValue }
-    }
-    var badgeBackgroundHidden: Bool {
-        get { badge.background.isHidden }
-        set { badge.background.isHidden = newValue }
-    }
-
-    /// Bool ⇄ enum bridge: the badge background used to carry a free `Bool`
-    /// where the icon used a mode enum — the same idea expressed two ways, which
-    /// is why `BadgeBackgroundSource` now exists. Two cases, so the round-trip is
-    /// exact.
-    var badgeUseImportedBackground: Bool {
-        get { badge.background.source == .image }
-        set { badge.background.source = newValue ? .image : .color }
-    }
-
-    var badgeGenerationMode: GenerationMode {
-        get { badge.mode }
-        set { badge.mode = newValue }
-    }
-    var badgeDrawsImportedBackground: Bool { badge.background.drawsImage }
-    var badgeImportedBackgroundEffectiveScale: CGFloat { badge.background.effectiveImageScale }
-    var showBadge: Bool {
-        get { badge.isVisible }
-        set { badge.isVisible = newValue }
-    }
-    var iconHidden: Bool {
-        get { icon.isHidden }
-        set { icon.isHidden = newValue }
-    }
-    var badgeHidden: Bool {
-        get { badge.isHidden }
-        set { badge.isHidden = newValue }
-    }
-    func iconVisibility() -> LayerGroupVisibility { icon.visibility }
-    func badgeVisibility() -> LayerGroupVisibility { badge.visibility }
-    var gradientColors: [Color] { icon.background.gradientColors }
-    var badgeGradientColors: [Color] { badge.background.gradientColors }
-    var preRenderedAssetName: String { icon.background.preRenderedAssetName }
-    var finalExportSize: CGFloat { export.pixelSize }
-
     /// Default export filename (without extension): the imported background image's
     /// file name when the icon uses a custom background, otherwise the SF Symbol
     /// name, with a `-mica` suffix appended.
+    ///
+    /// One of the few things that has to live up here: it reads the icon's
+    /// background *and* its foreground, so it cannot move onto either spec.
     var exportBaseName: String {
         let base: String
-        if backgroundMode == .image, let imported = importedBackground {
+        if icon.background.source == .image, let imported = icon.background.image {
             base = (imported.sourceName as NSString).deletingPathExtension
         } else {
-            base = symbolName
+            base = icon.foreground.symbolName
         }
         let trimmed = base.trimmingCharacters(in: .whitespaces)
         return "\(trimmed.isEmpty ? "CustomIcon" : trimmed)-mica"
@@ -323,6 +37,15 @@ struct IconSettings: Equatable {
 // The structs `IconSettings` actually stores. Shapes match the `.mica` document
 // DTO in docs/plans/mica-document-format.md, so that mapping is field-for-field
 // rather than a translation layer.
+//
+// **Imported image defaults.** Each layer spec has an `apply(_:)` carrying the
+// import-time defaults: the drop shadow off, and — on the two backgrounds, which
+// are the specs with the toggle — "Icon Padding" compensation on, scaling a native
+// app icon's chiclet up to fill the frame. The user can change either afterwards;
+// SF Symbol shadows are unaffected, because those default from the struct rather
+// than from an import. Keeping the defaults on the specs is what makes every entry
+// point agree — menu, paste, drag, inspector and CLI — whichever layer it reaches
+// and however it gets there.
 
 /// Export settings: what size, at what scale, in which colour space.
 struct ExportSpec: Equatable {
@@ -463,7 +186,6 @@ struct ForegroundSpec: Equatable {
     /// drop shadow off, because an imported graphic usually carries its own.
     /// One implementation for both groups — the icon's and the badge's imports
     /// were two identical methods before the specs collapsed them.
-    /// See the "Imported image defaults" note on `IconSettings`.
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
@@ -498,7 +220,6 @@ struct IconBackgroundSpec: Equatable {
     /// Import an image as this background, with the import-time defaults: "Icon
     /// Padding" compensation on (scaling a native app icon's chiclet up to fill
     /// the frame) and the shadow off.
-    /// See the "Imported image defaults" note on `IconSettings`.
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
@@ -548,7 +269,6 @@ struct BadgeBackgroundSpec: Equatable {
     /// Import an image as this background, with the import-time defaults: "Icon
     /// Padding" compensation on (scaling a native app icon's chiclet up to fill
     /// the frame) and the shadow off.
-    /// See the "Imported image defaults" note on `IconSettings`.
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
@@ -736,50 +456,3 @@ enum LayerGroupVisibility {
     }
 }
 
-// Compatibility aliases for the bounds, which now live on the spec that owns
-// them. Same deal as the property forwarders above: deleted as callers migrate.
-extension IconSettings {
-    static let minExportSize = ExportSpec.minSize
-    static let maxExportSize = ExportSpec.maxSize
-    static let defaultExportSize = ExportSpec.defaultSize
-    static let manualSymbolScaleRange = ForegroundSpec.symbolScaleRange
-    static let badgeOffsetRange = BadgeSpec.offsetRange
-    static let importedImageScaleRange = ForegroundSpec.imageScaleRange
-
-    var isExportSizeValid: Bool { export.isSizeValid }
-}
-
-// MARK: - Imported image defaults
-//
-// When an image is imported into any of the four image slots we default the
-// "Icon Padding" compensation (where the toggle exists — the two background
-// slots) to off, scaling the image up to fill the frame, and turn off the
-// imported-image drop shadow. These are import-time defaults the user can still
-// change afterwards; SF Symbol shadows are unaffected because they default from
-// the struct, not from these helpers.
-//
-// The defaults themselves live on each spec's `apply(_:)`, so every entry point
-// (menu, paste, drag, inspector, CLI) gets them whether it goes through
-// `IconSettings` or reaches a layer directly. The four methods here are
-// compatibility forwarders, deleted as callers migrate.
-extension IconSettings {
-    /// Apply an image as the icon foreground (custom symbol image).
-    mutating func applyImportedIconForeground(_ image: ImportedImage) {
-        icon.foreground.apply(image)
-    }
-
-    /// Apply an image as the icon background.
-    mutating func applyImportedIconBackground(_ image: ImportedImage) {
-        icon.background.apply(image)
-    }
-
-    /// Apply an image as the badge foreground (custom badge symbol image).
-    mutating func applyImportedBadgeForeground(_ image: ImportedImage) {
-        badge.foreground.apply(image)
-    }
-
-    /// Apply an image as the badge background.
-    mutating func applyImportedBadgeBackground(_ image: ImportedImage) {
-        badge.background.apply(image)
-    }
-}

@@ -44,9 +44,9 @@ struct ExportFlagsTests {
     func scaleMapsToRetina() throws {
         let cli = IconGeneratorCLI()
         #expect(try cli.buildTestSettings(
-            from: parseCommand(["star.fill", "--scale", "2x"])).exportRetinaSize == true)
+            from: parseCommand(["star.fill", "--scale", "2x"])).export.isRetina == true)
         #expect(try cli.buildTestSettings(
-            from: parseCommand(["star.fill", "--scale", "1x"])).exportRetinaSize == false)
+            from: parseCommand(["star.fill", "--scale", "1x"])).export.isRetina == false)
     }
 
     @Test("export.pixelSize doubles at 2x")
@@ -69,9 +69,9 @@ struct ExportFlagsTests {
     func colorSpaceMapping() throws {
         let cli = IconGeneratorCLI()
         #expect(try cli.buildTestSettings(
-            from: parseCommand(["star.fill", "--color-space", "displayP3"])).exportColorSpace == .displayP3)
+            from: parseCommand(["star.fill", "--color-space", "displayP3"])).export.colorSpace == .displayP3)
         #expect(try cli.buildTestSettings(
-            from: parseCommand(["star.fill", "--color-space", "sRGB"])).exportColorSpace == .sRGB)
+            from: parseCommand(["star.fill", "--color-space", "sRGB"])).export.colorSpace == .sRGB)
     }
 
     @Test("--color-space rejects unknown values")
