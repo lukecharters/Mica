@@ -9,8 +9,14 @@ extension AppexColor {
     /// - bare comma-separated `r,g,b` or `r,g,b,a` components (0–1 floats, or
     ///   0–255 when any of r/g/b exceeds 1) → normalised to an `"r,g,b,a"`
     ///   string (the format real system icon plists use, e.g. `1,0.0902,0.2118,1`),
-    /// - any format `ColorParser` understands (hex, `rgb()`, CSS names, …) →
-    ///   converted to an sRGB `"r,g,b,a"` string.
+    /// - any format `ColorParser` understands (hex, `rgb()`, CSS names, the
+    ///   `extended-srgb:` form, any of them with a `:opacity` suffix) → converted
+    ///   to an sRGB `"r,g,b,a"` string.
+    ///
+    /// Note that `white` and `white:0.5` deliberately take different branches: a
+    /// bare token is Apple's curated colour (branch 1), while a translucent white
+    /// is no longer that colour, so it resolves to custom components like any other
+    /// non-token input.
     ///
     /// Throws `ColorParseError` when the input cannot be resolved.
     static func plistValue(fromCLIString input: String) throws -> String {
@@ -49,7 +55,7 @@ extension AppexColor {
         }
 
         // 3. Anything ColorParser understands (hex, rgb(), CSS names, …).
-        let color = try ColorParser.parse(trimmed)
+        let color = try ColorParser.parseWithOpacity(trimmed)
         return rgbaString(from: color)
     }
 }

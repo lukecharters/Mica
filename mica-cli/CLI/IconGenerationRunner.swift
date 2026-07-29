@@ -245,14 +245,14 @@ class IconGenerationRunner {
                 // In system mode the enclosure colour is resolved separately in
                 // renderAppleReference, so leave the SwiftUI base colour default.
                 if command.generation.iconGenerationMode != .system {
-                    settings.icon.background.color = try ColorParser.parse(command.background.color ?? "blue")
+                    settings.icon.background.color = try ColorParser.parseWithOpacity(command.background.color ?? "blue")
                 }
             case .customGradient:
                 settings.icon.background.source = .color
                 settings.icon.background.usesCustomGradient = true
                 let parts = try splitGradientColors(command.background.gradientColors ?? "blue,purple")
-                settings.icon.background.gradientStartColor = try ColorParser.parse(parts[0])
-                settings.icon.background.gradientEndColor = try ColorParser.parse(parts[1])
+                settings.icon.background.gradientStartColor = try ColorParser.parseWithOpacity(parts[0])
+                settings.icon.background.gradientEndColor = try ColorParser.parseWithOpacity(parts[1])
                 settings.icon.background.color = settings.icon.background.gradientStartColor
             case .preRendered:
                 settings.icon.background.source = .preRendered
@@ -284,7 +284,7 @@ class IconGenerationRunner {
             // resolved as an appex token in renderAppleReference, so the SwiftUI
             // colour is left at its (unused) default here.
             if command.generation.iconGenerationMode != .system {
-                let parsed = try ColorParser.parse(command.iconForeground.symbolColor ?? "white")
+                let parsed = try ColorParser.parseWithOpacity(command.iconForeground.symbolColor ?? "white")
                 settings.icon.foreground.color = parsed
                 settings.icon.foreground.hierarchicalColor = parsed
             }
@@ -294,7 +294,7 @@ class IconGenerationRunner {
                 command.iconForeground.symbolPalette ?? "white,white:0.5,white:0.26",
                 role: "--icon-symbol-palette"
             )
-            settings.icon.foreground.palettePrimaryColor = try ColorParser.parse(paletteParts[0])
+            settings.icon.foreground.palettePrimaryColor = try ColorParser.parseWithOpacity(paletteParts[0])
             settings.icon.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(paletteParts[1])
             settings.icon.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(paletteParts[2])
 
@@ -337,14 +337,14 @@ class IconGenerationRunner {
                     // In system mode the enclosure colour is resolved separately
                     // via the appex pipeline, so leave the SwiftUI base default.
                     if command.generation.badgeGenerationMode != .system {
-                        settings.badge.background.color = try ColorParser.parse(command.badge.backgroundColor ?? "gray")
+                        settings.badge.background.color = try ColorParser.parseWithOpacity(command.badge.backgroundColor ?? "gray")
                     }
                 case .customGradient:
                     settings.badge.background.source = .color
                     settings.badge.background.usesCustomGradient = true
                     let parts = try splitGradientColors(command.badge.backgroundGradientColors ?? "white,indigo", role: "--badge-bg-gradient-colors")
-                    settings.badge.background.gradientStartColor = try ColorParser.parse(parts[0])
-                    settings.badge.background.gradientEndColor = try ColorParser.parse(parts[1])
+                    settings.badge.background.gradientStartColor = try ColorParser.parseWithOpacity(parts[0])
+                    settings.badge.background.gradientEndColor = try ColorParser.parseWithOpacity(parts[1])
                     settings.badge.background.color = settings.badge.background.gradientStartColor
                 case .image(let path):
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
@@ -371,7 +371,7 @@ class IconGenerationRunner {
                 // symbol/hierarchical/multicolor tint; in system mode the colour is
                 // resolved as an appex token, so the SwiftUI colour is left default.
                 if command.generation.badgeGenerationMode != .system {
-                    let parsed = try ColorParser.parse(command.badge.symbolColor ?? "white")
+                    let parsed = try ColorParser.parseWithOpacity(command.badge.symbolColor ?? "white")
                     settings.badge.foreground.color = parsed
                     settings.badge.foreground.hierarchicalColor = parsed
                 }
@@ -381,7 +381,7 @@ class IconGenerationRunner {
                     command.badge.symbolPalette ?? "white,white:0.5,white:0.26",
                     role: "--badge-symbol-palette"
                 )
-                settings.badge.foreground.palettePrimaryColor = try ColorParser.parse(badgePaletteParts[0])
+                settings.badge.foreground.palettePrimaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[0])
                 settings.badge.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[1])
                 settings.badge.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[2])
 

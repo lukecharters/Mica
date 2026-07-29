@@ -60,6 +60,10 @@ HAPPY_CASES=(
 
     # ---- Icon background ----
     "icon-bg-color-red|star.fill|--icon-bg-color|red"
+    # Every colour option takes a ':opacity' suffix, on any comma-free form.
+    "icon-bg-color-opacity|star.fill|--icon-bg-color|blue:0.5"
+    "icon-bg-color-hex-opacity|star.fill|--icon-bg-color|#0088FF:0.5"
+    "icon-symbol-color-opacity|star.fill|--icon-symbol-color|white:0.5"
     # The .mica document's colour form, accepted anywhere a colour is — so a value
     # can be copied out of an icon.json straight onto the command line.
     "icon-bg-color-extended-srgb|star.fill|--icon-bg-color|extended-srgb:0.20000,0.60000,0.90196,1.00000"
@@ -69,6 +73,7 @@ HAPPY_CASES=(
     "icon-symbol-color-extended-srgb|star.fill|--icon-symbol-color|extended-srgb:1.00000,1.00000,1.00000,1.00000"
     "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
     "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
+    "icon-bg-gradient-colors-opacity|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|red:0.8,orange:0.4"
     "icon-bg-prerendered-liquid-glass|star.fill|--icon-bg|prerendered-liquid-glass|--icon-bg-color|blue"
     "icon-bg-image|star.fill|--icon-bg|\$BACKGROUND_FIXTURE"
     "icon-bg-image-scale|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-scale|1.3"
@@ -87,6 +92,8 @@ HAPPY_CASES=(
     "icon-symbol-rendering-hierarchical|shield.fill|--icon-symbol-rendering|hierarchical"
     "icon-symbol-rendering-multicolor|star.fill|--icon-symbol-rendering|multicolor"
     "icon-symbol-rendering-palette|person.3.sequence.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|blue,white:0.5,white:0.26"
+    # Opacity on the FIRST palette slot: rejected until 2026-07-29.
+    "icon-symbol-palette-primary-opacity|person.3.sequence.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|blue:0.8,white:0.5,white:0.26"
     "icon-symbol-color-yellow|star.fill|--icon-symbol-color|yellow"
     "icon-symbol-weight-bold|star.fill|--icon-symbol-weight|bold"
     "icon-symbol-gradient-on|star.fill|--icon-symbol-gradient|on"

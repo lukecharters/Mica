@@ -167,19 +167,19 @@ struct IconForegroundOptions: ParsableArguments {
         name: [.customLong("icon-symbol-color"), .customLong("icon-symbol-colour")],
         help: ArgumentHelp(
             "Symbol color (monochrome, hierarchical, and multicolor modes)",
-            discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
+            discussion: "See COLOR FORMATS in `mica-cli generate --help`. For system mode, a named appex token keeps Apple's curated rendering; anything else resolves to custom components. Default: white.",
             valueName: "color"
         )
     )
     var symbolColor: String?
 
-    // Folds --palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`;
-    // c2/c3 accept a `:opacity` suffix. Validated/parsed in the builder.
+    // Folds --palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`,
+    // all three slots accepting the same forms. Validated/parsed in the builder.
     @Option(
         name: .customLong("icon-symbol-palette"),
         help: ArgumentHelp(
             "Palette colors for palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3'; the 2nd and 3rd accept a ':opacity' suffix (e.g. 'blue,white:0.5,white:0.26'). Default: white,white:0.5,white:0.26.",
+            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma (e.g. 'blue,white:0.5,white:0.26'). Default: white,white:0.5,white:0.26.",
             valueName: "c1,c2,c3"
         )
     )
@@ -394,19 +394,19 @@ struct BadgeOptions: ParsableArguments {
         name: [.customLong("badge-symbol-color"), .customLong("badge-symbol-colour")],
         help: ArgumentHelp(
             "Badge symbol color (monochrome, hierarchical, and multicolor modes)",
-            discussion: "For mica mode: a named color, r,g,b(,a), or hex. For system mode: a named/r,g,b,a/hex appex color. Default: white.",
+            discussion: "See COLOR FORMATS in `mica-cli generate --help`. For system mode, a named appex token keeps Apple's curated rendering; anything else resolves to custom components. Default: white.",
             valueName: "color"
         )
     )
     var symbolColor: String?
 
-    // Folds --badge-palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`;
-    // c2/c3 accept a `:opacity` suffix. Validated/parsed in the builder.
+    // Folds --badge-palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`,
+    // all three slots accepting the same forms. Validated/parsed in the builder.
     @Option(
         name: .customLong("badge-symbol-palette"),
         help: ArgumentHelp(
             "Palette colors for badge palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3'; the 2nd and 3rd accept a ':opacity' suffix. Default: white,white:0.5,white:0.26.",
+            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma. Default: white,white:0.5,white:0.26.",
             valueName: "c1,c2,c3"
         )
     )
@@ -672,15 +672,23 @@ struct GenerateCommand: AsyncParsableCommand {
               mica-cli star.fill --quiet           # only the path on stdout
               mica-cli star.fill --verbose         # per-phase progress on stderr
 
-            COLOR FORMATS (for options taking a single color):
+            COLOR FORMATS — every option taking a color accepts all of these:
               blue, system.blue, label        named and system tokens
               "#0088FF", "#0088FFCC"         hex, 3/6/8 digits
               "rgb(0,136,255)"               CSS rgb()/rgba()/hsl()/hsla()
               "0,136,255" or "0,0.53,1"      bare r,g,b(,a) — 0-255 or 0-1
-              white:0.5                      any of the above, with opacity
               extended-srgb:0,0.53333,1,1    a .mica document's stored form,
               extended-gray:1,1              so a colour can be copied from an
                                              icon.json onto the command line
+
+            All but the extended forms may carry a ':opacity' suffix — white:0.5,
+            "#0088FF:0.5", "rgb(0,136,255):0.5". The extended forms already end in
+            an alpha component, so they take no suffix. The suffix scales the
+            colour's own alpha rather than replacing it, so 'label:0.5' is ~42%
+            (labelColor is only ~85% opaque to begin with), while 'white:0.5' is 50%.
+
+            In system mode a bare token keeps Apple's curated rendering, so 'white'
+            and 'white:0.5' differ: the second is a custom colour.
 
             Components in the extended forms may fall outside 0-1: that is how a
             wide-gamut colour is carried, e.g. Display P3 red is
@@ -688,8 +696,10 @@ struct GenerateCommand: AsyncParsableCommand {
 
             The options taking several colors at once — --icon-bg-gradient-colors,
             --badge-bg-gradient-colors, --icon-symbol-palette and
-            --badge-symbol-palette — split their value on commas, so the two forms
-            above (and bare r,g,b) cannot be used there. Use a name or hex.
+            --badge-symbol-palette — split their value on commas, so only the
+            comma-free forms above work there: a name, hex, or either with an
+            opacity suffix. That is why the default palette reads
+            'white,white:0.5,white:0.26'.
 
             The output file path is written to stdout; diagnostics go to stderr,
             so `mica-cli star.fill -o icon.png` pipes cleanly.
@@ -987,23 +997,20 @@ struct GenerateCommand: AsyncParsableCommand {
                 _ = try resolveAppexColorArg(symbolColor, role: "--icon-symbol-color")
             } else {
                 do {
-                    _ = try ColorParser.parse(symbolColor)
+                    _ = try ColorParser.parseWithOpacity(symbolColor)
                 } catch {
                     throw ValidationError("Invalid color format for --icon-symbol-color: '\(symbolColor)'. \(error.localizedDescription)")
                 }
             }
         }
 
-        // Palette colours (mica only): first is opaque, the other two allow opacity.
+        // Palette colours (mica only). All three slots take the same forms,
+        // including a `:opacity` suffix — the primary used to reject one for no
+        // reason the GUI shares.
         if let palette = iconForeground.symbolPalette {
-            let parts = try splitPalette(palette, role: "--icon-symbol-palette")
-            for (index, part) in parts.enumerated() {
+            for part in try splitPalette(palette, role: "--icon-symbol-palette") {
                 do {
-                    if index == 0 {
-                        _ = try ColorParser.parse(part)
-                    } else {
-                        _ = try ColorParser.parseWithOpacity(part)
-                    }
+                    _ = try ColorParser.parseWithOpacity(part)
                 } catch {
                     throw ValidationError("Invalid color format in --icon-symbol-palette ('\(part)'). \(error.localizedDescription)")
                 }
@@ -1021,7 +1028,7 @@ struct GenerateCommand: AsyncParsableCommand {
                 }
             } else {
                 do {
-                    _ = try ColorParser.parse(bgColor)
+                    _ = try ColorParser.parseWithOpacity(bgColor)
                 } catch {
                     throw ValidationError("Invalid color format for --icon-bg-color: '\(bgColor)'. \(error.localizedDescription)")
                 }
@@ -1032,7 +1039,7 @@ struct GenerateCommand: AsyncParsableCommand {
         if let gradientColors = background.gradientColors {
             for part in try splitGradientColors(gradientColors) {
                 do {
-                    _ = try ColorParser.parse(part)
+                    _ = try ColorParser.parseWithOpacity(part)
                 } catch {
                     throw ValidationError("Invalid color in --icon-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
                 }
@@ -1050,23 +1057,18 @@ struct GenerateCommand: AsyncParsableCommand {
                     _ = try resolveAppexColorArg(badgeSymbolColor, role: "--badge-symbol-color")
                 } else {
                     do {
-                        _ = try ColorParser.parse(badgeSymbolColor)
+                        _ = try ColorParser.parseWithOpacity(badgeSymbolColor)
                     } catch {
                         throw ValidationError("Invalid color format for --badge-symbol-color: '\(badgeSymbolColor)'. \(error.localizedDescription)")
                     }
                 }
             }
 
-            // Badge palette (mica only): first opaque, the other two allow opacity.
+            // Badge palette (mica only). All three slots take the same forms.
             if let badgePalette = badge.symbolPalette {
-                let parts = try splitPalette(badgePalette, role: "--badge-symbol-palette")
-                for (index, part) in parts.enumerated() {
+                for part in try splitPalette(badgePalette, role: "--badge-symbol-palette") {
                     do {
-                        if index == 0 {
-                            _ = try ColorParser.parse(part)
-                        } else {
-                            _ = try ColorParser.parseWithOpacity(part)
-                        }
+                        _ = try ColorParser.parseWithOpacity(part)
                     } catch {
                         throw ValidationError("Invalid color format in --badge-symbol-palette ('\(part)'). \(error.localizedDescription)")
                     }
@@ -1078,7 +1080,7 @@ struct GenerateCommand: AsyncParsableCommand {
                     _ = try resolveAppexColorArg(badgeBgColor, role: "--badge-bg-color")
                 } else {
                     do {
-                        _ = try ColorParser.parse(badgeBgColor)
+                        _ = try ColorParser.parseWithOpacity(badgeBgColor)
                     } catch {
                         throw ValidationError("Invalid color format for --badge-bg-color: '\(badgeBgColor)'. \(error.localizedDescription)")
                     }
@@ -1089,7 +1091,7 @@ struct GenerateCommand: AsyncParsableCommand {
             if let badgeGradientColors = badge.backgroundGradientColors {
                 for part in try splitGradientColors(badgeGradientColors, role: "--badge-bg-gradient-colors") {
                     do {
-                        _ = try ColorParser.parse(part)
+                        _ = try ColorParser.parseWithOpacity(part)
                     } catch {
                         throw ValidationError("Invalid color in --badge-bg-gradient-colors ('\(part)'). \(error.localizedDescription)")
                     }
