@@ -46,12 +46,12 @@ struct IconShadowVariationTests {
         for (shadowName, description, bgOpacity, bgRadius, bgYOffset, symOpacity, symRadius, symYOffset) in shadowVariations {
             var settings = IconSettings()
             // Keep defaults for icon and background
-            settings.symbolName = "folder.fill.badge.plus"
-            settings.baseColor = .blue
-            settings.symbolRenderingMode = .monochrome
-            settings.symbolColor = .white
-            settings.exportSize = size
-            settings.exportRetinaSize = retina
+            settings.icon.foreground.symbolName = "folder.fill.badge.plus"
+            settings.icon.background.color = .blue
+            settings.icon.foreground.renderingStyle = .monochrome
+            settings.icon.foreground.color = .white
+            settings.export.size = size
+            settings.export.isRetina = retina
             
             let shadowMods = ShadowModifications(
                 description: description,
@@ -230,7 +230,7 @@ struct IconShadowVariationTests {
     
     // Custom render function that applies shadow modifications
     static func renderIconWithShadowMods(settings: IconSettings, shadowMods: ShadowModifications) -> NSImage {
-        let size = CGSize(width: settings.finalExportSize, height: settings.finalExportSize)
+        let size = CGSize(width: settings.export.pixelSize, height: settings.export.pixelSize)
         
         // Create a modified icon view with custom shadows
         let iconView = ModifiedShadowIconView(settings: settings, shadowMods: shadowMods)
@@ -243,7 +243,7 @@ struct IconShadowVariationTests {
         
         // Convert to NSImage
         if let nsImage = renderer.nsImage {
-            return IconRenderer.convertToColorSpace(image: nsImage, colorSpace: settings.exportColorSpace)
+            return IconRenderer.convertToColorSpace(image: nsImage, colorSpace: settings.export.colorSpace)
         }
         
         // Fallback if rendering fails
@@ -300,7 +300,7 @@ struct ModifiedShadowIconView: View {
             // Background with fixed shadow values
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .inset(by: insetSize)
-                .fill(settings.baseColor.gradient)
+                .fill(settings.icon.background.color.gradient)
                 .shadow(
                     color: .black.opacity(shadowMods.backgroundOpacity),
                     radius: shadowMods.backgroundRadius,
@@ -309,9 +309,9 @@ struct ModifiedShadowIconView: View {
                 )
             
             // Symbol with fixed shadow values
-            Image(systemName: settings.symbolName)
+            Image(systemName: settings.icon.foreground.symbolName)
                 .font(.system(size: fontSize, weight: .light))
-                .foregroundColor(settings.symbolColor)
+                .foregroundColor(settings.icon.foreground.color)
                 .symbolRenderingMode(.monochrome)
                 .shadow(
                     color: .black.opacity(shadowMods.symbolOpacity),
@@ -320,7 +320,7 @@ struct ModifiedShadowIconView: View {
                     y: shadowMods.symbolYOffset
                 )
         }
-        .frame(width: settings.finalExportSize, height: settings.finalExportSize)
+        .frame(width: settings.export.pixelSize, height: settings.export.pixelSize)
     }
 }
 

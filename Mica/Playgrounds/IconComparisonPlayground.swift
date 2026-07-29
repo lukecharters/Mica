@@ -13,11 +13,11 @@ struct IconComparisonPlayground: View {
 
     @State private var settings: IconSettings = {
         var s = IconSettings()
-        s.useCustomColors = true
-        s.enableBackgroundGradient = false
-        s.badgeUseCustomColors = true
-        s.badgeEnableBackgroundGradient = false
-        s.showBadge = true
+        s.icon.background.usesCustomGradient = true
+        s.icon.background.usesGradient = false
+        s.badge.background.usesCustomGradient = true
+        s.badge.background.usesGradient = false
+        s.badge.isVisible = true
         return s
     }()
 
@@ -110,10 +110,10 @@ struct IconComparisonPlayground: View {
             comparisonArea
         }
         .sheet(isPresented: $showSymbolPicker) {
-            SymbolPickerView(selectedSymbol: $settings.symbolName)
+            SymbolPickerView(selectedSymbol: $settings.icon.foreground.symbolName)
         }
         .sheet(isPresented: $showBadgeSymbolPicker) {
-            SymbolPickerView(selectedSymbol: $settings.badgeSymbolName)
+            SymbolPickerView(selectedSymbol: $settings.badge.foreground.symbolName)
         }
         .task(id: systemReferenceKey) {
             await generateSystemReference()
@@ -154,54 +154,54 @@ struct IconComparisonPlayground: View {
             Text("Icon")
                 .font(.headline)
             HStack {
-                Image(systemName: settings.symbolName)
+                Image(systemName: settings.icon.foreground.symbolName)
                     .frame(width: 20)
-                Text(settings.symbolName)
+                Text(settings.icon.foreground.symbolName)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
                 Button("Choose…") { showSymbolPicker = true }
                     .controlSize(.small)
             }
-            ColorPicker("Background", selection: $settings.customPrimaryColor)
+            ColorPicker("Background", selection: $settings.icon.background.gradientStartColor)
             Toggle("Auto Gradient (.gradient)", isOn: $autoBackgroundGradient)
             Text("Matches the gradient macOS applies to appex enclosures by default.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            Toggle("Background Gradient", isOn: $settings.enableBackgroundGradient)
+            Toggle("Background Gradient", isOn: $settings.icon.background.usesGradient)
                 .disabled(autoBackgroundGradient)
-            if settings.enableBackgroundGradient && !autoBackgroundGradient {
-                ColorPicker("Gradient End", selection: $settings.customSecondaryColor)
+            if settings.icon.background.usesGradient && !autoBackgroundGradient {
+                ColorPicker("Gradient End", selection: $settings.icon.background.gradientEndColor)
             }
-            ColorPicker("Symbol", selection: $settings.symbolColor)
+            ColorPicker("Symbol", selection: $settings.icon.foreground.color)
         }
     }
 
     private var badgeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("Badge", isOn: $settings.showBadge)
+            Toggle("Badge", isOn: $settings.badge.isVisible)
                 .font(.headline)
-            if settings.showBadge {
+            if settings.badge.isVisible {
                 HStack {
-                    Image(systemName: settings.badgeSymbolName)
+                    Image(systemName: settings.badge.foreground.symbolName)
                         .frame(width: 20)
-                    Text(settings.badgeSymbolName)
+                    Text(settings.badge.foreground.symbolName)
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer()
                     Button("Choose…") { showBadgeSymbolPicker = true }
                         .controlSize(.small)
                 }
-                ColorPicker("Background", selection: $settings.badgeCustomPrimaryColor)
-                ColorPicker("Symbol", selection: $settings.badgeSymbolColor)
-                Picker("Position", selection: $settings.badgePosition) {
+                ColorPicker("Background", selection: $settings.badge.background.gradientStartColor)
+                ColorPicker("Symbol", selection: $settings.badge.foreground.color)
+                Picker("Position", selection: $settings.badge.position) {
                     ForEach(BadgePosition.allCases) { position in
                         Text(position.rawValue).tag(position)
                     }
                 }
-                LabeledSlider(label: "Scale", value: $settings.badgeScale, range: 0.5...2.0, format: "%.3f")
-                LabeledSlider(label: "Offset X", value: $settings.badgeManualOffsetX, range: -0.2...0.2, format: "%.4f")
-                LabeledSlider(label: "Offset Y", value: $settings.badgeManualOffsetY, range: -0.2...0.2, format: "%.4f")
+                LabeledSlider(label: "Scale", value: $settings.badge.scale, range: 0.5...2.0, format: "%.3f")
+                LabeledSlider(label: "Offset X", value: $settings.badge.offsetX, range: -0.2...0.2, format: "%.4f")
+                LabeledSlider(label: "Offset Y", value: $settings.badge.offsetY, range: -0.2...0.2, format: "%.4f")
                 derivedRatiosReadout
             }
         }
@@ -213,7 +213,7 @@ struct IconComparisonPlayground: View {
         // offset(for:enclosureSize: 1) yields the signed effective anchor
         // ratios directly (anchor ± manual offset, per position).
         let anchor = BadgeGeometry.offset(for: settings, enclosureSize: 1)
-        let diameter = BadgeGeometry.diameterRatio * settings.badgeScale
+        let diameter = BadgeGeometry.diameterRatio * settings.badge.scale
         return VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text("Derived ratios")
@@ -236,7 +236,7 @@ struct IconComparisonPlayground: View {
 
     private var derivedRatiosText: String {
         let anchor = BadgeGeometry.offset(for: settings, enclosureSize: 1)
-        let diameter = BadgeGeometry.diameterRatio * settings.badgeScale
+        let diameter = BadgeGeometry.diameterRatio * settings.badge.scale
         return String(
             format: """
             diameterRatio = %.4f (%.1f/208)
@@ -273,17 +273,17 @@ struct IconComparisonPlayground: View {
             )
             canvasShadowSection(
                 title: "Symbol Shadow",
-                enabled: $settings.enableSymbolShadow,
+                enabled: $settings.icon.foreground.drawsShadow,
                 shadow: $shadow.symbol
             )
             badgeShadowSection(
                 title: "Badge BG Shadow",
-                enabled: $settings.badgeEnableBackgroundShadow,
+                enabled: $settings.badge.background.drawsShadow,
                 shadow: $shadow.badgeBackground
             )
             badgeShadowSection(
                 title: "Badge Symbol Shadow",
-                enabled: $settings.badgeEnableSymbolShadow,
+                enabled: $settings.badge.foreground.drawsShadow,
                 shadow: $shadow.badgeSymbol
             )
         }
@@ -718,15 +718,15 @@ struct IconComparisonPlayground: View {
     /// toggle as well as the render parameters), per the project's task-key rule.
     private var systemReferenceKey: String {
         guard referenceSource == .system else { return "off" }
-        return [settings.symbolName, systemEnclosureColor, systemSymbolColor].joined(separator: "|")
+        return [settings.icon.foreground.symbolName, systemEnclosureColor, systemSymbolColor].joined(separator: "|")
     }
 
     private var systemEnclosureColor: String {
-        AppexColor.rgbaString(from: settings.useCustomColors ? settings.customPrimaryColor : settings.baseColor)
+        AppexColor.rgbaString(from: settings.icon.background.usesCustomGradient ? settings.icon.background.gradientStartColor : settings.icon.background.color)
     }
 
     private var systemSymbolColor: String {
-        AppexColor.rgbaString(from: settings.symbolColor)
+        AppexColor.rgbaString(from: settings.icon.foreground.color)
     }
 
     private func generateSystemReference() async {
@@ -734,7 +734,7 @@ struct IconComparisonPlayground: View {
         systemReferenceError = nil
         do {
             let icon = try await appexService.referenceIcon(
-                for: settings.symbolName,
+                for: settings.icon.foreground.symbolName,
                 enclosureColor: systemEnclosureColor,
                 symbolColor: systemSymbolColor
             )
