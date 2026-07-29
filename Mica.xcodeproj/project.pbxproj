@@ -130,9 +130,9 @@
 			membershipExceptions = (
 				CLI/AppexColorResolver.swift,
 				CLI/ColorParser.swift,
-				CLI/GetIconCommand.swift,
-				CLI/IconGeneratorCLI.swift,
-				CLI/IconGeneratorCommand.swift,
+				CLI/ExtractCommand.swift,
+				CLI/GenerateCommand.swift,
+				CLI/IconGenerationRunner.swift,
 				CLI/Shared/CLIOutput.swift,
 				"CLI/Shared/ExportColorSpace+CLI.swift",
 				CLI/Shared/ExportScale.swift,
@@ -794,7 +794,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				EXCLUDED_SOURCE_FILE_NAMES = (
 					"DevTools/*",
-						Resources/symbol_metrics.json,
+					Resources/symbol_metrics.json,
 					Resources/symbol_baselines.json,
 				);
 				GENERATE_INFOPLIST_FILE = YES;

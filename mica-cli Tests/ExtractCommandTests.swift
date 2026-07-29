@@ -3,12 +3,12 @@ import Foundation
 import Testing
 import ArgumentParser
 
-@Suite struct GetIconCommandTests {
+@Suite struct ExtractCommandTests {
 
     // MARK: - Argument parsing
 
     @Test func parsesMinimalArguments() throws {
-        let command = try GetIconCommand.parse(["/Applications/Notes.app"])
+        let command = try ExtractCommand.parse(["/Applications/Notes.app"])
         #expect(command.inputPath == "/Applications/Notes.app")
         #expect(command.outputPath == nil)
         #expect(command.size == 512)
@@ -19,7 +19,7 @@ import ArgumentParser
     }
 
     @Test func parsesAllOptions() throws {
-        let command = try GetIconCommand.parse([
+        let command = try ExtractCommand.parse([
             "/Applications",
             "--output", "/tmp/icons",
             "--size", "256",
@@ -38,12 +38,12 @@ import ArgumentParser
     }
 
     @Test func parsesOutputShortFlag() throws {
-        let command = try GetIconCommand.parse(["/some/path", "-o", "/tmp/out"])
+        let command = try ExtractCommand.parse(["/some/path", "-o", "/tmp/out"])
         #expect(command.outputPath == "/tmp/out")
     }
 
     @Test func parsesShortFlags() throws {
-        let command = try GetIconCommand.parse([
+        let command = try ExtractCommand.parse([
             "/some/path",
             "-s", "1024",
             "-r"
@@ -59,9 +59,9 @@ import ArgumentParser
     // Assert on the user-facing message instead.
     private func parseFailureMessage(_ args: [String]) throws -> String {
         let error = try #require(#expect(throws: (any Error).self) {
-            _ = try GetIconCommand.parse(args)
+            _ = try ExtractCommand.parse(args)
         })
-        return GetIconCommand.message(for: error)
+        return ExtractCommand.message(for: error)
     }
 
     @Test func rejectsZeroSize() throws {
@@ -78,7 +78,7 @@ import ArgumentParser
 
     @Test func rejectsInvalidScale() {
         #expect(throws: (any Error).self) {
-            _ = try GetIconCommand.parse(["/some/path", "--scale", "3x"])
+            _ = try ExtractCommand.parse(["/some/path", "--scale", "3x"])
         }
     }
 
@@ -93,7 +93,7 @@ import ArgumentParser
     }
 
     @Test func acceptsDepthZeroWithRecursive() throws {
-        let command = try GetIconCommand.parse(["/some/path", "--recursive", "--depth", "0"])
+        let command = try ExtractCommand.parse(["/some/path", "--recursive", "--depth", "0"])
         #expect(command.depth == 0)
     }
 

@@ -2,7 +2,7 @@
 // Covers the generate command's export namespace: --size / --scale /
 // --color-space parsing and their mapping into IconSettings.exportSize /
 // export.isRetina / export.colorSpace via buildIconSettings. The extract
-// command's equivalents are covered in GetIconCommandTests.
+// command's equivalents are covered in ExtractCommandTests.
 
 import Testing
 import Foundation
@@ -15,7 +15,7 @@ struct ExportFlagsTests {
 
     @Test("Export defaults: 512px, 1x, sRGB")
     func defaults() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
         #expect(settings.export.size == 512)
         #expect(settings.export.isRetina == false)
         #expect(settings.export.colorSpace == .sRGB)
@@ -25,7 +25,7 @@ struct ExportFlagsTests {
 
     @Test("--size maps to export.size", arguments: [16, 128, 256, 1024])
     func sizeMapsToExportSize(_ size: Int) throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["star.fill", "--size", "\(size)"]))
         #expect(settings.export.size == CGFloat(size))
     }
@@ -42,16 +42,16 @@ struct ExportFlagsTests {
 
     @Test("--scale 2x sets export.isRetina; 1x and default clear it")
     func scaleMapsToRetina() throws {
-        let cli = IconGeneratorCLI()
-        #expect(try cli.buildTestSettings(
+        let runner = IconGenerationRunner()
+        #expect(try runner.buildTestSettings(
             from: parseCommand(["star.fill", "--scale", "2x"])).export.isRetina == true)
-        #expect(try cli.buildTestSettings(
+        #expect(try runner.buildTestSettings(
             from: parseCommand(["star.fill", "--scale", "1x"])).export.isRetina == false)
     }
 
     @Test("export.pixelSize doubles at 2x")
     func finalExportSizeDoubles() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["star.fill", "--size", "512", "--scale", "2x"]))
         #expect(settings.export.pixelSize == 1024)
     }
@@ -67,10 +67,10 @@ struct ExportFlagsTests {
 
     @Test("--color-space maps to export.colorSpace")
     func colorSpaceMapping() throws {
-        let cli = IconGeneratorCLI()
-        #expect(try cli.buildTestSettings(
+        let runner = IconGenerationRunner()
+        #expect(try runner.buildTestSettings(
             from: parseCommand(["star.fill", "--color-space", "displayP3"])).export.colorSpace == .displayP3)
-        #expect(try cli.buildTestSettings(
+        #expect(try runner.buildTestSettings(
             from: parseCommand(["star.fill", "--color-space", "sRGB"])).export.colorSpace == .sRGB)
     }
 

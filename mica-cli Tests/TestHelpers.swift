@@ -2,9 +2,9 @@ import Foundation
 import AppKit
 import ArgumentParser
 
-/// Convenience wrapper for `IconGeneratorCommand.parse(_:)`.
-func parseCommand(_ args: [String]) throws -> IconGeneratorCommand {
-    try IconGeneratorCommand.parse(args)
+/// Convenience wrapper for `GenerateCommand.parse(_:)`.
+func parseCommand(_ args: [String]) throws -> GenerateCommand {
+    try GenerateCommand.parse(args)
 }
 
 /// Writes a 1×1 PNG to a unique temporary URL and returns the URL.

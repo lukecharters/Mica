@@ -619,7 +619,7 @@ enum ResolvedBadgeBackground {
     case image(String)
 }
 
-struct IconGeneratorCommand: AsyncParsableCommand {
+struct GenerateCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "generate",
         abstract: "Generate customized macOS app icons using SF Symbols",
@@ -803,7 +803,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
         try performValidation()
 
         let reporter = output.reporter
-        let generator = IconGeneratorCLI()
+        let generator = IconGenerationRunner()
 
         do {
             let result = try await generator.generateIcon(from: self, reporter: reporter)
@@ -845,7 +845,7 @@ struct IconGeneratorCommand: AsyncParsableCommand {
     // MARK: - Testing Support
 
     /// Expose the private validation chain for unit tests. Mirrors the
-    /// `IconGeneratorCLI.buildTestSettings(from:)` pattern.
+    /// `IconGenerationRunner.buildTestSettings(from:)` pattern.
     func performValidationForTesting() throws {
         try performValidation()
     }

@@ -1,7 +1,7 @@
 import ArgumentParser
 import Foundation
 
-struct GetIconCommand: ParsableCommand {
+struct ExtractCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "extract",
         abstract: "Export icons from a file or from every item inside a directory.",

@@ -3,16 +3,17 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-/// Enhanced CLI adapter that bridges between command arguments and the existing IconRenderer
-/// Provides comprehensive error handling, validation, and progress reporting
-class IconGeneratorCLI {
+/// Runs one generation: takes an already-parsed `GenerateCommand`, validates it,
+/// builds the `IconSettings`, renders through `IconRenderer` and writes the PNG.
+/// It parses nothing and owns no command-line surface — `GenerateCommand` does that.
+class IconGenerationRunner {
 
     // MARK: - Main Generation Method
 
     /// Render and save the icon, returning a description of the produced file.
     /// Diagnostics go through `reporter` (verbose phase detail to stderr); the
     /// caller is responsible for the success/error reporting and exit code.
-    func generateIcon(from command: IconGeneratorCommand, reporter: OutputReporter) async throws -> OutputFileJSON {
+    func generateIcon(from command: GenerateCommand, reporter: OutputReporter) async throws -> OutputFileJSON {
         // Phase 1: Validation
         reporter.detail("Validating…")
         try await performEnhancedValidation(command)
@@ -62,7 +63,7 @@ class IconGeneratorCLI {
 
     // MARK: - Apple Reference Rendering
 
-    private func renderAppleReference(command: IconGeneratorCommand, settings: IconSettings) async throws -> NSImage {
+    private func renderAppleReference(command: GenerateCommand, settings: IconSettings) async throws -> NSImage {
         let appexPath = "/System/Library/ExtensionKit/Extensions/Storage.appex"
         guard FileManager.default.fileExists(atPath: appexPath) else {
             throw CLIError.renderingError("Apple Reference mode requires Storage.appex at \(appexPath). This file is not available on this system.")
@@ -136,7 +137,7 @@ class IconGeneratorCLI {
 
     // MARK: - Enhanced Validation
     
-    private func performEnhancedValidation(_ command: IconGeneratorCommand) async throws {
+    private func performEnhancedValidation(_ command: GenerateCommand) async throws {
         // Validate SF Symbol exists (only when the foreground is an SF Symbol)
         if case .symbol(let name) = try command.resolvedForeground() {
             try validateSFSymbolExists(name)
@@ -148,7 +149,7 @@ class IconGeneratorCLI {
         }
 
         // Color strings are validated once, in the command layer
-        // (IconGeneratorCommand.validateColorFormats) — it runs before this
+        // (GenerateCommand.validateColorFormats) — it runs before this
         // method, covers System-mode appex tokens too, and previously had a
         // near-verbatim (dead) duplicate here that had started to drift.
 
@@ -198,7 +199,7 @@ class IconGeneratorCLI {
         }
     }
     
-    private func validateRenderingModeConsistency(_ command: IconGeneratorCommand) throws {
+    private func validateRenderingModeConsistency(_ command: GenerateCommand) throws {
         if command.iconForeground.symbolRendering == "palette",
            let palette = command.iconForeground.symbolPalette {
             // Enforce exactly three palette components.
@@ -212,7 +213,7 @@ class IconGeneratorCLI {
     
     // MARK: - Enhanced Settings Builder
     
-    private func buildIconSettings(from command: IconGeneratorCommand) throws -> IconSettings {
+    private func buildIconSettings(from command: GenerateCommand) throws -> IconSettings {
         var settings = IconSettings()
 
         do {
@@ -584,7 +585,7 @@ class IconGeneratorCLI {
     // MARK: - Testing Support Methods
     
     /// Expose buildIconSettings for testing
-    func buildTestSettings(from command: IconGeneratorCommand) throws -> IconSettings {
+    func buildTestSettings(from command: GenerateCommand) throws -> IconSettings {
         return try buildIconSettings(from: command)
     }
     

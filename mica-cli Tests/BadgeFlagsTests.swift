@@ -21,9 +21,9 @@ struct BadgeFlagsTests {
 
     @Test("--badge-fg presence activates both badge layers (visible by default)")
     func activationVisibility() throws {
-        let off = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill"]))
+        let off = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
         #expect(off.badge.isVisible == false)
-        let on = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
+        let on = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
         #expect(on.badge.isVisible == true)
         #expect(on.badge.foreground.isHidden == false)
         #expect(on.badge.background.isHidden == false)
@@ -69,14 +69,14 @@ struct BadgeFlagsTests {
     @Test("--badge-symbol-color feeds both the monochrome and hierarchical colors")
     func mergedSymbolColor() throws {
         let red = try ColorParser.parse("red")
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-color", "red"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-color", "red"]))
         #expect(settings.badge.foreground.color == red)
         #expect(settings.badge.foreground.hierarchicalColor == red)
     }
 
     @Test("--badge-symbol-palette splits into the three palette colors")
     func paletteSingleFlag() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-rendering", "palette", "--badge-symbol-palette", "red,green,blue"])
         )
         #expect(settings.badge.foreground.renderingStyle == .palette)
@@ -88,14 +88,14 @@ struct BadgeFlagsTests {
     @Test("--badge-bg-color drives the badge base color in mica mode")
     func backgroundColor() throws {
         let green = try ColorParser.parse("green")
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-color", "green"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-color", "green"]))
         #expect(settings.badge.background.usesCustomGradient == false)
         #expect(settings.badge.background.color == green)
     }
 
     @Test("--badge-bg custom-gradient maps the two colors and enables custom colors")
     func customGradient() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg", "custom-gradient", "--badge-bg-gradient-colors", "red,orange"])
         )
         #expect(settings.badge.background.usesCustomGradient == true)
@@ -107,25 +107,25 @@ struct BadgeFlagsTests {
 
     @Test("--badge-symbol-gradient on selects the gradient color-rendering mode")
     func gradientToggle() throws {
-        let flat = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
+        let flat = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
         #expect(flat.badge.foreground.fillStyle == .flat)
-        let gradient = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-gradient", "on"]))
+        let gradient = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-gradient", "on"]))
         #expect(gradient.badge.foreground.fillStyle == .gradient)
     }
 
     @Test("--badge-fg-visibility / --badge-bg-visibility off hide their layers")
     func visibilityToggles() throws {
-        let fgHidden = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-fg-visibility", "off"]))
+        let fgHidden = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-fg-visibility", "off"]))
         #expect(fgHidden.badge.foreground.isHidden == true)
         #expect(fgHidden.badge.background.isHidden == false)
-        let bgHidden = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-visibility", "off"]))
+        let bgHidden = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-visibility", "off"]))
         #expect(bgHidden.badge.background.isHidden == true)
         #expect(bgHidden.badge.foreground.isHidden == false)
     }
 
     @Test("--badge-fg-scale drives the badge symbol scale")
     func fgScaleSymbol() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-fg-scale", "1.5"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-fg-scale", "1.5"]))
         #expect(settings.badge.foreground.symbolScale == 1.5)
     }
 
@@ -136,7 +136,7 @@ struct BadgeFlagsTests {
     func scaleAndOffsetStoredVerbatim() throws {
         // `--badge-offset-y=-1.0`, not a space: ArgumentParser reads a
         // space-separated leading-dash value as another option name.
-        let settings = try IconGeneratorCLI().buildTestSettings(from: parseCommand([
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand([
             "star.fill", "--badge-fg", "symbol:plus",
             "--badge-scale", "2.0",
             "--badge-offset-x", "1.0",
@@ -149,20 +149,20 @@ struct BadgeFlagsTests {
 
     @Test("--badge-bg-gradient off disables the badge background gradient")
     func bgGradientToggle() throws {
-        let on = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
+        let on = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
         #expect(on.badge.background.usesGradient == true)
-        let off = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-gradient", "off"]))
+        let off = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-gradient", "off"]))
         #expect(off.badge.background.usesGradient == false)
     }
 
     @Test("Badge background shadow defaults on for generated backgrounds, off for image backgrounds")
     func bgShadowDefaults() throws {
-        let symbolBg = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
+        let symbolBg = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus"]))
         #expect(symbolBg.badge.background.drawsShadow == true)
         let path = try makeTempImageFile().path
-        let imageBg = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg", path]))
+        let imageBg = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg", path]))
         #expect(imageBg.badge.background.drawsShadow == false)
-        let forcedOn = try IconGeneratorCLI().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg", path, "--badge-bg-shadow", "on"]))
+        let forcedOn = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg", path, "--badge-bg-shadow", "on"]))
         #expect(forcedOn.badge.background.drawsShadow == true)
     }
 
@@ -170,7 +170,7 @@ struct BadgeFlagsTests {
 
     @Test("--badge-generation-mode system locks the badge source to Apple Reference")
     func systemBadgeSource() throws {
-        let settings = try IconGeneratorCLI().buildTestSettings(
+        let settings = try IconGenerationRunner().buildTestSettings(
             from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system"])
         )
         #expect(settings.badge.foreground.source == .system)
