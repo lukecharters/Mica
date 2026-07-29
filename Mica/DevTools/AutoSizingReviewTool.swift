@@ -1,4 +1,4 @@
-// AutoCalibrationPlayground.swift
+// AutoSizingReviewTool.swift
 //
 // Auto-calibration review tool built on the tight-bounds box-fit rule
 // (SymbolAutoSizingService). Measures every SF Symbol, predicts its sizing
@@ -46,7 +46,7 @@ private struct TightBoundsCacheFile: Codable {
     var bounds: [String: SymbolTightBounds]
 }
 
-/// Shared with DimensionCalibrationPlayground, which reads the same cache to
+/// Shared with SymbolCalibrationTool, which reads the same cache to
 /// flag box-fit outliers for editing.
 enum TightBoundsCache {
     static var url: URL {
@@ -100,7 +100,7 @@ private enum AppleFamilyMap {
     }
 }
 
-// MARK: - Preview Icon (same layout math as DimensionCalibrationPlayground)
+// MARK: - Preview Icon (same layout math as SymbolCalibrationTool)
 
 private struct AutoCalIconView: View {
     let symbolName: String
@@ -134,9 +134,9 @@ private struct AutoCalIconView: View {
     }
 }
 
-// MARK: - Playground
+// MARK: - Tool
 
-struct AutoCalibrationPlayground: View {
+struct AutoSizingReviewTool: View {
     @State private var store = SymbolCalibrationStore()
     @State private var service = AppexReferenceService()
 
@@ -368,7 +368,7 @@ struct AutoCalibrationPlayground: View {
             Button("Mark All") { batchMarkNeedsReviewFiltered() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Set status to needs-review on all \(filteredItems.count) symbols in the current filter, keeping their existing values. Use the Apple Reference playground (⇧⌘K) to recapture them.")
+            Text("Set status to needs-review on all \(filteredItems.count) symbols in the current filter, keeping their existing values. Use the Apple Reference Calibration tool (⇧⌘K) to recapture them.")
         }
     }
 
@@ -795,6 +795,6 @@ struct AutoCalibrationPlayground: View {
 // MARK: - Preview
 
 #Preview {
-    AutoCalibrationPlayground()
+    AutoSizingReviewTool()
         .frame(width: 1200, height: 800)
 }

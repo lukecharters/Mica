@@ -150,8 +150,8 @@ struct MicaApp: App {
             #if DEBUG
             CommandGroup(after: .newItem) {
                 Divider()
-                Button("Calibration Playground") {
-                    openWindow(id: "calibration")
+                Button("Apple Reference Calibration") {
+                    openWindow(id: "apple-reference-calibration")
                 }
                 .keyboardShortcut("K", modifiers: [.command, .shift])
 
@@ -160,28 +160,28 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("M", modifiers: [.command, .shift])
 
-                Button("Dimension Calibration Playground") {
-                    openWindow(id: "dim-calibration")
+                Button("Symbol Calibration") {
+                    openWindow(id: "symbol-calibration")
                 }
                 .keyboardShortcut("L", modifiers: [.command, .shift])
 
-                Button("Auto Calibration Playground") {
-                    openWindow(id: "auto-calibration")
+                Button("Auto Sizing Review") {
+                    openWindow(id: "auto-sizing-review")
                 }
                 .keyboardShortcut("A", modifiers: [.command, .shift])
 
-                Button("Icon Comparison Playground") {
-                    openWindow(id: "icon-comparison")
+                Button("Reference Comparison") {
+                    openWindow(id: "reference-comparison")
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
             #endif
             #if DEBUG
             CommandGroup(after: .help) {
-                Button("Run Shadow Variation Tests") {
+                Button("Export Shadow Variations…") {
                     Task {
                         do {
-                            try await IconShadowVariationTests.runShadowTestsWithSavePanel()
+                            try await ShadowVariationHarness.runShadowTestsWithSavePanel()
                         } catch {
                             print("Shadow test failed: \(error)")
                         }
@@ -192,8 +192,8 @@ struct MicaApp: App {
         }
 
         #if DEBUG
-        Window("Calibration Playground", id: "calibration") {
-            AppleReferenceCalibrationPlayground()
+        Window("Apple Reference Calibration", id: "apple-reference-calibration") {
+            AppleReferenceCalibrationTool()
         }
         .defaultSize(width: 1200, height: 800)
 
@@ -202,18 +202,18 @@ struct MicaApp: App {
         }
         .defaultSize(width: 420, height: 220)
 
-        Window("Dimension Calibration Playground", id: "dim-calibration") {
-            DimensionCalibrationPlayground()
+        Window("Symbol Calibration", id: "symbol-calibration") {
+            SymbolCalibrationTool()
         }
         .defaultSize(width: 1200, height: 800)
 
-        Window("Auto Calibration Playground", id: "auto-calibration") {
-            AutoCalibrationPlayground()
+        Window("Auto Sizing Review", id: "auto-sizing-review") {
+            AutoSizingReviewTool()
         }
         .defaultSize(width: 1250, height: 850)
 
-        Window("Icon Comparison Playground", id: "icon-comparison") {
-            IconComparisonPlayground()
+        Window("Reference Comparison", id: "reference-comparison") {
+            ReferenceComparisonTool()
         }
         .defaultSize(width: 1400, height: 900)
         #endif

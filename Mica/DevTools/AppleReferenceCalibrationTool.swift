@@ -1,4 +1,4 @@
-// AppleReferenceCalibrationPlayground.swift
+// AppleReferenceCalibrationTool.swift
 //
 // Calibration tool for generating ground-truth reference icons via Apple's
 // private rendering pipeline (.appex manipulation), then overlaying our
@@ -154,9 +154,9 @@ private enum FilterMode: String, CaseIterable {
     case skipped = "Skipped"
 }
 
-// MARK: - Main Playground
+// MARK: - Main Tool
 
-struct AppleReferenceCalibrationPlayground: View {
+struct AppleReferenceCalibrationTool: View {
     @State private var store = ReferenceCalibrationStore()
     @State private var service = AppexReferenceService()
     @State private var deduplicator: SymbolDeduplicator
@@ -820,6 +820,6 @@ struct AppleReferenceCalibrationPlayground: View {
 // MARK: - Preview
 
 #Preview {
-    AppleReferenceCalibrationPlayground()
+    AppleReferenceCalibrationTool()
         .frame(width: 1100, height: 700)
 }

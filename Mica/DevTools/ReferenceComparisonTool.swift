@@ -1,4 +1,4 @@
-// IconComparisonPlayground.swift
+// ReferenceComparisonTool.swift
 // Compare the real render pipeline (IconContentView) against imported
 // screenshots of reference icons — built to calibrate macOS 27's new
 // icon/symbol shadows and badge geometry. Replaces the old
@@ -8,7 +8,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct IconComparisonPlayground: View {
+struct ReferenceComparisonTool: View {
     // MARK: - State
 
     @State private var settings: IconSettings = {
@@ -26,7 +26,7 @@ struct IconComparisonPlayground: View {
     // Tunable shadow override — drives the real IconContentView/BadgeView.
     @State private var shadow: ResolvedShadow = .macOS26
     // Background shadow has no per-settings enable flag (only the style enum),
-    // so the on/off toggle is playground-local. The other three toggles bind
+    // so the on/off toggle is tool-local. The other three toggles bind
     // to the real gates in IconSettings.
     @State private var bgShadowEnabled: Bool = true
 
@@ -46,7 +46,7 @@ struct IconComparisonPlayground: View {
 
     // System-mode reference: Apple's IconServices ground-truth render of the
     // current symbol/colours on this Mac (same machinery as the Apple
-    // Reference Calibration Playground). No badge — badge ground truth
+    // Reference Calibration tool). No badge — badge ground truth
     // still needs screenshots.
     @State private var appexService = AppexReferenceService()
     @State private var systemReferenceImage: NSImage? = nil
@@ -852,6 +852,6 @@ extension LabeledSlider {
 // MARK: - Preview
 
 #Preview {
-    IconComparisonPlayground()
+    ReferenceComparisonTool()
         .frame(width: 1400, height: 900)
 }

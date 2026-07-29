@@ -785,8 +785,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				EXCLUDED_SOURCE_FILE_NAMES = (
-					"Playgrounds/*",
-					PlaygroundAssets.xcassets,
+					"DevTools/*",
+					DevToolsAssets.xcassets,
 					Resources/symbol_metrics.json,
 					Resources/symbol_baselines.json,
 				);

@@ -1,9 +1,9 @@
-// IconShadowVariationTests.swift - Test shadow variations at 1024px with fixed values
+// ShadowVariationHarness.swift - Test shadow variations at 1024px with fixed values
 import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
-struct IconShadowVariationTests {
+struct ShadowVariationHarness {
     
     // Generate test configurations for shadow variations
     static func generateShadowTestConfigurations() -> [(name: String, settings: IconSettings, shadowMods: ShadowModifications)] {
@@ -329,7 +329,7 @@ extension MicaApp {
     func runShadowVariationTests() {
         Task {
             do {
-                try await IconShadowVariationTests.runShadowTestsWithSavePanel()
+                try await ShadowVariationHarness.runShadowTestsWithSavePanel()
             } catch {
                 print("Shadow variation test failed: \(error)")
             }

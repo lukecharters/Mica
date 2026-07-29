@@ -1,4 +1,4 @@
-// DimensionCalibrationPlayground.swift
+// SymbolCalibrationTool.swift
 //
 // Calibration tool that groups SF Symbols by family (base symbol name).
 // Each non-container symbol gets individual calibration. Container variants
@@ -346,9 +346,9 @@ struct SymbolBaselineData {
     }
 }
 
-// MARK: - Main Playground
+// MARK: - Main Tool
 
-struct DimensionCalibrationPlayground: View {
+struct SymbolCalibrationTool: View {
     @State private var store = SymbolCalibrationStore()
     @State private var service = AppexReferenceService()
 
@@ -381,9 +381,9 @@ struct DimensionCalibrationPlayground: View {
     @State private var symbolContainerKeys: [String: String] = [:]
     @State private var symbolMetrics: [String: SymbolMetrics] = [:]
 
-    /// Box-fit multipliers computed from the Auto Calibration playground's
+    /// Box-fit multipliers computed from the Auto Sizing Review tool's
     /// tight-bounds cache (auto-tight-bounds.json). Empty until that
-    /// playground (⇧⌘A) has measured. Drives the Outliers filter.
+    /// tool (⇧⌘A) has measured. Drives the Outliers filter.
     @State private var boxFitPredictions: [String: Double] = [:]
 
     /// Outlier membership frozen when the Outliers filter is entered. The
@@ -393,7 +393,7 @@ struct DimensionCalibrationPlayground: View {
     /// refreshes the snapshot.
     @State private var outlierSnapshot: Set<String> = []
 
-    /// Same default disagreement threshold as the Auto Calibration playground.
+    /// Same default disagreement threshold as the Auto Sizing Review tool.
     private let outlierThreshold = 0.02
 
     // All Icons multi-selection
@@ -821,7 +821,7 @@ struct DimensionCalibrationPlayground: View {
             }
 
             if filterMode == .outliers && boxFitPredictions.isEmpty {
-                Label("No tight-bounds cache — open the Auto Calibration playground (⇧⌘A) to measure first.",
+                Label("No tight-bounds cache — open the Auto Sizing Review tool (⇧⌘A) to measure first.",
                       systemImage: "exclamationmark.triangle")
                     .font(.caption)
                     .foregroundStyle(.orange)
@@ -2592,6 +2592,6 @@ struct DimensionCalibrationPlayground: View {
 // MARK: - Preview
 
 #Preview {
-    DimensionCalibrationPlayground()
+    SymbolCalibrationTool()
         .frame(width: 1100, height: 800)
 }

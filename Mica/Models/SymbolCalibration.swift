@@ -1,7 +1,7 @@
 // SymbolCalibration.swift - Shared types for per-symbol SF Symbol sizing calibration
 //
 // Used by both the production rendering pipeline (SymbolSizingService) and the
-// calibration tool (SymbolCalibrationStore in DimensionCalibrationPlayground).
+// calibration tool (SymbolCalibrationStore in SymbolCalibrationTool).
 //
 // Entries are per symbol, plus one per container shape. Symbols are *grouped*
 // into families for review in the tool — see `SymbolFamily` and
