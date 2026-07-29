@@ -11,7 +11,7 @@ struct AppexColorPickerRow: View {
 
     /// Preset swatches, one per named appex token.
     private let presets: [(name: String, color: Color)] =
-        AppexEnclosureColor.allCases.map { (name: $0.displayName, color: $0.previewColor) }
+        AppexNamedColor.allCases.map { (name: $0.displayName, color: $0.previewColor) }
 
     var body: some View {
         ColorPickerWithDropdown(
@@ -31,7 +31,7 @@ struct AppexColorPickerRow: View {
             set: { newColor in
                 if selection.isCustom {
                     selection.customColor = newColor
-                } else if let match = AppexEnclosureColor.allCases.first(where: { $0.previewColor == newColor }) {
+                } else if let match = AppexNamedColor.allCases.first(where: { $0.previewColor == newColor }) {
                     selection.preset = match
                 } else {
                     selection.customColor = newColor

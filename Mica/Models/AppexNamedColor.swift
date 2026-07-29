@@ -1,9 +1,9 @@
-// Models/AppexEnclosureColor.swift
+// Models/AppexNamedColor.swift
 import SwiftUI
 
 /// Named color tokens accepted by ISEnclosureColor in an .appex Info.plist.
 /// Raw values are the exact strings Apple's IconServices pipeline expects.
-enum AppexEnclosureColor: String, CaseIterable, Identifiable {
+enum AppexNamedColor: String, CaseIterable, Identifiable {
     case black
     case blue
     case brown

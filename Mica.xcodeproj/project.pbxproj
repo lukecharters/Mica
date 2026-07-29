@@ -107,7 +107,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Models/AppexColor.swift,
-				Models/AppexEnclosureColor.swift,
+				Models/AppexNamedColor.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
@@ -146,7 +146,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Models/AppexColor.swift,
-				Models/AppexEnclosureColor.swift,
+				Models/AppexNamedColor.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
