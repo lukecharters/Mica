@@ -8,4 +8,8 @@ enum ExportScale: String, CaseIterable, ExpressibleByArgument {
 
     /// Integer multiplier applied to the base pixel size.
     var factor: Int { self == .twoX ? 2 : 1 }
+
+    /// The scale matching `ExportSpec`'s default, so `--scale`'s documented
+    /// default is derived from the settings rather than restated as a literal.
+    static var settingsDefault: ExportScale { ExportSpec().isRetina ? .twoX : .oneX }
 }

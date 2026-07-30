@@ -38,8 +38,29 @@ private func validateOffset(_ offset: String, name: String) throws -> Double {
     return value
 }
 
+// MARK: - Documenting the default of an Optional-typed flag
+
+/// Formats the `(default: …)` suffix for a flag whose property is Optional.
+///
+/// ArgumentParser writes that suffix itself, but only from a property's default
+/// *value* (`ArgumentDefinition.defaultValueDescription`, derived from the
+/// initial value). A flag that must distinguish "not passed" from "passed the
+/// default" — which `--config` requires — therefore cannot have one, and loses
+/// the annotation. This puts it back, reading the same constant the fallback in
+/// `buildIconSettings` uses, so help text cannot drift from behaviour.
+///
+/// Pass the *settings* default, never a literal: `defaultNote(ExportSpec.defaultSize)`.
+func defaultNote(_ value: some CustomStringConvertible) -> String {
+    "(default: \(value))"
+}
+
 // MARK: - Export Options
 
+// Export flags are Optional-typed with no default value, so that a nil reads as
+// "the user did not pass this" — which `--config` needs in order to leave a
+// document's stored value alone. Defaults therefore live in exactly one place,
+// `ExportSpec`, `buildIconSettings` assigns only what was passed, and each
+// abstract documents its default via `defaultNote` from that same constant.
 struct ExportOptions: ParsableArguments {
     @Option(
         name: [.customLong("output"), .customShort("o")],
@@ -54,7 +75,7 @@ struct ExportOptions: ParsableArguments {
     @Option(
         name: [.customLong("size"), .customShort("s")],
         help: ArgumentHelp(
-            "Export size in pixels (16-1024)",
+            "Export size in pixels (16-1024) \(defaultNote(Int(ExportSpec.defaultSize)))",
             discussion: "Common sizes: 128, 256, 512, 1024.",
             valueName: "pixels"
         ),
@@ -70,16 +91,25 @@ struct ExportOptions: ParsableArguments {
             return intSize
         }
     )
-    var size: Int = 512
+    var size: Int?
 
-    @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x (retina)", valueName: "scale"))
-    var scale: ExportScale = .oneX
+    @Option(
+        name: .long,
+        help: ArgumentHelp(
+            "Output resolution: 1x or 2x (retina) \(defaultNote(ExportScale.settingsDefault.rawValue))",
+            valueName: "scale"
+        )
+    )
+    var scale: ExportScale?
 
     @Option(
         name: [.customLong("color-space"), .customLong("colour-space")],
-        help: ArgumentHelp("Color space to render in: sRGB (default) or displayP3", valueName: "space")
+        help: ArgumentHelp(
+            "Color space: sRGB or displayP3 \(defaultNote(ExportSpec().colorSpace.rawValue))",
+            valueName: "space"
+        )
     )
-    var colorSpace: ExportColorSpace = .sRGB
+    var colorSpace: ExportColorSpace?
 }
 
 // MARK: - Generation Options

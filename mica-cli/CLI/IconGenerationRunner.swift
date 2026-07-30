@@ -217,10 +217,19 @@ class IconGenerationRunner {
         var settings = IconSettings()
 
         do {
-            // Export properties
-            settings.export.size = CGFloat(command.export.size)
-            settings.export.isRetina = command.export.scale.factor == 2
-            settings.export.colorSpace = command.export.colorSpace
+            // Export properties. Each flag is Optional and assigned only when
+            // passed, so an absent flag leaves whatever is already in
+            // `settings` — the ExportSpec default today, and a `--config`
+            // document's value once Phase 5 lands.
+            if let size = command.export.size {
+                settings.export.size = CGFloat(size)
+            }
+            if let scale = command.export.scale {
+                settings.export.isRetina = scale.factor == 2
+            }
+            if let colorSpace = command.export.colorSpace {
+                settings.export.colorSpace = colorSpace
+            }
 
             // Icon foreground source (folds --icon-fg + --icon-fg-scale)
             switch try command.resolvedForeground() {
