@@ -10,6 +10,27 @@ import Foundation
 @MainActor
 struct BadgeFlagsTests {
 
+    // MARK: - Absent flags
+
+    @Test("Omitted badge flags are nil, leaving the BadgeSpec defaults")
+    func omittedBadgeFlagsAreNil() throws {
+        let badge = try parseCommand(["star.fill", "--badge-fg", "symbol:plus"]).badge
+        #expect(badge.foregroundScale == nil)
+        #expect(badge.symbolRendering == nil)
+        #expect(badge.symbolWeight == nil)
+        #expect(badge.symbolGradient == nil)
+        #expect(badge.foregroundVisibility == nil)
+        #expect(badge.background == nil)
+        #expect(badge.backgroundGradient == nil)
+        #expect(badge.backgroundScale == nil)
+        #expect(badge.backgroundVisibility == nil)
+        #expect(badge.position == nil)
+        #expect(badge.scale == nil)
+        #expect(badge.offsetX == nil)
+        #expect(badge.offsetY == nil)
+        #expect(badge.isImageBackground == false)
+    }
+
     // MARK: - Activation
 
     @Test("The badge is inactive unless --badge-fg is supplied")

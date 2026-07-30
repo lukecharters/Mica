@@ -54,6 +54,13 @@ func defaultNote(_ value: some CustomStringConvertible) -> String {
     "(default: \(value))"
 }
 
+/// `defaultNote` for an on|off flag, taking the settings `Bool` the flag drives
+/// so the documented default is derived rather than restated. Note the sense
+/// often inverts: a visibility flag is `on` when the spec's `isHidden` is false.
+func defaultNote(toggle isOn: Bool) -> String {
+    defaultNote(ToggleState(isOn).rawValue)
+}
+
 // MARK: - Export Options
 
 // Export flags are Optional-typed with no default value, so that a nil reads as
@@ -126,7 +133,7 @@ struct GenerationOptions: ParsableArguments {
         ),
         transform: { try parseGenerationMode($0, role: "Icon") }
     )
-    var iconGenerationMode: GenerationMode = .mica
+    var iconGenerationMode: GenerationMode?
 
     @Option(
         name: .customLong("badge-generation-mode"),
@@ -136,7 +143,19 @@ struct GenerationOptions: ParsableArguments {
         ),
         transform: { try parseGenerationMode($0, role: "Badge") }
     )
-    var badgeGenerationMode: GenerationMode = .mica
+    var badgeGenerationMode: GenerationMode?
+
+    // Both modes are read in a dozen places — two settings builders, four
+    // validators and the appex render path — so the nil fallback is resolved
+    // here once rather than repeated at each site. Read these, not the stored
+    // properties, everywhere except where "was it passed?" is the question.
+    // The defaults come from the specs, so there is no literal `.mica` to drift.
+
+    /// The icon's effective generation mode: the flag when passed, else the default.
+    var effectiveIconMode: GenerationMode { iconGenerationMode ?? IconSpec().mode }
+
+    /// The badge's effective generation mode: the flag when passed, else the default.
+    var effectiveBadgeMode: GenerationMode { badgeGenerationMode ?? BadgeSpec().mode }
 }
 
 private func parseGenerationMode(_ mode: String, role: String) throws -> GenerationMode {
@@ -170,7 +189,7 @@ struct IconForegroundOptions: ParsableArguments {
         help: ArgumentHelp("Foreground scale multiplier (0.3-2.0)", valueName: "scale"),
         transform: { try validateScale($0, name: "Icon foreground scale") }
     )
-    var scale: Double = 1.0
+    var scale: Double?
 
     @Option(
         name: .customLong("icon-symbol-rendering"),
@@ -187,7 +206,7 @@ struct IconForegroundOptions: ParsableArguments {
             return normalized
         }
     )
-    var symbolRendering: String = "monochrome"
+    var symbolRendering: String?
 
     // Folds --symbol-color + --hierarchical-color + --appex-symbol-color into a
     // single colour. Stored RAW; resolved in the settings builder by generation
@@ -225,14 +244,17 @@ struct IconForegroundOptions: ParsableArguments {
             return weight.lowercased()
         }
     )
-    var symbolWeight: String = "auto"
+    var symbolWeight: String?
 
     // Was --symbol-color-rendering flat|gradient.
     @Option(
         name: .customLong("icon-symbol-gradient"),
-        help: ArgumentHelp("Symbol gradient fill: on or off (default; gradient requires macOS 26+)", valueName: "on|off")
+        help: ArgumentHelp(
+            "Symbol gradient fill: on or off; gradient requires macOS 26+ \(defaultNote(toggle: ForegroundSpec.iconDefault.fillStyle == .gradient))",
+            valueName: "on|off"
+        )
     )
-    var symbolGradient: ToggleState = .off
+    var symbolGradient: ToggleState?
 
     // nil = unspecified, so the effective value can default based on the source
     // (off for imported images, on for SF Symbols).
@@ -244,9 +266,12 @@ struct IconForegroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-fg-visibility"),
-        help: ArgumentHelp("Foreground visibility: on (default) or off to hide the foreground", valueName: "on|off")
+        help: ArgumentHelp(
+            "Foreground visibility: on, or off to hide the foreground \(defaultNote(toggle: !ForegroundSpec.iconDefault.isHidden))",
+            valueName: "on|off"
+        )
     )
-    var visibility: ToggleState = .on
+    var visibility: ToggleState?
 }
 
 // MARK: - Icon Background Options
@@ -270,7 +295,7 @@ struct IconBackgroundOptions: ParsableArguments {
             valueName: "standard|custom-gradient|prerendered-liquid-glass|path"
         )
     )
-    var selection: String = "standard"
+    var selection: String?
 
     // Folds --base-color + --appex-enclosure-color. Stored RAW; resolved in the
     // builder by generation mode + background kind. nil → blue.
@@ -299,9 +324,12 @@ struct IconBackgroundOptions: ParsableArguments {
     // the -solid vs -gradient asset.
     @Option(
         name: .customLong("icon-bg-gradient"),
-        help: ArgumentHelp("Background gradient: on (default) or off", valueName: "on|off")
+        help: ArgumentHelp(
+            "Background gradient: on or off \(defaultNote(toggle: IconBackgroundSpec().usesGradient))",
+            valueName: "on|off"
+        )
     )
-    var gradient: ToggleState = .on
+    var gradient: ToggleState?
 
     @Option(
         name: .customLong("icon-bg-corner-radius"),
@@ -313,14 +341,14 @@ struct IconBackgroundOptions: ParsableArguments {
             return style.lowercased()
         }
     )
-    var cornerRadius: String = "macos26"
+    var cornerRadius: String?
 
     @Option(
         name: .customLong("icon-bg-scale"),
         help: ArgumentHelp("Scale for an imported background image (0.3-2.0)", valueName: "scale"),
         transform: { try validateScale($0, name: "Icon background scale") }
     )
-    var scale: Double = 1.0
+    var scale: Double?
 
     // nil = unspecified, so image backgrounds default to no shadow and generated
     // backgrounds to macOS 26.
@@ -345,13 +373,19 @@ struct IconBackgroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-bg-visibility"),
-        help: ArgumentHelp("Background visibility: on (default) or off to hide the background", valueName: "on|off")
+        help: ArgumentHelp(
+            "Background visibility: on, or off to hide the background \(defaultNote(toggle: !IconBackgroundSpec().isHidden))",
+            valueName: "on|off"
+        )
     )
-    var visibility: ToggleState = .on
+    var visibility: ToggleState?
 
-    /// True when `--icon-bg` is a file path rather than a generated-background keyword.
+    /// True when `--icon-bg` is a file path rather than a generated-background
+    /// keyword. An absent flag is not an image background — the default source is
+    /// `.color`, so the generated-background defaults below apply.
     var isImageBackground: Bool {
-        !["standard", "custom-gradient", "prerendered-liquid-glass"].contains(selection.lowercased())
+        guard let selection else { return false }
+        return !["standard", "custom-gradient", "prerendered-liquid-glass"].contains(selection.lowercased())
     }
 
     /// Resolved background shadow style: an explicit `--icon-bg-shadow` wins;
@@ -398,7 +432,7 @@ struct BadgeOptions: ParsableArguments {
         help: ArgumentHelp("Badge foreground scale multiplier (0.3-2.0)", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge foreground scale") }
     )
-    var foregroundScale: Double = 1.0
+    var foregroundScale: Double?
 
     @Option(
         name: .customLong("badge-symbol-rendering"),
@@ -415,7 +449,7 @@ struct BadgeOptions: ParsableArguments {
             return normalized
         }
     )
-    var symbolRendering: String = "monochrome"
+    var symbolRendering: String?
 
     // Folds --badge-symbol-color + --badge-hierarchical-color + --badge-appex-symbol-color
     // into one colour. Stored RAW; resolved in the settings builder by generation
@@ -452,14 +486,17 @@ struct BadgeOptions: ParsableArguments {
             return weight.lowercased()
         }
     )
-    var symbolWeight: String = "auto"
+    var symbolWeight: String?
 
     // Was --badge-symbol-color-rendering flat|gradient.
     @Option(
         name: .customLong("badge-symbol-gradient"),
-        help: ArgumentHelp("Badge symbol gradient fill: on or off (default; gradient requires macOS 26+)", valueName: "on|off")
+        help: ArgumentHelp(
+            "Badge symbol gradient fill: on or off; gradient requires macOS 26+ \(defaultNote(toggle: ForegroundSpec.badgeDefault.fillStyle == .gradient))",
+            valueName: "on|off"
+        )
     )
-    var symbolGradient: ToggleState = .off
+    var symbolGradient: ToggleState?
 
     // nil = unspecified, so the effective value can default based on the source
     // (off for imported images, on for SF Symbols).
@@ -469,11 +506,16 @@ struct BadgeOptions: ParsableArguments {
     )
     var foregroundShadow: ToggleState?
 
+    // No `defaultNote` on either badge visibility flag: their default is not a
+    // spec value but the *activation* rule — supplying --badge-fg means "show the
+    // badge", so an active badge is visible unless told otherwise, while the
+    // specs default both layers to hidden. The prose says so more precisely than
+    // "(default: on)" could. `buildIconSettings` resolves it with `?? true`.
     @Option(
         name: .customLong("badge-fg-visibility"),
         help: ArgumentHelp("Badge foreground visibility: on (default when the badge is active) or off", valueName: "on|off")
     )
-    var foregroundVisibility: ToggleState = .on
+    var foregroundVisibility: ToggleState?
 
     // MARK: Background
 
@@ -488,7 +530,7 @@ struct BadgeOptions: ParsableArguments {
             valueName: "standard|custom-gradient|path"
         )
     )
-    var background: String = "standard"
+    var background: String?
 
     // Folds --badge-color + --badge-appex-enclosure-color. Stored RAW; resolved in
     // the builder by generation mode. nil → gray (mica) / blue (system).
@@ -516,16 +558,19 @@ struct BadgeOptions: ParsableArguments {
     // Was --badge-no-gradient.
     @Option(
         name: .customLong("badge-bg-gradient"),
-        help: ArgumentHelp("Badge background gradient: on (default) or off", valueName: "on|off")
+        help: ArgumentHelp(
+            "Badge background gradient: on or off \(defaultNote(toggle: BadgeBackgroundSpec().usesGradient))",
+            valueName: "on|off"
+        )
     )
-    var backgroundGradient: ToggleState = .on
+    var backgroundGradient: ToggleState?
 
     @Option(
         name: .customLong("badge-bg-scale"),
         help: ArgumentHelp("Scale for an imported badge background image (0.3-2.0)", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge background scale") }
     )
-    var backgroundScale: Double = 1.0
+    var backgroundScale: Double?
 
     // nil = unspecified → off for image backgrounds, on otherwise. Unlike the icon
     // background, badge background shadow is a plain on|off (no era styles).
@@ -546,7 +591,7 @@ struct BadgeOptions: ParsableArguments {
         name: .customLong("badge-bg-visibility"),
         help: ArgumentHelp("Badge background visibility: on (default when the badge is active) or off", valueName: "on|off")
     )
-    var backgroundVisibility: ToggleState = .on
+    var backgroundVisibility: ToggleState?
 
     // MARK: Layout (unchanged)
 
@@ -561,14 +606,14 @@ struct BadgeOptions: ParsableArguments {
             return pos.lowercased()
         }
     )
-    var position: String = "bottom-right"
+    var position: String?
 
     @Option(
         name: .customLong("badge-scale"),
         help: ArgumentHelp("Overall badge scale (0.3-2.0)", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge scale") }
     )
-    var scale: Double = 1.0
+    var scale: Double?
 
     // These are the only two flags that take a negative value, and a negative
     // value must be attached with `=`. Given a space, ArgumentParser reads the
@@ -589,7 +634,7 @@ struct BadgeOptions: ParsableArguments {
         ),
         transform: { try validateOffset($0, name: "Badge offset X") }
     )
-    var offsetX: Double = 0.0
+    var offsetX: Double?
 
     @Option(
         name: .customLong("badge-offset-y"),
@@ -600,13 +645,15 @@ struct BadgeOptions: ParsableArguments {
         ),
         transform: { try validateOffset($0, name: "Badge offset Y") }
     )
-    var offsetY: Double = 0.0
+    var offsetY: Double?
 
     // MARK: Derived
 
-    /// True when `--badge-bg` is a file path rather than a generated-background keyword.
+    /// True when `--badge-bg` is a file path rather than a generated-background
+    /// keyword. An absent flag is not an image background — see the icon's.
     var isImageBackground: Bool {
-        !["standard", "custom-gradient"].contains(background.lowercased())
+        guard let background else { return false }
+        return !["standard", "custom-gradient"].contains(background.lowercased())
     }
 
     /// Resolved padding compensation for an imported badge background. Mirrors the
@@ -793,11 +840,13 @@ struct GenerateCommand: AsyncParsableCommand {
     /// Resolve the icon background from `--icon-bg`. Recognised keywords select a
     /// generated background; any other value is treated as an image file path.
     func resolvedBackground() -> ResolvedBackground {
-        switch background.selection.lowercased() {
+        // Absent means the default generated background, not an image path.
+        guard let selection = background.selection else { return .standard }
+        switch selection.lowercased() {
         case "standard": return .standard
         case "custom-gradient": return .customGradient
         case "prerendered-liquid-glass": return .preRendered
-        default: return .image(background.selection)
+        default: return .image(selection)
         }
     }
 
@@ -824,10 +873,12 @@ struct GenerateCommand: AsyncParsableCommand {
     /// Resolve the badge background from `--badge-bg`. Recognised keywords select
     /// a generated background; any other value is treated as an image file path.
     func resolvedBadgeBackground() -> ResolvedBadgeBackground {
-        switch badge.background.lowercased() {
+        // Absent means the default generated background, not an image path.
+        guard let background = badge.background else { return .standard }
+        switch background.lowercased() {
         case "standard": return .standard
         case "custom-gradient": return .customGradient
-        default: return .image(badge.background)
+        default: return .image(background)
         }
     }
 
@@ -870,7 +921,7 @@ struct GenerateCommand: AsyncParsableCommand {
             // stdout = the machine result; stderr = a concise human summary.
             reporter.path(result.path)
             var summary = "Generated \(result.width)×\(result.height) icon (\(humanByteCount(result.bytes)))"
-            if generation.iconGenerationMode == .system {
+            if generation.effectiveIconMode == .system {
                 summary += " in system mode"
             }
             if badgeIsActive {
@@ -951,7 +1002,7 @@ struct GenerateCommand: AsyncParsableCommand {
         }
 
         // System badge mode renders via the appex pipeline, which needs an SF Symbol.
-        if generation.badgeGenerationMode == .system, case .image = badgeForeground {
+        if generation.effectiveBadgeMode == .system, case .image = badgeForeground {
             throw ValidationError("--badge-generation-mode system requires an SF Symbol badge foreground (--badge-fg symbol:NAME); image foregrounds are only supported in mica mode.")
         }
 
@@ -1023,7 +1074,7 @@ struct GenerateCommand: AsyncParsableCommand {
         // The merged icon symbol color resolves differently by generation mode:
         // mica → ColorParser; system → appex color tokens. Validate accordingly.
         if let symbolColor = iconForeground.symbolColor {
-            if generation.iconGenerationMode == .system {
+            if generation.effectiveIconMode == .system {
                 _ = try resolveAppexColorArg(symbolColor, role: "--icon-symbol-color")
             } else {
                 do {
@@ -1050,7 +1101,7 @@ struct GenerateCommand: AsyncParsableCommand {
         // Merged --icon-bg-color (folds base / appex-enclosure). Resolves by
         // generation mode + background kind.
         if let bgColor = background.color {
-            if generation.iconGenerationMode == .system {
+            if generation.effectiveIconMode == .system {
                 _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color")
             } else if case .preRendered = resolvedBackground() {
                 guard validPreRenderedColors.contains(normalizeBritishSpelling(bgColor)) else {
@@ -1080,7 +1131,7 @@ struct GenerateCommand: AsyncParsableCommand {
         // --badge-symbol-color / --badge-bg-color resolve differently per mode:
         // mica → ColorParser; system → appex colour tokens.
         if badgeIsActive {
-            let isSystemBadge = generation.badgeGenerationMode == .system
+            let isSystemBadge = generation.effectiveBadgeMode == .system
 
             if let badgeSymbolColor = badge.symbolColor {
                 if isSystemBadge {

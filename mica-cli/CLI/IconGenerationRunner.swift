@@ -25,7 +25,7 @@ class IconGenerationRunner {
         // Phase 3: Render
         let image: NSImage
 
-        if command.generation.iconGenerationMode == .system {
+        if command.generation.effectiveIconMode == .system {
             reporter.detail("Rendering via the Apple Reference (appex) pipeline…")
             image = try await renderAppleReference(command: command, settings: settings)
         } else {
@@ -236,14 +236,18 @@ class IconGenerationRunner {
             case .symbol(let name):
                 settings.icon.foreground.source = .symbol
                 settings.icon.foreground.symbolName = name
-                settings.icon.foreground.symbolScale = command.iconForeground.scale
+                if let scale = command.iconForeground.scale {
+                    settings.icon.foreground.symbolScale = scale
+                }
             case .image(let path):
                 settings.icon.foreground.source = .image
                 // symbolName is cosmetic for image foregrounds; use the basename.
                 settings.icon.foreground.symbolName = command.defaultOutputBasename()
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                 settings.icon.foreground.image = try ImageImportService.importFromURL(url)
-                settings.icon.foreground.imageScale = command.iconForeground.scale
+                if let scale = command.iconForeground.scale {
+                    settings.icon.foreground.imageScale = scale
+                }
             }
 
             // Icon background (folds --icon-bg + --icon-bg-color + gradient-colors + scale + padding)
@@ -253,7 +257,7 @@ class IconGenerationRunner {
                 settings.icon.background.usesCustomGradient = false
                 // In system mode the enclosure colour is resolved separately in
                 // renderAppleReference, so leave the SwiftUI base colour default.
-                if command.generation.iconGenerationMode != .system {
+                if command.generation.effectiveIconMode != .system {
                     settings.icon.background.color = try ColorParser.parseWithOpacity(command.background.color ?? "blue")
                 }
             case .customGradient:
@@ -271,20 +275,30 @@ class IconGenerationRunner {
                 settings.icon.background.source = .image
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                 settings.icon.background.image = try ImageImportService.importFromURL(url)
-                settings.icon.background.imageScale = command.background.scale
+                if let scale = command.background.scale {
+                    settings.icon.background.imageScale = scale
+                }
                 settings.icon.background.compensatesForPadding = command.background.effectivePaddingCompensation
             }
 
             // Background style
-            settings.icon.background.usesGradient = command.background.gradient.isOn
-            settings.icon.background.cornerRadiusStyle = try parseCornerRadius(command.background.cornerRadius)
+            if let gradient = command.background.gradient {
+                settings.icon.background.usesGradient = gradient.isOn
+            }
+            if let cornerRadius = command.background.cornerRadius {
+                settings.icon.background.cornerRadiusStyle = try parseCornerRadius(cornerRadius)
+            }
             settings.icon.background.shadowStyle = try parseShadowStyle(command.background.effectiveShadowStyle)
 
             // Background visibility (new --icon-bg-visibility → iconBackgroundHidden)
-            settings.icon.background.isHidden = !command.background.visibility.isOn
+            if let visibility = command.background.visibility {
+                settings.icon.background.isHidden = !visibility.isOn
+            }
 
             // Symbol rendering
-            settings.icon.foreground.renderingStyle = try parseRenderingMode(command.iconForeground.symbolRendering)
+            if let symbolRendering = command.iconForeground.symbolRendering {
+                settings.icon.foreground.renderingStyle = try parseRenderingMode(symbolRendering)
+            }
 
             let isImageForeground = settings.icon.foreground.source == .image
 
@@ -292,7 +306,7 @@ class IconGenerationRunner {
             // symbol/hierarchical/multicolor tint; in system mode the colour is
             // resolved as an appex token in renderAppleReference, so the SwiftUI
             // colour is left at its (unused) default here.
-            if command.generation.iconGenerationMode != .system {
+            if command.generation.effectiveIconMode != .system {
                 let parsed = try ColorParser.parseWithOpacity(command.iconForeground.symbolColor ?? "white")
                 settings.icon.foreground.color = parsed
                 settings.icon.foreground.hierarchicalColor = parsed
@@ -309,16 +323,22 @@ class IconGenerationRunner {
 
             // Symbol style
             settings.icon.foreground.drawsShadow = command.iconForeground.shadow?.isOn ?? (isImageForeground ? false : true)
-            settings.icon.foreground.symbolWeight = try parseSymbolWeight(command.iconForeground.symbolWeight)
-            settings.icon.foreground.fillStyle = command.iconForeground.symbolGradient.isOn ? .gradient : .flat
+            if let symbolWeight = command.iconForeground.symbolWeight {
+                settings.icon.foreground.symbolWeight = try parseSymbolWeight(symbolWeight)
+            }
+            if let symbolGradient = command.iconForeground.symbolGradient {
+                settings.icon.foreground.fillStyle = symbolGradient.isOn ? .gradient : .flat
+            }
 
             // Foreground visibility (new --icon-fg-visibility → iconForegroundHidden)
-            settings.icon.foreground.isHidden = !command.iconForeground.visibility.isOn
+            if let visibility = command.iconForeground.visibility {
+                settings.icon.foreground.isHidden = !visibility.isOn
+            }
 
             // Icon generation mode (always set, independent of badge presence — the
-            // render path reads command.generation.iconGenerationMode directly, but
+            // render path reads command.generation.effectiveIconMode directly, but
             // keeping this in sync is correct and avoids a latent quirk).
-            settings.icon.mode = command.generation.iconGenerationMode
+            settings.icon.mode = command.generation.effectiveIconMode
 
             // Badge settings — gated on --badge-fg activation.
             if let badgeForeground = try command.resolvedBadgeForeground() {
@@ -328,13 +348,17 @@ class IconGenerationRunner {
                 case .symbol(let name):
                     settings.badge.foreground.source = .symbol
                     settings.badge.foreground.symbolName = name
-                    settings.badge.foreground.symbolScale = command.badge.foregroundScale
+                    if let foregroundScale = command.badge.foregroundScale {
+                        settings.badge.foreground.symbolScale = foregroundScale
+                    }
                     isBadgeImageForeground = false
                 case .image(let path):
                     settings.badge.foreground.source = .image
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                     settings.badge.foreground.image = try ImageImportService.importFromURL(url)
-                    settings.badge.foreground.imageScale = command.badge.foregroundScale
+                    if let foregroundScale = command.badge.foregroundScale {
+                        settings.badge.foreground.imageScale = foregroundScale
+                    }
                     isBadgeImageForeground = true
                 }
 
@@ -345,7 +369,7 @@ class IconGenerationRunner {
                     settings.badge.background.usesCustomGradient = false
                     // In system mode the enclosure colour is resolved separately
                     // via the appex pipeline, so leave the SwiftUI base default.
-                    if command.generation.badgeGenerationMode != .system {
+                    if command.generation.effectiveBadgeMode != .system {
                         settings.badge.background.color = try ColorParser.parseWithOpacity(command.badge.backgroundColor ?? "gray")
                     }
                 case .customGradient:
@@ -359,27 +383,41 @@ class IconGenerationRunner {
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                     settings.badge.background.source = .image
                     settings.badge.background.image = try ImageImportService.importFromURL(url)
-                    settings.badge.background.imageScale = command.badge.backgroundScale
+                    if let backgroundScale = command.badge.backgroundScale {
+                        settings.badge.background.imageScale = backgroundScale
+                    }
                     settings.badge.background.compensatesForPadding = command.badge.effectiveBackgroundPaddingCompensation
                 }
 
                 // Badge background style.
-                settings.badge.background.usesGradient = command.badge.backgroundGradient.isOn
+                if let backgroundGradient = command.badge.backgroundGradient {
+                    settings.badge.background.usesGradient = backgroundGradient.isOn
+                }
                 settings.badge.background.drawsShadow = command.badge.backgroundShadow?.isOn ?? (command.badge.isImageBackground ? false : true)
 
                 // Badge layout.
-                settings.badge.position = try parseBadgePosition(command.badge.position)
-                settings.badge.scale = command.badge.scale
-                settings.badge.offsetX = command.badge.offsetX
-                settings.badge.offsetY = command.badge.offsetY
+                if let position = command.badge.position {
+                    settings.badge.position = try parseBadgePosition(position)
+                }
+                if let badgeScale = command.badge.scale {
+                    settings.badge.scale = badgeScale
+                }
+                if let offsetX = command.badge.offsetX {
+                    settings.badge.offsetX = offsetX
+                }
+                if let offsetY = command.badge.offsetY {
+                    settings.badge.offsetY = offsetY
+                }
 
                 // Badge symbol rendering.
-                settings.badge.foreground.renderingStyle = try parseRenderingMode(command.badge.symbolRendering)
+                if let symbolRendering = command.badge.symbolRendering {
+                    settings.badge.foreground.renderingStyle = try parseRenderingMode(symbolRendering)
+                }
 
                 // Merged --badge-symbol-color. In mica mode it drives the SwiftUI
                 // symbol/hierarchical/multicolor tint; in system mode the colour is
                 // resolved as an appex token, so the SwiftUI colour is left default.
-                if command.generation.badgeGenerationMode != .system {
+                if command.generation.effectiveBadgeMode != .system {
                     let parsed = try ColorParser.parseWithOpacity(command.badge.symbolColor ?? "white")
                     settings.badge.foreground.color = parsed
                     settings.badge.foreground.hierarchicalColor = parsed
@@ -394,20 +432,29 @@ class IconGenerationRunner {
                 settings.badge.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[1])
                 settings.badge.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(badgePaletteParts[2])
 
-                settings.badge.foreground.symbolWeight = try parseSymbolWeight(command.badge.symbolWeight)
-                settings.badge.foreground.fillStyle = command.badge.symbolGradient.isOn ? .gradient : .flat
+                if let symbolWeight = command.badge.symbolWeight {
+                    settings.badge.foreground.symbolWeight = try parseSymbolWeight(symbolWeight)
+                }
+                if let symbolGradient = command.badge.symbolGradient {
+                    settings.badge.foreground.fillStyle = symbolGradient.isOn ? .gradient : .flat
+                }
 
                 // Badge foreground shadow (off for images, on for SF Symbols by default).
                 settings.badge.foreground.drawsShadow = command.badge.foregroundShadow?.isOn ?? (isBadgeImageForeground ? false : true)
 
                 // Badge generation mode (system → appex pipeline).
-                if command.generation.badgeGenerationMode == .system {
+                if command.generation.effectiveBadgeMode == .system {
                     settings.badge.foreground.source = .system
                 }
 
-                // Badge layer visibility (default on when the badge is active).
-                settings.badge.foreground.isHidden = !command.badge.foregroundVisibility.isOn
-                settings.badge.background.isHidden = !command.badge.backgroundVisibility.isOn
+                // Badge layer visibility. Unlike every other flag here this is
+                // NOT conditional on the flag being passed: both specs default
+                // their layers to hidden, and supplying --badge-fg is what makes
+                // the badge appear. So an active badge is visible unless a flag
+                // says otherwise — the `?? true` is that activation rule, not a
+                // restatement of a spec default.
+                settings.badge.foreground.isHidden = !(command.badge.foregroundVisibility?.isOn ?? true)
+                settings.badge.background.isHidden = !(command.badge.backgroundVisibility?.isOn ?? true)
             }
 
         } catch let error as ColorParseError {
