@@ -837,6 +837,19 @@ struct GenerateCommand: AsyncParsableCommand {
         return .image(raw)
     }
 
+    /// The icon foreground the command *supplied*, or `nil` when neither the
+    /// positional name nor `--icon-fg` was given.
+    ///
+    /// `generate` requires a foreground, so it goes through `resolvedForeground()`
+    /// and lets the throw stand. `render` does not: the document already carries
+    /// one, and an absent flag there means "keep it" rather than "error". Only the
+    /// settings builder uses this — validation still uses the throwing form, which
+    /// is what preserves `generate`'s "provide an icon foreground" error.
+    func providedForeground() throws -> ResolvedForeground? {
+        guard iconForeground.foreground != nil || symbolName != nil else { return nil }
+        return try resolvedForeground()
+    }
+
     /// Resolve the icon background from `--icon-bg`. Recognised keywords select a
     /// generated background; any other value is treated as an image file path.
     func resolvedBackground() -> ResolvedBackground {
