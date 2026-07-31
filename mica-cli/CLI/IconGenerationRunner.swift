@@ -670,63 +670,44 @@ class IconGenerationRunner {
     }
     
     // MARK: - Enhanced Parsing Helpers
+    //
+    // Thin wrappers over the shared token vocabulary (Services/SettingsTokens.swift)
+    // that own the CLI's error wording. The flag transforms have already validated
+    // these values, so the throws are a second line of defence.
 
     private func parseRenderingMode(_ input: String) throws -> SymbolRenderingStyle {
-        switch input.lowercased() {
-        case "monochrome": return .monochrome
-        case "hierarchical": return .hierarchical
-        case "multicolor": return .multicolor
-        case "palette": return .palette
-        default: 
-            throw CLIError.invalidArgument("Invalid rendering mode: \(input). Must be 'monochrome', 'hierarchical', 'multicolor', or 'palette'")
+        guard let style = SymbolRenderingStyle.from(cliToken: input) else {
+            throw CLIError.invalidArgument("Invalid rendering mode: \(input). Must be one of: \(SymbolRenderingStyle.allCLITokens.joined(separator: ", "))")
         }
+        return style
     }
-    
+
     private func parseBadgePosition(_ input: String) throws -> BadgePosition {
-        switch input.lowercased() {
-        case "top-left": return .topLeft
-        case "top-right": return .topRight
-        case "bottom-left": return .bottomLeft
-        case "bottom-right": return .bottomRight
-        default:
-            throw CLIError.invalidArgument("Invalid badge position: \(input). Must be 'top-left', 'top-right', 'bottom-left', or 'bottom-right'")
+        guard let position = BadgePosition.from(cliToken: input) else {
+            throw CLIError.invalidArgument("Invalid badge position: \(input). Must be one of: \(BadgePosition.allCLITokens.joined(separator: ", "))")
         }
+        return position
     }
 
     private func parseCornerRadius(_ input: String) throws -> IconCornerRadiusStyle {
-        switch input.lowercased() {
-        case "macos11": return .macOS11
-        case "macos26": return .macOS26
-        default:
-            throw CLIError.invalidArgument("Invalid corner radius: \(input). Must be 'macos11' or 'macos26'")
+        guard let style = IconCornerRadiusStyle.from(cliToken: input) else {
+            throw CLIError.invalidArgument("Invalid corner radius: \(input). Must be one of: \(IconCornerRadiusStyle.allCLITokens.joined(separator: ", "))")
         }
+        return style
     }
 
     private func parseShadowStyle(_ input: String) throws -> BackgroundShadowStyle {
-        switch input.lowercased() {
-        case "off": return .off
-        case "macos11": return .sequoia
-        case "macos26": return .macOS26
-        default:
-            throw CLIError.invalidArgument("Invalid shadow style: \(input). Must be 'off', 'macos11', or 'macos26'")
+        guard let style = BackgroundShadowStyle.from(cliToken: input) else {
+            throw CLIError.invalidArgument("Invalid shadow style: \(input). Must be one of: \(BackgroundShadowStyle.allCLITokens.joined(separator: ", "))")
         }
+        return style
     }
 
     private func parseSymbolWeight(_ input: String) throws -> SymbolWeight {
-        switch input.lowercased() {
-        case "auto": return .auto
-        case "ultralight": return .ultraLight
-        case "thin": return .thin
-        case "light": return .light
-        case "regular": return .regular
-        case "medium": return .medium
-        case "semibold": return .semibold
-        case "bold": return .bold
-        case "heavy": return .heavy
-        case "black": return .black
-        default:
-            throw CLIError.invalidArgument("Invalid symbol weight: \(input). Must be one of: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black")
+        guard let weight = SymbolWeight.from(cliToken: input) else {
+            throw CLIError.invalidArgument("Invalid symbol weight: \(input). Must be one of: \(SymbolWeight.allCLITokens.joined(separator: ", "))")
         }
+        return weight
     }
 
     // MARK: - File Metadata

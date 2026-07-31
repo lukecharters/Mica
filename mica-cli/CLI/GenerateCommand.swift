@@ -3,9 +3,8 @@ import Foundation
 
 // MARK: - Shared Validation Helpers
 
-private let validRenderingModes = ["monochrome", "hierarchical", "multicolor", "palette"]
-private let validSymbolWeights = ["auto", "ultralight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"]
-private let validAppexColors = ["black", "blue", "brown", "cyan", "gray", "green", "indigo", "orange", "pink", "purple", "red", "teal", "white", "yellow"]
+// The token vocabularies live in Services/SettingsTokens.swift, shared with the
+// configuration codec so the flag transforms and the config keys cannot drift.
 
 /// Resolve an appex colour argument to the plist value stored on the command.
 /// Accepts a named token, an `r,g,b,a` value (0–1 or 0–255), or a hex colour.
@@ -14,7 +13,8 @@ private func resolveAppexColorArg(_ input: String, role: String) throws -> Strin
     do {
         return try AppexColor.plistValue(fromCLIString: input)
     } catch {
-        throw ValidationError("\(role) is invalid: '\(input)'. Use a named color (\(validAppexColors.joined(separator: ", "))), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736).")
+        let tokens = AppexNamedColor.allCases.map(\.rawValue).joined(separator: ", ")
+        throw ValidationError("\(role) is invalid: '\(input)'. Use a named color (\(tokens)), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736).")
     }
 }
 
@@ -200,8 +200,8 @@ struct IconForegroundOptions: ParsableArguments {
         ),
         transform: { mode in
             let normalized = normalizeBritishSpelling(mode)
-            guard validRenderingModes.contains(normalized) else {
-                throw ValidationError("Symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
+            guard SymbolRenderingStyle.from(cliToken: normalized) != nil else {
+                throw ValidationError("Symbol rendering mode must be one of: \(SymbolRenderingStyle.allCLITokens.joined(separator: ", "))")
             }
             return normalized
         }
@@ -238,8 +238,8 @@ struct IconForegroundOptions: ParsableArguments {
         name: .customLong("icon-symbol-weight"),
         help: ArgumentHelp("Symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
         transform: { weight in
-            guard validSymbolWeights.contains(weight.lowercased()) else {
-                throw ValidationError("Symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
+            guard SymbolWeight.from(cliToken: weight) != nil else {
+                throw ValidationError("Symbol weight must be one of: \(SymbolWeight.allCLITokens.joined(separator: ", "))")
             }
             return weight.lowercased()
         }
@@ -276,13 +276,8 @@ struct IconForegroundOptions: ParsableArguments {
 
 // MARK: - Icon Background Options
 
-/// Named asset colours available for `prerendered-liquid-glass` backgrounds.
-/// Matches the `background-<color>-<gradient|solid>` assets in Assets.xcassets.
-let validPreRenderedColors = [
-    "black", "blue", "brown", "cyan", "darkgray", "darkmode", "gray", "green",
-    "indigo", "lightgray", "mint", "orange", "pink", "purple", "red", "teal",
-    "white", "yellow",
-]
+// `validPreRenderedColors` lives in Services/SettingsTokens.swift, shared with
+// the configuration codec.
 
 struct IconBackgroundOptions: ParsableArguments {
     // Folds the old --background-mode + --imported-background. Recognised
@@ -335,7 +330,7 @@ struct IconBackgroundOptions: ParsableArguments {
         name: .customLong("icon-bg-corner-radius"),
         help: ArgumentHelp("Corner radius: macos11 or macos26 (default)", valueName: "style"),
         transform: { style in
-            guard ["macos11", "macos26"].contains(style.lowercased()) else {
+            guard IconCornerRadiusStyle.from(cliToken: style) != nil else {
                 throw ValidationError("Corner radius must be 'macos11' or 'macos26'")
             }
             return style.lowercased()
@@ -356,7 +351,7 @@ struct IconBackgroundOptions: ParsableArguments {
         name: .customLong("icon-bg-shadow"),
         help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default: off for image backgrounds, macos26 otherwise)", valueName: "style"),
         transform: { style in
-            guard ["off", "macos11", "macos26"].contains(style.lowercased()) else {
+            guard BackgroundShadowStyle.from(cliToken: style) != nil else {
                 throw ValidationError("Background shadow must be 'off', 'macos11', or 'macos26'")
             }
             return style.lowercased()
@@ -385,7 +380,7 @@ struct IconBackgroundOptions: ParsableArguments {
     /// `.color`, so the generated-background defaults below apply.
     var isImageBackground: Bool {
         guard let selection else { return false }
-        return !["standard", "custom-gradient", "prerendered-liquid-glass"].contains(selection.lowercased())
+        return !IconBackgroundValue.keywords.contains(selection.lowercased())
     }
 
     /// Resolved background shadow style: an explicit `--icon-bg-shadow` wins;
@@ -443,8 +438,8 @@ struct BadgeOptions: ParsableArguments {
         ),
         transform: { mode in
             let normalized = normalizeBritishSpelling(mode)
-            guard validRenderingModes.contains(normalized) else {
-                throw ValidationError("Badge symbol rendering mode must be one of: \(validRenderingModes.joined(separator: ", "))")
+            guard SymbolRenderingStyle.from(cliToken: normalized) != nil else {
+                throw ValidationError("Badge symbol rendering mode must be one of: \(SymbolRenderingStyle.allCLITokens.joined(separator: ", "))")
             }
             return normalized
         }
@@ -480,8 +475,8 @@ struct BadgeOptions: ParsableArguments {
         name: .customLong("badge-symbol-weight"),
         help: ArgumentHelp("Badge symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
         transform: { weight in
-            guard validSymbolWeights.contains(weight.lowercased()) else {
-                throw ValidationError("Badge symbol weight must be one of: \(validSymbolWeights.joined(separator: ", "))")
+            guard SymbolWeight.from(cliToken: weight) != nil else {
+                throw ValidationError("Badge symbol weight must be one of: \(SymbolWeight.allCLITokens.joined(separator: ", "))")
             }
             return weight.lowercased()
         }
@@ -599,9 +594,8 @@ struct BadgeOptions: ParsableArguments {
         name: .customLong("badge-position"),
         help: ArgumentHelp("Badge position: top-left, top-right, bottom-left, bottom-right", valueName: "position"),
         transform: { pos in
-            let valid = ["top-left", "top-right", "bottom-left", "bottom-right"]
-            guard valid.contains(pos.lowercased()) else {
-                throw ValidationError("Badge position must be one of: \(valid.joined(separator: ", "))")
+            guard BadgePosition.from(cliToken: pos) != nil else {
+                throw ValidationError("Badge position must be one of: \(BadgePosition.allCLITokens.joined(separator: ", "))")
             }
             return pos.lowercased()
         }
@@ -653,7 +647,7 @@ struct BadgeOptions: ParsableArguments {
     /// keyword. An absent flag is not an image background — see the icon's.
     var isImageBackground: Bool {
         guard let background else { return false }
-        return !["standard", "custom-gradient"].contains(background.lowercased())
+        return !BadgeBackgroundValue.keywords.contains(background.lowercased())
     }
 
     /// Resolved padding compensation for an imported badge background. Mirrors the
@@ -667,34 +661,10 @@ struct BadgeOptions: ParsableArguments {
 
 // MARK: - Main Command
 
-/// The resolved icon foreground after combining the positional symbol-name
-/// shorthand with an explicit `--icon-fg` value.
-enum ResolvedForeground {
-    case symbol(String)
-    case image(String)
-}
-
-/// The resolved icon background selected by `--icon-bg`.
-enum ResolvedBackground {
-    case standard
-    case customGradient
-    case preRendered
-    case image(String)
-}
-
-/// The resolved badge foreground after parsing `--badge-fg`. A `symbol:` prefix
-/// selects an SF Symbol; any other value is an image file path.
-enum ResolvedBadgeForeground {
-    case symbol(String)
-    case image(String)
-}
-
-/// The resolved badge background selected by `--badge-bg` (no Liquid Glass).
-enum ResolvedBadgeBackground {
-    case standard
-    case customGradient
-    case image(String)
-}
+// The resolved-source value types (`ForegroundValue`, `IconBackgroundValue`,
+// `BadgeBackgroundValue`) live in Services/SettingsTokens.swift, shared with
+// the configuration codec so both interpret `symbol:` prefixes and background
+// keywords with the same code.
 
 struct GenerateCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -817,7 +787,7 @@ struct GenerateCommand: AsyncParsableCommand {
     /// Resolve the icon foreground. An explicit `--icon-fg` wins over the
     /// positional symbol-name shorthand. A `symbol:` prefix selects an SF
     /// Symbol; any other value is treated as an image file path.
-    func resolvedForeground() throws -> ResolvedForeground {
+    func resolvedForeground() throws -> ForegroundValue {
         let raw: String
         if let foreground = iconForeground.foreground {
             raw = foreground
@@ -827,14 +797,10 @@ struct GenerateCommand: AsyncParsableCommand {
             throw ValidationError("Provide an icon foreground: a positional SF Symbol name, or --icon-fg <symbol:NAME|path>.")
         }
 
-        if raw.lowercased().hasPrefix("symbol:") {
-            let name = String(raw.dropFirst("symbol:".count))
-            guard !name.isEmpty else {
-                throw ValidationError("--icon-fg 'symbol:' requires a symbol name, e.g. symbol:star.fill")
-            }
-            return .symbol(name)
+        guard let value = ForegroundValue(parsing: raw) else {
+            throw ValidationError("--icon-fg 'symbol:' requires a symbol name, e.g. symbol:star.fill")
         }
-        return .image(raw)
+        return value
     }
 
     /// The icon foreground the command *supplied*, or `nil` when neither the
@@ -846,22 +812,17 @@ struct GenerateCommand: AsyncParsableCommand {
     /// rather than "error". Only the settings builder uses this — validation still
     /// uses the throwing form, which is what preserves the "provide an icon
     /// foreground" error.
-    func providedForeground() throws -> ResolvedForeground? {
+    func providedForeground() throws -> ForegroundValue? {
         guard iconForeground.foreground != nil || symbolName != nil else { return nil }
         return try resolvedForeground()
     }
 
     /// Resolve the icon background from `--icon-bg`. Recognised keywords select a
     /// generated background; any other value is treated as an image file path.
-    func resolvedBackground() -> ResolvedBackground {
+    func resolvedBackground() -> IconBackgroundValue {
         // Absent means the default generated background, not an image path.
         guard let selection = background.selection else { return .standard }
-        switch selection.lowercased() {
-        case "standard": return .standard
-        case "custom-gradient": return .customGradient
-        case "prerendered-liquid-glass": return .preRendered
-        default: return .image(selection)
-        }
+        return IconBackgroundValue(parsing: selection)
     }
 
     // MARK: - Badge Resolution
@@ -872,28 +833,20 @@ struct GenerateCommand: AsyncParsableCommand {
     /// Resolve the badge foreground. Returns `nil` when `--badge-fg` is absent
     /// (the badge is inactive). A `symbol:` prefix selects an SF Symbol; any
     /// other value is treated as an image file path.
-    func resolvedBadgeForeground() throws -> ResolvedBadgeForeground? {
+    func resolvedBadgeForeground() throws -> ForegroundValue? {
         guard let raw = badge.foreground else { return nil }
-        if raw.lowercased().hasPrefix("symbol:") {
-            let name = String(raw.dropFirst("symbol:".count))
-            guard !name.isEmpty else {
-                throw ValidationError("--badge-fg 'symbol:' requires a symbol name, e.g. symbol:plus.circle")
-            }
-            return .symbol(name)
+        guard let value = ForegroundValue(parsing: raw) else {
+            throw ValidationError("--badge-fg 'symbol:' requires a symbol name, e.g. symbol:plus.circle")
         }
-        return .image(raw)
+        return value
     }
 
     /// Resolve the badge background from `--badge-bg`. Recognised keywords select
     /// a generated background; any other value is treated as an image file path.
-    func resolvedBadgeBackground() -> ResolvedBadgeBackground {
+    func resolvedBadgeBackground() -> BadgeBackgroundValue {
         // Absent means the default generated background, not an image path.
         guard let background = badge.background else { return .standard }
-        switch background.lowercased() {
-        case "standard": return .standard
-        case "custom-gradient": return .customGradient
-        default: return .image(background)
-        }
+        return BadgeBackgroundValue(parsing: background)
     }
 
     /// Badge appex enclosure colour (system badge mode), resolved from the merged
@@ -1198,30 +1151,28 @@ struct GenerateCommand: AsyncParsableCommand {
 
 /// Split a gradient-colors value into exactly two component strings.
 /// Throws a `ValidationError` if the count isn't two or any part is empty.
+/// The splitting itself is `splitColorList`, shared with the configuration codec.
 func splitGradientColors(_ raw: String, role: String = "--icon-bg-gradient-colors") throws -> [String] {
-    let parts = raw
-        .split(separator: ",", omittingEmptySubsequences: false)
-        .map { $0.trimmingCharacters(in: .whitespaces) }
-    guard parts.count == 2 else {
-        throw ValidationError("\(role) requires exactly two comma-separated colors 'c1,c2'. You provided \(parts.count).")
-    }
-    guard parts.allSatisfy({ !$0.isEmpty }) else {
+    switch splitColorList(raw, expecting: 2) {
+    case .ok(let parts):
+        return parts
+    case .wrongCount(let count):
+        throw ValidationError("\(role) requires exactly two comma-separated colors 'c1,c2'. You provided \(count).")
+    case .emptyComponent:
         throw ValidationError("\(role) colors cannot be empty. Use 'c1,c2'.")
     }
-    return parts
 }
 
 /// Split a `--icon-symbol-palette` value into exactly three component strings.
 /// Throws a `ValidationError` if the count isn't three or any part is empty.
+/// The splitting itself is `splitColorList`, shared with the configuration codec.
 func splitPalette(_ raw: String, role: String) throws -> [String] {
-    let parts = raw
-        .split(separator: ",", omittingEmptySubsequences: false)
-        .map { $0.trimmingCharacters(in: .whitespaces) }
-    guard parts.count == 3 else {
-        throw ValidationError("\(role) requires exactly three comma-separated colors 'c1,c2,c3'. You provided \(parts.count).")
-    }
-    guard parts.allSatisfy({ !$0.isEmpty }) else {
+    switch splitColorList(raw, expecting: 3) {
+    case .ok(let parts):
+        return parts
+    case .wrongCount(let count):
+        throw ValidationError("\(role) requires exactly three comma-separated colors 'c1,c2,c3'. You provided \(count).")
+    case .emptyComponent:
         throw ValidationError("\(role) colors cannot be empty. Use 'c1,c2,c3'.")
     }
-    return parts
 }
