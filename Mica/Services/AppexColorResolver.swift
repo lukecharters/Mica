@@ -58,4 +58,23 @@ extension AppexColor {
         let color = try ColorParser.parseWithOpacity(trimmed)
         return rgbaString(from: color)
     }
+
+    /// Resolve a CLI/config colour string to an `AppexColor` value — the form the
+    /// configuration codec stores on `MicaAppexColors`. Same branch order as
+    /// `plistValue(fromCLIString:)`, and implemented *through* it so the two can
+    /// never disagree: a named token keeps Apple's curated rendering, anything
+    /// else becomes a custom colour whose `plistValue` reproduces the resolved
+    /// components exactly.
+    static func parsing(cliString input: String) throws -> AppexColor {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let token = AppexNamedColor(rawValue: normalizeBritishSpelling(trimmed)) {
+            return .named(token)
+        }
+        let plist = try plistValue(fromCLIString: trimmed)
+        let parts = plist.split(separator: ",").compactMap { Double($0) }
+        guard parts.count == 4 else {
+            throw ColorParseError.invalidFormat(input, "Unresolvable appex colour")
+        }
+        return .custom(Color(.sRGB, red: parts[0], green: parts[1], blue: parts[2], opacity: parts[3]))
+    }
 }
