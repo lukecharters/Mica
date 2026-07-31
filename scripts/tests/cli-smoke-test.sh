@@ -6,6 +6,8 @@
 #   - generate (default subcommand): --icon-fg…/--icon-bg…, --badge-fg…/--badge-bg…,
 #     --icon-generation-mode/--badge-generation-mode, --scale, --color-space,
 #     and the --json/-q/-v output modes.
+#   - generate --config <file.json>: a configuration alone, a flag overriding one,
+#     the warning and fatal paths, and relative image resolution.
 #   - extract subcommand: <path> -o <dir> [--size --scale --color-space --recursive --depth].
 # Produces per-case PNGs in a timestamped output directory and a README.txt summary.
 # See docs/superpowers/specs/2026-04-17-cli-smoke-test-design.md for the original design.
@@ -20,6 +22,7 @@ readonly FIXTURES_DIR="${PROJECT_ROOT}/scripts/tests/fixtures"
 readonly OUTPUT_ROOT="${PROJECT_ROOT}/scripts/tests/smoke-output"
 readonly FIXTURE_SYMBOL="${FIXTURES_DIR}/test-symbol-2.png"
 readonly FIXTURE_BACKGROUND="${FIXTURES_DIR}/test-background-2.png"
+readonly FIXTURE_CONFIG="${FIXTURES_DIR}/smoke-config.json"
 readonly SCHEME="mica-cli"
 readonly XCODE_PROJECT="${PROJECT_ROOT}/Mica.xcodeproj"
 
@@ -37,6 +40,9 @@ NEG_FAIL=0
 EXTRACT_INDEX=0
 EXTRACT_PASS=0
 EXTRACT_FAIL=0
+CONFIG_INDEX=0
+CONFIG_PASS=0
+CONFIG_FAIL=0
 
 # Filled by expand_fixtures() — fixture-placeholder-expanded argument list.
 EXPANDED_ARGS=()
@@ -170,6 +176,36 @@ NEGATIVE_CASES=(
     "extract-dir-without-recursive|Pass --recursive|extract|/System/Applications"
 )
 
+# `generate --config` cases. These need their own runner because a configuration
+# supplies the foreground, so unlike HAPPY_CASES there is no positional symbol —
+# which is also what makes them the test of `mica-cli --config …` routing through
+# the default subcommand with a flag as its first token.
+#
+# Entry format: slug|expectedExit|stderrSubstring|expectedWidth|arg1[|arg2|...]
+#   expectedExit    the exit code the case must produce
+#   stderrSubstring '-' to skip, otherwise stderr must contain it
+#   expectedWidth   '-' to skip, otherwise the PNG's pixel width must match
+# $CONFIG expands to the committed smoke-config.json; the other fixtures are
+# named in full so the failure mode of each is obvious from the entry.
+CONFIG_CASES=(
+    # A configuration on its own, invoked with no subcommand name.
+    "config-only|0|-|512|--config|\$CONFIG"
+    # …and with it, since `generate --config` must mean the same thing.
+    "config-explicit-subcommand|0|-|512|generate|--config|\$CONFIG"
+    # A flag beats the file: 256@2x becomes 128@1x.
+    "config-size-override|0|-|128|--config|\$CONFIG|--size|128|--scale|1x"
+    # An unknown key is a warning on stderr and a successful run.
+    "config-unknown-key|0|not a configuration key|-|--config|\$FIXTURES/smoke-config-unknown-key.json"
+    # …and it is still heard under --quiet, which is the point of the channel.
+    "config-warning-survives-quiet|0|not a configuration key|-|--config|\$FIXTURES/smoke-config-unknown-key.json|--quiet"
+    # Malformed JSON is the one fatal case.
+    "config-truncated-json|1|not valid JSON|-|--config|\$FIXTURES/smoke-config-truncated.json"
+    # A missing file fails before anything is rendered.
+    "config-missing-file|1|Cannot read configuration|-|--config|\$FIXTURES/no-such-config.json"
+    # A relative image path resolves against the configuration's own directory.
+    "config-relative-image|0|-|-|--config|\$FIXTURES/smoke-config-relative-image.json"
+)
+
 # Happy-path cases for the `extract` subcommand. Format differs from HAPPY_CASES
 # because extract takes an input path (not a symbol name) and writes one or more
 # PNGs into an output directory (via -o <dir>).
@@ -197,6 +233,8 @@ expand_fixtures() {
         case "${a}" in
             '$SYMBOL_FIXTURE')     EXPANDED_ARGS+=("${FIXTURE_SYMBOL}") ;;
             '$BACKGROUND_FIXTURE') EXPANDED_ARGS+=("${FIXTURE_BACKGROUND}") ;;
+            '$CONFIG')             EXPANDED_ARGS+=("${FIXTURE_CONFIG}") ;;
+            '$FIXTURES/'*)         EXPANDED_ARGS+=("${FIXTURES_DIR}/${a#\$FIXTURES/}") ;;
             *)                     EXPANDED_ARGS+=("${a}") ;;
         esac
     done
@@ -246,6 +284,10 @@ setup_run() {
     fi
     if [[ ! -f "${FIXTURE_BACKGROUND}" ]]; then
         echo "ERROR: missing fixture ${FIXTURE_BACKGROUND}" >&2
+        exit 2
+    fi
+    if [[ ! -f "${FIXTURE_CONFIG}" ]]; then
+        echo "ERROR: missing fixture ${FIXTURE_CONFIG}" >&2
         exit 2
     fi
 
@@ -372,6 +414,77 @@ run_extract_case() {
     rm -f "${stderr_file}"
 }
 
+run_config_case() {
+    local entry="$1"
+    local old_ifs="${IFS}"
+    IFS='|' read -ra parts <<< "${entry}"
+    IFS="${old_ifs}"
+
+    if [[ "${#parts[@]}" -lt 5 ]]; then
+        echo "FAIL  C???  malformed config entry: ${entry}" | tee -a "${README}"
+        CONFIG_FAIL=$((CONFIG_FAIL + 1))
+        return
+    fi
+
+    local slug="${parts[0]}"
+    local expected_exit="${parts[1]}"
+    local expected_stderr="${parts[2]}"
+    local expected_width="${parts[3]}"
+    local rest=("${parts[@]:4}")
+
+    CONFIG_INDEX=$((CONFIG_INDEX + 1))
+    local index_formatted
+    printf -v index_formatted "C%03d" "${CONFIG_INDEX}"
+    local output_file="${OUTPUT_DIR}/${index_formatted}__${slug}.png"
+
+    local stderr_file
+    stderr_file="$(mktemp)"
+    local exit_code=0
+    expand_fixtures ${rest[@]+"${rest[@]}"}
+
+    "${CLI_BINARY}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
+        || exit_code=$?
+
+    local failures=()
+
+    if [[ "${exit_code}" -ne "${expected_exit}" ]]; then
+        failures+=("exit=${exit_code}, expected ${expected_exit}")
+    fi
+
+    if [[ "${expected_stderr}" != "-" ]] && ! grep -qi -- "${expected_stderr}" "${stderr_file}"; then
+        failures+=("stderr missing: ${expected_stderr}")
+    fi
+
+    # A case expected to succeed must have produced a PNG; one expected to fail
+    # must not have written a half-rendered file.
+    if [[ "${expected_exit}" -eq 0 ]]; then
+        if [[ ! -s "${output_file}" ]]; then
+            failures+=("no PNG written")
+        elif [[ "${expected_width}" != "-" ]]; then
+            local width
+            width="$(sips -g pixelWidth "${output_file}" 2>/dev/null | awk '/pixelWidth:/ { print $2 }')"
+            if [[ "${width}" != "${expected_width}" ]]; then
+                failures+=("width=${width:-unknown}, expected ${expected_width}")
+            fi
+        fi
+    elif [[ -e "${output_file}" ]]; then
+        failures+=("a failed run still wrote ${output_file##*/}")
+    fi
+
+    if [[ "${#failures[@]}" -eq 0 ]]; then
+        CONFIG_PASS=$((CONFIG_PASS + 1))
+        echo "PASS  ${index_formatted}  ${slug}" | tee -a "${README}"
+    else
+        CONFIG_FAIL=$((CONFIG_FAIL + 1))
+        echo "FAIL  ${index_formatted}  ${slug}  ${failures[*]}" | tee -a "${README}"
+        if [[ -s "${stderr_file}" ]]; then
+            sed 's/^/        /' "${stderr_file}" | head -5 >> "${README}"
+        fi
+    fi
+
+    rm -f "${stderr_file}"
+}
+
 run_negative_case() {
     local entry="$1"
     local old_ifs="${IFS}"
@@ -408,7 +521,8 @@ print_summary() {
     local happy_total=$((HAPPY_PASS + HAPPY_FAIL))
     local neg_total=$((NEG_PASS + NEG_FAIL))
     local extract_total=$((EXTRACT_PASS + EXTRACT_FAIL))
-    local line="Happy: ${HAPPY_PASS}/${happy_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
+    local config_total=$((CONFIG_PASS + CONFIG_FAIL))
+    local line="Happy: ${HAPPY_PASS}/${happy_total} | Config: ${CONFIG_PASS}/${config_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
 
     echo ""
     echo "============================================================"
@@ -425,7 +539,7 @@ print_summary() {
         open "${OUTPUT_DIR}"
     fi
 
-    if [[ "${HAPPY_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then
+    if [[ "${HAPPY_FAIL}" -ne 0 || "${CONFIG_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then
         exit 1
     fi
     exit 0
@@ -439,6 +553,10 @@ main() {
     for entry in "${HAPPY_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
         run_happy_case "$entry"
+    done
+    for entry in "${CONFIG_CASES[@]-}"; do
+        [[ -z "$entry" ]] && continue
+        run_config_case "$entry"
     done
     for entry in "${EXTRACT_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue

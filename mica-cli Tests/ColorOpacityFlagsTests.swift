@@ -190,10 +190,10 @@ import AppKit
             "--icon-bg-color", "blue:0.5", "--icon-symbol-color", "white:0.5",
         ])
         try command.performValidationForTesting()
-        // The icon has no resolver method on the command — these are the two
-        // expressions IconGenerationRunner itself uses to fill the appex plist.
-        #expect(try AppexColor.plistValue(fromCLIString: command.background.color ?? "blue").hasSuffix(",0.5"))
-        #expect(try AppexColor.plistValue(fromCLIString: command.iconForeground.symbolColor ?? "white") == "1,1,1,0.5")
+        // The four resolvers are what IconGenerationRunner fills the appex plist
+        // from; `.none` is the flags-only context, so only the flags speak here.
+        #expect(try command.resolvedIconAppexEnclosureColor(in: .none).hasSuffix(",0.5"))
+        #expect(try command.resolvedIconAppexSymbolColor(in: .none) == "1,1,1,0.5")
     }
 
     @Test("system-mode badge colour flags accept a :opacity suffix")
@@ -203,7 +203,7 @@ import AppKit
             "--badge-bg-color", "blue:0.5", "--badge-symbol-color", "white:0.5",
         ])
         try command.performValidationForTesting()
-        #expect(try command.resolvedBadgeAppexEnclosureColor().hasSuffix(",0.5"))
-        #expect(try command.resolvedBadgeAppexSymbolColor() == "1,1,1,0.5")
+        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none).hasSuffix(",0.5"))
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none) == "1,1,1,0.5")
     }
 }

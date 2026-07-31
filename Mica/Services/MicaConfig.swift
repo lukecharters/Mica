@@ -167,7 +167,19 @@ enum MicaConfigCodec {
     typealias ImageLoader = (URL) throws -> ImportedImage
 
     static func defaultImageLoader(_ url: URL) throws -> ImportedImage {
-        try ImageImportService.importFromURL(url)
+        // Existence is this loader's business, not `importImage`'s, so an injected
+        // loader stays in full control of what "loadable" means (the tests never
+        // touch the disk). It has to be checked *somewhere*, because
+        // `ImageImportService.importFromURL` does not fail on a path that isn't
+        // there: its last resort is the file's Finder icon, and for a missing file
+        // that is the generic document icon. Right for a deliberate import of an
+        // app or a document, wrong for a typo in a configuration — which would
+        // then render a blank page instead of warning. The flag path never meets
+        // this, because `validateImagePaths` rejects a missing `--icon-fg` first.
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw CocoaError(.fileNoSuchFile, userInfo: [NSFilePathErrorKey: url.path])
+        }
+        return try ImageImportService.importFromURL(url)
     }
 
     // MARK: Decode

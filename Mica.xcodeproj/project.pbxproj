@@ -140,6 +140,7 @@
 				CLI/IconGenerationRunner.swift,
 				CLI/Support/CLIOutput.swift,
 				"CLI/Support/ExportColorSpace+CLI.swift",
+				CLI/Support/GenerationContext.swift,
 				CLI/Support/IconExtractor.swift,
 				CLI/Support/OutputResolver.swift,
 				"CLI/Support/SharedTokens+CLI.swift",

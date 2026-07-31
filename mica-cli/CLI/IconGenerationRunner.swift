@@ -22,21 +22,31 @@ class IconGenerationRunner {
     /// Render and save the icon, returning a description of the produced file.
     /// Diagnostics go through `reporter` (verbose phase detail to stderr); the
     /// caller is responsible for the success/error reporting and exit code.
-    func generateIcon(from command: GenerateCommand, reporter: OutputReporter) async throws -> OutputFileJSON {
+    ///
+    /// `context` is what `--config` loaded, or `.none` for a flags-only run. Every
+    /// decision below that used to read a flag directly now reads the *built
+    /// settings* or the context instead, because with a configuration the flag may
+    /// be absent and the answer still be yes.
+    func generateIcon(from command: GenerateCommand, context: GenerationContext = .none, reporter: OutputReporter) async throws -> OutputFileJSON {
         // Phase 1: Validation
         reporter.detail("Validating…")
-        try await performEnhancedValidation(command)
+        try await performEnhancedValidation(command, context: context)
 
         // Phase 2: Build settings
         reporter.detail("Building settings…")
-        let settings = try buildIconSettings(from: command)
+        let settings = try buildIconSettings(from: command, onto: context.base)
+
+        // The symbols are checked against the *resolved* settings rather than the
+        // flags: a configuration can supply either symbol, and a name that does
+        // not exist has to fail the same way whichever supplied it.
+        try validateResolvedSymbols(settings)
 
         // Phase 3: Render
         let image: NSImage
 
-        if command.generation.effectiveIconMode == .system {
+        if settings.icon.mode == .system {
             reporter.detail("Rendering via the Apple Reference (appex) pipeline…")
-            image = try await renderAppleReference(command: command, settings: settings)
+            image = try await renderAppleReference(command: command, context: context, settings: settings)
         } else {
             reporter.detail("Rendering…")
             // Load badge appex image if badge uses the System (appex) source.
@@ -45,8 +55,8 @@ class IconGenerationRunner {
             let badgeAppexImage: NSImage? = (settings.badge.isVisible && settings.badge.foreground.source == .system)
                 ? try renderAppexIcon(
                     symbolName: settings.badge.foreground.symbolName,
-                    enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
-                    symbolColor: command.resolvedBadgeAppexSymbolColor(),
+                    enclosureColor: command.resolvedBadgeAppexEnclosureColor(in: context),
+                    symbolColor: command.resolvedBadgeAppexSymbolColor(in: context),
                     settings: settings
                 )
                 : nil
@@ -54,7 +64,8 @@ class IconGenerationRunner {
         }
 
         // Phase 4: Save
-        let outputURL = try resolveOutputPath(basename: command.defaultOutputBasename(), userPath: command.export.outputPath)
+        let basename = command.defaultOutputBasename(in: context)
+        let outputURL = try resolveOutputPath(basename: basename, userPath: command.export.outputPath)
         reporter.detail("Saving to \(outputURL.path)…")
         let pixelSize = try await saveImageWithValidation(image, to: outputURL, settings: settings)
 
@@ -66,32 +77,30 @@ class IconGenerationRunner {
             width: pixelSize.width,
             height: pixelSize.height,
             bytes: fileByteCount(outputURL),
-            source: command.defaultOutputBasename()
+            source: basename
         )
     }
 
     // MARK: - Apple Reference Rendering
 
-    private func renderAppleReference(command: GenerateCommand, settings: IconSettings) async throws -> NSImage {
+    private func renderAppleReference(command: GenerateCommand, context: GenerationContext, settings: IconSettings) async throws -> NSImage {
         let appexPath = "/System/Library/ExtensionKit/Extensions/Storage.appex"
         guard FileManager.default.fileExists(atPath: appexPath) else {
             throw CLIError.renderingError("Apple Reference mode requires Storage.appex at \(appexPath). This file is not available on this system.")
         }
 
         // System mode renders an SF Symbol via the appex pipeline; image
-        // foregrounds are only supported in mica mode.
-        let foregroundSymbol: String
-        switch try command.resolvedForeground() {
-        case .symbol(let name):
-            foregroundSymbol = name
-        case .image:
+        // foregrounds are only supported in mica mode. Read off the settings, so a
+        // configuration's foreground counts as much as a flag's.
+        guard settings.icon.foreground.source != .image else {
             throw CLIError.configurationError("System generation mode (--icon-generation-mode system) requires an SF Symbol foreground; image foregrounds are only supported in mica mode.")
         }
+        let foregroundSymbol = settings.icon.foreground.symbolName
 
         // In system mode --icon-symbol-color and --icon-bg-color resolve to appex
-        // colour tokens (symbol + enclosure).
-        let appexSymbolColor = try AppexColor.plistValue(fromCLIString: command.iconForeground.symbolColor ?? "white")
-        let appexEnclosureColor = try AppexColor.plistValue(fromCLIString: command.background.color ?? "blue")
+        // colour tokens (symbol + enclosure), falling back to the configuration's.
+        let appexSymbolColor = try command.resolvedIconAppexSymbolColor(in: context)
+        let appexEnclosureColor = try command.resolvedIconAppexEnclosureColor(in: context)
 
         let scaleFactor = settings.export.isRetina ? 2 : 1
         let appexImage = try AppexReferenceService.renderForExport(
@@ -110,8 +119,8 @@ class IconGenerationRunner {
             let badgeAppexImage: NSImage? = settings.badge.foreground.source == .system
                 ? try renderAppexIcon(
                     symbolName: settings.badge.foreground.symbolName,
-                    enclosureColor: command.resolvedBadgeAppexEnclosureColor(),
-                    symbolColor: command.resolvedBadgeAppexSymbolColor(),
+                    enclosureColor: command.resolvedBadgeAppexEnclosureColor(in: context),
+                    symbolColor: command.resolvedBadgeAppexSymbolColor(in: context),
                     settings: settings
                 )
                 : nil
@@ -146,16 +155,10 @@ class IconGenerationRunner {
 
     // MARK: - Enhanced Validation
     
-    private func performEnhancedValidation(_ command: GenerateCommand) async throws {
-        // Validate SF Symbol exists (only when the foreground is an SF Symbol)
-        if case .symbol(let name) = try command.resolvedForeground() {
-            try validateSFSymbolExists(name)
-        }
-
-        // Validate badge symbol exists (only when the badge foreground is an SF Symbol)
-        if case .symbol(let name)? = try command.resolvedBadgeForeground() {
-            try validateSFSymbolExists(name)
-        }
+    private func performEnhancedValidation(_ command: GenerateCommand, context: GenerationContext) async throws {
+        // SF Symbol existence is checked *after* the settings are built, by
+        // `validateResolvedSymbols` — the name can come from a configuration as
+        // easily as from a flag, and only the built settings know which won.
 
         // Color strings are validated once, in the command layer
         // (GenerateCommand.validateColorFormats) — it runs before this
@@ -168,9 +171,22 @@ class IconGenerationRunner {
         }
 
         // Validate rendering mode consistency
-        try validateRenderingModeConsistency(command)
+        try validateRenderingModeConsistency(command, context: context)
     }
-    
+
+    /// Both symbols the settings will actually render, whatever supplied them.
+    private func validateResolvedSymbols(_ settings: IconSettings) throws {
+        // `.image` foregrounds keep a cosmetic `symbolName` (the file's stem),
+        // which is not a symbol and must not be looked up. `.system` is the appex
+        // raster of a real SF Symbol, so it is checked like `.symbol`.
+        if settings.icon.foreground.source != .image {
+            try validateSFSymbolExists(settings.icon.foreground.symbolName)
+        }
+        if settings.badge.isVisible, settings.badge.foreground.source != .image {
+            try validateSFSymbolExists(settings.badge.foreground.symbolName)
+        }
+    }
+
     private func validateSFSymbolExists(_ symbolName: String) throws {
         // Check if symbol exists by attempting to create UIImage
         let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
@@ -208,13 +224,13 @@ class IconGenerationRunner {
         }
     }
     
-    private func validateRenderingModeConsistency(_ command: GenerateCommand) throws {
+    private func validateRenderingModeConsistency(_ command: GenerateCommand, context: GenerationContext) throws {
         if command.iconForeground.symbolRendering == "palette",
            let palette = command.iconForeground.symbolPalette {
             // Enforce exactly three palette components.
             _ = try splitPalette(palette, role: "--icon-symbol-palette")
         }
-        if command.badgeIsActive, command.badge.symbolRendering == "palette",
+        if command.badgeIsActive(in: context), command.badge.symbolRendering == "palette",
            let palette = command.badge.symbolPalette {
             _ = try splitPalette(palette, role: "--badge-symbol-palette")
         }
