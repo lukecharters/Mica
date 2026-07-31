@@ -192,28 +192,31 @@ struct MicaApp: App {
         }
 
         #if DEBUG
+        // Every tool goes through DeferredWindowContent — a tool's `init` would
+        // otherwise run on every App-body evaluation, i.e. on every settings edit.
+        // See that file's header for the measurements.
         Window("Apple Reference Calibration", id: "apple-reference-calibration") {
-            AppleReferenceCalibrationTool()
+            DeferredWindowContent { AppleReferenceCalibrationTool() }
         }
         .defaultSize(width: 1200, height: 800)
 
         Window("Symbol Metrics Generator", id: "metrics-generator") {
-            SymbolMetricsGeneratorView()
+            DeferredWindowContent { SymbolMetricsGeneratorView() }
         }
         .defaultSize(width: 420, height: 220)
 
         Window("Symbol Calibration", id: "symbol-calibration") {
-            SymbolCalibrationTool()
+            DeferredWindowContent { SymbolCalibrationTool() }
         }
         .defaultSize(width: 1200, height: 800)
 
         Window("Auto Sizing Review", id: "auto-sizing-review") {
-            AutoSizingReviewTool()
+            DeferredWindowContent { AutoSizingReviewTool() }
         }
         .defaultSize(width: 1250, height: 850)
 
         Window("Reference Comparison", id: "reference-comparison") {
-            ReferenceComparisonTool()
+            DeferredWindowContent { ReferenceComparisonTool() }
         }
         .defaultSize(width: 1400, height: 900)
         #endif
