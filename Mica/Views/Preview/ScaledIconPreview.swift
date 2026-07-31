@@ -25,6 +25,9 @@ struct ScaledIconPreview: View {
     /// outline after it has faded.
     var selectionPulse: Int = 0
 
+    /// So a badge drag is one undo step rather than one per frame.
+    @Environment(\.continuousEdit) private var continuousEdit
+
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
     @State private var isDropTargeted: Bool = false
@@ -162,6 +165,10 @@ struct ScaledIconPreview: View {
                                 height: settings.badge.offsetY
                             )
                             setPushedCursor(.closedHand)
+                            // One undo for the whole drag, back to where it started.
+                            // Named explicitly because the drag writes both offsets, so
+                            // the change diff can only report a generic bulk edit.
+                            continuousEdit.begin("Move Badge")
                         }
                         let normalizedDX = value.translation.width / enclosureSize
                         let normalizedDY = value.translation.height / enclosureSize
@@ -181,6 +188,7 @@ struct ScaledIconPreview: View {
                             width: settings.badge.offsetX,
                             height: settings.badge.offsetY
                         )
+                        continuousEdit.end()
                     }
             )
             .onDisappear {

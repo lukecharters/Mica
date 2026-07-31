@@ -60,6 +60,8 @@ struct ImageImportLayoutControls: View {
     @Binding var paddingCompensation: Bool
     @Binding var imageScale: Double
     var showPaddingCompensation: Bool = true
+    /// So a drag is one undo step rather than one per frame.
+    @Environment(\.continuousEdit) private var continuousEdit
 
     var body: some View {
         if showPaddingCompensation {
@@ -77,7 +79,7 @@ struct ImageImportLayoutControls: View {
             Text("\(Int(imageScale * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-        }
+        } onEditingChanged: { continuousEdit.sliderEditing($0) }
     }
 }
 

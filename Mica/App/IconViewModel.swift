@@ -4,9 +4,27 @@ import SwiftUI
 
 @MainActor
 final class IconViewModel: ObservableObject {
+    /// True only while an imported configuration is being installed into these
+    /// properties. The undo observers in `ContentView` check it, so that an import
+    /// registers the one combined step it makes for itself rather than a step per
+    /// property it happens to write. See `IconViewModel+Undo.swift`.
+    var isInstallingImportedConfiguration = false
+
+    /// Undo bookkeeping: which writes came from an undo rather than the user, and
+    /// whether a continuous edit is in progress. Stored here because extensions cannot
+    /// add stored properties; all the logic — and the reasoning — is in
+    /// `IconViewModel+Undo.swift`.
+    var undoState = UndoState()
+
     // Mirror previous @State vars from ContentView with identical types
     @Published var iconSettings: IconSettings = IconSettings()
     @Published var showExportDialog: Bool = false
+
+    /// Anything an imported configuration said that this build could not honour — an
+    /// unknown key, an unparseable colour, a missing sidecar image. Held rather than
+    /// discarded so the import can account for what it dropped. See
+    /// `IconViewModel+Configuration.swift`.
+    @Published var configImportWarnings: [MicaConfigWarning] = []
 
     // Generation mode is now per-group on `iconSettings` (iconGenerationMode +
     // badgeGenerationMode). A computed convenience for any code that still wants

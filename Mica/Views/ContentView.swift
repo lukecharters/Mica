@@ -29,6 +29,11 @@ struct ContentView: View {
 
     private var actualExportSize: CGFloat { viewModel.iconSettings.export.pixelSize }
 
+    /// The window's own undo manager, which is what `@Environment(\.undoManager)` gives
+    /// a plain `WindowGroup` — verified `===` the window's `NSUndoManager` in the running
+    /// app. Drives the observers below; see `IconViewModel+Undo.swift`.
+    @Environment(\.undoManager) private var undoManager
+
     @State private var zoomLevel: Double = 1.0
     /// Optional preview-only override of the icon's display point size, used to
     /// simulate how the icon reads in an MDM self service portal. `nil` = export size.
@@ -171,6 +176,22 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
+        // Undo. Every change to the two pieces of editable state is observed here —
+        // centrally, rather than at the many bindings that write them.
+        //
+        // Both handlers are deliberately thin: the policy (what came from an undo, what
+        // belongs to a gesture, what the action is called) is in IconViewModel+Undo.swift
+        // so it can be tested in the order SwiftUI actually calls it — mutate, then
+        // observe. A previous version decided that policy here and got redo wrong in a
+        // way no unit test could reach.
+        .onChange(of: viewModel.iconSettings) { previous, _ in
+            viewModel.settingsDidChange(from: previous, undoManager: undoManager)
+        }
+        .onChange(of: viewModel.micaAppexColors) { previous, _ in
+            viewModel.appexColorsDidChange(from: previous, undoManager: undoManager)
+        }
+        // Lets a slider or the badge drag group its frames into one undo action.
+        .environment(\.continuousEdit, viewModel.continuousEditScope)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
             document: viewModel.iconSettings.icon.mode == .system

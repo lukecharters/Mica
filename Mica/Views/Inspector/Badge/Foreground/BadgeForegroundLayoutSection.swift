@@ -6,6 +6,8 @@ import SwiftUI
 /// in `BadgeGroupLayoutSection`, shown when the Badge group header is selected.
 struct BadgeForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
+    /// So a drag is one undo step rather than one per frame.
+    @Environment(\.continuousEdit) private var continuousEdit
 
     var body: some View {
         switch iconSettings.badge.foreground.source {
@@ -17,7 +19,7 @@ struct BadgeForegroundLayoutSection: View {
                 Text("\(Int(iconSettings.badge.foreground.symbolScale * 100))%")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
-            }
+            } onEditingChanged: { continuousEdit.sliderEditing($0) }
 
         case .image:
             ImageImportLayoutControls(
