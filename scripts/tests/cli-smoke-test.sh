@@ -64,8 +64,8 @@ HAPPY_CASES=(
     "icon-bg-color-opacity|star.fill|--icon-bg-color|blue:0.5"
     "icon-bg-color-hex-opacity|star.fill|--icon-bg-color|#0088FF:0.5"
     "icon-symbol-color-opacity|star.fill|--icon-symbol-color|white:0.5"
-    # The .mica document's colour form, accepted anywhere a colour is — so a value
-    # can be copied out of an icon.json straight onto the command line.
+    # The configuration's stored colour form, accepted anywhere a colour is — so a
+    # value can be copied out of a config file straight onto the command line.
     "icon-bg-color-extended-srgb|star.fill|--icon-bg-color|extended-srgb:0.20000,0.60000,0.90196,1.00000"
     "icon-bg-color-extended-gray|star.fill|--icon-bg-color|extended-gray:0.50000,1.00000"
     # Out-of-gamut components are legal: this is Display P3 red in extended sRGB.

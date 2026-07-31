@@ -65,7 +65,7 @@ func defaultNote(toggle isOn: Bool) -> String {
 
 // Export flags are Optional-typed with no default value, so that a nil reads as
 // "the user did not pass this" — which `--config` needs in order to leave a
-// document's stored value alone. Defaults therefore live in exactly one place,
+// configuration's stored value alone. Defaults therefore live in exactly one place,
 // `ExportSpec`, `buildIconSettings` assigns only what was passed, and each
 // abstract documents its default via `defaultNote` from that same constant.
 struct ExportOptions: ParsableArguments {
@@ -149,7 +149,7 @@ struct GenerationOptions: ParsableArguments {
     // validators and the appex render path — so the nil fallback is resolved
     // here once rather than repeated at each site. Read these, not the stored
     // properties, everywhere except where "was it passed?" is the question.
-    // The defaults come from the specs, so there is no literal `.mica` to drift.
+    // The defaults come from the specs, so there is no literal `mica` to drift.
 
     /// The icon's effective generation mode: the flag when passed, else the default.
     var effectiveIconMode: GenerationMode { iconGenerationMode ?? IconSpec().mode }
@@ -754,9 +754,9 @@ struct GenerateCommand: AsyncParsableCommand {
               "#0088FF", "#0088FFCC"         hex, 3/6/8 digits
               "rgb(0,136,255)"               CSS rgb()/rgba()/hsl()/hsla()
               "0,136,255" or "0,0.53,1"      bare r,g,b(,a) — 0-255 or 0-1
-              extended-srgb:0,0.53333,1,1    a .mica document's stored form,
-              extended-gray:1,1              so a colour can be copied from an
-                                             icon.json onto the command line
+              extended-srgb:0,0.53333,1,1    a configuration's stored form, so a
+              extended-gray:1,1              colour can be copied from a config
+                                             file onto the command line
 
             All but the extended forms may carry a ':opacity' suffix — white:0.5,
             "#0088FF:0.5", "rgb(0,136,255):0.5". The extended forms already end in
@@ -840,11 +840,12 @@ struct GenerateCommand: AsyncParsableCommand {
     /// The icon foreground the command *supplied*, or `nil` when neither the
     /// positional name nor `--icon-fg` was given.
     ///
-    /// `generate` requires a foreground, so it goes through `resolvedForeground()`
-    /// and lets the throw stand. `render` does not: the document already carries
-    /// one, and an absent flag there means "keep it" rather than "error". Only the
-    /// settings builder uses this — validation still uses the throwing form, which
-    /// is what preserves `generate`'s "provide an icon foreground" error.
+    /// A flags-only `generate` requires a foreground, so it goes through
+    /// `resolvedForeground()` and lets the throw stand. `--config` does not: the
+    /// configuration already carries one, and an absent flag there means "keep it"
+    /// rather than "error". Only the settings builder uses this — validation still
+    /// uses the throwing form, which is what preserves the "provide an icon
+    /// foreground" error.
     func providedForeground() throws -> ResolvedForeground? {
         guard iconForeground.foreground != nil || symbolName != nil else { return nil }
         return try resolvedForeground()
