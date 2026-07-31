@@ -85,10 +85,15 @@ struct ImportedImageTests {
         #expect(ForegroundSource.allCases.count == 3)
     }
 
-    @Test("ForegroundSource raw values match user-facing labels")
+    /// The raw values are not authoritative — the pickers write their own labels and
+    /// the document its own tokens — but they are kept equal to the shipped labels so
+    /// searching the interface's wording finds the type. This is the reminder to move
+    /// them when the picker moves; `.image` read "Custom Image" for a while after the
+    /// picker said "Imported".
+    @Test("ForegroundSource raw values match the shipped picker labels")
     func iconSource_rawValues() {
         #expect(ForegroundSource.symbol.rawValue == "SF Symbol")
-        #expect(ForegroundSource.image.rawValue == "Custom Image")
+        #expect(ForegroundSource.image.rawValue == "Imported")
         #expect(ForegroundSource.system.rawValue == "System")
     }
 

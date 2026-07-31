@@ -4,9 +4,8 @@ import SwiftUI
 struct IconSettings: Equatable {
     // MARK: - Storage
     //
-    // Grouped as the UI, the CLI flag namespaces and the `.mica` document all
-    // group it: two layer groups, each with a foreground and a background, plus
-    // export settings. Icon and badge foregrounds share one type because their
+    // Grouped as the UI and the CLI flag namespaces group it: two layer groups,
+    // each with a foreground and a background, plus export settings. Icon and badge foregrounds share one type because their
     // property sets are identical — 15 each, one-to-one — which is what stops a
     // new foreground feature being added to one and forgotten on the other.
 
@@ -34,9 +33,9 @@ struct IconSettings: Equatable {
 
 // MARK: - Specs
 //
-// The structs `IconSettings` actually stores. Shapes match the `.mica` document
-// DTO in docs/plans/mica-document-format.md, so that mapping is field-for-field
-// rather than a translation layer.
+// The structs `IconSettings` actually stores, shaped so that anything carrying a
+// whole configuration (the CLI's flag namespaces, the JSON config format) maps
+// field-for-field rather than through a translation layer.
 //
 // **Imported image defaults.** Each layer spec has an `apply(_:)` carrying the
 // import-time defaults: the drop shadow off, and — on the two backgrounds, which
@@ -280,9 +279,11 @@ struct BadgeBackgroundSpec: Equatable {
 /// What the badge's background layer draws. Smaller than `IconBackgroundSource`
 /// — there are no pre-rendered badge assets — so the two are separate types
 /// rather than one with cases the badge ignores.
+///
+/// Raw values are not authoritative; see `ForegroundSource`.
 enum BadgeBackgroundSource: String, CaseIterable, Identifiable {
-    case color = "Custom"
-    case image = "Image"
+    case color = "Color"
+    case image = "Imported"
     var id: String { rawValue }
 }
 
@@ -312,12 +313,15 @@ enum SymbolRenderingStyle: String, CaseIterable, Identifiable {
 /// What a *foreground* layer draws — an SF Symbol, an imported image, or (icon
 /// group only) the whole thing handed to Apple's appex pipeline.
 ///
-/// Raw values are user-visible picker labels, so they deliberately keep their
-/// original wording even though the case names changed: retiring "Custom Image"
-/// from the interface is a copy decision, not a rename.
+/// Raw values are **not** authoritative for anything: the inspector writes its own
+/// picker labels (`Views/Inspector/…SourceSection.swift`) and the CLI/config
+/// format writes its own tokens. They are kept equal to the shipped labels only so
+/// that searching the interface's wording finds this type — they used to say
+/// "Custom Image" long after the picker had stopped, which read as a live open
+/// question rather than the stale string it was.
 enum ForegroundSource: String, CaseIterable, Identifiable, Equatable {
     case symbol = "SF Symbol"
-    case image = "Custom Image"
+    case image = "Imported"
     case system = "System"
     var id: String { rawValue }
 }
@@ -326,11 +330,11 @@ enum ForegroundSource: String, CaseIterable, Identifiable, Equatable {
 /// smaller set — it has no pre-rendered assets — so the two are separate types
 /// rather than one with cases the badge ignores.
 ///
-/// Raw values are user-visible picker labels; see `ForegroundSource`.
+/// Raw values are not authoritative; see `ForegroundSource`.
 enum IconBackgroundSource: String, CaseIterable, Identifiable {
-    case color = "Custom"
-    case preRendered = "Pre-rendered"
-    case image = "Image"
+    case color = "Color"
+    case preRendered = "Pre-Rendered"
+    case image = "Imported"
     var id: String { rawValue }
 }
 
