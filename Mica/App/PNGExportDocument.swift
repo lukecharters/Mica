@@ -5,8 +5,10 @@
 // returns PNG bytes, and `init(configuration:)` is a stub that discards its
 // input: nothing is ever read back in through this type.
 //
-// Renamed from IconDocument on 2026-07-28. `.mica` documents are a separate
-// thing entirely — see docs/plans/mica-document-format.md.
+// Renamed from IconDocument on 2026-07-28. The `.mica` document format it used to
+// refer to was abandoned on 2026-07-31; the app has no document model and keeps
+// work by exporting a configuration instead — see ConfigurationExportDocument and
+// docs/plans/json-config-format.md.
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO
