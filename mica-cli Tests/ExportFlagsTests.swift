@@ -21,6 +21,32 @@ struct ExportFlagsTests {
         #expect(settings.export.colorSpace == .sRGB)
     }
 
+    // MARK: - Absent vs. explicitly-default flags
+    //
+    // The export flags are Optional with no default value so that `--config`
+    // can distinguish "not passed" from "passed the default". These two tests
+    // pin that distinction: without them, restoring a declaration default
+    // would keep every other test in this file green while silently making a
+    // document's stored export values impossible to preserve.
+
+    @Test("Omitted export flags parse as nil, so a config document can supply them")
+    func omittedExportFlagsAreNil() throws {
+        let command = try parseCommand(["star.fill"])
+        #expect(command.export.size == nil)
+        #expect(command.export.scale == nil)
+        #expect(command.export.colorSpace == nil)
+    }
+
+    @Test("Export flags passed their default value still parse as non-nil")
+    func explicitDefaultValuesAreNotNil() throws {
+        let command = try parseCommand([
+            "star.fill", "--size", "512", "--scale", "1x", "--color-space", "sRGB",
+        ])
+        #expect(command.export.size == 512)
+        #expect(command.export.scale == .oneX)
+        #expect(command.export.colorSpace == .sRGB)
+    }
+
     // MARK: - --size
 
     @Test("--size maps to export.size", arguments: [16, 128, 256, 1024])

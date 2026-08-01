@@ -14,10 +14,33 @@ struct IconForegroundFlagsTests {
 
     @Test("Generation-mode tokens parse directly to GenerationMode")
     func generationModeMapping() throws {
-        #expect(try parseCommand(["star.fill"]).generation.iconGenerationMode == .mica)
         #expect(try parseCommand(["star.fill", "--icon-generation-mode", "mica"]).generation.iconGenerationMode == .mica)
         #expect(try parseCommand(["star.fill", "--icon-generation-mode", "system"]).generation.iconGenerationMode == .system)
         #expect(try parseCommand(["star.fill", "--badge-generation-mode", "system"]).generation.badgeGenerationMode == .system)
+    }
+
+    @Test("Omitted generation modes are nil, and resolve to mica through the effective accessors")
+    func generationModeDefaults() throws {
+        // The stored properties are Optional so `--config` can tell "not passed"
+        // from "passed mica"; the effective accessors carry the default, and are
+        // what every read site uses.
+        let command = try parseCommand(["star.fill"])
+        #expect(command.generation.iconGenerationMode == nil)
+        #expect(command.generation.badgeGenerationMode == nil)
+        #expect(command.generation.effectiveIconMode == .mica)
+        #expect(command.generation.effectiveBadgeMode == .mica)
+    }
+
+    @Test("Omitted icon-foreground flags are nil, leaving the ForegroundSpec defaults")
+    func omittedIconForegroundFlagsAreNil() throws {
+        // Optional so `--config` can leave a document's stored value alone.
+        // The settings-level defaults are asserted by the other tests here.
+        let fg = try parseCommand(["star.fill"]).iconForeground
+        #expect(fg.scale == nil)
+        #expect(fg.symbolRendering == nil)
+        #expect(fg.symbolWeight == nil)
+        #expect(fg.symbolGradient == nil)
+        #expect(fg.visibility == nil)
     }
 
     // MARK: - Foreground resolution

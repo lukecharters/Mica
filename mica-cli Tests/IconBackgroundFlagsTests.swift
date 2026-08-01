@@ -10,6 +10,20 @@ import Foundation
 @MainActor
 struct IconBackgroundFlagsTests {
 
+    // MARK: - Absent flags
+
+    @Test("Omitted icon-background flags are nil, leaving the IconBackgroundSpec defaults")
+    func omittedIconBackgroundFlagsAreNil() throws {
+        let bg = try parseCommand(["star.fill"]).background
+        #expect(bg.selection == nil)
+        #expect(bg.gradient == nil)
+        #expect(bg.cornerRadius == nil)
+        #expect(bg.scale == nil)
+        #expect(bg.visibility == nil)
+        // A nil --icon-bg still resolves to the generated background, not a path.
+        #expect(bg.isImageBackground == false)
+    }
+
     // MARK: - Background resolution
 
     @Test("--icon-bg resolves the four background kinds")

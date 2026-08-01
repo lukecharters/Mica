@@ -10,6 +10,27 @@ import Foundation
 @MainActor
 struct BadgeFlagsTests {
 
+    // MARK: - Absent flags
+
+    @Test("Omitted badge flags are nil, leaving the BadgeSpec defaults")
+    func omittedBadgeFlagsAreNil() throws {
+        let badge = try parseCommand(["star.fill", "--badge-fg", "symbol:plus"]).badge
+        #expect(badge.foregroundScale == nil)
+        #expect(badge.symbolRendering == nil)
+        #expect(badge.symbolWeight == nil)
+        #expect(badge.symbolGradient == nil)
+        #expect(badge.foregroundVisibility == nil)
+        #expect(badge.background == nil)
+        #expect(badge.backgroundGradient == nil)
+        #expect(badge.backgroundScale == nil)
+        #expect(badge.backgroundVisibility == nil)
+        #expect(badge.position == nil)
+        #expect(badge.scale == nil)
+        #expect(badge.offsetX == nil)
+        #expect(badge.offsetY == nil)
+        #expect(badge.isImageBackground == false)
+    }
+
     // MARK: - Activation
 
     @Test("The badge is inactive unless --badge-fg is supplied")
@@ -179,8 +200,8 @@ struct BadgeFlagsTests {
     @Test("System badge appex colors resolve from --badge-bg-color / --badge-symbol-color")
     func systemBadgeAppexColors() throws {
         let command = try parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system", "--badge-bg-color", "red", "--badge-symbol-color", "white"])
-        #expect(try command.resolvedBadgeAppexEnclosureColor() == (try AppexColor.plistValue(fromCLIString: "red")))
-        #expect(try command.resolvedBadgeAppexSymbolColor() == (try AppexColor.plistValue(fromCLIString: "white")))
+        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none) == (try AppexColor.plistValue(fromCLIString: "red")))
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none) == (try AppexColor.plistValue(fromCLIString: "white")))
     }
 
     // MARK: - Validation

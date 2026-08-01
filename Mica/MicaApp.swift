@@ -5,6 +5,9 @@ import SwiftUI
 struct MicaApp: App {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.iconSettings) private var iconSettings
+    @FocusedBinding(\.exportPNG) private var exportPNG
+    @FocusedValue(\.exportConfiguration) private var exportConfiguration
+    @FocusedValue(\.importConfiguration) private var importConfiguration
 
 
     var body: some Scene {
@@ -147,6 +150,37 @@ struct MicaApp: App {
                 Divider()
             }
 
+            // Replaces the empty stock Import/Export slot rather than adding a group,
+            // so the item lands where macOS already puts export commands in File.
+            // Cmd-Shift-E is free: Cmd-Shift-G is Paste as Icon Background above, and
+            // K/L/M/A/S belong to the DevTools windows in Debug builds.
+            CommandGroup(replacing: .importExport) {
+                Button("Export as PNG…") {
+                    exportPNG = true
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+                .disabled(exportPNG == nil)
+
+                Divider()
+
+                // Cmd-S, blessed by the user on 2026-08-01 over Opt-Cmd-S. Mica has
+                // no document and saves nothing between launches, so this is the only
+                // save-shaped action there is; the plan's worry was that Cmd-S might
+                // over-promise persistence, and the ruling was that being the obvious
+                // shortcut for the obvious action matters more.
+                Button("Export Configuration…") {
+                    exportConfiguration?.perform()
+                }
+                .keyboardShortcut("s", modifiers: .command)
+                .disabled(exportConfiguration == nil)
+
+                Button("Import Configuration…") {
+                    importConfiguration?.perform()
+                }
+                .keyboardShortcut("o", modifiers: .command)
+                .disabled(importConfiguration == nil)
+            }
+
             #if DEBUG
             CommandGroup(after: .newItem) {
                 Divider()
@@ -192,28 +226,31 @@ struct MicaApp: App {
         }
 
         #if DEBUG
+        // Every tool goes through DeferredWindowContent — a tool's `init` would
+        // otherwise run on every App-body evaluation, i.e. on every settings edit.
+        // See that file's header for the measurements.
         Window("Apple Reference Calibration", id: "apple-reference-calibration") {
-            AppleReferenceCalibrationTool()
+            DeferredWindowContent { AppleReferenceCalibrationTool() }
         }
         .defaultSize(width: 1200, height: 800)
 
         Window("Symbol Metrics Generator", id: "metrics-generator") {
-            SymbolMetricsGeneratorView()
+            DeferredWindowContent { SymbolMetricsGeneratorView() }
         }
         .defaultSize(width: 420, height: 220)
 
         Window("Symbol Calibration", id: "symbol-calibration") {
-            SymbolCalibrationTool()
+            DeferredWindowContent { SymbolCalibrationTool() }
         }
         .defaultSize(width: 1200, height: 800)
 
         Window("Auto Sizing Review", id: "auto-sizing-review") {
-            AutoSizingReviewTool()
+            DeferredWindowContent { AutoSizingReviewTool() }
         }
         .defaultSize(width: 1250, height: 850)
 
         Window("Reference Comparison", id: "reference-comparison") {
-            ReferenceComparisonTool()
+            DeferredWindowContent { ReferenceComparisonTool() }
         }
         .defaultSize(width: 1400, height: 900)
         #endif

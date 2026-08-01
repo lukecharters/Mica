@@ -99,6 +99,17 @@ struct OutputReporter {
         guard !json else { return }
         printToStandardError(message)
     }
+
+    /// Something a `--config` file asked for that this build could not honour →
+    /// stderr, **unconditionally**.
+    ///
+    /// The only channel gated by neither verbosity nor `--json`, deliberately: an
+    /// ignored key changes what gets rendered, so silencing it would let `--quiet`
+    /// turn a wrong icon into a clean run. Nothing is lost by always printing —
+    /// this writes to stderr, so stdout stays machine-readable in both modes.
+    func warning(_ message: String) {
+        printToStandardError(message)
+    }
 }
 
 // MARK: - JSON result models (stable schema)

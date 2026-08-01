@@ -1,0 +1,28 @@
+{
+  "size": 256,
+  "scale": "2x",
+  "color-space": "displayP3",
+
+  "icon-fg": "symbol:bolt.fill",
+  "icon-fg-scale": 1.2,
+  "icon-symbol-rendering": "palette",
+  "icon-symbol-palette": ["red", "white:0.5", "white:0.26"],
+  "icon-symbol-weight": "bold",
+  "icon-symbol-gradient": true,
+  "icon-fg-shadow": false,
+
+  "icon-bg-color": "teal",
+  "icon-bg-gradient": false,
+  "icon-bg-corner-radius": "macos11",
+  "icon-bg-shadow": "macos11",
+
+  "badge-fg": "symbol:bell.fill",
+  "badge-fg-scale": 1.1,
+  "badge-symbol-color": "yellow",
+  "badge-bg-color": "purple",
+  "badge-bg-gradient": false,
+  "badge-position": "top-left",
+  "badge-scale": 1.3,
+  "badge-offset-x": 0.1,
+  "badge-offset-y": -0.05
+}

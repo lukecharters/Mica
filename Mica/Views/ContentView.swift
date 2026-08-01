@@ -2,17 +2,50 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - Focused Value for Paste
+// MARK: - Focused Values
 
-struct FocusedIconSettingsKey: FocusedValueKey {
-    typealias Value = Binding<IconSettings>
+/// What the menu commands in `MicaApp` reach for: the focused window's settings (the
+/// Paste as… and Import as… items) and its export trigger (File ▸ Export as PNG…).
+///
+/// Both use `@Entry`, the same idiom `ContinuousEditScope` uses for the environment.
+/// `iconSettings` predates `@Entry` and was written as an explicit `FocusedValueKey`;
+/// it was converted when `exportPNG` arrived rather than leave two spellings of one
+/// concept side by side in the same extension.
+extension FocusedValues {
+    @Entry var iconSettings: Binding<IconSettings>?
+
+    /// Set to `true` to open the PNG export dialog.
+    ///
+    /// Published only while the focused window can actually export — see
+    /// `IconViewModel.canExport` — so the File menu item is driven by one rule: it is
+    /// disabled whenever this is nil, whether that is because no window has focus or
+    /// because a System-mode layer is still waiting on its appex render. A menu item
+    /// that stayed enabled in the second case would write a PNG missing that layer.
+    @Entry var exportPNG: Binding<Bool>?
+
+    /// Run the focused window's Export Configuration… flow.
+    ///
+    /// An action rather than a `Binding<Bool>` like `exportPNG`, because this menu item
+    /// has work to do before a panel can open: the configuration has to be encoded to
+    /// know whether it is writing a `.json` file or a `.folder`, and that answer is the
+    /// content type `fileExporter` needs up front. The rule for which to use is that
+    /// simple: a binding when the menu only flips a flag, an action when it must run
+    /// something first.
+    @Entry var exportConfiguration: FocusedAction?
+
+    /// Open the focused window's Import Configuration… panel. An action for symmetry
+    /// with `exportConfiguration`, since the pair is one feature in the File menu.
+    @Entry var importConfiguration: FocusedAction?
 }
 
-extension FocusedValues {
-    var iconSettings: Binding<IconSettings>? {
-        get { self[FocusedIconSettingsKey.self] }
-        set { self[FocusedIconSettingsKey.self] = newValue }
-    }
+/// A menu-invokable action published by the focused window.
+///
+/// `FocusedValues` entries have to be plain values, and a bare `(() -> Void)?` entry
+/// reads as a double optional at the use site. Wrapping it keeps `MicaApp`'s call
+/// `exportConfiguration?.perform()` and its `disabled(exportConfiguration == nil)`
+/// symmetric with every other command there.
+struct FocusedAction {
+    let perform: () -> Void
 }
 
 struct ContentView: View {
@@ -28,6 +61,11 @@ struct ContentView: View {
     let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
 
     private var actualExportSize: CGFloat { viewModel.iconSettings.export.pixelSize }
+
+    /// The window's own undo manager, which is what `@Environment(\.undoManager)` gives
+    /// a plain `WindowGroup` — verified `===` the window's `NSUndoManager` in the running
+    /// app. Drives the observers below; see `IconViewModel+Undo.swift`.
+    @Environment(\.undoManager) private var undoManager
 
     @State private var zoomLevel: Double = 1.0
     /// Optional preview-only override of the icon's display point size, used to
@@ -130,8 +168,7 @@ struct ContentView: View {
                 badgeTab: $badgeTab,
                 tab: inspectorTab,
                 colorOptions: colorOptions,
-                appexHasImage: viewModel.appexRenderedImage != nil,
-                badgeAppexHasImage: viewModel.badgeAppexRenderedImage != nil
+                canExport: viewModel.canExport
             )
             .inspectorColumnWidth(
                 min: inspectorRange.lowerBound,
@@ -171,20 +208,30 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
+        .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)
+        // Always available: a configuration is just the settings, so unlike a PNG
+        // export there is nothing it can be waiting on.
+        .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
+        .focusedSceneValue(\.importConfiguration, FocusedAction { viewModel.showConfigImportDialog = true })
+        // Undo. Every change to the two pieces of editable state is observed here —
+        // centrally, rather than at the many bindings that write them.
+        //
+        // Both handlers are deliberately thin: the policy (what came from an undo, what
+        // belongs to a gesture, what the action is called) is in IconViewModel+Undo.swift
+        // so it can be tested in the order SwiftUI actually calls it — mutate, then
+        // observe. A previous version decided that policy here and got redo wrong in a
+        // way no unit test could reach.
+        .onChange(of: viewModel.iconSettings) { previous, _ in
+            viewModel.settingsDidChange(from: previous, undoManager: undoManager)
+        }
+        .onChange(of: viewModel.micaAppexColors) { previous, _ in
+            viewModel.appexColorsDidChange(from: previous, undoManager: undoManager)
+        }
+        // Lets a slider or the badge drag group its frames into one undo action.
+        .environment(\.continuousEdit, viewModel.continuousEditScope)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: viewModel.iconSettings.icon.mode == .system
-                ? PNGExportDocument(appexExport: .init(
-                    symbolName: viewModel.iconSettings.icon.foreground.symbolName,
-                    enclosureColor: viewModel.appexEnclosureColor.plistValue,
-                    symbolColor: viewModel.appexSymbolColor.plistValue,
-                    pointSize: viewModel.iconSettings.export.size,
-                    scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
-                    colorSpace: viewModel.iconSettings.export.colorSpace
-                  ),
-                  settings: viewModel.iconSettings,
-                  badgeAppexImage: viewModel.badgeAppexRenderedImage)
-                : PNGExportDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
+            document: pngExportDocument,
             contentType: .png,
             defaultFilename: viewModel.iconSettings.exportBaseName
         ) { result in
@@ -195,6 +242,121 @@ struct ContentView: View {
                 print("Failed to save icon: \(error.localizedDescription)")
             }
         }
+        // The configuration export, deliberately hosted on its own view.
+        //
+        // **A view gets one `fileExporter`.** Stacking a second directly on this one
+        // does not add a presentation — the outer modifier wins and the inner is
+        // silently ignored, with no warning at build or run time. Written that way, the
+        // configuration exporter above swallowed the PNG exporter below it: Cmd-S
+        // worked, Cmd-Shift-E did nothing at all, and no test could see it because the
+        // failure is in view composition rather than in any value. Found in manual
+        // testing on 2026-08-01, having passed every automated gate.
+        //
+        // An empty background view is its own presentation host, so each exporter gets
+        // one. Anything else presenting from this view — the Phase 8 importer — needs
+        // the same treatment.
+        .background {
+            Color.clear
+                // `contentType` follows the prepared document: a configuration with
+                // imported images is written as a folder, because the sandbox grants
+                // only what the user picked in the save panel and a chosen file does
+                // not cover its siblings. See ConfigurationExportDocument.
+                .fileExporter(
+                    isPresented: $viewModel.showConfigExportDialog,
+                    document: viewModel.configExportDocument,
+                    contentType: viewModel.configExportDocument?.contentType ?? .json,
+                    defaultFilename: viewModel.iconSettings.exportBaseName
+                ) { result in
+                    switch result {
+                    case .success(let url):
+                        print("Configuration saved to: \(url.path)")
+                    case .failure(let error):
+                        viewModel.configExportError = error.localizedDescription
+                    }
+                    viewModel.configExportDocument = nil
+                }
+        }
+        // Its own host again — a view gets one `fileImporter` just as it gets one
+        // `fileExporter`, and stacking them on the shared view is what silently killed
+        // Cmd-Shift-E. `.folder` is offered alongside `.json` because an exported
+        // configuration with images is a folder.
+        .background {
+            Color.clear
+                .fileImporter(
+                    isPresented: $viewModel.showConfigImportDialog,
+                    allowedContentTypes: [.json, .folder]
+                ) { result in
+                    switch result {
+                    case .success(let url):
+                        viewModel.importConfiguration(from: url, undoManager: undoManager)
+                    case .failure(let error):
+                        viewModel.configImportError = error.localizedDescription
+                    }
+                }
+        }
+        .alert(
+            "Couldn’t Import the Configuration",
+            isPresented: Binding(
+                get: { viewModel.configImportError != nil },
+                set: { if !$0 { viewModel.configImportError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.configImportError = nil }
+        } message: {
+            Text(viewModel.configImportError ?? "")
+        }
+        // Not an error: the configuration imported, but something in it could not be
+        // honoured. Listed rather than summarised — "3 problems" tells the user nothing
+        // about which layer came back empty.
+        .alert(
+            "Imported with Changes",
+            isPresented: Binding(
+                get: { !viewModel.configImportWarnings.isEmpty },
+                set: { if !$0 { viewModel.configImportWarnings = [] } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.configImportWarnings = [] }
+        } message: {
+            Text(viewModel.configImportWarnings.map(\.message).joined(separator: "\n\n"))
+        }
+        .alert(
+            "Couldn’t Export the Configuration",
+            isPresented: Binding(
+                get: { viewModel.configExportError != nil },
+                set: { if !$0 { viewModel.configExportError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.configExportError = nil }
+        } message: {
+            Text(viewModel.configExportError ?? "")
+        }
+    }
+
+    /// The PNG payload for the export panel.
+    ///
+    /// Lifted out of `body` because the whole view stopped type-checking in reasonable
+    /// time once the configuration dialogs were added — a ternary between two multi-
+    /// argument initializers inside a modifier argument is expensive to infer. Keep new
+    /// presentation payloads out of `body` for the same reason.
+    private var pngExportDocument: PNGExportDocument {
+        guard viewModel.iconSettings.icon.mode == .system else {
+            return PNGExportDocument(
+                settings: viewModel.iconSettings,
+                badgeAppexImage: viewModel.badgeAppexRenderedImage
+            )
+        }
+        return PNGExportDocument(
+            appexExport: .init(
+                symbolName: viewModel.iconSettings.icon.foreground.symbolName,
+                enclosureColor: viewModel.appexEnclosureColor.plistValue,
+                symbolColor: viewModel.appexSymbolColor.plistValue,
+                pointSize: viewModel.iconSettings.export.size,
+                scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
+                colorSpace: viewModel.iconSettings.export.colorSpace
+            ),
+            settings: viewModel.iconSettings,
+            badgeAppexImage: viewModel.badgeAppexRenderedImage
+        )
     }
 
     // MARK: - Canvas selection

@@ -3,6 +3,8 @@ import SwiftUI
 
 struct IconForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
+    /// So a drag is one undo step rather than one per frame.
+    @Environment(\.continuousEdit) private var continuousEdit
 
     var body: some View {
         switch iconSettings.icon.foreground.source {
@@ -19,7 +21,7 @@ struct IconForegroundLayoutSection: View {
                 Text("\(Int(iconSettings.icon.foreground.symbolScale * 100))%")
                     .foregroundStyle(.secondary)
                 //                .monospacedDigit()
-            }
+            } onEditingChanged: { continuousEdit.sliderEditing($0) }
             }
         case .image:
             ImageImportLayoutControls(

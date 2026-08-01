@@ -7,6 +7,8 @@ import SwiftUI
 /// See `InspectorControls.badgeGroupControls`.
 struct BadgeGroupLayoutSection: View {
     @Binding var iconSettings: IconSettings
+    /// So a drag is one undo step rather than one per frame.
+    @Environment(\.continuousEdit) private var continuousEdit
 
     var body: some View {
         Picker("Position", systemImage: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left", selection: $iconSettings.badge.position) {
@@ -26,7 +28,7 @@ struct BadgeGroupLayoutSection: View {
             Text("\(Int(iconSettings.badge.offsetX * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-        }
+        } onEditingChanged: { continuousEdit.sliderEditing($0) }
 
         Slider(value: $iconSettings.badge.offsetY,
                in: BadgeSpec.offsetRange,
@@ -36,7 +38,7 @@ struct BadgeGroupLayoutSection: View {
             Text("\(Int(iconSettings.badge.offsetY * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-        }
+        } onEditingChanged: { continuousEdit.sliderEditing($0) }
 
         if iconSettings.badge.offsetX != 0 || iconSettings.badge.offsetY != 0 {
             Button("Reset Position") {
@@ -53,7 +55,7 @@ struct BadgeGroupLayoutSection: View {
             Text("\(Int(iconSettings.badge.scale * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-        }
+        } onEditingChanged: { continuousEdit.sliderEditing($0) }
     }
 }
 
