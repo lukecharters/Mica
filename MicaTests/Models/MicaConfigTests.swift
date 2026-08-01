@@ -178,11 +178,28 @@ struct MicaConfigTests {
 
     // MARK: - Minimality
 
-    @Test("default settings encode to an empty object")
-    func defaultsEncodeEmpty() throws {
+    /// The identity set for default settings, spelled out. A configuration is
+    /// the only record of a user's work, so it must describe the icon rather
+    /// than diff against whatever this build's defaults happen to be — see the
+    /// identity-set note in `MicaConfig.swift`. If a default *value* changes,
+    /// this test should be updated; if the set of *keys* changes, think twice.
+    @Test("default settings encode to the identity set, not an empty object")
+    func defaultsEncodeIdentitySet() throws {
         let json = try MicaConfigCodec.encode(settings: IconSettings())
-        let object = try JSONSerialization.jsonObject(with: json) as? [String: Any]
-        #expect(object?.isEmpty == true)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(Set(object.keys) == [
+            "size",
+            "icon-generation-mode",
+            "icon-fg",
+            "icon-symbol-color",
+            "icon-bg-color",
+        ])
+        #expect(object["icon-generation-mode"] as? String == "mica")
+        #expect(object["icon-fg"] as? String == "symbol:command")
+        #expect(object["icon-symbol-color"] as? String == "white")
+        #expect(object["icon-bg-color"] as? String == "blue")
+        #expect(object["size"] as? Int == Int(IconSettings().export.size))
     }
 
     @Test("an invisible badge is omitted whole")
@@ -190,8 +207,34 @@ struct MicaConfigTests {
         var settings = IconSettings()
         settings.badge.position = .topLeft   // stored, but the badge is hidden
         let json = try MicaConfigCodec.encode(settings: settings)
-        let object = try JSONSerialization.jsonObject(with: json) as? [String: Any]
-        #expect(object?.isEmpty == true)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        // The icon's identity keys are expected; no badge key may appear.
+        #expect(object.keys.allSatisfy { !$0.hasPrefix("badge-") })
+    }
+
+    @Test("a visible badge writes its identity keys even at their defaults")
+    func visibleBadgeWritesIdentitySet() throws {
+        var settings = IconSettings()
+        settings.badge.foreground.isHidden = false   // the activation rule
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(object["badge-generation-mode"] as? String == "mica")
+        #expect(object["badge-fg"] as? String == "symbol:gearshape.fill")
+        #expect(object["badge-symbol-color"] != nil)
+        #expect(object["badge-bg-color"] != nil)
+    }
+
+    @Test("the identity set survives a round trip unchanged")
+    func identitySetRoundTrips() throws {
+        let json = try MicaConfigCodec.encode(settings: IconSettings())
+        let decoded = try Self.roundTrip(IconSettings())
+        #expect(decoded.warnings.isEmpty)
+        // Re-encoding the decoded settings must reproduce the same file — the
+        // identity keys decode to exactly the defaults they were written from,
+        // so writing them changes nothing about what the file means.
+        let second = try MicaConfigCodec.encode(settings: decoded.settings)
+        #expect(second == json)
     }
 
     @Test("an image background omits its import-baseline shadow and padding")
@@ -204,7 +247,12 @@ struct MicaConfigTests {
         var catalog = MicaConfigAssetCatalog()
         let json = try MicaConfigCodec.encode(settings: settings, assets: &catalog)
         let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
-        #expect(object.keys.sorted() == ["icon-bg"], "shadow .off and compensation on are the import baseline")
+        // The baseline keys, and only those, must be absent — the identity keys
+        // beside them are expected. An image background is also the case where
+        // `icon-bg-color` stops being identity, because it colours nothing.
+        #expect(object["icon-bg-shadow"] == nil, "shadow .off is the import baseline")
+        #expect(object["icon-bg-padding"] == nil, "compensation on is the import baseline")
+        #expect(object["icon-bg-color"] == nil, "an image background is not a colour")
         #expect(object["icon-bg"] as? String == "bg.png")
         #expect(catalog.assets["bg.png"] != nil)
     }

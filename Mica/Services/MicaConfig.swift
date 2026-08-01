@@ -16,9 +16,13 @@
 //   JSON array of colour strings or the CLI's comma-joined form (the array form
 //   is what finally admits comma-containing colours like `extended-srgb:`);
 //   British `-colour` spellings are accepted and the American key wins a tie.
-// - **Encode is minimal**: every key equal to what decoding its absence would
-//   produce is omitted, so an exported file reads as exactly the flags you
-//   would have passed. Values are JSON-native (booleans, numbers, arrays).
+// - **Encode is minimal above an identity set.** The keys that say *what the
+//   icon is* are always written, even at their defaults; every other key equal
+//   to what decoding its absence would produce is omitted. So an exported file
+//   reads as the flags you would have passed to build this icon from scratch,
+//   not as a diff against whatever this build's defaults happen to be. Values
+//   are JSON-native (booleans, numbers, arrays). See `identity` below for the
+//   set and why it exists.
 // - **Unknown keys and unparseable values are warnings, not errors** — only
 //   unreadable JSON is fatal. A configuration must still load; the CLI prints
 //   warnings loudly on stderr and the GUI shows them in an alert.
@@ -770,6 +774,28 @@ private struct ConfigWriter {
     private let defaults = IconSettings()
     private let defaultAppexColors = MicaAppexColors()
 
+    // MARK: The identity set
+    //
+    // The keys that identify the artwork are written even when they hold their
+    // default value. Mica has no document model — an exported configuration is
+    // the *only* record of a user's work — so a file that omits everything
+    // default does not describe an icon, it describes whatever this build's
+    // defaults happen to be. Change `ForegroundSpec.iconDefault` in a later
+    // version and every such file silently renders something else.
+    //
+    // The set: `size`, the two generation modes, each group's foreground
+    // source, its symbol colour, and whichever background key is operative.
+    // Everything else is a *modifier* of those and stays omit-at-default —
+    // which is what keeps an exported file readable as a short list of
+    // intentions rather than all 51 keys. Resist adding to it for any weaker
+    // reason than "a reader cannot tell what they would get without this".
+    //
+    // Applicability still gates every one of them: a symbol colour is not
+    // written for an image foreground, and the Mica and System background
+    // colours remain mutually exclusive. An invisible badge is still omitted
+    // whole, so the badge's identity keys only appear once it is switched on.
+    // Each site below is commented with which of those two rules it is under.
+
     func dictionary(assets: inout MicaConfigAssetCatalog) -> [String: Any] {
         var output: [String: Any] = [:]
 
@@ -777,22 +803,22 @@ private struct ConfigWriter {
             output[key.rawValue] = value
         }
 
-        // Export.
-        if settings.export.size != defaults.export.size { put(.size, Int(settings.export.size)) }
+        // Export. `size` is identity — an implicit export size is the one thing
+        // you cannot recover by looking at the file.
+        put(.size, Int(settings.export.size))
         if settings.export.isRetina { put(.scale, ExportScale.twoX.rawValue) }
         if settings.export.colorSpace != defaults.export.colorSpace {
             put(.colorSpace, settings.export.colorSpace.cliToken)
         }
-        if settings.icon.mode == .system { put(.iconGenerationMode, GenerationMode.system.cliToken) }
+        // Identity: which pipeline drew this decides what every other key means.
+        put(.iconGenerationMode, settings.icon.mode.cliToken)
 
-        // Icon foreground source. Written unless it is the default symbol; an
-        // image source with no pixels is inexpressible and stays omitted.
+        // Icon foreground source — identity. An image source with no pixels is
+        // inexpressible and is the one case that stays omitted.
         let iconFG = settings.icon.foreground
         switch iconFG.source {
         case .symbol, .system:
-            if iconFG.symbolName != defaults.icon.foreground.symbolName {
-                put(.iconFG, ForegroundValue.symbol(iconFG.symbolName).cliValue)
-            }
+            put(.iconFG, ForegroundValue.symbol(iconFG.symbolName).cliValue)
         case .image:
             if let image = iconFG.image {
                 put(.iconFG, assets.relativePath(for: image))
@@ -810,13 +836,16 @@ private struct ConfigWriter {
         // One key carries the symbol colour; the effective one wins (the
         // hierarchical well writes its own field in the GUI, but decode sets
         // both from this key, which is also what the flags do).
+        // Identity while the foreground is a symbol. For an image foreground the
+        // key colours nothing, so it stays omit-at-default.
+        let symbolColorIsIdentity = !iconFGIsImage
         if settings.icon.mode == .system {
-            if appexColors.iconSymbol != defaultAppexColors.iconSymbol {
+            if symbolColorIsIdentity || appexColors.iconSymbol != defaultAppexColors.iconSymbol {
                 put(.iconSymbolColor, appexColors.iconSymbol.plistValue)
             }
         } else {
             let effective = iconFG.renderingStyle == .hierarchical ? iconFG.hierarchicalColor : iconFG.color
-            if effective != defaults.icon.foreground.color {
+            if symbolColorIsIdentity || effective != defaults.icon.foreground.color {
                 put(.iconSymbolColor, MicaColor(resolving: effective).stringValue)
             }
         }
@@ -848,26 +877,29 @@ private struct ConfigWriter {
         // Icon background.
         let iconBG = settings.icon.background
         let iconBGIsImage = iconBG.source == .image && iconBG.image != nil
+        // Whichever key describes the operative background is identity. In
+        // System mode that is the appex enclosure written below, and the
+        // Mica-side colour stays suppressed — the two never both appear.
+        let backgroundIsMicaDrawn = settings.icon.mode != .system
         switch iconBG.source {
         case .color:
             if iconBG.usesCustomGradient {
                 put(.iconBG, IconBackgroundValue.customGradient.cliValue)
                 let defaultGradient = (defaults.icon.background.gradientStartColor,
                                        defaults.icon.background.gradientEndColor)
-                if (iconBG.gradientStartColor, iconBG.gradientEndColor) != defaultGradient {
+                if backgroundIsMicaDrawn
+                    || (iconBG.gradientStartColor, iconBG.gradientEndColor) != defaultGradient {
                     put(.iconBGGradientColors, [
                         MicaColor(resolving: iconBG.gradientStartColor).stringValue,
                         MicaColor(resolving: iconBG.gradientEndColor).stringValue,
                     ])
                 }
-            } else if settings.icon.mode != .system, iconBG.color != defaults.icon.background.color {
+            } else if backgroundIsMicaDrawn {
                 put(.iconBGColor, MicaColor(resolving: iconBG.color).stringValue)
             }
         case .preRendered:
             put(.iconBG, IconBackgroundValue.preRendered.cliValue)
-            if iconBG.preRenderedColorName.lowercased() != defaults.icon.background.preRenderedColorName.lowercased() {
-                put(.iconBGColor, iconBG.preRenderedColorName.lowercased())
-            }
+            put(.iconBGColor, iconBG.preRenderedColorName.lowercased())
         case .image:
             if let image = iconBG.image {
                 put(.iconBG, assets.relativePath(for: image))
@@ -877,7 +909,7 @@ private struct ConfigWriter {
                 if !iconBG.compensatesForPadding { put(.iconBGPadding, true) }
             }
         }
-        if settings.icon.mode == .system, appexColors.iconEnclosure != defaultAppexColors.iconEnclosure {
+        if settings.icon.mode == .system {
             put(.iconBGColor, appexColors.iconEnclosure.plistValue)
         }
         if iconBG.usesGradient != defaults.icon.background.usesGradient {
@@ -914,7 +946,9 @@ private struct ConfigWriter {
         let badgeFG = badge.foreground
         let badgeBG = badge.background
 
-        if badge.mode == .system { put(.badgeGenerationMode, GenerationMode.system.cliToken) }
+        // Identity, on the same terms as the icon's — but only reached at all
+        // once the badge is visible, so a switched-off badge stays absent.
+        put(.badgeGenerationMode, badge.mode.cliToken)
 
         // The activation key. A system badge writes its symbol name too —
         // decode applies `badge-generation-mode` after the source, restoring
@@ -933,13 +967,14 @@ private struct ConfigWriter {
         if badgeFG.renderingStyle != SymbolRenderingStyle.monochrome {
             put(.badgeSymbolRendering, badgeFG.renderingStyle.cliToken)
         }
+        let badgeSymbolColorIsIdentity = !badgeFGIsImage
         if badge.mode == .system {
-            if appexColors.badgeSymbol != defaultAppexColors.badgeSymbol {
+            if badgeSymbolColorIsIdentity || appexColors.badgeSymbol != defaultAppexColors.badgeSymbol {
                 put(.badgeSymbolColor, appexColors.badgeSymbol.plistValue)
             }
         } else {
             let effective = badgeFG.renderingStyle == .hierarchical ? badgeFG.hierarchicalColor : badgeFG.color
-            if effective != ForegroundSpec.badgeDefault.color {
+            if badgeSymbolColorIsIdentity || effective != ForegroundSpec.badgeDefault.color {
                 put(.badgeSymbolColor, MicaColor(resolving: effective).stringValue)
             }
         }
@@ -968,19 +1003,21 @@ private struct ConfigWriter {
 
         // Badge background.
         let badgeBGIsImage = badgeBG.source == .image && badgeBG.image != nil
+        let badgeBackgroundIsMicaDrawn = badge.mode != .system
         switch badgeBG.source {
         case .color:
             if badgeBG.usesCustomGradient {
                 put(.badgeBG, BadgeBackgroundValue.customGradient.cliValue)
                 let defaultGradient = (BadgeBackgroundSpec().gradientStartColor,
                                        BadgeBackgroundSpec().gradientEndColor)
-                if (badgeBG.gradientStartColor, badgeBG.gradientEndColor) != defaultGradient {
+                if badgeBackgroundIsMicaDrawn
+                    || (badgeBG.gradientStartColor, badgeBG.gradientEndColor) != defaultGradient {
                     put(.badgeBGGradientColors, [
                         MicaColor(resolving: badgeBG.gradientStartColor).stringValue,
                         MicaColor(resolving: badgeBG.gradientEndColor).stringValue,
                     ])
                 }
-            } else if badge.mode != .system, badgeBG.color != BadgeBackgroundSpec().color {
+            } else if badgeBackgroundIsMicaDrawn {
                 put(.badgeBGColor, MicaColor(resolving: badgeBG.color).stringValue)
             }
         case .image:
@@ -990,7 +1027,7 @@ private struct ConfigWriter {
                 if !badgeBG.compensatesForPadding { put(.badgeBGPadding, true) }
             }
         }
-        if badge.mode == .system, appexColors.badgeEnclosure != defaultAppexColors.badgeEnclosure {
+        if badge.mode == .system {
             put(.badgeBGColor, appexColors.badgeEnclosure.plistValue)
         }
         if badgeBG.usesGradient != BadgeBackgroundSpec().usesGradient {
