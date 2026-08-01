@@ -32,6 +32,10 @@ extension FocusedValues {
     /// simple: a binding when the menu only flips a flag, an action when it must run
     /// something first.
     @Entry var exportConfiguration: FocusedAction?
+
+    /// Open the focused window's Import Configuration… panel. An action for symmetry
+    /// with `exportConfiguration`, since the pair is one feature in the File menu.
+    @Entry var importConfiguration: FocusedAction?
 }
 
 /// A menu-invokable action published by the focused window.
@@ -208,6 +212,7 @@ struct ContentView: View {
         // Always available: a configuration is just the settings, so unlike a PNG
         // export there is nothing it can be waiting on.
         .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
+        .focusedSceneValue(\.importConfiguration, FocusedAction { viewModel.showConfigImportDialog = true })
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //
@@ -226,18 +231,7 @@ struct ContentView: View {
         .environment(\.continuousEdit, viewModel.continuousEditScope)
         .fileExporter(
             isPresented: $viewModel.showExportDialog,
-            document: viewModel.iconSettings.icon.mode == .system
-                ? PNGExportDocument(appexExport: .init(
-                    symbolName: viewModel.iconSettings.icon.foreground.symbolName,
-                    enclosureColor: viewModel.appexEnclosureColor.plistValue,
-                    symbolColor: viewModel.appexSymbolColor.plistValue,
-                    pointSize: viewModel.iconSettings.export.size,
-                    scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
-                    colorSpace: viewModel.iconSettings.export.colorSpace
-                  ),
-                  settings: viewModel.iconSettings,
-                  badgeAppexImage: viewModel.badgeAppexRenderedImage)
-                : PNGExportDocument(settings: viewModel.iconSettings, badgeAppexImage: viewModel.badgeAppexRenderedImage),
+            document: pngExportDocument,
             contentType: .png,
             defaultFilename: viewModel.iconSettings.exportBaseName
         ) { result in
@@ -282,6 +276,49 @@ struct ContentView: View {
                     viewModel.configExportDocument = nil
                 }
         }
+        // Its own host again — a view gets one `fileImporter` just as it gets one
+        // `fileExporter`, and stacking them on the shared view is what silently killed
+        // Cmd-Shift-E. `.folder` is offered alongside `.json` because an exported
+        // configuration with images is a folder.
+        .background {
+            Color.clear
+                .fileImporter(
+                    isPresented: $viewModel.showConfigImportDialog,
+                    allowedContentTypes: [.json, .folder]
+                ) { result in
+                    switch result {
+                    case .success(let url):
+                        viewModel.importConfiguration(from: url, undoManager: undoManager)
+                    case .failure(let error):
+                        viewModel.configImportError = error.localizedDescription
+                    }
+                }
+        }
+        .alert(
+            "Couldn’t Import the Configuration",
+            isPresented: Binding(
+                get: { viewModel.configImportError != nil },
+                set: { if !$0 { viewModel.configImportError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.configImportError = nil }
+        } message: {
+            Text(viewModel.configImportError ?? "")
+        }
+        // Not an error: the configuration imported, but something in it could not be
+        // honoured. Listed rather than summarised — "3 problems" tells the user nothing
+        // about which layer came back empty.
+        .alert(
+            "Imported with Changes",
+            isPresented: Binding(
+                get: { !viewModel.configImportWarnings.isEmpty },
+                set: { if !$0 { viewModel.configImportWarnings = [] } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.configImportWarnings = [] }
+        } message: {
+            Text(viewModel.configImportWarnings.map(\.message).joined(separator: "\n\n"))
+        }
         .alert(
             "Couldn’t Export the Configuration",
             isPresented: Binding(
@@ -293,6 +330,33 @@ struct ContentView: View {
         } message: {
             Text(viewModel.configExportError ?? "")
         }
+    }
+
+    /// The PNG payload for the export panel.
+    ///
+    /// Lifted out of `body` because the whole view stopped type-checking in reasonable
+    /// time once the configuration dialogs were added — a ternary between two multi-
+    /// argument initializers inside a modifier argument is expensive to infer. Keep new
+    /// presentation payloads out of `body` for the same reason.
+    private var pngExportDocument: PNGExportDocument {
+        guard viewModel.iconSettings.icon.mode == .system else {
+            return PNGExportDocument(
+                settings: viewModel.iconSettings,
+                badgeAppexImage: viewModel.badgeAppexRenderedImage
+            )
+        }
+        return PNGExportDocument(
+            appexExport: .init(
+                symbolName: viewModel.iconSettings.icon.foreground.symbolName,
+                enclosureColor: viewModel.appexEnclosureColor.plistValue,
+                symbolColor: viewModel.appexSymbolColor.plistValue,
+                pointSize: viewModel.iconSettings.export.size,
+                scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
+                colorSpace: viewModel.iconSettings.export.colorSpace
+            ),
+            settings: viewModel.iconSettings,
+            badgeAppexImage: viewModel.badgeAppexRenderedImage
+        )
     }
 
     // MARK: - Canvas selection

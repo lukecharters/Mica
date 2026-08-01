@@ -7,6 +7,7 @@ struct MicaApp: App {
     @FocusedBinding(\.iconSettings) private var iconSettings
     @FocusedBinding(\.exportPNG) private var exportPNG
     @FocusedValue(\.exportConfiguration) private var exportConfiguration
+    @FocusedValue(\.importConfiguration) private var importConfiguration
 
 
     var body: some Scene {
@@ -172,6 +173,12 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("s", modifiers: .command)
                 .disabled(exportConfiguration == nil)
+
+                Button("Import Configuration…") {
+                    importConfiguration?.perform()
+                }
+                .keyboardShortcut("o", modifiers: .command)
+                .disabled(importConfiguration == nil)
             }
 
             #if DEBUG

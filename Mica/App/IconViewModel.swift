@@ -32,6 +32,11 @@ final class IconViewModel: ObservableObject {
     /// producing a menu item that silently does nothing.
     @Published var configExportError: String?
 
+    /// Whether the configuration open panel is showing, and why an import failed.
+    /// A failure installs nothing — see `importConfiguration(from:undoManager:)`.
+    @Published var showConfigImportDialog: Bool = false
+    @Published var configImportError: String?
+
     /// Anything an imported configuration said that this build could not honour — an
     /// unknown key, an unparseable colour, a missing sidecar image. Held rather than
     /// discarded so the import can account for what it dropped. See
