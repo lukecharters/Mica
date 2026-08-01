@@ -248,23 +248,39 @@ struct ContentView: View {
                 print("Failed to save icon: \(error.localizedDescription)")
             }
         }
-        // The configuration export. `contentType` follows the prepared document — a
-        // configuration with imported images is written as a folder, because the
-        // sandbox only grants what the user picked in the save panel and a chosen
-        // file does not cover its siblings. See ConfigurationExportDocument.
-        .fileExporter(
-            isPresented: $viewModel.showConfigExportDialog,
-            document: viewModel.configExportDocument,
-            contentType: viewModel.configExportDocument?.contentType ?? .json,
-            defaultFilename: viewModel.iconSettings.exportBaseName
-        ) { result in
-            switch result {
-            case .success(let url):
-                print("Configuration saved to: \(url.path)")
-            case .failure(let error):
-                viewModel.configExportError = error.localizedDescription
-            }
-            viewModel.configExportDocument = nil
+        // The configuration export, deliberately hosted on its own view.
+        //
+        // **A view gets one `fileExporter`.** Stacking a second directly on this one
+        // does not add a presentation — the outer modifier wins and the inner is
+        // silently ignored, with no warning at build or run time. Written that way, the
+        // configuration exporter above swallowed the PNG exporter below it: Cmd-S
+        // worked, Cmd-Shift-E did nothing at all, and no test could see it because the
+        // failure is in view composition rather than in any value. Found in manual
+        // testing on 2026-08-01, having passed every automated gate.
+        //
+        // An empty background view is its own presentation host, so each exporter gets
+        // one. Anything else presenting from this view — the Phase 8 importer — needs
+        // the same treatment.
+        .background {
+            Color.clear
+                // `contentType` follows the prepared document: a configuration with
+                // imported images is written as a folder, because the sandbox grants
+                // only what the user picked in the save panel and a chosen file does
+                // not cover its siblings. See ConfigurationExportDocument.
+                .fileExporter(
+                    isPresented: $viewModel.showConfigExportDialog,
+                    document: viewModel.configExportDocument,
+                    contentType: viewModel.configExportDocument?.contentType ?? .json,
+                    defaultFilename: viewModel.iconSettings.exportBaseName
+                ) { result in
+                    switch result {
+                    case .success(let url):
+                        print("Configuration saved to: \(url.path)")
+                    case .failure(let error):
+                        viewModel.configExportError = error.localizedDescription
+                    }
+                    viewModel.configExportDocument = nil
+                }
         }
         .alert(
             "Couldn’t Export the Configuration",
