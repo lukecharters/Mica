@@ -811,7 +811,7 @@ private struct ConfigWriter {
     //                           covers it better — including when the user
     //                           toggles the foreground back on. `badge-fg`
     //                           stays ungated for its own reason (activation).
-    //                           docs/plans/imported-background-foreground-and-clipping.md.
+    //                           docs/plans/visibility-activation-and-imported-backgrounds.md.
     //   3. Non-symbol foreground — an image reads no `*-symbol-*` key.
     //   4. Rendering style    — `*-symbol-color` under palette, or
     //                           `*-symbol-palette` under anything else.
