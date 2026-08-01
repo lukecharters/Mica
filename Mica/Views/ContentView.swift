@@ -2,17 +2,26 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - Focused Value for Paste
+// MARK: - Focused Values
 
-struct FocusedIconSettingsKey: FocusedValueKey {
-    typealias Value = Binding<IconSettings>
-}
-
+/// What the menu commands in `MicaApp` reach for: the focused window's settings (the
+/// Paste as… and Import as… items) and its export trigger (File ▸ Export as PNG…).
+///
+/// Both use `@Entry`, the same idiom `ContinuousEditScope` uses for the environment.
+/// `iconSettings` predates `@Entry` and was written as an explicit `FocusedValueKey`;
+/// it was converted when `exportPNG` arrived rather than leave two spellings of one
+/// concept side by side in the same extension.
 extension FocusedValues {
-    var iconSettings: Binding<IconSettings>? {
-        get { self[FocusedIconSettingsKey.self] }
-        set { self[FocusedIconSettingsKey.self] = newValue }
-    }
+    @Entry var iconSettings: Binding<IconSettings>?
+
+    /// Set to `true` to open the PNG export dialog.
+    ///
+    /// Published only while the focused window can actually export — see
+    /// `IconViewModel.canExport` — so the File menu item is driven by one rule: it is
+    /// disabled whenever this is nil, whether that is because no window has focus or
+    /// because a System-mode layer is still waiting on its appex render. A menu item
+    /// that stayed enabled in the second case would write a PNG missing that layer.
+    @Entry var exportPNG: Binding<Bool>?
 }
 
 struct ContentView: View {
@@ -135,8 +144,7 @@ struct ContentView: View {
                 badgeTab: $badgeTab,
                 tab: inspectorTab,
                 colorOptions: colorOptions,
-                appexHasImage: viewModel.appexRenderedImage != nil,
-                badgeAppexHasImage: viewModel.badgeAppexRenderedImage != nil
+                canExport: viewModel.canExport
             )
             .inspectorColumnWidth(
                 min: inspectorRange.lowerBound,
@@ -176,6 +184,7 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
+        .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //

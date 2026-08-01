@@ -5,6 +5,7 @@ import SwiftUI
 struct MicaApp: App {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.iconSettings) private var iconSettings
+    @FocusedBinding(\.exportPNG) private var exportPNG
 
 
     var body: some Scene {
@@ -145,6 +146,18 @@ struct MicaApp: App {
                 }
                 .disabled(iconSettings == nil)
                 Divider()
+            }
+
+            // Replaces the empty stock Import/Export slot rather than adding a group,
+            // so the item lands where macOS already puts export commands in File.
+            // Cmd-Shift-E is free: Cmd-Shift-G is Paste as Icon Background above, and
+            // K/L/M/A/S belong to the DevTools windows in Debug builds.
+            CommandGroup(replacing: .importExport) {
+                Button("Export as PNG…") {
+                    exportPNG = true
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+                .disabled(exportPNG == nil)
             }
 
             #if DEBUG

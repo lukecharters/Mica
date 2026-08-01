@@ -49,6 +49,31 @@ final class IconViewModel: ObservableObject {
     // Derived values (no type changes)
     var actualExportSize: CGFloat { iconSettings.export.pixelSize }
 
+    /// Whether an export would produce the icon the preview is showing.
+    ///
+    /// System-mode layers export their appex-rendered image, so an export started
+    /// before that image arrives silently omits the pending layer. Both the icon and
+    /// the badge can be in System mode independently, and either one pending is enough
+    /// to block.
+    ///
+    /// This lives here, not on the inspector's export button, because the File menu's
+    /// Export as PNG… asks the same question from outside the inspector — and it reads
+    /// `appexRenderedImage`, which only the view model has. Two copies of the rule
+    /// would drift, and the copy that drifted would be the one that writes a broken PNG.
+    var canExport: Bool {
+        !waitingOnIconAppex && !waitingOnBadgeAppex
+    }
+
+    private var waitingOnIconAppex: Bool {
+        iconSettings.icon.mode == .system && appexRenderedImage == nil
+    }
+
+    private var waitingOnBadgeAppex: Bool {
+        iconSettings.badge.isVisible
+            && iconSettings.badge.foreground.source == .system
+            && badgeAppexRenderedImage == nil
+    }
+
     // MARK: - Appex Generation
 
     struct AppexGenerationKey: Equatable {

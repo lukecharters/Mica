@@ -5,8 +5,10 @@ struct ExportSettingsSection: View {
     @Binding var iconSettings: IconSettings
     @Binding var showExportDialog: Bool
     var generationMode: GenerationMode = .mica
-    var appexHasImage: Bool = false
-    var badgeAppexHasImage: Bool = false
+    /// Whether an export would produce the icon the preview is showing. Decided by
+    /// `IconViewModel.canExport`, which the File menu's Export as PNG… also reads —
+    /// this button and that menu item must never disagree about it.
+    var canExport: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -70,23 +72,13 @@ struct ExportSettingsSection: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .keyboardShortcut("e", modifiers: .command)
-            .disabled(waitingOnIconAppex || waitingOnBadgeAppex)
+            // No shortcut here. It carried Cmd-E, which only worked while this tab was
+            // on screen; the equivalent lives in the File menu at Cmd-Shift-E, where
+            // it works from anywhere. Adding one back would put the same action on two
+            // shortcuts, one of them conditionally dead.
+            .disabled(!canExport)
         }
         .padding()
-    }
-
-    /// System-mode layers export their appex-rendered image; block export until
-    /// every active System-mode layer (icon AND badge) has one, otherwise the
-    /// export would silently omit the pending layer.
-    private var waitingOnIconAppex: Bool {
-        generationMode == .system && !appexHasImage
-    }
-
-    private var waitingOnBadgeAppex: Bool {
-        iconSettings.badge.isVisible
-            && iconSettings.badge.foreground.source == .system
-            && !badgeAppexHasImage
     }
 
     private var retinaSizeDescription: String {
