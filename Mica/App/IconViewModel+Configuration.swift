@@ -34,4 +34,27 @@ extension IconViewModel {
             badgeAppexSymbolColor = newValue.badgeSymbol
         }
     }
+
+    // MARK: - Export
+
+    /// Prepare the configuration export and open the save panel.
+    ///
+    /// Preparing before presenting is what lets the exporter know which *shape* it is
+    /// writing: a configuration with no imported images is a single `.json` file, one
+    /// with them is a `.folder`, and `fileExporter` needs that content type up front.
+    /// It also means the JSON is encoded once per export rather than once per view
+    /// update.
+    func beginConfigurationExport() {
+        do {
+            configExportDocument = try ConfigurationExportDocument(
+                settings: iconSettings,
+                appexColors: micaAppexColors,
+                baseName: iconSettings.exportBaseName
+            )
+            showConfigExportDialog = true
+        } catch {
+            configExportDocument = nil
+            configExportError = error.localizedDescription
+        }
+    }
 }

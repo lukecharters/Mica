@@ -268,4 +268,68 @@ struct IconViewModelTests {
         vm.badgeAppexRenderedImage = stubImage()
         #expect(vm.canExport)
     }
+
+    // MARK: - Configuration export
+    //
+    // `beginConfigurationExport()` prepares the document *before* presenting the panel,
+    // which is not incidental: `fileExporter` needs the content type up front, and the
+    // content type is only knowable once the configuration has been encoded and the
+    // imported images collected. Preparing it in `body` instead would re-encode the
+    // JSON and every image on each view update.
+
+    @Test("beginConfigurationExport prepares a document and opens the panel")
+    func beginConfigurationExport_preparesAndPresents() {
+        let vm = IconViewModel()
+        #expect(vm.configExportDocument == nil)
+        #expect(!vm.showConfigExportDialog)
+
+        vm.beginConfigurationExport()
+
+        #expect(vm.configExportDocument != nil)
+        #expect(vm.showConfigExportDialog)
+        #expect(vm.configExportError == nil)
+    }
+
+    @Test("A configuration with no imported images exports as a single JSON file")
+    func beginConfigurationExport_withoutImages_isJSON() throws {
+        let vm = IconViewModel()
+        vm.beginConfigurationExport()
+
+        let document = try #require(vm.configExportDocument)
+        #expect(!document.hasSidecars)
+        #expect(document.contentType == .json)
+    }
+
+    @Test("A configuration with an imported image exports as a folder")
+    func beginConfigurationExport_withImages_isFolder() throws {
+        let vm = IconViewModel()
+        vm.iconSettings.icon.foreground.apply(try ImportedImage.testFixture())
+        vm.beginConfigurationExport()
+
+        let document = try #require(vm.configExportDocument)
+        #expect(document.hasSidecars)
+        #expect(document.contentType == .folder)
+    }
+
+    @Test("The prepared document carries the current settings, not the defaults")
+    func beginConfigurationExport_capturesCurrentSettings() throws {
+        let vm = IconViewModel()
+        vm.iconSettings.icon.foreground.symbolName = "bolt.fill"
+        vm.beginConfigurationExport()
+
+        let document = try #require(vm.configExportDocument)
+        let decoded = try MicaConfigCodec.decode(json: document.json, configDirectory: nil)
+        #expect(decoded.settings.icon.foreground.symbolName == "bolt.fill")
+    }
+
+    @Test("The JSON inside a folder export is named from the icon's export base name")
+    func beginConfigurationExport_namesJSONFromExportBaseName() throws {
+        let vm = IconViewModel()
+        vm.iconSettings.icon.foreground.symbolName = "bolt.fill"
+        vm.beginConfigurationExport()
+
+        let document = try #require(vm.configExportDocument)
+        #expect(document.jsonName == "\(vm.iconSettings.exportBaseName).json")
+        #expect(document.jsonName == "bolt.fill-mica.json")
+    }
 }

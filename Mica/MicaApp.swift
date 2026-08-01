@@ -6,6 +6,7 @@ struct MicaApp: App {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.iconSettings) private var iconSettings
     @FocusedBinding(\.exportPNG) private var exportPNG
+    @FocusedValue(\.exportConfiguration) private var exportConfiguration
 
 
     var body: some Scene {
@@ -158,6 +159,19 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(exportPNG == nil)
+
+                Divider()
+
+                // Cmd-S, blessed by the user on 2026-08-01 over Opt-Cmd-S. Mica has
+                // no document and saves nothing between launches, so this is the only
+                // save-shaped action there is; the plan's worry was that Cmd-S might
+                // over-promise persistence, and the ruling was that being the obvious
+                // shortcut for the obvious action matters more.
+                Button("Export Configuration…") {
+                    exportConfiguration?.perform()
+                }
+                .keyboardShortcut("s", modifiers: .command)
+                .disabled(exportConfiguration == nil)
             }
 
             #if DEBUG

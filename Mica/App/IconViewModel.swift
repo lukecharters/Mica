@@ -20,6 +20,18 @@ final class IconViewModel: ObservableObject {
     @Published var iconSettings: IconSettings = IconSettings()
     @Published var showExportDialog: Bool = false
 
+    /// The configuration export, prepared by `beginConfigurationExport()` rather than
+    /// computed in `body`: building it encodes the JSON and collects every imported
+    /// image's bytes, which is far too much to redo on each view update. The exporter
+    /// reads the prepared value, so the two are set together.
+    @Published var showConfigExportDialog: Bool = false
+    @Published var configExportDocument: ConfigurationExportDocument?
+
+    /// Why a configuration export could not be prepared. Encoding a configuration has
+    /// no expected failure, so this exists to make an unexpected one visible instead of
+    /// producing a menu item that silently does nothing.
+    @Published var configExportError: String?
+
     /// Anything an imported configuration said that this build could not honour — an
     /// unknown key, an unparseable colour, a missing sidecar image. Held rather than
     /// discarded so the import can account for what it dropped. See

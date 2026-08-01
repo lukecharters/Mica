@@ -22,6 +22,26 @@ extension FocusedValues {
     /// because a System-mode layer is still waiting on its appex render. A menu item
     /// that stayed enabled in the second case would write a PNG missing that layer.
     @Entry var exportPNG: Binding<Bool>?
+
+    /// Run the focused window's Export Configuration… flow.
+    ///
+    /// An action rather than a `Binding<Bool>` like `exportPNG`, because this menu item
+    /// has work to do before a panel can open: the configuration has to be encoded to
+    /// know whether it is writing a `.json` file or a `.folder`, and that answer is the
+    /// content type `fileExporter` needs up front. The rule for which to use is that
+    /// simple: a binding when the menu only flips a flag, an action when it must run
+    /// something first.
+    @Entry var exportConfiguration: FocusedAction?
+}
+
+/// A menu-invokable action published by the focused window.
+///
+/// `FocusedValues` entries have to be plain values, and a bare `(() -> Void)?` entry
+/// reads as a double optional at the use site. Wrapping it keeps `MicaApp`'s call
+/// `exportConfiguration?.perform()` and its `disabled(exportConfiguration == nil)`
+/// symmetric with every other command there.
+struct FocusedAction {
+    let perform: () -> Void
 }
 
 struct ContentView: View {
@@ -185,6 +205,9 @@ struct ContentView: View {
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)
+        // Always available: a configuration is just the settings, so unlike a PNG
+        // export there is nothing it can be waiting on.
+        .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //
@@ -224,6 +247,35 @@ struct ContentView: View {
             case .failure(let error):
                 print("Failed to save icon: \(error.localizedDescription)")
             }
+        }
+        // The configuration export. `contentType` follows the prepared document — a
+        // configuration with imported images is written as a folder, because the
+        // sandbox only grants what the user picked in the save panel and a chosen
+        // file does not cover its siblings. See ConfigurationExportDocument.
+        .fileExporter(
+            isPresented: $viewModel.showConfigExportDialog,
+            document: viewModel.configExportDocument,
+            contentType: viewModel.configExportDocument?.contentType ?? .json,
+            defaultFilename: viewModel.iconSettings.exportBaseName
+        ) { result in
+            switch result {
+            case .success(let url):
+                print("Configuration saved to: \(url.path)")
+            case .failure(let error):
+                viewModel.configExportError = error.localizedDescription
+            }
+            viewModel.configExportDocument = nil
+        }
+        .alert(
+            "Couldn’t Export the Configuration",
+            isPresented: Binding(
+                get: { viewModel.configExportError != nil },
+                set: { if !$0 { viewModel.configExportError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { viewModel.configExportError = nil }
+        } message: {
+            Text(viewModel.configExportError ?? "")
         }
     }
 
