@@ -805,9 +805,12 @@ private struct ConfigWriter {
     //   2. Imported background — replaces its group's foreground outright, so
     //                           the whole foreground goes (the badge keeps
     //                           `badge-fg`, which is its activation key).
-    //                           **Slated for deletion**: once importing merely
-    //                           hides the foreground rather than vetoing it,
-    //                           gate 6 covers this and covers it better. See
+    //                           **Slated for deletion outright, both groups**:
+    //                           once importing merely hides the foreground
+    //                           rather than vetoing it, gate 6 covers this and
+    //                           covers it better — including when the user
+    //                           toggles the foreground back on. `badge-fg`
+    //                           stays ungated for its own reason (activation).
     //                           docs/plans/imported-background-foreground-and-clipping.md.
     //   3. Non-symbol foreground — an image reads no `*-symbol-*` key.
     //   4. Rendering style    — `*-symbol-color` under palette, or
