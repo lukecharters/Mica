@@ -23,7 +23,9 @@ readonly OUTPUT_ROOT="${PROJECT_ROOT}/scripts/tests/smoke-output"
 readonly FIXTURE_SYMBOL="${FIXTURES_DIR}/test-symbol-2.png"
 readonly FIXTURE_BACKGROUND="${FIXTURES_DIR}/test-background-2.png"
 readonly FIXTURE_CONFIG="${FIXTURES_DIR}/smoke-config.json"
-readonly SCHEME="mica-cli"
+# The app scheme, not mica-cli — see build_cli() for why the smoke test exercises
+# the embedded copy of the binary rather than the loose build product.
+readonly SCHEME="Mica"
 readonly XCODE_PROJECT="${PROJECT_ROOT}/Mica.xcodeproj"
 
 # Populated by setup_run / build_cli.
@@ -269,9 +271,27 @@ build_cli() {
         exit 2
     fi
 
-    CLI_BINARY="${built_products_dir}/${SCHEME}"
+    # The embedded copy, deliberately — NOT "${built_products_dir}/mica-cli".
+    #
+    # mica-cli reaches its bundled resources through `Bundle.main`: the Liquid Glass
+    # background assets in Assets.car (IconContentView) and symbol-calibration.json
+    # (SymbolSizingService). The target's membershipExceptions list carries only .swift
+    # files and it has no Resources build phase, so the loose build product has neither,
+    # and **both lookups fail silently** — pre-rendered backgrounds render as nothing at
+    # all, and symbol sizing drops to its auto box-fit tier, producing visibly different
+    # glyph sizes from the app.
+    #
+    # The shipped binary does not have this problem: it lives in Contents/MacOS, so
+    # CFBundle resolves the enclosing .app and `Bundle.main` is the app itself. That is
+    # also the only copy a user ever runs, the CLI being distributed inside the bundle.
+    #
+    # Testing the loose one meant every render here was output the shipped CLI would
+    # never produce, and nothing caught it because a wrong-but-present PNG still passes.
+    # Found 2026-08-01 when a GUI-exported configuration replayed through the CLI came
+    # back missing its pre-rendered background.
+    CLI_BINARY="${built_products_dir}/Mica.app/Contents/MacOS/mica-cli"
     if [[ ! -x "${CLI_BINARY}" ]]; then
-        echo "ERROR: built CLI binary not found or not executable: ${CLI_BINARY}" >&2
+        echo "ERROR: embedded CLI binary not found or not executable: ${CLI_BINARY}" >&2
         exit 2
     fi
     echo "==> CLI binary: ${CLI_BINARY}"
