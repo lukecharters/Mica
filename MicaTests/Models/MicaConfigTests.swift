@@ -215,7 +215,7 @@ struct MicaConfigTests {
     @Test("a visible badge writes its identity keys even at their defaults")
     func visibleBadgeWritesIdentitySet() throws {
         var settings = IconSettings()
-        settings.badge.foreground.isHidden = false   // the activation rule
+        settings.badge.isVisible = true   // both layers; the background draws too
         let json = try MicaConfigCodec.encode(settings: settings)
         let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
 
@@ -223,6 +223,89 @@ struct MicaConfigTests {
         #expect(object["badge-fg"] as? String == "symbol:gearshape.fill")
         #expect(object["badge-symbol-color"] != nil)
         #expect(object["badge-bg-color"] != nil)
+    }
+
+    // MARK: - Applicability gates
+
+    /// Palette and the single symbol colour are mutually exclusive in
+    /// `IconContentView.applySymbolColor`, so exactly one of them is written.
+    /// Verified against the renderer: under `--icon-symbol-rendering palette`,
+    /// changing `--icon-symbol-color` produces byte-identical PNGs.
+    @Test("palette rendering writes the palette and drops the single colour")
+    func paletteRoundTripsUnderPalette() throws {
+        var settings = IconSettings()
+        settings.icon.foreground.renderingStyle = .palette
+        settings.icon.foreground.palettePrimaryColor = .red
+        settings.icon.foreground.paletteSecondaryColor = .green
+        settings.icon.foreground.paletteTertiaryColor = .blue
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["icon-symbol-palette"] as? [String] == ["red", "green", "blue"])
+        #expect(object["icon-symbol-color"] == nil)
+
+        let result = try Self.roundTrip(settings)
+        #expect(result.settings.icon.foreground.palettePrimaryColor == .red)
+        #expect(result.settings.icon.foreground.paletteTertiaryColor == .blue)
+    }
+
+    @Test("a palette set under any other rendering style is not written")
+    func paletteIsDroppedWhenNotRendered() throws {
+        var settings = IconSettings()
+        settings.icon.foreground.renderingStyle = .hierarchical
+        settings.icon.foreground.palettePrimaryColor = .red
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["icon-symbol-palette"] == nil)
+        #expect(object["icon-symbol-color"] != nil)
+    }
+
+    /// System mode renders a bare appex raster, whose only inputs are the symbol
+    /// name, the symbol colour and the enclosure colour
+    /// (`AppexReferenceService`). Every other Mica-side icon key describes a
+    /// pipeline that did not run.
+    @Test("System mode writes only the three keys the appex reads")
+    func systemModeDropsMicaOnlyKeys() throws {
+        var settings = IconSettings()
+        settings.icon.mode = .system
+        settings.icon.foreground.symbolName = "shield.fill"
+        settings.icon.foreground.symbolWeight = .bold
+        settings.icon.foreground.symbolScale = 1.3
+        settings.icon.background.cornerRadiusStyle = .macOS11
+        settings.icon.background.shadowStyle = .sequoia
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(object["icon-fg"] as? String == "symbol:shield.fill")
+        #expect(object["icon-symbol-color"] != nil)
+        #expect(object["icon-bg-color"] != nil)
+        for dropped in ["icon-symbol-weight", "icon-fg-scale", "icon-bg-corner-radius",
+                        "icon-bg-shadow", "icon-bg", "icon-symbol-rendering"] {
+            #expect(object[dropped] == nil, "\(dropped) describes the Mica pipeline, which did not run")
+        }
+    }
+
+    /// `BadgeView.swift:107` suppresses the badge symbol when an imported badge
+    /// background draws, so none of the symbol's keys are written. `badge-fg`
+    /// stays: it is the activation key, and without it the group decodes away.
+    @Test("an imported badge background drops the badge symbol's keys")
+    func importedBadgeBackgroundDropsSymbolKeys() throws {
+        var settings = IconSettings()
+        settings.badge.isVisible = true
+        settings.badge.foreground.symbolWeight = .bold
+        settings.badge.foreground.color = .red
+        settings.badge.background.apply(try ImportedImage.testFixture(sourceName: "Back.png"))
+
+        var catalog = MicaConfigAssetCatalog()
+        let json = try MicaConfigCodec.encode(settings: settings, assets: &catalog)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(object["badge-fg"] != nil, "the activation key is never gated")
+        #expect(object["badge-bg"] != nil)
+        #expect(object["badge-symbol-weight"] == nil)
+        #expect(object["badge-symbol-color"] == nil)
     }
 
     @Test("the identity set survives a round trip unchanged")
@@ -283,9 +366,10 @@ struct MicaConfigTests {
         settings.icon.foreground.fillStyle = .gradient
         settings.icon.foreground.symbolWeight = .bold
         settings.icon.foreground.drawsShadow = false
-        settings.icon.foreground.palettePrimaryColor = .red
-        settings.icon.foreground.paletteSecondaryColor = .green
-        settings.icon.foreground.paletteTertiaryColor = .blue
+        // No palette here: the rendering style above is `.hierarchical`, and the
+        // encoder writes the palette only under `.palette` rendering because
+        // that is the only style that draws it. `paletteRoundTripsUnderPalette`
+        // covers the palette; `paletteIsDroppedWhenNotRendered` covers the gate.
 
         settings.icon.background.usesCustomGradient = true
         settings.icon.background.gradientStartColor = .pink
@@ -335,12 +419,28 @@ struct MicaConfigTests {
         var settings = IconSettings()
         settings.icon.background.source = .preRendered
         settings.icon.background.preRenderedColorName = "teal"
-        settings.icon.background.usesGradient = false
 
         let result = try Self.roundTrip(settings)
         #expect(result.settings.icon.background.source == .preRendered)
         #expect(result.settings.icon.background.preRenderedColorName == "teal")
-        #expect(result.settings.icon.background.usesGradient == false)
+    }
+
+    /// A pre-rendered asset is drawn as-is by `IconContentView.backgroundLayer`
+    /// — no gradient, no corner radius — so neither key is written for it, and
+    /// neither survives. Verified against the renderer: two renders differing
+    /// only in `--icon-bg-corner-radius` over `prerendered-liquid-glass` are
+    /// byte-identical.
+    @Test("a pre-rendered background drops the keys it does not read")
+    func preRenderedDropsInertKeys() throws {
+        var settings = IconSettings()
+        settings.icon.background.source = .preRendered
+        settings.icon.background.usesGradient = !IconSettings().icon.background.usesGradient
+        settings.icon.background.cornerRadiusStyle = .macOS11
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["icon-bg-gradient"] == nil)
+        #expect(object["icon-bg-corner-radius"] == nil)
     }
 
     @Test("the custom-solid gradient state round-trips", arguments: [
@@ -364,6 +464,10 @@ struct MicaConfigTests {
 
     @Test("imported images round-trip by bytes, name and layer")
     func importedImagesRoundTrip() throws {
+        // The two images go on the icon foreground and the *badge* foreground.
+        // Both on the icon would mean an imported background, which suppresses
+        // the icon foreground outright (`IconContentView.swift:93`) and is
+        // therefore not written — see `importedBackgroundDropsTheForeground`.
         var settings = IconSettings()
         var foreground = settings.icon.foreground
         foreground.apply(try ImportedImage.testFixture(fill: .systemRed, sourceName: "Glyph.png"))
@@ -373,17 +477,47 @@ struct MicaConfigTests {
         // leaves the previous name, which the format does not carry.
         foreground.symbolName = "Glyph"
         settings.icon.foreground = foreground
+        settings.badge.isVisible = true
+        var badgeForeground = settings.badge.foreground
+        badgeForeground.apply(try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Backdrop.png"))
+        badgeForeground.imageScale = 1.2
+        badgeForeground.symbolName = "Backdrop"
+        settings.badge.foreground = badgeForeground
+
+        let result = try Self.roundTrip(settings)
+        #expect(result.settings.icon.foreground.image?.sourceName == "Glyph.png")
+        #expect(result.settings.icon.foreground.imageScale == 0.9)
+        #expect(result.settings.badge.foreground.image?.sourceName == "Backdrop.png")
+        #expect(result.settings.badge.foreground.imageScale == 1.2)
+        #expect(result.warnings.isEmpty)
+    }
+
+    /// An imported icon background replaces the foreground rather than sitting
+    /// behind it, so the foreground's keys — including its imported image and
+    /// that image's sidecar — are not written. Verified against the renderer:
+    /// `--icon-bg <image>` with `star.fill` and with `heart.fill --icon-symbol-color
+    /// green --icon-symbol-weight bold` produce byte-identical PNGs.
+    @Test("an imported icon background drops the foreground it hides")
+    func importedBackgroundDropsTheForeground() throws {
+        var settings = IconSettings()
+        settings.icon.foreground.apply(try ImportedImage.testFixture(fill: .systemRed, sourceName: "Glyph.png"))
+        settings.icon.foreground.symbolName = "Glyph"
         var background = settings.icon.background
         background.apply(try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Backdrop.png"))
         background.imageScale = 1.2
         background.compensatesForPadding = false
         settings.icon.background = background
 
-        let result = try Self.roundTrip(settings)
-        Self.expectEquivalent(result.settings, settings)
-        #expect(result.settings.icon.foreground.image?.sourceName == "Glyph.png")
-        #expect(result.settings.icon.background.image?.sourceName == "Backdrop.png")
-        #expect(result.warnings.isEmpty)
+        var catalog = MicaConfigAssetCatalog()
+        let json = try MicaConfigCodec.encode(settings: settings, assets: &catalog)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(object["icon-bg"] != nil)
+        #expect(object["icon-bg-scale"] as? Double == 1.2)
+        #expect(object["icon-bg-padding"] as? Bool == true)
+        // Nothing from the hidden foreground, and only the background's sidecar.
+        #expect(object.keys.allSatisfy { !$0.hasPrefix("icon-fg") && !$0.hasPrefix("icon-symbol") })
+        #expect(catalog.assets.count == 1)
     }
 
     @Test("System-mode appex colours round-trip beside the settings")

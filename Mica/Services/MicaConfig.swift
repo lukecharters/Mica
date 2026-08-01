@@ -16,13 +16,15 @@
 //   JSON array of colour strings or the CLI's comma-joined form (the array form
 //   is what finally admits comma-containing colours like `extended-srgb:`);
 //   British `-colour` spellings are accepted and the American key wins a tie.
-// - **Encode is minimal above an identity set.** The keys that say *what the
-//   icon is* are always written, even at their defaults; every other key equal
-//   to what decoding its absence would produce is omitted. So an exported file
-//   reads as the flags you would have passed to build this icon from scratch,
-//   not as a diff against whatever this build's defaults happen to be. Values
-//   are JSON-native (booleans, numbers, arrays). See `identity` below for the
-//   set and why it exists.
+// - **Encode is minimal above an identity set, and gated by applicability.**
+//   The keys that say *what the icon is* are always written, even at their
+//   defaults; every other key equal to what decoding its absence would produce
+//   is omitted; and any key that cannot affect the render is dropped whatever
+//   its value. So an exported file reads as the flags you would have passed to
+//   build this icon from scratch — not a diff against this build's defaults,
+//   and not a record of settings that draw nothing. Values are JSON-native
+//   (booleans, numbers, arrays). Both rules, the gate list, and the lossiness
+//   they buy are set out on `ConfigWriter` below.
 // - **Unknown keys and unparseable values are warnings, not errors** — only
 //   unreadable JSON is fatal. A configuration must still load; the CLI prints
 //   warnings loudly on stderr and the GUI shows them in an alert.
@@ -790,11 +792,37 @@ private struct ConfigWriter {
     // intentions rather than all 51 keys. Resist adding to it for any weaker
     // reason than "a reader cannot tell what they would get without this".
     //
-    // Applicability still gates every one of them: a symbol colour is not
-    // written for an image foreground, and the Mica and System background
-    // colours remain mutually exclusive. An invisible badge is still omitted
-    // whole, so the badge's identity keys only appear once it is switched on.
-    // Each site below is commented with which of those two rules it is under.
+    // MARK: The applicability gates
+    //
+    // Cutting *across* identity: a key that cannot affect the render is never
+    // written, whatever its value. The file describes the render, so a key that
+    // draws nothing has no business in it. The gates, each named at the site
+    // that applies it and each mirroring a specific render decision:
+    //
+    //   1. System mode        — the appex raster reads only symbol name, symbol
+    //                           colour and enclosure colour; every other
+    //                           Mica-side key in that group is dropped.
+    //   2. Imported background — replaces its group's foreground outright, so
+    //                           the whole foreground goes (the badge keeps
+    //                           `badge-fg`, which is its activation key).
+    //   3. Non-symbol foreground — an image reads no `*-symbol-*` key.
+    //   4. Rendering style    — `*-symbol-color` under palette, or
+    //                           `*-symbol-palette` under anything else.
+    //   5. Background source  — `.color` reads the colour/gradient keys,
+    //                           `.image` reads scale/padding/corner radius,
+    //                           `.preRendered` reads neither gradient nor
+    //                           corner radius; it is drawn as-is.
+    //   6. Hidden layer       — a layer that does not draw takes its appearance
+    //                           keys with it. Visibility keys themselves are
+    //                           never gated: they are what did the hiding.
+    //
+    // **This is deliberately lossy**, on the same terms as the already-documented
+    // invisible badge: set a palette, switch to monochrome, export, and the
+    // palette is gone. That is the accepted cost of the file meaning exactly
+    // what it renders. Before relaxing a gate, check the render code rather than
+    // the key's name — `icon-bg-corner-radius` looks inert for an imported
+    // background and is not (`IconContentView.swift:180` clips with it), while
+    // it genuinely is inert for a pre-rendered one.
 
     func dictionary(assets: inout MicaConfigAssetCatalog) -> [String: Any] {
         var output: [String: Any] = [:]
@@ -803,8 +831,38 @@ private struct ConfigWriter {
             output[key.rawValue] = value
         }
 
-        // Export. `size` is identity — an implicit export size is the one thing
-        // you cannot recover by looking at the file.
+        let iconFG = settings.icon.foreground
+        let iconBG = settings.icon.background
+        let isSystem = settings.icon.mode == .system
+        let iconFGIsImage = iconFG.source == .image && iconFG.image != nil
+        let iconBGIsImage = iconBG.source == .image && iconBG.image != nil
+
+        // Applicability gates. Each names the render site it mirrors; if one of
+        // those moves, this moves with it or the file starts describing keys
+        // that draw nothing.
+        //
+        // System mode replaces the whole Mica pipeline with an appex raster
+        // (`IconRenderer.renderAppexWithBadge`), and `AppexReferenceService`
+        // takes exactly three inputs: symbol name, symbol colour, enclosure
+        // colour. Every other Mica-side key describes a pipeline that did not
+        // run.
+        //
+        // An imported background replaces the foreground outright, not merely
+        // its colour (`IconContentView.swift:93`). That gate is on `source`
+        // alone, but this one deliberately also requires *pixels*: a source of
+        // `.image` with no image cannot be written to the file at all, so
+        // suppressing the foreground too would export a configuration that
+        // re-imports as nothing.
+        let iconFGDraws = !isSystem && !iconBGIsImage && !iconFG.isHidden
+        // Symbol styling needs a symbol; an image foreground reads none of it.
+        let iconSymbolStyling = iconFGDraws && !iconFGIsImage
+        // Palette and the single symbol colour are mutually exclusive
+        // (`IconContentView.applySymbolColor`).
+        let iconUsesPalette = iconFG.renderingStyle == .palette
+        let iconBGDraws = !isSystem && !iconBG.isHidden
+
+        // Export — always operative. `size` is identity: an implicit export size
+        // is the one thing you cannot recover by looking at the file.
         put(.size, Int(settings.export.size))
         if settings.export.isRetina { put(.scale, ExportScale.twoX.rawValue) }
         if settings.export.colorSpace != defaults.export.colorSpace {
@@ -813,116 +871,111 @@ private struct ConfigWriter {
         // Identity: which pipeline drew this decides what every other key means.
         put(.iconGenerationMode, settings.icon.mode.cliToken)
 
-        // Icon foreground source — identity. An image source with no pixels is
-        // inexpressible and is the one case that stays omitted.
-        let iconFG = settings.icon.foreground
-        switch iconFG.source {
-        case .symbol, .system:
-            put(.iconFG, ForegroundValue.symbol(iconFG.symbolName).cliValue)
-        case .image:
-            if let image = iconFG.image {
-                put(.iconFG, assets.relativePath(for: image))
+        // Icon foreground source — identity. Written in System mode too, where
+        // the symbol name is what the appex is built from.
+        if isSystem || iconFGDraws {
+            switch iconFG.source {
+            case .symbol, .system:
+                put(.iconFG, ForegroundValue.symbol(iconFG.symbolName).cliValue)
+            case .image:
+                // An image source with no pixels is inexpressible.
+                if let image = iconFG.image {
+                    put(.iconFG, assets.relativePath(for: image))
+                }
             }
         }
-        let iconFGIsImage = iconFG.source == .image && iconFG.image != nil
-        if iconFGIsImage {
-            if iconFG.imageScale != 1.0 { put(.iconFGScale, iconFG.imageScale) }
-        } else if iconFG.symbolScale != 1.0 {
-            put(.iconFGScale, iconFG.symbolScale)
+        if iconFGDraws {
+            let scale = iconFGIsImage ? iconFG.imageScale : iconFG.symbolScale
+            if scale != 1.0 { put(.iconFGScale, scale) }
         }
-        if iconFG.renderingStyle != defaults.icon.foreground.renderingStyle {
+        if iconSymbolStyling, iconFG.renderingStyle != defaults.icon.foreground.renderingStyle {
             put(.iconSymbolRendering, iconFG.renderingStyle.cliToken)
         }
-        // One key carries the symbol colour; the effective one wins (the
-        // hierarchical well writes its own field in the GUI, but decode sets
-        // both from this key, which is also what the flags do).
-        // Identity while the foreground is a symbol. For an image foreground the
-        // key colours nothing, so it stays omit-at-default.
-        let symbolColorIsIdentity = !iconFGIsImage
-        if settings.icon.mode == .system {
-            if symbolColorIsIdentity || appexColors.iconSymbol != defaultAppexColors.iconSymbol {
-                put(.iconSymbolColor, appexColors.iconSymbol.plistValue)
-            }
-        } else {
+        // The operative symbol colour is identity, and exactly one key carries
+        // it: `icon-symbol-color` or `icon-symbol-palette`, never both. The
+        // effective colour wins (the hierarchical well writes its own field in
+        // the GUI, but decode sets both from this key, as the flags do).
+        if isSystem {
+            put(.iconSymbolColor, appexColors.iconSymbol.plistValue)
+        } else if iconSymbolStyling, !iconUsesPalette {
             let effective = iconFG.renderingStyle == .hierarchical ? iconFG.hierarchicalColor : iconFG.color
-            if symbolColorIsIdentity || effective != defaults.icon.foreground.color {
-                put(.iconSymbolColor, MicaColor(resolving: effective).stringValue)
-            }
+            put(.iconSymbolColor, MicaColor(resolving: effective).stringValue)
         }
-        let defaultPalette = (defaults.icon.foreground.palettePrimaryColor,
-                              defaults.icon.foreground.paletteSecondaryColor,
-                              defaults.icon.foreground.paletteTertiaryColor)
-        if (iconFG.palettePrimaryColor, iconFG.paletteSecondaryColor, iconFG.paletteTertiaryColor) != defaultPalette {
+        if iconSymbolStyling, iconUsesPalette {
             put(.iconSymbolPalette, [
                 MicaColor(resolving: iconFG.palettePrimaryColor).stringValue,
                 MicaColor(resolving: iconFG.paletteSecondaryColor).stringValue,
                 MicaColor(resolving: iconFG.paletteTertiaryColor).stringValue,
             ])
         }
-        if iconFG.symbolWeight != defaults.icon.foreground.symbolWeight {
+        if iconSymbolStyling, iconFG.symbolWeight != defaults.icon.foreground.symbolWeight {
             put(.iconSymbolWeight, iconFG.symbolWeight.cliToken)
         }
-        if iconFG.fillStyle != defaults.icon.foreground.fillStyle {
+        if iconSymbolStyling, iconFG.fillStyle != defaults.icon.foreground.fillStyle {
             put(.iconSymbolGradient, iconFG.fillStyle == .gradient)
         }
         // Baseline mirrors decode's fresh-import rule: an imported foreground's
         // shadow defaults off.
-        if iconFG.drawsShadow != (iconFGIsImage ? false : defaults.icon.foreground.drawsShadow) {
+        if iconFGDraws,
+           iconFG.drawsShadow != (iconFGIsImage ? false : defaults.icon.foreground.drawsShadow) {
             put(.iconFGShadow, iconFG.drawsShadow)
         }
-        if iconFG.isHidden != defaults.icon.foreground.isHidden {
+        // Visibility stays operative wherever the layer could have drawn — in
+        // System mode it is half of what gates the appex raster.
+        if isSystem || !iconBGIsImage,
+           iconFG.isHidden != defaults.icon.foreground.isHidden {
             put(.iconFGVisibility, !iconFG.isHidden)
         }
 
-        // Icon background.
-        let iconBG = settings.icon.background
-        let iconBGIsImage = iconBG.source == .image && iconBG.image != nil
-        // Whichever key describes the operative background is identity. In
-        // System mode that is the appex enclosure written below, and the
-        // Mica-side colour stays suppressed — the two never both appear.
-        let backgroundIsMicaDrawn = settings.icon.mode != .system
-        switch iconBG.source {
-        case .color:
-            if iconBG.usesCustomGradient {
-                put(.iconBG, IconBackgroundValue.customGradient.cliValue)
-                let defaultGradient = (defaults.icon.background.gradientStartColor,
-                                       defaults.icon.background.gradientEndColor)
-                if backgroundIsMicaDrawn
-                    || (iconBG.gradientStartColor, iconBG.gradientEndColor) != defaultGradient {
+        // Icon background. Whichever key describes the operative background is
+        // identity; the rest is gated on the source, because each source reads a
+        // different subset (`IconContentView.backgroundLayer`).
+        if iconBGDraws {
+            switch iconBG.source {
+            case .color:
+                if iconBG.usesCustomGradient {
+                    put(.iconBG, IconBackgroundValue.customGradient.cliValue)
                     put(.iconBGGradientColors, [
                         MicaColor(resolving: iconBG.gradientStartColor).stringValue,
                         MicaColor(resolving: iconBG.gradientEndColor).stringValue,
                     ])
+                } else {
+                    put(.iconBGColor, MicaColor(resolving: iconBG.color).stringValue)
                 }
-            } else if backgroundIsMicaDrawn {
-                put(.iconBGColor, MicaColor(resolving: iconBG.color).stringValue)
+                if iconBG.usesGradient != defaults.icon.background.usesGradient {
+                    put(.iconBGGradient, iconBG.usesGradient)
+                }
+            case .preRendered:
+                // Drawn as-is: no gradient, no scale, and no corner radius.
+                put(.iconBG, IconBackgroundValue.preRendered.cliValue)
+                put(.iconBGColor, iconBG.preRenderedColorName.lowercased())
+            case .image:
+                if let image = iconBG.image {
+                    put(.iconBG, assets.relativePath(for: image))
+                    if iconBG.imageScale != 1.0 { put(.iconBGScale, iconBG.imageScale) }
+                    // The padding key is the inverse of the stored compensation,
+                    // and decode's baseline for an image background is on.
+                    if !iconBG.compensatesForPadding { put(.iconBGPadding, true) }
+                }
             }
-        case .preRendered:
-            put(.iconBG, IconBackgroundValue.preRendered.cliValue)
-            put(.iconBGColor, iconBG.preRenderedColorName.lowercased())
-        case .image:
-            if let image = iconBG.image {
-                put(.iconBG, assets.relativePath(for: image))
-                if iconBG.imageScale != 1.0 { put(.iconBGScale, iconBG.imageScale) }
-                // The padding key is the inverse of the stored compensation, and
-                // decode's baseline for an image background is compensation on.
-                if !iconBG.compensatesForPadding { put(.iconBGPadding, true) }
+            // The corner radius shapes the chiclet and clips an imported image
+            // (`IconContentView.swift:180`), but a pre-rendered asset is drawn
+            // unclipped and ignores it.
+            if iconBG.source != .preRendered,
+               iconBG.cornerRadiusStyle != defaults.icon.background.cornerRadiusStyle {
+                put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
+            }
+            // Every source draws the background shadow. Baseline mirrors
+            // decode's fresh-import rule: an imported background's shadow is off.
+            if iconBG.shadowStyle != (iconBGIsImage ? .off : defaults.icon.background.shadowStyle) {
+                put(.iconBGShadow, iconBG.shadowStyle.cliToken)
             }
         }
-        if settings.icon.mode == .system {
+        if isSystem {
             put(.iconBGColor, appexColors.iconEnclosure.plistValue)
         }
-        if iconBG.usesGradient != defaults.icon.background.usesGradient {
-            put(.iconBGGradient, iconBG.usesGradient)
-        }
-        if iconBG.cornerRadiusStyle != defaults.icon.background.cornerRadiusStyle {
-            put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
-        }
-        // Baseline mirrors decode's fresh-import rule: an imported background's
-        // shadow defaults off.
-        if iconBG.shadowStyle != (iconBGIsImage ? .off : defaults.icon.background.shadowStyle) {
-            put(.iconBGShadow, iconBG.shadowStyle.cliToken)
-        }
+        // As with the foreground: still what gates the appex raster in System
+        // mode, so it is never suppressed.
         if iconBG.isHidden != defaults.icon.background.isHidden {
             put(.iconBGVisibility, !iconBG.isHidden)
         }
@@ -945,96 +998,104 @@ private struct ConfigWriter {
         let badge = settings.badge
         let badgeFG = badge.foreground
         let badgeBG = badge.background
+        let badgeDefault = ForegroundSpec.badgeDefault
+        let badgeFGIsImage = badgeFG.source == .image && badgeFG.image != nil
+
+        // The badge's gates, mirroring the icon's. Two are specific to it:
+        //
+        // A System badge draws *only* the appex raster (`BadgeView.swift:42`),
+        // so every Mica-side badge key below describes nothing.
+        //
+        // An imported badge background suppresses the badge foreground
+        // (`BadgeView.swift:107`), on the same `drawsImage` answer that decides
+        // whether it draws at all — so unlike the icon's, this gate already
+        // requires pixels and a visible layer.
+        let badgeIsSystem = badge.mode == .system
+        let badgeBGDrawsImage = badgeBG.drawsImage
+        let badgeFGDraws = !badgeIsSystem && !badgeBGDrawsImage && !badgeFG.isHidden
+        let badgeSymbolStyling = badgeFGDraws && !badgeFGIsImage
+        let badgeUsesPalette = badgeFG.renderingStyle == .palette
+        let badgeBGDraws = !badgeIsSystem && !badgeBG.isHidden
 
         // Identity, on the same terms as the icon's — but only reached at all
         // once the badge is visible, so a switched-off badge stays absent.
         put(.badgeGenerationMode, badge.mode.cliToken)
 
-        // The activation key. A system badge writes its symbol name too —
-        // decode applies `badge-generation-mode` after the source, restoring
-        // `.system` exactly as the builder does for the flags.
-        let badgeFGIsImage = badgeFG.source == .image && badgeFG.image != nil
+        // The activation key, and the one badge key that is never gated:
+        // without it the whole group would decode as absent. A system badge
+        // writes its symbol name too — decode applies `badge-generation-mode`
+        // after the source, restoring `.system` as the builder does for flags.
         if badgeFGIsImage, let image = badgeFG.image {
             put(.badgeFG, assets.relativePath(for: image))
         } else {
             put(.badgeFG, ForegroundValue.symbol(badgeFG.symbolName).cliValue)
         }
-        if badgeFGIsImage {
-            if badgeFG.imageScale != 1.0 { put(.badgeFGScale, badgeFG.imageScale) }
-        } else if badgeFG.symbolScale != 1.0 {
-            put(.badgeFGScale, badgeFG.symbolScale)
+        if badgeFGDraws {
+            let scale = badgeFGIsImage ? badgeFG.imageScale : badgeFG.symbolScale
+            if scale != 1.0 { put(.badgeFGScale, scale) }
         }
-        if badgeFG.renderingStyle != SymbolRenderingStyle.monochrome {
+        if badgeSymbolStyling, badgeFG.renderingStyle != SymbolRenderingStyle.monochrome {
             put(.badgeSymbolRendering, badgeFG.renderingStyle.cliToken)
         }
-        let badgeSymbolColorIsIdentity = !badgeFGIsImage
-        if badge.mode == .system {
-            if badgeSymbolColorIsIdentity || appexColors.badgeSymbol != defaultAppexColors.badgeSymbol {
-                put(.badgeSymbolColor, appexColors.badgeSymbol.plistValue)
-            }
-        } else {
+        // Exactly one of colour / palette, as with the icon.
+        if badgeIsSystem {
+            put(.badgeSymbolColor, appexColors.badgeSymbol.plistValue)
+        } else if badgeSymbolStyling, !badgeUsesPalette {
             let effective = badgeFG.renderingStyle == .hierarchical ? badgeFG.hierarchicalColor : badgeFG.color
-            if badgeSymbolColorIsIdentity || effective != ForegroundSpec.badgeDefault.color {
-                put(.badgeSymbolColor, MicaColor(resolving: effective).stringValue)
-            }
+            put(.badgeSymbolColor, MicaColor(resolving: effective).stringValue)
         }
-        let badgeDefault = ForegroundSpec.badgeDefault
-        if (badgeFG.palettePrimaryColor, badgeFG.paletteSecondaryColor, badgeFG.paletteTertiaryColor)
-            != (badgeDefault.palettePrimaryColor, badgeDefault.paletteSecondaryColor, badgeDefault.paletteTertiaryColor) {
+        if badgeSymbolStyling, badgeUsesPalette {
             put(.badgeSymbolPalette, [
                 MicaColor(resolving: badgeFG.palettePrimaryColor).stringValue,
                 MicaColor(resolving: badgeFG.paletteSecondaryColor).stringValue,
                 MicaColor(resolving: badgeFG.paletteTertiaryColor).stringValue,
             ])
         }
-        if badgeFG.symbolWeight != badgeDefault.symbolWeight {
+        if badgeSymbolStyling, badgeFG.symbolWeight != badgeDefault.symbolWeight {
             put(.badgeSymbolWeight, badgeFG.symbolWeight.cliToken)
         }
-        if badgeFG.fillStyle != badgeDefault.fillStyle {
+        if badgeSymbolStyling, badgeFG.fillStyle != badgeDefault.fillStyle {
             put(.badgeSymbolGradient, badgeFG.fillStyle == .gradient)
         }
-        if badgeFG.drawsShadow != (badgeFGIsImage ? false : badgeDefault.drawsShadow) {
+        if badgeFGDraws, badgeFG.drawsShadow != (badgeFGIsImage ? false : badgeDefault.drawsShadow) {
             put(.badgeFGShadow, badgeFG.drawsShadow)
         }
         // The activation baseline is both layers visible, not the spec default
         // (which is hidden) — supplying `badge-fg` is what shows the badge.
+        // Never gated: these are what switch the badge's layers off at all.
         if badgeFG.isHidden { put(.badgeFGVisibility, false) }
         if badgeBG.isHidden { put(.badgeBGVisibility, false) }
 
-        // Badge background.
-        let badgeBGIsImage = badgeBG.source == .image && badgeBG.image != nil
-        let badgeBackgroundIsMicaDrawn = badge.mode != .system
-        switch badgeBG.source {
-        case .color:
-            if badgeBG.usesCustomGradient {
-                put(.badgeBG, BadgeBackgroundValue.customGradient.cliValue)
-                let defaultGradient = (BadgeBackgroundSpec().gradientStartColor,
-                                       BadgeBackgroundSpec().gradientEndColor)
-                if badgeBackgroundIsMicaDrawn
-                    || (badgeBG.gradientStartColor, badgeBG.gradientEndColor) != defaultGradient {
+        // Badge background. The badge has no corner-radius key — it is a
+        // `Circle()` unless an imported image gives it a shape of its own.
+        if badgeBGDraws {
+            switch badgeBG.source {
+            case .color:
+                if badgeBG.usesCustomGradient {
+                    put(.badgeBG, BadgeBackgroundValue.customGradient.cliValue)
                     put(.badgeBGGradientColors, [
                         MicaColor(resolving: badgeBG.gradientStartColor).stringValue,
                         MicaColor(resolving: badgeBG.gradientEndColor).stringValue,
                     ])
+                } else {
+                    put(.badgeBGColor, MicaColor(resolving: badgeBG.color).stringValue)
                 }
-            } else if badgeBackgroundIsMicaDrawn {
-                put(.badgeBGColor, MicaColor(resolving: badgeBG.color).stringValue)
+                if badgeBG.usesGradient != BadgeBackgroundSpec().usesGradient {
+                    put(.badgeBGGradient, badgeBG.usesGradient)
+                }
+            case .image:
+                if let image = badgeBG.image {
+                    put(.badgeBG, assets.relativePath(for: image))
+                    if badgeBG.imageScale != 1.0 { put(.badgeBGScale, badgeBG.imageScale) }
+                    if !badgeBG.compensatesForPadding { put(.badgeBGPadding, true) }
+                }
             }
-        case .image:
-            if let image = badgeBG.image {
-                put(.badgeBG, assets.relativePath(for: image))
-                if badgeBG.imageScale != 1.0 { put(.badgeBGScale, badgeBG.imageScale) }
-                if !badgeBG.compensatesForPadding { put(.badgeBGPadding, true) }
+            if badgeBG.drawsShadow != (badgeBGDrawsImage ? false : BadgeBackgroundSpec().drawsShadow) {
+                put(.badgeBGShadow, badgeBG.drawsShadow)
             }
         }
-        if badge.mode == .system {
+        if badgeIsSystem {
             put(.badgeBGColor, appexColors.badgeEnclosure.plistValue)
-        }
-        if badgeBG.usesGradient != BadgeBackgroundSpec().usesGradient {
-            put(.badgeBGGradient, badgeBG.usesGradient)
-        }
-        if badgeBG.drawsShadow != (badgeBGIsImage ? false : BadgeBackgroundSpec().drawsShadow) {
-            put(.badgeBGShadow, badgeBG.drawsShadow)
         }
 
         // Layout.

@@ -107,8 +107,13 @@ struct ConfigurationExportDocumentTests {
 
     @Test("Every child of the folder is flat — no nested directories for the importer to walk")
     func directory_isFlat() throws {
+        // The second image goes on the *badge*, not the icon background: an
+        // imported icon background suppresses the icon foreground entirely
+        // (IconContentView), so the encoder now omits the foreground and its
+        // sidecar, and this would silently become a one-sidecar test.
         var settings = try settingsWithImportedIcon(fill: .systemRed, sourceName: "Front.png")
-        settings.icon.background.apply(
+        settings.badge.isVisible = true
+        settings.badge.foreground.apply(
             try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Back.png")
         )
         let document = try ConfigurationExportDocument(settings: settings, baseName: "Icon")
@@ -123,10 +128,14 @@ struct ConfigurationExportDocumentTests {
 
     @Test("Two layers importing byte-identical images share one sidecar")
     func identicalImages_shareOneSidecar() throws {
+        // Icon foreground + badge foreground, for the reason in `directory_isFlat`:
+        // putting the second copy on the icon background would drop it and make
+        // the single-sidecar assertion pass without dedup doing anything.
         var settings = IconSettings()
         let shared = try ImportedImage.testFixture(fill: .systemRed, sourceName: "Same.png")
         settings.icon.foreground.apply(shared)
-        settings.icon.background.apply(shared)
+        settings.badge.isVisible = true
+        settings.badge.foreground.apply(shared)
 
         let document = try ConfigurationExportDocument(settings: settings, baseName: "Icon")
         let children = try #require(document.makeFileWrapper().fileWrappers)
@@ -277,9 +286,12 @@ struct ConfigurationExportDocumentTests {
         let back = try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Back.png")
         #expect(front.imageData != back.imageData, "fixtures must differ or dedup makes this vacuous")
 
+        // Icon foreground + badge foreground — see `directory_isFlat` for why the
+        // second image cannot go on the icon background any more.
         var settings = IconSettings()
         settings.icon.foreground.apply(front)
-        settings.icon.background.apply(back)
+        settings.badge.isVisible = true
+        settings.badge.foreground.apply(back)
 
         let document = try ConfigurationExportDocument(settings: settings, baseName: "Icon")
 
@@ -301,7 +313,7 @@ struct ConfigurationExportDocumentTests {
             // available (see the re-encoding note above), so distinctness is what is
             // asserted, which is exactly the property dedup could break.
             let front2 = try #require(decoded.settings.icon.foreground.image)
-            let back2 = try #require(decoded.settings.icon.background.image)
+            let back2 = try #require(decoded.settings.badge.foreground.image)
             #expect(front2.imageData != back2.imageData)
         }
     }
