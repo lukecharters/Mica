@@ -19,7 +19,6 @@ struct InspectorControls: View {
     @Binding var appexSymbolColor: AppexColor
     @Binding var badgeAppexEnclosureColor: AppexColor
     @Binding var badgeAppexSymbolColor: AppexColor
-    let colorOptions: [(name: String, color: Color)]
 
     // Persisted section expand/collapse state.
     @AppStorage("sidebar.iconSource.expanded") private var iconSourceExpanded = true
@@ -183,7 +182,6 @@ struct InspectorControls: View {
                     Section("Appearance", isExpanded: $iconAppearanceExpanded) {
                         IconForegroundAppearanceSection(
                             iconSettings: $iconSettings,
-                            colorOptions: colorOptions,
                             isAppleReference: true,
                             appexSymbolColor: $appexSymbolColor,
                             appexEnclosureColor: $appexEnclosureColor
@@ -224,7 +222,6 @@ struct InspectorControls: View {
                     Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                         BadgeForegroundAppearanceSection(
                             iconSettings: $iconSettings,
-                            colorOptions: colorOptions,
                             badgeAppexSymbolColor: $badgeAppexSymbolColor,
                             badgeAppexEnclosureColor: $badgeAppexEnclosureColor
                         )
@@ -302,8 +299,7 @@ struct InspectorControls: View {
                         symbolColor: $iconSettings.icon.foreground.color,
                         symbolShadow: $iconSettings.icon.foreground.drawsShadow,
                         backgroundColor: $iconSettings.icon.background.color,
-                        backgroundShadow: backgroundShadowEnabled,
-                        colorOptions: colorOptions
+                        backgroundShadow: backgroundShadowEnabled
                     )
                     .padding(4)
                 }
@@ -335,8 +331,7 @@ struct InspectorControls: View {
                         symbolColor: $iconSettings.badge.foreground.color,
                         symbolShadow: $iconSettings.badge.foreground.drawsShadow,
                         backgroundColor: $iconSettings.badge.background.color,
-                        backgroundShadow: $iconSettings.badge.background.drawsShadow,
-                        colorOptions: colorOptions
+                        backgroundShadow: $iconSettings.badge.background.drawsShadow
                     )
                     .padding(4)
                 }
@@ -412,7 +407,6 @@ struct InspectorControls: View {
                 Section("Appearance", isExpanded: $iconAppearanceExpanded) {
                     IconForegroundAppearanceSection(
                         iconSettings: $iconSettings,
-                        colorOptions: colorOptions,
                         isAppleReference: false,
                         appexSymbolColor: $appexSymbolColor,
                         appexEnclosureColor: $appexEnclosureColor
@@ -448,8 +442,7 @@ struct InspectorControls: View {
             sectionForm {
                 Section("Appearance", isExpanded: $backgroundAppearanceExpanded) {
                     IconBackgroundAppearanceSection(
-                        iconSettings: $iconSettings,
-                        colorOptions: colorOptions
+                        iconSettings: $iconSettings
                     )
                     .padding(4)
                 }
@@ -481,7 +474,6 @@ struct InspectorControls: View {
                 Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                     BadgeForegroundAppearanceSection(
                         iconSettings: $iconSettings,
-                        colorOptions: colorOptions,
                         badgeAppexSymbolColor: $badgeAppexSymbolColor,
                         badgeAppexEnclosureColor: $badgeAppexEnclosureColor
                     )
@@ -516,8 +508,7 @@ struct InspectorControls: View {
             sectionForm {
                 Section("Appearance", isExpanded: $badgeBackgroundAppearanceExpanded) {
                     BadgeBackgroundAppearanceSection(
-                        iconSettings: $iconSettings,
-                        colorOptions: colorOptions
+                        iconSettings: $iconSettings
                     )
                     .padding(4)
                 }
@@ -575,8 +566,7 @@ private struct InspectorControlsPreview: View {
             appexEnclosureColor: $enclosure,
             appexSymbolColor: $symbol,
             badgeAppexEnclosureColor: $badgeEnclosure,
-            badgeAppexSymbolColor: $badgeSymbol,
-            colorOptions: OptionsCatalog.colorOptions
+            badgeAppexSymbolColor: $badgeSymbol
         )
         .frame(width: 380, height: 700)
         .onAppear {

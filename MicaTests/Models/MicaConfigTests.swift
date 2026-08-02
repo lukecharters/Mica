@@ -585,7 +585,7 @@ struct MicaConfigTests {
         let extended = "extended-srgb:0.20000,0.60000,0.90196,1.00000"
         let result = try Self.decode(["icon-symbol-palette": [extended, "green", "blue"]])
         #expect(result.warnings.isEmpty)
-        #expect(result.settings.icon.foreground.palettePrimaryColor == (try ColorParser.parseWithOpacity(extended)))
+        #expect(result.settings.icon.foreground.palettePrimaryColor == (try MicaColorValue(parsing: extended)))
     }
 
     @Test("British aliases decode; the American key wins a tie")

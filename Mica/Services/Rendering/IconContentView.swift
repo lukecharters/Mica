@@ -136,14 +136,14 @@ struct IconContentView: View {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(
                             forceAutoBackgroundGradient
-                                ? AnyShapeStyle(settings.icon.background.gradientStartColor.gradient)
+                                ? AnyShapeStyle(settings.icon.background.gradientStartColor.resolved.gradient)
                                 : settings.icon.background.usesGradient
                                     ? AnyShapeStyle(LinearGradient(
                                         gradient: Gradient(colors: settings.icon.background.gradientColors),
                                         startPoint: .top,
                                         endPoint: .bottom
                                     ))
-                                    : AnyShapeStyle(settings.icon.background.gradientStartColor)
+                                    : AnyShapeStyle(settings.icon.background.gradientStartColor.resolved)
                         )
                         .padding(backgroundInset)
                         .shadow(
@@ -154,7 +154,7 @@ struct IconContentView: View {
                         .frame(width: iconSize, height: iconSize)
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(settings.icon.background.usesGradient ? AnyShapeStyle(settings.icon.background.color.gradient) : AnyShapeStyle(settings.icon.background.color))
+                        .fill(settings.icon.background.usesGradient ? AnyShapeStyle(settings.icon.background.color.resolved.gradient) : AnyShapeStyle(settings.icon.background.color.resolved))
                         .shadow(
                             color: Color.black.opacity(backgroundShadowOpacity),
                             radius: backgroundShadowRadius,
@@ -192,14 +192,14 @@ struct IconContentView: View {
     private func applySymbolColor<Content: View>(to view: Content) -> some View {
         switch settings.icon.foreground.renderingStyle {
         case .monochrome, .multicolor:
-            view.foregroundColor(settings.icon.foreground.color)
+            view.foregroundColor(settings.icon.foreground.color.resolved)
         case .hierarchical:
-            view.foregroundStyle(settings.icon.foreground.hierarchicalColor)
+            view.foregroundStyle(settings.icon.foreground.hierarchicalColor.resolved)
         case .palette:
             view.foregroundStyle(
-                settings.icon.foreground.palettePrimaryColor,
-                settings.icon.foreground.paletteSecondaryColor,
-                settings.icon.foreground.paletteTertiaryColor
+                settings.icon.foreground.palettePrimaryColor.resolved,
+                settings.icon.foreground.paletteSecondaryColor.resolved,
+                settings.icon.foreground.paletteTertiaryColor.resolved
             )
         }
     }

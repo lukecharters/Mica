@@ -14,30 +14,23 @@ import SwiftUI
 /// multi-style `BackgroundShadowStyle` is mapped to on/off at the call site,
 /// which is what the advanced-off shadow toggle has always done.
 struct SimpleAppearanceSection: View {
-    @Binding var symbolColor: Color
+    @Binding var symbolColor: MicaColorValue
     @Binding var symbolShadow: Bool
-    @Binding var backgroundColor: Color
+    @Binding var backgroundColor: MicaColorValue
     @Binding var backgroundShadow: Bool
-    let colorOptions: [(name: String, color: Color)]
 
-    @State private var useCustomSymbolColor = false
-    @State private var useCustomBackgroundColor = false
 
     var body: some View {
         ColorPickerWithDropdown(
             label: "Symbol Color",
-            color: $symbolColor,
-            useCustom: $useCustomSymbolColor,
-            colorOptions: colorOptions
+            value: $symbolColor
         )
 
         Toggle("Symbol Shadow", systemImage: "app.shadow", isOn: $symbolShadow)
 
         ColorPickerWithDropdown(
             label: "Background Color",
-            color: $backgroundColor,
-            useCustom: $useCustomBackgroundColor,
-            colorOptions: colorOptions
+            value: $backgroundColor
         )
 
         Toggle("Background Shadow", systemImage: "app.shadow", isOn: $backgroundShadow)
@@ -45,9 +38,9 @@ struct SimpleAppearanceSection: View {
 }
 
 #Preview {
-    @Previewable @State var symbolColor: Color = .white
+    @Previewable @State var symbolColor: MicaColorValue = .white
     @Previewable @State var symbolShadow = true
-    @Previewable @State var backgroundColor: Color = .blue
+    @Previewable @State var backgroundColor: MicaColorValue = .blue
     @Previewable @State var backgroundShadow = true
     Form {
         Section("Appearance") {
@@ -55,8 +48,7 @@ struct SimpleAppearanceSection: View {
                 symbolColor: $symbolColor,
                 symbolShadow: $symbolShadow,
                 backgroundColor: $backgroundColor,
-                backgroundShadow: $backgroundShadow,
-                colorOptions: OptionsCatalog.colorOptions
+                backgroundShadow: $backgroundShadow
             )
         }
     }

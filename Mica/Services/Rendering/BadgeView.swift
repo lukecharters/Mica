@@ -85,7 +85,7 @@ struct BadgeView: View {
                                     startPoint: .top,
                                     endPoint: .bottom
                                 ))
-                                : AnyShapeStyle(settings.badge.background.gradientStartColor)
+                                : AnyShapeStyle(settings.badge.background.gradientStartColor.resolved)
                         )
                         .shadow(
                             color: settings.badge.background.drawsShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
@@ -94,7 +94,7 @@ struct BadgeView: View {
                         )
                 } else if !settings.badge.background.isHidden {
                     Circle()
-                        .fill(settings.badge.background.usesGradient ? AnyShapeStyle(settings.badge.background.color.gradient) : AnyShapeStyle(settings.badge.background.color))
+                        .fill(settings.badge.background.usesGradient ? AnyShapeStyle(settings.badge.background.color.resolved.gradient) : AnyShapeStyle(settings.badge.background.color.resolved))
                         .shadow(
                             color: settings.badge.background.drawsShadow ? Color.black.opacity(resolvedShadow.badgeBackground.opacity) : Color.clear,
                             radius: settings.badge.background.drawsShadow ? badgeSize * resolvedShadow.badgeBackground.radiusMultiplier : 0,
@@ -127,25 +127,25 @@ struct BadgeView: View {
                     case .monochrome:
                         Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
-                            .foregroundColor(settings.badge.foreground.color)
+                            .foregroundColor(settings.badge.foreground.color.resolved)
                             .symbolRenderingMode(.monochrome)
                     case .hierarchical:
                         Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
-                            .foregroundStyle(settings.badge.foreground.hierarchicalColor)
+                            .foregroundStyle(settings.badge.foreground.hierarchicalColor.resolved)
                             .symbolRenderingMode(.hierarchical)
                     case .multicolor:
                         Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
-                            .foregroundColor(settings.badge.foreground.color)
+                            .foregroundColor(settings.badge.foreground.color.resolved)
                             .symbolRenderingMode(.multicolor)
                     case .palette:
                         Image(systemName: settings.badge.foreground.symbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundStyle(
-                                settings.badge.foreground.palettePrimaryColor,
-                                settings.badge.foreground.paletteSecondaryColor,
-                                settings.badge.foreground.paletteTertiaryColor
+                                settings.badge.foreground.palettePrimaryColor.resolved,
+                                settings.badge.foreground.paletteSecondaryColor.resolved,
+                                settings.badge.foreground.paletteTertiaryColor.resolved
                             )
                             .symbolRenderingMode(.palette)
                     }

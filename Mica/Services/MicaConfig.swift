@@ -381,14 +381,13 @@ private struct ConfigReader {
         return value
     }
 
-    mutating func swiftUIColor(_ key: MicaConfigKey) -> Color? {
+    /// A colour, **keeping its provenance**: a token in the file stays a token, so
+    /// it re-resolves against whatever appearance and OS the configuration is next
+    /// opened in. Resolving it here — which is what this did until 2026-08-02 —
+    /// froze `"blue"` to whatever blue meant on the machine that read it.
+    mutating func colorValue(_ key: MicaConfigKey) -> MicaColorValue? {
         guard let raw = string(key) else { return nil }
-        do {
-            return try ColorParser.parseWithOpacity(raw)
-        } catch {
-            warn(key.rawValue, "\"\(raw)\" is not a recognisable colour")
-            return nil
-        }
+        return parseColor(raw, key: key)
     }
 
     mutating func appexColor(_ key: MicaConfigKey) -> AppexColor? {
@@ -489,7 +488,7 @@ private struct ConfigReader {
             fallthrough
         case nil:
             // Absent behaves as the default background; the colour still tints it.
-            if effectiveIconMode != .system, let color = swiftUIColor(.iconBGColor) {
+            if effectiveIconMode != .system, let color = colorValue(.iconBGColor) {
                 settings.icon.background.color = color
             }
         case .customGradient:
@@ -553,7 +552,7 @@ private struct ConfigReader {
             settings.icon.foreground.renderingStyle = rendering
         }
         if effectiveIconMode != .system {
-            if let color = swiftUIColor(.iconSymbolColor) {
+            if let color = colorValue(.iconSymbolColor) {
                 settings.icon.foreground.color = color
                 settings.icon.foreground.hierarchicalColor = color
             }
@@ -641,7 +640,7 @@ private struct ConfigReader {
             settings.badge.background.usesCustomGradient = false
             fallthrough
         case nil:
-            if effectiveBadgeMode != .system, let color = swiftUIColor(.badgeBGColor) {
+            if effectiveBadgeMode != .system, let color = colorValue(.badgeBGColor) {
                 settings.badge.background.color = color
             }
         case .customGradient:
@@ -699,7 +698,7 @@ private struct ConfigReader {
             settings.badge.foreground.renderingStyle = rendering
         }
         if effectiveBadgeMode != .system {
-            if let color = swiftUIColor(.badgeSymbolColor) {
+            if let color = colorValue(.badgeSymbolColor) {
                 settings.badge.foreground.color = color
                 settings.badge.foreground.hierarchicalColor = color
             }
@@ -738,10 +737,16 @@ private struct ConfigReader {
         settings.badge.background.isHidden = !(toggle(.badgeBGVisibility) ?? true)
     }
 
-    /// A colour inside a multi-colour list; failures warn under the list's key.
-    private mutating func parseColor(_ raw: String, key: MicaConfigKey) -> Color? {
+    /// A colour, provenance kept; failures warn under the given key.
+    ///
+    /// `MicaColorValue(parsing:)` is deliberately tolerant of unknown token names,
+    /// so the validity check is `resolvedColor()` — that is the call that knows
+    /// whether the name means anything, and it can quote the offending string.
+    mutating func parseColor(_ raw: String, key: MicaConfigKey) -> MicaColorValue? {
         do {
-            return try ColorParser.parseWithOpacity(raw)
+            let value = try MicaColorValue(parsing: raw)
+            _ = try value.resolvedColor()
+            return value
         } catch {
             warn(key.rawValue, "\"\(raw)\" is not a recognisable colour")
             return nil
@@ -906,13 +911,13 @@ private struct ConfigWriter {
             put(.iconSymbolColor, appexColors.iconSymbol.plistValue)
         } else if iconSymbolStyling, !iconUsesPalette {
             let effective = iconFG.renderingStyle == .hierarchical ? iconFG.hierarchicalColor : iconFG.color
-            put(.iconSymbolColor, MicaColor(resolving: effective).stringValue)
+            put(.iconSymbolColor, effective.stringValue)
         }
         if iconSymbolStyling, iconUsesPalette {
             put(.iconSymbolPalette, [
-                MicaColor(resolving: iconFG.palettePrimaryColor).stringValue,
-                MicaColor(resolving: iconFG.paletteSecondaryColor).stringValue,
-                MicaColor(resolving: iconFG.paletteTertiaryColor).stringValue,
+                iconFG.palettePrimaryColor.stringValue,
+                iconFG.paletteSecondaryColor.stringValue,
+                iconFG.paletteTertiaryColor.stringValue,
             ])
         }
         if iconSymbolStyling, iconFG.symbolWeight != defaults.icon.foreground.symbolWeight {
@@ -943,11 +948,11 @@ private struct ConfigWriter {
                 if iconBG.usesCustomGradient {
                     put(.iconBG, IconBackgroundValue.customGradient.cliValue)
                     put(.iconBGGradientColors, [
-                        MicaColor(resolving: iconBG.gradientStartColor).stringValue,
-                        MicaColor(resolving: iconBG.gradientEndColor).stringValue,
+                        iconBG.gradientStartColor.stringValue,
+                        iconBG.gradientEndColor.stringValue,
                     ])
                 } else {
-                    put(.iconBGColor, MicaColor(resolving: iconBG.color).stringValue)
+                    put(.iconBGColor, iconBG.color.stringValue)
                 }
                 if iconBG.usesGradient != defaults.icon.background.usesGradient {
                     put(.iconBGGradient, iconBG.usesGradient)
@@ -1049,13 +1054,13 @@ private struct ConfigWriter {
             put(.badgeSymbolColor, appexColors.badgeSymbol.plistValue)
         } else if badgeSymbolStyling, !badgeUsesPalette {
             let effective = badgeFG.renderingStyle == .hierarchical ? badgeFG.hierarchicalColor : badgeFG.color
-            put(.badgeSymbolColor, MicaColor(resolving: effective).stringValue)
+            put(.badgeSymbolColor, effective.stringValue)
         }
         if badgeSymbolStyling, badgeUsesPalette {
             put(.badgeSymbolPalette, [
-                MicaColor(resolving: badgeFG.palettePrimaryColor).stringValue,
-                MicaColor(resolving: badgeFG.paletteSecondaryColor).stringValue,
-                MicaColor(resolving: badgeFG.paletteTertiaryColor).stringValue,
+                badgeFG.palettePrimaryColor.stringValue,
+                badgeFG.paletteSecondaryColor.stringValue,
+                badgeFG.paletteTertiaryColor.stringValue,
             ])
         }
         if badgeSymbolStyling, badgeFG.symbolWeight != badgeDefault.symbolWeight {
@@ -1081,11 +1086,11 @@ private struct ConfigWriter {
                 if badgeBG.usesCustomGradient {
                     put(.badgeBG, BadgeBackgroundValue.customGradient.cliValue)
                     put(.badgeBGGradientColors, [
-                        MicaColor(resolving: badgeBG.gradientStartColor).stringValue,
-                        MicaColor(resolving: badgeBG.gradientEndColor).stringValue,
+                        badgeBG.gradientStartColor.stringValue,
+                        badgeBG.gradientEndColor.stringValue,
                     ])
                 } else {
-                    put(.badgeBGColor, MicaColor(resolving: badgeBG.color).stringValue)
+                    put(.badgeBGColor, badgeBG.color.stringValue)
                 }
                 if badgeBG.usesGradient != BadgeBackgroundSpec().usesGradient {
                     put(.badgeBGGradient, badgeBG.usesGradient)

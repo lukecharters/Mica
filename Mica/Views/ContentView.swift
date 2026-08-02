@@ -58,7 +58,6 @@ struct ContentView: View {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
-    let colorOptions: [(name: String, color: Color)] = OptionsCatalog.colorOptions
 
     private var actualExportSize: CGFloat { viewModel.iconSettings.export.pixelSize }
 
@@ -167,7 +166,6 @@ struct ContentView: View {
                 iconTab: $iconTab,
                 badgeTab: $badgeTab,
                 tab: inspectorTab,
-                colorOptions: colorOptions,
                 canExport: viewModel.canExport
             )
             .inspectorColumnWidth(

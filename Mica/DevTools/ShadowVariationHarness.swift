@@ -300,7 +300,7 @@ struct ModifiedShadowIconView: View {
             // Background with fixed shadow values
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .inset(by: insetSize)
-                .fill(settings.icon.background.color.gradient)
+                .fill(settings.icon.background.color.resolved.gradient)
                 .shadow(
                     color: .black.opacity(shadowMods.backgroundOpacity),
                     radius: shadowMods.backgroundRadius,
@@ -311,7 +311,7 @@ struct ModifiedShadowIconView: View {
             // Symbol with fixed shadow values
             Image(systemName: settings.icon.foreground.symbolName)
                 .font(.system(size: fontSize, weight: .light))
-                .foregroundColor(settings.icon.foreground.color)
+                .foregroundColor(settings.icon.foreground.color.resolved)
                 .symbolRenderingMode(.monochrome)
                 .shadow(
                     color: .black.opacity(shadowMods.symbolOpacity),

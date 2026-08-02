@@ -20,13 +20,19 @@ struct AppexColor {
     /// The named preset used when `isCustom == false`.
     var preset: AppexNamedColor
     /// The custom colour used when `isCustom == true`.
-    var customColor: Color
+    ///
+    /// Carries provenance like every other stored colour, even though the appex
+    /// plist can only ever receive clamped sRGB components: keeping the type
+    /// uniform is what lets a System-mode colour survive a round trip through a
+    /// configuration, and what Phase 4 needs to make this a *projection* of
+    /// `MicaColorValue` rather than a parallel colour system.
+    var customColor: MicaColorValue
     /// Whether the custom colour (vs. the named preset) is active.
     var isCustom: Bool
 
-    init(preset: AppexNamedColor = .blue, customColor: Color? = nil, isCustom: Bool = false) {
+    init(preset: AppexNamedColor = .blue, customColor: MicaColorValue? = nil, isCustom: Bool = false) {
         self.preset = preset
-        self.customColor = customColor ?? preset.previewColor
+        self.customColor = customColor ?? .token(preset.rawValue)
         self.isCustom = isCustom
     }
 
@@ -36,18 +42,23 @@ struct AppexColor {
     }
 
     /// An arbitrary custom colour.
-    static func custom(_ color: Color) -> AppexColor {
+    static func custom(_ color: MicaColorValue) -> AppexColor {
         AppexColor(preset: .blue, customColor: color, isCustom: true)
+    }
+
+    /// Convenience for a colour that arrived with no provenance.
+    static func custom(_ color: Color) -> AppexColor {
+        .custom(MicaColorValue(resolving: color))
     }
 
     /// The string written to the `.appex` `Info.plist` colour key.
     var plistValue: String {
-        isCustom ? AppexColor.rgbaString(from: customColor) : preset.rawValue
+        isCustom ? AppexColor.rgbaString(from: customColor.resolved) : preset.rawValue
     }
 
     /// The colour shown in the UI swatch / colour picker.
     var displayColor: Color {
-        isCustom ? customColor : preset.previewColor
+        isCustom ? customColor.resolved : preset.previewColor
     }
 
     // MARK: - Convenience constants (mirror the named tokens)
@@ -74,8 +85,9 @@ struct AppexColor {
     /// `"1,0.0902,0.2118,1"`). Components are rounded to four decimal places and
     /// whole numbers render compactly (`1`, not `1.0`).
     static func rgbaString(from color: Color) -> String {
-        let ns = NSColor(color).usingColorSpace(.sRGB) ?? NSColor(color)
-        return rgbaString(r: ns.redComponent, g: ns.greenComponent, b: ns.blueComponent, a: ns.alphaComponent)
+        let ns = ColorParser.nsColor(from: color)
+        let srgb = ns.usingColorSpace(.sRGB) ?? ns
+        return rgbaString(r: srgb.redComponent, g: srgb.greenComponent, b: srgb.blueComponent, a: srgb.alphaComponent)
     }
 
     /// Format raw sRGB components (0–1) into the appex `"r,g,b,a"` plist string.

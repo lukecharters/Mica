@@ -89,7 +89,7 @@ struct BadgeFlagsTests {
 
     @Test("--badge-symbol-color feeds both the monochrome and hierarchical colors")
     func mergedSymbolColor() throws {
-        let red = try ColorParser.parse("red")
+        let red = try MicaColorValue(parsing: "red")
         let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-color", "red"]))
         #expect(settings.badge.foreground.color == red)
         #expect(settings.badge.foreground.hierarchicalColor == red)
@@ -101,14 +101,14 @@ struct BadgeFlagsTests {
             from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-rendering", "palette", "--badge-symbol-palette", "red,green,blue"])
         )
         #expect(settings.badge.foreground.renderingStyle == .palette)
-        #expect(settings.badge.foreground.palettePrimaryColor == (try ColorParser.parse("red")))
-        #expect(settings.badge.foreground.paletteSecondaryColor == (try ColorParser.parseWithOpacity("green")))
-        #expect(settings.badge.foreground.paletteTertiaryColor == (try ColorParser.parseWithOpacity("blue")))
+        #expect(settings.badge.foreground.palettePrimaryColor == (try MicaColorValue(parsing: "red")))
+        #expect(settings.badge.foreground.paletteSecondaryColor == (try MicaColorValue(parsing: "green")))
+        #expect(settings.badge.foreground.paletteTertiaryColor == (try MicaColorValue(parsing: "blue")))
     }
 
     @Test("--badge-bg-color drives the badge base color in mica mode")
     func backgroundColor() throws {
-        let green = try ColorParser.parse("green")
+        let green = try MicaColorValue(parsing: "green")
         let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-color", "green"]))
         #expect(settings.badge.background.usesCustomGradient == false)
         #expect(settings.badge.background.color == green)
@@ -120,8 +120,8 @@ struct BadgeFlagsTests {
             from: parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-bg", "custom-gradient", "--badge-bg-gradient-colors", "red,orange"])
         )
         #expect(settings.badge.background.usesCustomGradient == true)
-        #expect(settings.badge.background.gradientStartColor == (try ColorParser.parse("red")))
-        #expect(settings.badge.background.gradientEndColor == (try ColorParser.parse("orange")))
+        #expect(settings.badge.background.gradientStartColor == (try MicaColorValue(parsing: "red")))
+        #expect(settings.badge.background.gradientEndColor == (try MicaColorValue(parsing: "orange")))
     }
 
     // MARK: - Toggles

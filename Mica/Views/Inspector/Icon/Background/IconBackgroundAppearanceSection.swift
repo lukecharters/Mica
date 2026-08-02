@@ -3,11 +3,9 @@ import SwiftUI
 
 struct IconBackgroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
-    let colorOptions: [(name: String, color: Color)]
 
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    @State private var useCustomBackgroundColor = false
 
     var body: some View {
         switch iconSettings.icon.background.source {
@@ -56,7 +54,7 @@ struct IconBackgroundAppearanceSection: View {
                 Text("Color")
             }
         ) {
-            ForEach(colorOptions, id: \.name) { option in
+            ForEach(OptionsCatalog.colorOptions, id: \.name) { option in
                 Text(option.name).tag(option.name)
             }
         }
@@ -92,16 +90,14 @@ struct IconBackgroundAppearanceSection: View {
         }
 
         if iconSettings.icon.background.usesCustomGradient {
-            ColorPicker("Primary", selection: $iconSettings.icon.background.gradientStartColor)
-            ColorPicker("Secondary", selection: $iconSettings.icon.background.gradientEndColor)
+            ColorPicker("Primary", selection: $iconSettings.icon.background.gradientStartColor.asColor)
+            ColorPicker("Secondary", selection: $iconSettings.icon.background.gradientEndColor.asColor)
         } else {
             // Shared preset/custom flow — self-heals the reset `useCustom` flag
             // and shows the actual color as the fallback swatch.
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.icon.background.color,
-                useCustom: $useCustomBackgroundColor,
-                colorOptions: colorOptions
+                value: $iconSettings.icon.background.color
             )
         }
 
@@ -118,8 +114,7 @@ struct IconBackgroundAppearanceSection: View {
     Form {
         Section("Appearance") {
             IconBackgroundAppearanceSection(
-                iconSettings: $settings,
-                colorOptions: OptionsCatalog.colorOptions
+                iconSettings: $settings
             )
         }
     }

@@ -2,9 +2,32 @@ import SwiftUI
 import Foundation
 import AppKit
 
+/// Serialises SwiftUI's `Color` → `NSColor` bridge.
+///
+/// **This is not defensive tidiness.** `NSColor.init(_: Color)` memoises through a
+/// process-global `NSMapTable` of `ObjcColor` boxes with no synchronisation of its
+/// own, so two threads converting at the same time can over-release a box and take
+/// the process down with `EXC_BAD_ACCESS` inside `objc_release` — which is exactly
+/// what happened on 2026-08-02, when `MicaColorValue.init(resolving:)` started
+/// converting the whole token table on each call and Swift Testing ran two suites
+/// in parallel.
+///
+/// The hazard predates that change; it was just rare enough not to have fired.
+/// Every conversion in Mica goes through `ColorParser.nsColor(from:)` so there is
+/// one place to hold the line.
+private let colorBridgeLock = NSLock()
+
 /// Enhanced color parser supporting multiple formats with comprehensive validation
 /// Supports: Named colors, Hex codes, RGB values, HSL, CSS colors, system colors, and opacity notation
 struct ColorParser {
+
+    /// Convert a SwiftUI `Color` to an `NSColor`, safely from any thread.
+    /// See `colorBridgeLock` — call this rather than `NSColor(color)` directly.
+    static func nsColor(from color: Color) -> NSColor {
+        colorBridgeLock.lock()
+        defer { colorBridgeLock.unlock() }
+        return NSColor(color)
+    }
     
     // MARK: - Public Interface
     
@@ -564,6 +587,39 @@ extension ColorParser {
             String(format: "%.5f", value)
         }
 
+        /// Rounded to `places` decimal places. `MicaColorValue` applies this at
+        /// construction so that equality means "writes the same string" — see D5
+        /// in `docs/plans/colour-resolution.md`.
+        ///
+        /// Deliberately rounds the components rather than clamping them: an
+        /// out-of-gamut Display P3 pick has to survive this.
+        func rounded(to places: Int) -> ExtendedComponents {
+            let scale = pow(10.0, Double(places))
+            func round(_ value: Double) -> Double {
+                guard value.isFinite else { return value }
+                return (value * scale).rounded() / scale
+            }
+            switch self {
+            case .srgb(let r, let g, let b, let a):
+                return .srgb(r: round(r), g: round(g), b: round(b), a: round(a))
+            case .gray(let white, let alpha):
+                return .gray(white: round(white), alpha: round(alpha))
+            }
+        }
+
+        /// The same colour with its alpha scaled — how `MicaColorValue` folds an
+        /// opacity modifier into a components source, so `alpha` is only ever a
+        /// modifier on a *token*.
+        func multiplyingAlpha(by factor: Double) -> ExtendedComponents {
+            guard factor != 1 else { return self }
+            switch self {
+            case .srgb(let r, let g, let b, let a):
+                return .srgb(r: r, g: g, b: b, a: a * factor)
+            case .gray(let white, let alpha):
+                return .gray(white: white, alpha: alpha * factor)
+            }
+        }
+
         /// Resolve a `Color` to extended sRGB components.
         ///
         /// Always `.srgb`, never `.gray`: extended sRGB represents everything the
@@ -574,7 +630,7 @@ extension ColorParser {
         /// stops being dynamic. That loss is why `MicaColor` prefers a semantic
         /// token and only falls back to this.
         static func resolving(_ color: Color) -> ExtendedComponents {
-            let nsColor = NSColor(color)
+            let nsColor = ColorParser.nsColor(from: color)
             // `usingColorSpace` returns nil only for pattern colours, which cannot
             // reach here — every Mica colour is a component colour.
             guard let resolved = nsColor.usingColorSpace(.extendedSRGB) ?? nsColor.usingColorSpace(.sRGB) else {

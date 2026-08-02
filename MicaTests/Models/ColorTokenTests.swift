@@ -192,16 +192,14 @@ struct ColorTokenTests {
         }
     }
 
-    @Test("MicaColor writes only tokens from the table")
-    func micaColor_derivesFromTheTable() {
-        #expect(MicaColor.semanticTokens == ColorTokenTable.names)
-    }
-
-    @Test("the GUI presets are a subset of what the writer may emit")
-    func presets_areWritable() {
-        let writable = Set(MicaColor.semanticTokens)
-        for token in ColorTokenTable.presentable {
-            #expect(writable.contains(token.name), "\(token.name) is a preset the writer cannot emit")
+    @Test("every token round-trips through the value type as itself")
+    func micaColorValue_keepsEveryToken() throws {
+        // The writer emits `stringValue`; reading it back must give the same
+        // token, or a configuration would drift a little on every save.
+        for token in ColorTokenTable.all {
+            let value = MicaColorValue.token(token.name)
+            #expect(value.stringValue == token.name)
+            #expect(try MicaColorValue(parsing: value.stringValue) == value)
         }
     }
 

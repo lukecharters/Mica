@@ -3,11 +3,9 @@ import SwiftUI
 
 struct BadgeBackgroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
-    let colorOptions: [(name: String, color: Color)]
 
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    @State private var useCustomBadgeBackgroundColor = false
 
     var body: some View {
         if iconSettings.badge.background.source != .image {
@@ -24,16 +22,14 @@ struct BadgeBackgroundAppearanceSection: View {
             }
 
             if iconSettings.badge.background.usesCustomGradient {
-                ColorPicker("Primary", selection: $iconSettings.badge.background.gradientStartColor)
-                ColorPicker("Secondary", selection: $iconSettings.badge.background.gradientEndColor)
+                ColorPicker("Primary", selection: $iconSettings.badge.background.gradientStartColor.asColor)
+                ColorPicker("Secondary", selection: $iconSettings.badge.background.gradientEndColor.asColor)
             } else {
                 // Shared preset/custom flow — self-heals the reset `useCustom`
                 // flag and shows the actual color as the fallback swatch.
                 ColorPickerWithDropdown(
                     label: "Color",
-                    color: $iconSettings.badge.background.color,
-                    useCustom: $useCustomBadgeBackgroundColor,
-                    colorOptions: colorOptions
+                    value: $iconSettings.badge.background.color
                 )
             }
 
@@ -51,8 +47,7 @@ struct BadgeBackgroundAppearanceSection: View {
     Form {
         Section("Appearance") {
             BadgeBackgroundAppearanceSection(
-                iconSettings: $settings,
-                colorOptions: OptionsCatalog.colorOptions
+                iconSettings: $settings
             )
         }
     }

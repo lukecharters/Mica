@@ -319,15 +319,15 @@ class IconGenerationRunner {
                 // In system mode the enclosure colour is resolved separately in
                 // renderAppleReference, so leave the SwiftUI base colour alone.
                 if command.generation.effectiveIconMode != .system, let color = command.background.color {
-                    settings.icon.background.color = try ColorParser.parseWithOpacity(color)
+                    settings.icon.background.color = try MicaColorValue(strictlyParsing: color)
                 }
             case .customGradient:
                 settings.icon.background.source = .color
                 settings.icon.background.usesCustomGradient = true
                 if let gradientColors = command.background.gradientColors {
                     let parts = try splitGradientColors(gradientColors)
-                    settings.icon.background.gradientStartColor = try ColorParser.parseWithOpacity(parts[0])
-                    settings.icon.background.gradientEndColor = try ColorParser.parseWithOpacity(parts[1])
+                    settings.icon.background.gradientStartColor = try MicaColorValue(strictlyParsing: parts[0])
+                    settings.icon.background.gradientEndColor = try MicaColorValue(strictlyParsing: parts[1])
                 }
                 settings.icon.background.color = settings.icon.background.gradientStartColor
             case .preRendered:
@@ -379,7 +379,7 @@ class IconGenerationRunner {
             // resolved as an appex token in renderAppleReference, so the SwiftUI
             // colour is left at its (unused) default here.
             if command.generation.effectiveIconMode != .system, let symbolColor = command.iconForeground.symbolColor {
-                let parsed = try ColorParser.parseWithOpacity(symbolColor)
+                let parsed = try MicaColorValue(strictlyParsing: symbolColor)
                 settings.icon.foreground.color = parsed
                 settings.icon.foreground.hierarchicalColor = parsed
             }
@@ -390,9 +390,9 @@ class IconGenerationRunner {
             if let palette = command.iconForeground.symbolPalette
                 ?? (seedsCLIDefaults ? Self.cliPaletteDefault : nil) {
                 let parts = try splitPalette(palette, role: "--icon-symbol-palette")
-                settings.icon.foreground.palettePrimaryColor = try ColorParser.parseWithOpacity(parts[0])
-                settings.icon.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(parts[1])
-                settings.icon.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(parts[2])
+                settings.icon.foreground.palettePrimaryColor = try MicaColorValue(strictlyParsing: parts[0])
+                settings.icon.foreground.paletteSecondaryColor = try MicaColorValue(strictlyParsing: parts[1])
+                settings.icon.foreground.paletteTertiaryColor = try MicaColorValue(strictlyParsing: parts[2])
             }
 
             // Symbol style. As with the background shadow, only a fresh import
@@ -464,15 +464,15 @@ class IconGenerationRunner {
                     // In system mode the enclosure colour is resolved separately
                     // via the appex pipeline, so leave the SwiftUI base alone.
                     if command.generation.effectiveBadgeMode != .system, let backgroundColor = command.badge.backgroundColor {
-                        settings.badge.background.color = try ColorParser.parseWithOpacity(backgroundColor)
+                        settings.badge.background.color = try MicaColorValue(strictlyParsing: backgroundColor)
                     }
                 case .customGradient:
                     settings.badge.background.source = .color
                     settings.badge.background.usesCustomGradient = true
                     if let gradientColors = command.badge.backgroundGradientColors {
                         let parts = try splitGradientColors(gradientColors, role: "--badge-bg-gradient-colors")
-                        settings.badge.background.gradientStartColor = try ColorParser.parseWithOpacity(parts[0])
-                        settings.badge.background.gradientEndColor = try ColorParser.parseWithOpacity(parts[1])
+                        settings.badge.background.gradientStartColor = try MicaColorValue(strictlyParsing: parts[0])
+                        settings.badge.background.gradientEndColor = try MicaColorValue(strictlyParsing: parts[1])
                     }
                     settings.badge.background.color = settings.badge.background.gradientStartColor
                 case .image(let path):
@@ -519,7 +519,7 @@ class IconGenerationRunner {
                 // symbol/hierarchical/multicolor tint; in system mode the colour is
                 // resolved as an appex token, so the SwiftUI colour is left default.
                 if command.generation.effectiveBadgeMode != .system, let symbolColor = command.badge.symbolColor {
-                    let parsed = try ColorParser.parseWithOpacity(symbolColor)
+                    let parsed = try MicaColorValue(strictlyParsing: symbolColor)
                     settings.badge.foreground.color = parsed
                     settings.badge.foreground.hierarchicalColor = parsed
                 }
@@ -528,9 +528,9 @@ class IconGenerationRunner {
                 if let badgePalette = command.badge.symbolPalette
                     ?? (seedsCLIDefaults ? Self.cliPaletteDefault : nil) {
                     let parts = try splitPalette(badgePalette, role: "--badge-symbol-palette")
-                    settings.badge.foreground.palettePrimaryColor = try ColorParser.parseWithOpacity(parts[0])
-                    settings.badge.foreground.paletteSecondaryColor = try ColorParser.parseWithOpacity(parts[1])
-                    settings.badge.foreground.paletteTertiaryColor = try ColorParser.parseWithOpacity(parts[2])
+                    settings.badge.foreground.palettePrimaryColor = try MicaColorValue(strictlyParsing: parts[0])
+                    settings.badge.foreground.paletteSecondaryColor = try MicaColorValue(strictlyParsing: parts[1])
+                    settings.badge.foreground.paletteTertiaryColor = try MicaColorValue(strictlyParsing: parts[2])
                 }
 
                 if let symbolWeight = command.badge.symbolWeight {

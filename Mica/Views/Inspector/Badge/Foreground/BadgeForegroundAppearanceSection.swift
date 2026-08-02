@@ -3,7 +3,6 @@ import SwiftUI
 
 struct BadgeForegroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
-    let colorOptions: [(name: String, color: Color)]
 
     // Apple Reference bindings (only used when badgeIconSource == .system)
     @Binding var badgeAppexSymbolColor: AppexColor
@@ -11,11 +10,6 @@ struct BadgeForegroundAppearanceSection: View {
 
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    @State private var useCustomBadgeSymbolColor = false
-    @State private var useCustomBadgeHierarchicalColor = false
-    @State private var useCustomBadgePalettePrimaryColor = false
-    @State private var useCustomBadgePaletteSecondaryColor = false
-    @State private var useCustomBadgePaletteTertiaryColor = false
 
     var body: some View {
         switch iconSettings.badge.foreground.source {
@@ -79,35 +73,25 @@ struct BadgeForegroundAppearanceSection: View {
         case .monochrome, .multicolor:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.badge.foreground.color,
-                useCustom: $useCustomBadgeSymbolColor,
-                colorOptions: colorOptions
+                value: $iconSettings.badge.foreground.color
             )
         case .hierarchical:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.badge.foreground.hierarchicalColor,
-                useCustom: $useCustomBadgeHierarchicalColor,
-                colorOptions: colorOptions
+                value: $iconSettings.badge.foreground.hierarchicalColor
             )
         case .palette:
             ColorPickerWithDropdown(
                 label: "Primary",
-                color: $iconSettings.badge.foreground.palettePrimaryColor,
-                useCustom: $useCustomBadgePalettePrimaryColor,
-                colorOptions: colorOptions
+                value: $iconSettings.badge.foreground.palettePrimaryColor
             )
             ColorPickerWithDropdown(
                 label: "Secondary",
-                color: $iconSettings.badge.foreground.paletteSecondaryColor,
-                useCustom: $useCustomBadgePaletteSecondaryColor,
-                colorOptions: colorOptions
+                value: $iconSettings.badge.foreground.paletteSecondaryColor
             )
             ColorPickerWithDropdown(
                 label: "Tertiary",
-                color: $iconSettings.badge.foreground.paletteTertiaryColor,
-                useCustom: $useCustomBadgePaletteTertiaryColor,
-                colorOptions: colorOptions
+                value: $iconSettings.badge.foreground.paletteTertiaryColor
             )
         }
     }
@@ -121,7 +105,6 @@ struct BadgeForegroundAppearanceSection: View {
         Section("Appearance") {
             BadgeForegroundAppearanceSection(
                 iconSettings: $settings,
-                colorOptions: OptionsCatalog.colorOptions,
                 badgeAppexSymbolColor: $badgeSymbolColor,
                 badgeAppexEnclosureColor: $badgeEnclosureColor
             )

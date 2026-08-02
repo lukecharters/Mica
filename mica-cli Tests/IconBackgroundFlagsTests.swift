@@ -44,7 +44,7 @@ struct IconBackgroundFlagsTests {
         let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-color", "red"]))
         #expect(settings.icon.background.source == .color)
         #expect(settings.icon.background.usesCustomGradient == false)
-        #expect(settings.icon.background.color == (try ColorParser.parse("red")))
+        #expect(settings.icon.background.color == (try MicaColorValue(parsing: "red")))
     }
 
     // MARK: - Custom gradient
@@ -56,8 +56,8 @@ struct IconBackgroundFlagsTests {
         )
         #expect(settings.icon.background.source == .color)
         #expect(settings.icon.background.usesCustomGradient == true)
-        #expect(settings.icon.background.gradientStartColor == (try ColorParser.parse("red")))
-        #expect(settings.icon.background.gradientEndColor == (try ColorParser.parse("blue")))
+        #expect(settings.icon.background.gradientStartColor == (try MicaColorValue(parsing: "red")))
+        #expect(settings.icon.background.gradientEndColor == (try MicaColorValue(parsing: "blue")))
     }
 
     // MARK: - Pre-rendered (Liquid Glass)

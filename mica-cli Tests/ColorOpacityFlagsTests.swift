@@ -21,6 +21,13 @@ import AppKit
         Double(NSColor(color).usingColorSpace(.extendedSRGB)?.alphaComponent ?? -1)
     }
 
+    /// The alpha a stored colour renders at. Reads through `resolved`, so it
+    /// measures what reaches the canvas whether the value kept a token plus an
+    /// alpha modifier or folded everything into components.
+    private func alpha(_ value: MicaColorValue) -> Double {
+        alpha(value.resolved)
+    }
+
     // MARK: - Every single-colour option
 
     /// One colour option: the args that set it to 50% opacity, and how to read that
@@ -28,7 +35,7 @@ import AppKit
     private struct ColorFlagCase: Sendable {
         let flag: String
         let args: [String]
-        let read: @Sendable (IconSettings) -> Color
+        let read: @Sendable (IconSettings) -> MicaColorValue
     }
 
     private static let singleColorFlags: [ColorFlagCase] = [

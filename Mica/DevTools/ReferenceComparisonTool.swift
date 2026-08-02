@@ -163,7 +163,7 @@ struct ReferenceComparisonTool: View {
                 Button("Choose…") { showSymbolPicker = true }
                     .controlSize(.small)
             }
-            ColorPicker("Background", selection: $settings.icon.background.gradientStartColor)
+            ColorPicker("Background", selection: $settings.icon.background.gradientStartColor.asColor)
             Toggle("Auto Gradient (.gradient)", isOn: $autoBackgroundGradient)
             Text("Matches the gradient macOS applies to appex enclosures by default.")
                 .font(.caption2)
@@ -171,9 +171,9 @@ struct ReferenceComparisonTool: View {
             Toggle("Background Gradient", isOn: $settings.icon.background.usesGradient)
                 .disabled(autoBackgroundGradient)
             if settings.icon.background.usesGradient && !autoBackgroundGradient {
-                ColorPicker("Gradient End", selection: $settings.icon.background.gradientEndColor)
+                ColorPicker("Gradient End", selection: $settings.icon.background.gradientEndColor.asColor)
             }
-            ColorPicker("Symbol", selection: $settings.icon.foreground.color)
+            ColorPicker("Symbol", selection: $settings.icon.foreground.color.asColor)
         }
     }
 
@@ -192,8 +192,8 @@ struct ReferenceComparisonTool: View {
                     Button("Choose…") { showBadgeSymbolPicker = true }
                         .controlSize(.small)
                 }
-                ColorPicker("Background", selection: $settings.badge.background.gradientStartColor)
-                ColorPicker("Symbol", selection: $settings.badge.foreground.color)
+                ColorPicker("Background", selection: $settings.badge.background.gradientStartColor.asColor)
+                ColorPicker("Symbol", selection: $settings.badge.foreground.color.asColor)
                 Picker("Position", selection: $settings.badge.position) {
                     ForEach(BadgePosition.allCases) { position in
                         Text(position.rawValue).tag(position)
@@ -722,11 +722,11 @@ struct ReferenceComparisonTool: View {
     }
 
     private var systemEnclosureColor: String {
-        AppexColor.rgbaString(from: settings.icon.background.usesCustomGradient ? settings.icon.background.gradientStartColor : settings.icon.background.color)
+        AppexColor.rgbaString(from: (settings.icon.background.usesCustomGradient ? settings.icon.background.gradientStartColor : settings.icon.background.color).resolved)
     }
 
     private var systemSymbolColor: String {
-        AppexColor.rgbaString(from: settings.icon.foreground.color)
+        AppexColor.rgbaString(from: settings.icon.foreground.color.resolved)
     }
 
     private func generateSystemReference() async {

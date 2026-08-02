@@ -68,8 +68,8 @@ struct AppexColorTests {
     @Test("displayColor reflects the active source")
     func displayColor_reflectsSource() {
         #expect(AppexColor.named(.blue).displayColor == AppexNamedColor.blue.previewColor)
-        let custom = AppexColor.custom(.orange)
-        #expect(custom.displayColor == .orange)
+        let custom = AppexColor.custom(MicaColorValue.orange)
+        #expect(custom.displayColor == Color.orange)
     }
 
     @Test("static constants map to the matching named token", arguments: AppexNamedColor.allCases)

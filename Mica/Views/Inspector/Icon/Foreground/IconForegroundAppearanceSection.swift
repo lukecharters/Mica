@@ -3,7 +3,6 @@ import SwiftUI
 
 struct IconForegroundAppearanceSection: View {
     @Binding var iconSettings: IconSettings
-    let colorOptions: [(name: String, color: Color)]
     var isAppleReference: Bool = false
 
     // Apple Reference bindings (only used when isAppleReference == true)
@@ -12,11 +11,6 @@ struct IconForegroundAppearanceSection: View {
 
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    @State private var useCustomSymbolColor = false
-    @State private var useCustomHierarchicalColor = false
-    @State private var useCustomPalettePrimaryColor = false
-    @State private var useCustomPaletteSecondaryColor = false
-    @State private var useCustomPaletteTertiaryColor = false
 
     var body: some View {
         if isAppleReference {
@@ -79,35 +73,25 @@ struct IconForegroundAppearanceSection: View {
         case .monochrome, .multicolor:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.icon.foreground.color,
-                useCustom: $useCustomSymbolColor,
-                colorOptions: colorOptions
+                value: $iconSettings.icon.foreground.color
             )
         case .hierarchical:
             ColorPickerWithDropdown(
                 label: "Color",
-                color: $iconSettings.icon.foreground.hierarchicalColor,
-                useCustom: $useCustomHierarchicalColor,
-                colorOptions: colorOptions
+                value: $iconSettings.icon.foreground.hierarchicalColor
             )
         case .palette:
             ColorPickerWithDropdown(
                 label: "Primary",
-                color: $iconSettings.icon.foreground.palettePrimaryColor,
-                useCustom: $useCustomPalettePrimaryColor,
-                colorOptions: colorOptions
+                value: $iconSettings.icon.foreground.palettePrimaryColor
             )
             ColorPickerWithDropdown(
                 label: "Secondary",
-                color: $iconSettings.icon.foreground.paletteSecondaryColor,
-                useCustom: $useCustomPaletteSecondaryColor,
-                colorOptions: colorOptions
+                value: $iconSettings.icon.foreground.paletteSecondaryColor
             )
             ColorPickerWithDropdown(
                 label: "Tertiary",
-                color: $iconSettings.icon.foreground.paletteTertiaryColor,
-                useCustom: $useCustomPaletteTertiaryColor,
-                colorOptions: colorOptions
+                value: $iconSettings.icon.foreground.paletteTertiaryColor
             )
         }
     }
@@ -121,7 +105,6 @@ struct IconForegroundAppearanceSection: View {
         Section("Appearance") {
             IconForegroundAppearanceSection(
                 iconSettings: $settings,
-                colorOptions: OptionsCatalog.colorOptions,
                 appexSymbolColor: $symbolColor,
                 appexEnclosureColor: $enclosureColor
             )

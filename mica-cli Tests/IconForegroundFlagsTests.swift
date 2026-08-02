@@ -79,7 +79,7 @@ struct IconForegroundFlagsTests {
 
     @Test("--icon-symbol-color feeds both the monochrome and hierarchical colors")
     func mergedSymbolColor() throws {
-        let red = try ColorParser.parse("red")
+        let red = try MicaColorValue(parsing: "red")
         let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-symbol-color", "red"]))
         #expect(settings.icon.foreground.color == red)
         #expect(settings.icon.foreground.hierarchicalColor == red)
@@ -91,9 +91,9 @@ struct IconForegroundFlagsTests {
             from: parseCommand(["gear", "--icon-symbol-rendering", "palette", "--icon-symbol-palette", "red,green,blue"])
         )
         #expect(settings.icon.foreground.renderingStyle == .palette)
-        #expect(settings.icon.foreground.palettePrimaryColor == (try ColorParser.parse("red")))
-        #expect(settings.icon.foreground.paletteSecondaryColor == (try ColorParser.parseWithOpacity("green")))
-        #expect(settings.icon.foreground.paletteTertiaryColor == (try ColorParser.parseWithOpacity("blue")))
+        #expect(settings.icon.foreground.palettePrimaryColor == (try MicaColorValue(parsing: "red")))
+        #expect(settings.icon.foreground.paletteSecondaryColor == (try MicaColorValue(parsing: "green")))
+        #expect(settings.icon.foreground.paletteTertiaryColor == (try MicaColorValue(parsing: "blue")))
     }
 
     // MARK: - Toggles

@@ -14,7 +14,6 @@ struct InspectorPanel: View {
     @Binding var iconTab: LayerTab
     @Binding var badgeTab: LayerTab
     let tab: InspectorTab
-    let colorOptions: [(name: String, color: Color)]
     let canExport: Bool
 
     var body: some View {
@@ -31,8 +30,7 @@ struct InspectorPanel: View {
                     appexEnclosureColor: $appexEnclosureColor,
                     appexSymbolColor: $appexSymbolColor,
                     badgeAppexEnclosureColor: $badgeAppexEnclosureColor,
-                    badgeAppexSymbolColor: $badgeAppexSymbolColor,
-                    colorOptions: colorOptions
+                    badgeAppexSymbolColor: $badgeAppexSymbolColor
                 )
             case .export:
                 ExportSettingsSection(

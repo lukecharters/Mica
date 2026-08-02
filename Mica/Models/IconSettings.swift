@@ -168,13 +168,13 @@ struct ForegroundSpec: Equatable {
     var symbolScale: Double = 1.0
     var image: ImportedImage? = nil
     var imageScale: Double = 1.0
-    var color: Color = .white
+    var color: MicaColorValue = .white
     var renderingStyle: SymbolRenderingStyle = .monochrome
     var fillStyle: SymbolFillStyle = .flat
-    var hierarchicalColor: Color = .white
-    var palettePrimaryColor: Color = .white
-    var paletteSecondaryColor: Color = .mint
-    var paletteTertiaryColor: Color = .yellow
+    var hierarchicalColor: MicaColorValue = .white
+    var palettePrimaryColor: MicaColorValue = .white
+    var paletteSecondaryColor: MicaColorValue = .mint
+    var paletteTertiaryColor: MicaColorValue = .yellow
     var drawsShadow: Bool = true
     var isHidden: Bool
 
@@ -197,11 +197,11 @@ struct ForegroundSpec: Equatable {
 /// radius (the badge's shape is fixed by `BadgeGeometry.badgeCornerRadiusRatio`).
 struct IconBackgroundSpec: Equatable {
     var source: IconBackgroundSource = .color
-    var color: Color = .blue
+    var color: MicaColorValue = .blue
     var usesGradient: Bool = true
     var usesCustomGradient: Bool = false
-    var gradientStartColor: Color = .blue
-    var gradientEndColor: Color = .purple
+    var gradientStartColor: MicaColorValue = .blue
+    var gradientEndColor: MicaColorValue = .purple
     var preRenderedColorName: String = "Blue"
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var shadowStyle: BackgroundShadowStyle = .macOS26
@@ -210,7 +210,7 @@ struct IconBackgroundSpec: Equatable {
     var compensatesForPadding: Bool = false
     var isHidden: Bool = false
 
-    var gradientColors: [Color] { [gradientStartColor, gradientEndColor] }
+    var gradientColors: [Color] { [gradientStartColor.resolved, gradientEndColor.resolved] }
 
     var preRenderedAssetName: String {
         "background-\(preRenderedColorName.lowercased())-\(usesGradient ? "gradient" : "solid")"
@@ -231,18 +231,18 @@ struct IconBackgroundSpec: Equatable {
 /// because a badge only ever has one shadow shape.
 struct BadgeBackgroundSpec: Equatable {
     var source: BadgeBackgroundSource = .color
-    var color: Color = .gray
+    var color: MicaColorValue = .gray
     var usesGradient: Bool = true
     var usesCustomGradient: Bool = false
-    var gradientStartColor: Color = .white
-    var gradientEndColor: Color = .indigo
+    var gradientStartColor: MicaColorValue = .white
+    var gradientEndColor: MicaColorValue = .indigo
     var drawsShadow: Bool = true
     var image: ImportedImage? = nil
     var imageScale: Double = 1.0
     var compensatesForPadding: Bool = false
     var isHidden: Bool = true
 
-    var gradientColors: [Color] { [gradientStartColor, gradientEndColor] }
+    var gradientColors: [Color] { [gradientStartColor.resolved, gradientEndColor.resolved] }
 
     /// True only when an imported background will actually draw. `source` can be
     /// `.image` before any image is chosen (the Type picker writes it directly); in

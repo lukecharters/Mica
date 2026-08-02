@@ -1,9 +1,10 @@
-// MicaColorTests.swift
-// MicaColor is the JSON configuration format's colour field: one JSON string holding either
-// a semantic token or resolved extended components. These tests pin the two
-// properties the format depends on — that a written token always reads back as the
-// colour it replaced, and that components survive a round trip — plus a palette pin
-// that keeps Mica's colours tracking the system's rather than a frozen literal.
+// MicaColorValueTests.swift
+// `MicaColorValue` is the colour Mica stores — a token or components, plus an alpha
+// modifier — and the one JSON string it writes. These tests pin the properties the
+// format depends on: that a written token always reads back as the colour it
+// replaced, that components survive a round trip, and that a token stays a token
+// through everything that used to flatten it. Plus a palette pin that keeps Mica's
+// colours tracking the system's rather than a frozen literal.
 
 import Testing
 import SwiftUI
@@ -11,7 +12,7 @@ import AppKit
 @testable import Mica
 
 @Suite(.tags(.unit))
-struct MicaColorTests {
+struct MicaColorValueTests {
 
     /// Resolve inside a fixed appearance. Every adaptive colour resolves
     /// differently in Aqua and Dark Aqua, so any test asserting components must say
@@ -211,34 +212,127 @@ struct MicaColorTests {
         #expect(light != dark, "blue resolved identically in both appearances — freezing it would be lossless, and it is not")
 
         // And the token path loses nothing: the same token re-resolves per appearance.
-        #expect(MicaColor(resolving: .blue) == .token("blue"))
+        #expect(MicaColorValue(resolving: .blue) == .token("blue"))
+    }
+
+    // MARK: - Provenance (Phase 2)
+
+    @Test("a token with an opacity keeps both, so it still follows the appearance")
+    func tokenWithOpacitySurvivesAsAToken() throws {
+        // The bug this type exists to fix: `label` at 50% used to match no token,
+        // so a configuration saved in Aqua reopened wrong in Dark Aqua.
+        let value = try MicaColorValue(parsing: "label:0.5")
+        #expect(value.source == .token("label"))
+        #expect(value.alpha == 0.5)
+        #expect(value.stringValue == "label:0.5")
+    }
+
+    @Test("the opacity suffix multiplies rather than replaces (D4)")
+    @MainActor
+    func opacitySuffixMultiplies() throws {
+        // `labelColor` is ~84.7% opaque, so `label:0.5` renders at ~42% — the
+        // behaviour mica-cli has always had, kept deliberately on 2026-08-02.
+        let value = try MicaColorValue(parsing: "label:0.5")
+        let alpha = try srgbComponents(
+            inAppearance() { ColorParser.ExtendedComponents.resolving(value.resolved) }
+        ).a
+        #expect(abs(alpha - 0.847 * 0.5) < 0.01, "resolved alpha was \(alpha)")
+    }
+
+    @Test("a components source folds its alpha in, so there is one spelling")
+    func componentsFoldAlpha() {
+        let value = MicaColorValue(source: .components(.srgb(r: 1, g: 0, b: 0, a: 1)), alpha: 0.5)
+        #expect(value.alpha == 1)
+        #expect(value.stringValue == "extended-srgb:1.00000,0.00000,0.00000,0.50000")
+    }
+
+    @Test("equality means writing the same string (D5)")
+    func equalityMatchesTheWrittenString() {
+        // Rounded at construction, so a sixth decimal place cannot make two values
+        // that write identically compare unequal — which is what would let undo
+        // grouping disagree with the file.
+        let a = MicaColorValue.components(.srgb(r: 0.2000001, g: 0.6, b: 0.9, a: 1))
+        let b = MicaColorValue.components(.srgb(r: 0.2, g: 0.6, b: 0.9, a: 1))
+        #expect(a == b)
+        #expect(a.stringValue == b.stringValue)
+    }
+
+    @Test("a wide-gamut pick is never clamped by the rounding")
+    func wideGamutSurvivesRounding() throws {
+        let value = try MicaColorValue(parsing: "extended-srgb:1.09300,-0.22670,-0.15010,1.00000")
+        let c = try srgbComponents(#require(
+            { if case .components(let c) = value.source { return c } else { return nil } }()
+        ))
+        #expect(c.r > 1.0)
+        #expect(c.g < 0.0)
+        #expect(value.stringValue == "extended-srgb:1.09300,-0.22670,-0.15010,1.00000")
+    }
+
+    @Test("a legacy CSS-ish name is stored as components, not as a token")
+    @MainActor
+    func legacyNamesAreNotTokens() throws {
+        // `crimson` parses but is in no other Mica vocabulary, so keeping it as a
+        // token would write a name the GUI and the appex plist cannot read.
+        let value = try MicaColorValue(parsing: "crimson")
+        #expect(value.tokenName == nil)
+        #expect(value.stringValue.hasPrefix("extended-srgb:"))
+    }
+
+    @Test("the static conveniences are all presentable tokens")
+    func staticConveniencesArePresentableTokens() {
+        let all: [MicaColorValue] = [
+            .black, .blue, .brown, .cyan, .gray, .green, .indigo, .mint,
+            .orange, .pink, .purple, .red, .teal, .white, .yellow,
+        ]
+        for value in all {
+            #expect(value.isPresentableToken, "\(value.stringValue) is not a preset")
+        }
+        #expect(MicaColorValue.clear.isToken)
+        #expect(!MicaColorValue.clear.isPresentableToken)
+    }
+
+    @Test("strict parsing refuses a name nothing understands")
+    func strictParsingRefusesUnknownNames() {
+        #expect(throws: (any Error).self) { try MicaColorValue(strictlyParsing: "notacolour") }
+        #expect(throws: Never.self) { try MicaColorValue(strictlyParsing: "mint") }
+        #expect(throws: Never.self) { try MicaColorValue(strictlyParsing: "#FF0000") }
     }
 
     // MARK: - Semantic tokens
 
     @Test("every emittable token parses back to the colour it was matched on")
     func everySemanticTokenReparsesToItsOwnColour() throws {
-        for token in MicaColor.semanticTokens {
+        // Compared on *resolved components*, not on `Color` identity. `Color.blue`
+        // and `Color(.systemBlue)` are distinct instances that resolve to the same
+        // bytes, so identity would call the substitution a failure when it is
+        // exactly what the writer's ordering is for: the short, portable token
+        // wins, and `plainNamesWin` below pins that direction.
+        for token in ColorTokenTable.names {
             let color = try ColorParser.parse(token)
-            #expect(MicaColor.semanticToken(for: color) != nil, "\(token) resolves to no token at all")
-            let matched = try #require(MicaColor.semanticToken(for: color))
-            #expect(try ColorParser.parse(matched) == color, "\(token) matched \(matched), a different colour")
+            let matched = try #require(MicaColorValue(resolving: color).tokenName,
+                                       "\(token) resolves to no token at all")
+            // Rounded to the stored precision, for the same reason `MicaColorValue`
+            // rounds: `green` and `system.green` differ in the seventh decimal
+            // place, which is below anything a render can express.
+            let before = ColorParser.ExtendedComponents.resolving(color).rounded(to: MicaColorValue.precision)
+            let after = ColorParser.ExtendedComponents.resolving(try ColorParser.parse(matched)).rounded(to: MicaColorValue.precision)
+            #expect(before == after, "\(token) matched \(matched), a different colour")
         }
     }
 
     @Test("a token colour is written as its token, not as components")
     func tokenColoursWriteAsTokens() throws {
-        #expect(MicaColor(resolving: .white) == .token("white"))
-        #expect(MicaColor(resolving: .black) == .token("black"))
-        #expect(MicaColor(resolving: .blue).stringValue == "blue")
-        #expect(MicaColor(resolving: Color(.labelColor)) == .token("label"))
+        #expect(MicaColorValue(resolving: .white) == .token("white"))
+        #expect(MicaColorValue(resolving: .black) == .token("black"))
+        #expect(MicaColorValue(resolving: .blue).stringValue == "blue")
+        #expect(MicaColorValue(resolving: Color(.labelColor)) == .token("label"))
     }
 
     @Test("a plain name wins over the system.* spelling of the same colour")
     func plainNamesWin() {
         // If .blue and Color(.systemBlue) hold the same value, the short token is
         // the one worth writing — configurations stay readable and portable.
-        let token = MicaColor.semanticToken(for: Color(.systemBlue))
+        let token = MicaColorValue(resolving: Color(.systemBlue)).tokenName
         #expect(token == "blue" || token == "system.blue")
         if Color.blue == Color(.systemBlue) {
             #expect(token == "blue")
@@ -249,19 +343,25 @@ struct MicaColorTests {
     @MainActor
     func pickedColoursWriteAsComponents() {
         let picked = Color(.sRGB, red: 0.2, green: 0.6, blue: 0.9, opacity: 1)
-        let written = inAppearance() { MicaColor(resolving: picked) }
-        guard case .components = written else {
+        let written = inAppearance() { MicaColorValue(resolving: picked) }
+        guard case .components = written.source else {
             Issue.record("expected components, got \(written)")
             return
         }
         #expect(written.stringValue.hasPrefix("extended-srgb:"))
     }
 
-    @Test("an opacity-modified token falls through to components")
+    @Test("by-value capture of a faded token gives components, deliberately")
     @MainActor
     func opacityBreaksTokenMatch() {
-        let written = inAppearance() { MicaColor(resolving: Color.blue.opacity(0.5)) }
-        guard case .components = written else {
+        // `init(resolving:)` matches on all four components, so a faded token is
+        // not recovered as token-plus-alpha. That is not a gap: in Aqua
+        // `labelColor` is black at 84.7%, so black at 42% is byte-identical to
+        // `label` at 50% and no by-value rule could tell them apart. Provenance
+        // with an alpha comes from where the colour is *set* —
+        // `tokenWithOpacitySurvivesAsAToken` below is that path.
+        let written = inAppearance() { MicaColorValue(resolving: Color.blue.opacity(0.5)) }
+        guard case .components = written.source else {
             Issue.record("expected components for a half-opacity blue, got \(written)")
             return
         }
@@ -269,8 +369,8 @@ struct MicaColorTests {
 
     @Test("a token round-trips as the same dynamic colour, not a frozen one")
     func tokenStaysDynamic() throws {
-        let written = MicaColor(resolving: .blue)
-        let read = try MicaColor(parsing: written.stringValue)
+        let written = MicaColorValue(resolving: .blue)
+        let read = try MicaColorValue(parsing: written.stringValue)
         #expect(read == written)
         #expect(try read.resolvedColor() == Color.blue)
     }
@@ -279,19 +379,19 @@ struct MicaColorTests {
 
     @Test("an unrecognised token decodes, and only fails when resolved")
     func unknownTokenDefersItsFailure() throws {
-        let parsed = try MicaColor(parsing: "chartreuse-ish")
+        let parsed = try MicaColorValue(parsing: "chartreuse-ish")
         #expect(parsed == .token("chartreuse-ish"))
         #expect(throws: ColorParseError.self) { try parsed.resolvedColor() }
     }
 
     @Test("a malformed extended value fails at parse, because its intent is clear")
     func malformedExtendedValueFailsEarly() {
-        #expect(throws: ColorParseError.self) { try MicaColor(parsing: "extended-srgb:1,1") }
+        #expect(throws: ColorParseError.self) { try MicaColorValue(parsing: "extended-srgb:1,1") }
     }
 
     @Test("surrounding whitespace is trimmed from a token")
     func trimsTokenWhitespace() throws {
-        #expect(try MicaColor(parsing: "  blue  ") == .token("blue"))
+        #expect(try MicaColorValue(parsing: "  blue  ") == .token("blue"))
     }
 
     // MARK: - Codable
@@ -300,13 +400,13 @@ struct MicaColorTests {
     func encodesAsBareString() throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        let data = try encoder.encode(["color": MicaColor.token("blue")])
+        let data = try encoder.encode(["color": MicaColorValue.token("blue")])
         #expect(String(decoding: data, as: UTF8.self) == #"{"color":"blue"}"#)
     }
 
     @Test("components encode as their string form")
     func encodesComponentsAsString() throws {
-        let value = MicaColor.components(.srgb(r: 0, g: 0.47843, b: 1, a: 1))
+        let value = MicaColorValue.components(.srgb(r: 0, g: 0.47843, b: 1, a: 1))
         let data = try JSONEncoder().encode(["color": value])
         #expect(String(decoding: data, as: UTF8.self)
                 == #"{"color":"extended-srgb:0.00000,0.47843,1.00000,1.00000"}"#)
@@ -315,15 +415,15 @@ struct MicaColorTests {
     @Test("decodes both forms from JSON")
     func decodesBothForms() throws {
         let json = #"{"a":"blue","b":"extended-srgb:0.00000,0.47843,1.00000,1.00000"}"#
-        let decoded = try JSONDecoder().decode([String: MicaColor].self, from: Data(json.utf8))
+        let decoded = try JSONDecoder().decode([String: MicaColorValue].self, from: Data(json.utf8))
         #expect(decoded["a"] == .token("blue"))
         #expect(decoded["b"] == .components(.srgb(r: 0, g: 0.47843, b: 1, a: 1)))
     }
 
-    @Test("JSON → MicaColor → JSON is stable for both forms")
+    @Test("JSON → MicaColorValue → JSON is stable for both forms")
     func codableRoundTrips() throws {
         for input in [#""blue""#, #""extended-srgb:0.20000,0.60000,0.90000,0.75000""#, #""extended-gray:1.00000,1.00000""#] {
-            let decoded = try JSONDecoder().decode(MicaColor.self, from: Data(input.utf8))
+            let decoded = try JSONDecoder().decode(MicaColorValue.self, from: Data(input.utf8))
             let encoded = try JSONEncoder().encode(decoded)
             #expect(String(decoding: encoded, as: UTF8.self) == input, "\(input) did not round-trip")
         }
