@@ -108,6 +108,7 @@
 			membershipExceptions = (
 				Models/AppexColor.swift,
 				Models/AppexNamedColor.swift,
+				Models/ColorTokens.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,
@@ -152,6 +153,7 @@
 			membershipExceptions = (
 				Models/AppexColor.swift,
 				Models/AppexNamedColor.swift,
+				Models/ColorTokens.swift,
 				Models/GenerationMode.swift,
 				Models/IconSettings.swift,
 				Models/ImportedImage.swift,

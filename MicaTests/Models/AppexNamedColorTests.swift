@@ -11,9 +11,27 @@ import SwiftUI
 @MainActor
 struct AppexNamedColorTests {
 
-    @Test("All 14 Apple-named enclosure colors are present")
-    func allCases_countIsFourteen() {
-        #expect(AppexNamedColor.allCases.count == 14)
+    /// Fifteen, not fourteen: `mint` was measured as accepted by the pipeline on
+    /// 2026-08-02 and the hand-written enum had no case for it. The cases are now
+    /// derived from `ColorTokenTable`'s `.appexNative` flag, so this count moves
+    /// only when that flag does — see `ColorTokenTests` for the set itself.
+    @Test("All 15 Apple-named enclosure colors are present")
+    func allCases_countIsFifteen() {
+        #expect(AppexNamedColor.allCases.count == 15)
+    }
+
+    @Test("every static constant names a real token")
+    func staticConstants_areRealTokens() {
+        let constants: [AppexNamedColor] = [
+            .black, .blue, .brown, .cyan, .gray, .green, .indigo, .mint,
+            .orange, .pink, .purple, .red, .teal, .white, .yellow,
+        ]
+        // The constants use an unchecked initialiser, so a typo would otherwise
+        // become a token that resolves to nothing.
+        for constant in constants {
+            #expect(AppexNamedColor.allCases.contains(constant), "\(constant.rawValue) is not a real token")
+        }
+        #expect(Set(constants) == Set(AppexNamedColor.allCases))
     }
 
     @Test("Raw values are the lowercase color names Apple accepts")

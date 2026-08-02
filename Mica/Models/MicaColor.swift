@@ -78,29 +78,19 @@ enum MicaColor: Equatable, Hashable, Sendable {
 
     // MARK: - Semantic tokens
 
-    /// The tokens the writer may emit, in the order they are tried.
+    /// The tokens the writer may emit, in the order they are tried — a **derived
+    /// view of `ColorTokenTable`**, which holds them in exactly this order and for
+    /// exactly this reason.
     ///
     /// Order matters where two tokens hold the same colour — SwiftUI's `.blue` and
-    /// `Color(.systemBlue)` may well be identical — and the shorter, more portable
-    /// token is the one worth writing, so the plain names come first.
+    /// `Color(.systemBlue)` are byte-identical on macOS 26 — and the shorter, more
+    /// portable token is the one worth writing, so the plain names come first.
     ///
     /// Every entry must parse back to the colour it was matched on.
     /// `MicaColorTests.everySemanticTokenReparsesToItsOwnColour` pins that, which is
     /// what makes `tokenColors` safe to build with `compactMap`: a token that stops
     /// parsing would be silently dropped here, and fails loudly there.
-    static let semanticTokens: [String] = [
-        // Achromatic first — the most common foreground and background choices.
-        "white", "black", "clear", "gray",
-        // SwiftUI's adaptive palette.
-        "blue", "red", "green", "orange", "yellow",
-        "pink", "purple", "indigo", "teal", "mint", "cyan", "brown",
-        // AppKit's system palette, for colours the above does not cover.
-        "system.blue", "system.red", "system.green", "system.orange", "system.yellow",
-        "system.pink", "system.purple", "system.teal", "system.indigo", "system.mint",
-        "system.cyan", "system.brown", "system.gray",
-        // Appearance-dependent label colours.
-        "label", "secondary.label", "tertiary.label", "quaternary.label",
-    ]
+    static let semanticTokens: [String] = ColorTokenTable.names
 
     private static let tokenColors: [(token: String, color: Color)] = semanticTokens.compactMap { token in
         guard let color = try? ColorParser.parse(token) else { return nil }

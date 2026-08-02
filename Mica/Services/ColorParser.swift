@@ -67,17 +67,19 @@ struct ColorParser {
         if let color = try? parseCSSStyleColor(trimmed) {
             return color
         }
-        
-        // 2. System color references
-        if let color = try? parseSystemColor(trimmed) {
+
+        // 2. A token from `ColorTokenTable` — the one vocabulary the GUI presets,
+        //    the JSON writer and the appex pipeline also read. Canonical names and
+        //    aliases, case-insensitively.
+        if let color = ColorTokenTable.color(forToken: trimmed) {
             return color
         }
-        
-        // 3. Named colors (including extended set)
-        if let namedColor = parseNamedColor(trimmed) {
+
+        // 3. Legacy CSS-ish colour names that exist in no other Mica vocabulary.
+        if let namedColor = parseLegacyNamedColor(trimmed) {
             return namedColor
         }
-        
+
         // 4. Hex color formats (with multiple variations)
         if let color = try? parseHexColorVariations(trimmed) {
             return color
@@ -170,59 +172,16 @@ struct ColorParser {
         return try parseHSLComponents(Array(components[0..<3]), alpha: alpha, source: input)
     }
     
-    // MARK: - System Color Parsing
-    
-    private static func parseSystemColor(_ input: String) throws -> Color {
-        let lowercased = input.lowercased()
-        
-        switch lowercased {
-        case "system.blue", "systemblue": return Color(.systemBlue)
-        case "system.red", "systemred": return Color(.systemRed)
-        case "system.green", "systemgreen": return Color(.systemGreen)
-        case "system.orange", "systemorange": return Color(.systemOrange)
-        case "system.yellow", "systemyellow": return Color(.systemYellow)
-        case "system.pink", "systempink": return Color(.systemPink)
-        case "system.purple", "systempurple": return Color(.systemPurple)
-        case "system.teal", "systemteal": return Color(.systemTeal)
-        case "system.indigo", "systemindigo": return Color(.systemIndigo)
-        case "system.mint", "systemmint": return Color(.systemMint)
-        case "system.cyan", "systemcyan": return Color(.systemCyan)
-        case "system.brown", "systembrown": return Color(.systemBrown)
-        case "system.gray", "systemgray", "system.grey", "systemgrey": return Color(.systemGray)
-        case "label": return Color(.labelColor)
-        case "secondary.label", "secondarylabel": return Color(.secondaryLabelColor)
-        case "tertiary.label", "tertiarylabel": return Color(.tertiaryLabelColor)
-        case "quaternary.label", "quaternarylabel": return Color(.quaternaryLabelColor)
-        default:
-            throw ColorParseError.unknownSystemColor(input)
-        }
-    }
-    
-    // MARK: - Enhanced Named Color Parsing
-    
-    private static func parseNamedColor(_ name: String) -> Color? {
-        let lowercased = name.lowercased()
-        
-        // Standard SwiftUI colors
-        switch lowercased {
-        case "blue": return .blue
-        case "red": return .red
-        case "green": return .green
-        case "orange": return .orange
-        case "yellow": return .yellow
-        case "pink": return .pink
-        case "purple": return .purple
-        case "indigo": return .indigo
-        case "teal": return .teal
-        case "mint": return .mint
-        case "cyan": return .cyan
-        case "brown": return .brown
-        case "white": return .white
-        case "black": return .black
-        case "gray", "grey": return .gray
-        case "clear", "transparent": return .clear
-        
-        // Extended color names
+    // MARK: - Legacy Named Color Parsing
+
+    /// CSS-ish colour names that appear in no other Mica vocabulary — not in the
+    /// GUI presets, not in the JSON writer's tokens, not in the appex grammar. They
+    /// are kept only because they already parse; §4.3 of
+    /// `docs/plans/colour-resolution.md` drops them in Phase 3, since hex says the
+    /// same thing unambiguously. **Do not add to this list** — a new colour name
+    /// belongs in `ColorTokenTable`.
+    private static func parseLegacyNamedColor(_ name: String) -> Color? {
+        switch name.lowercased() {
         case "lightgray", "lightgrey": return Color(.lightGray)
         case "darkgray", "darkgrey": return Color(.darkGray)
         case "magenta": return Color(.magenta)
@@ -490,8 +449,9 @@ struct ColorParser {
     private static func generateSuggestions(for input: String) -> String {
         var suggestions: [String] = []
         
-        // Suggest similar named colors
-        let namedColors = ["blue", "red", "green", "orange", "yellow", "pink", "purple", "indigo", "teal", "mint", "cyan", "brown", "white", "black", "gray"]
+        // Suggest similar named colors, from the one token table — so a token
+        // added there is suggestible without a second list being remembered.
+        let namedColors = ColorTokenTable.presentable.map(\.name)
         let lowercasedInput = input.lowercased()
         
         for color in namedColors {

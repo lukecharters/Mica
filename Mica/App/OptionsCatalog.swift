@@ -3,26 +3,19 @@
 import SwiftUI
 
 struct OptionsCatalog {
-    /// All preset named SwiftUI colors available for icon customization.
-    static let colorOptions: [(name: String, color: Color)] = [
-        ("Black", .black),
-        ("Blue", .blue),
-        ("Brown", .brown),
-        ("Cyan", .cyan),
-        ("Gray", .gray),
-        ("Green", .green),
-        ("Indigo", .indigo),
-        ("Mint", .mint),
-        ("Orange", .orange),
-        ("Pink", .pink),
-        ("Purple", .purple),
-        ("Red", .red),
-        ("Teal", .teal),
-        ("White", .white),
-        ("Yellow", .yellow),
-    ]
+    /// The preset colour swatches offered in the inspector — a **derived view of
+    /// `ColorTokenTable`**, not a list of its own. It was a hand-written array of
+    /// 15 Title-Case names until 2026-08-02; the display names are now derived
+    /// from the tokens so the GUI list and the parser's vocabulary cannot drift.
+    ///
+    /// Alphabetical by display name, which is the order this has always shown.
+    static let colorOptions: [(name: String, color: Color)] =
+        ColorTokenTable.presentable.map { (name: $0.displayName, color: $0.color) }
 
-    /// Look up a color by name from the catalog.
+    /// Look up a preset by its display name. Deliberately scoped to the presets
+    /// rather than the whole token table — this backs the pre-rendered background
+    /// picker, where a name that has no `background-<name>-solid` asset would
+    /// render nothing.
     static func color(named name: String) -> Color {
         colorOptions.first { $0.name == name }?.color ?? .blue
     }
