@@ -78,7 +78,11 @@ fastlane/test_output
 !.claude/hooks/
 .claude/hooks/.DS_Store
 .claude/handoffs/
-.claude/skills/
+# Skills are vendored from marketplaces and stay untracked — except the ones this repo
+# writes itself, which are project documentation and are referenced from CLAUDE.md.
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/drive-mica-on-screen/
 .claude.local.md
 
 # Superpowers brainstorm sessions
