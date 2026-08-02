@@ -46,6 +46,8 @@ struct GroupModePicker: View {
                 selection: selection,
                 accessibilityLabel: "Generation Mode"
             )
+            Spacer()
+            Divider()
         }
         .padding(.top, 8)
         .padding(.bottom, 12)
