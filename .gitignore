@@ -64,8 +64,21 @@ fastlane/test_output
 
 *.DS_Store
 
-# Claude Code
-.claude/
+# Machine-local working data — regenerable, derived, or deliberately unpublished.
+# One rule covers the lot; see docs/README.md for what lives here and why.
+#   .local/xcode-docs/        Xcode AdditionalDocumentation snapshots (scripts/get-xcode-docs.sh)
+#   .local/transcripts/       session transcripts
+#   .local/container-recipes/ Apple-derived exports — these must never be
+#                             committed to this repository
+.local/
+
+# Claude Code — session state and machine-local settings only.
+# hooks/ and skills-lock.json are tracked: they are project config, not local state.
+.claude/*
+!.claude/hooks/
+.claude/hooks/.DS_Store
+.claude/handoffs/
+.claude/skills/
 .claude.local.md
 
 # Superpowers brainstorm sessions
@@ -77,14 +90,7 @@ fastlane/test_output
 .agents/
 .github/hooks/
 
-# Local-only session transcripts
-research/transcripts/
-
-
 screenshots/
-# Xcode AdditionalDocumentation (local-only)
-docs/xcode/
-scripts/get-xcode-docs.sh
 
 # CLI smoke-test runs
 scripts/tests/smoke-output/
@@ -93,15 +99,3 @@ default.profraw
 
 # Local git-history backups
 *.bundle
-
-# docs/plans/
-# docs/scratch/
-# research/
-
-# Code-review findings (local-only)
-code-review/
-# Apple-derived data exports (never commit)
-research/container_recipes/
-
-# skills.sh lock file
-skills-lock.json
