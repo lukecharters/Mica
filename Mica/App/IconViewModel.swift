@@ -32,6 +32,12 @@ final class IconViewModel: ObservableObject {
     /// producing a menu item that silently does nothing.
     @Published var configExportError: String?
 
+    /// Why copying the icon to the pasteboard failed. Nearly unreachable — the render
+    /// is the only step that can throw, and `canExport` already withdraws the command
+    /// while a System-mode layer is pending — but a Copy that silently does nothing is
+    /// exactly what item A2 exists to fix, so the failure is shown rather than dropped.
+    @Published var copyError: String?
+
     /// Whether the configuration open panel is showing, and why an import failed.
     /// A failure installs nothing — see `importConfiguration(from:undoManager:)`.
     @Published var showConfigImportDialog: Bool = false

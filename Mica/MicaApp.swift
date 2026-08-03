@@ -8,6 +8,7 @@ struct MicaApp: App {
     @FocusedBinding(\.exportPNG) private var exportPNG
     @FocusedValue(\.exportConfiguration) private var exportConfiguration
     @FocusedValue(\.importConfiguration) private var importConfiguration
+    @FocusedValue(\.copyIcon) private var copyIcon
 
 
     var body: some Scene {
@@ -22,6 +23,26 @@ struct MicaApp: App {
         .commands {
             CommandGroup(after: .pasteboard) {
                 Divider()
+
+                // ⇧⌘C, deliberately **not** ⌘C, even though ⌘C is currently unbound
+                // app-wide: this app has no pasteboard command group at all, so nothing
+                // handles Cut/Copy/Paste anywhere — verified 2026-08-03 by pressing ⌘C
+                // in the Symbol field with a sentinel on the pasteboard, which survived.
+                //
+                // Taking ⌘C would therefore not break text copying (there is none to
+                // break) but it *would* mean a user editing the symbol name and pressing
+                // ⌘C gets the icon on the pasteboard instead of their selected text —
+                // silently wrong, which is worse than today's silently nothing. Leaving
+                // ⌘C free also leaves room to fix the real gap, which is bigger than
+                // this command: see item B6 of docs/plans/mac-conventions.md.
+                Button("Copy Icon") {
+                    copyIcon?.perform()
+                }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .disabled(copyIcon == nil)
+
+                Divider()
+
                 Button("Paste as Icon Background") {
                     guard var settings = iconSettings else { return }
                     do {
