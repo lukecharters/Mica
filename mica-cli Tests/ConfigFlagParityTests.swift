@@ -334,19 +334,19 @@ struct ConfigFlagParityTests {
             outputBasename: nil,
             warnings: []
         )
-        #expect(try command.resolvedIconAppexEnclosureColor(in: context) == "red")
-        #expect(try command.resolvedIconAppexSymbolColor(in: context) == "white")
-        #expect(try command.resolvedBadgeAppexEnclosureColor(in: context) == "green")
-        #expect(try command.resolvedBadgeAppexSymbolColor(in: context) == "black")
+        #expect(try command.resolvedIconAppexEnclosureColor(in: context).stringValue == "red")
+        #expect(try command.resolvedIconAppexSymbolColor(in: context).stringValue == "white")
+        #expect(try command.resolvedBadgeAppexEnclosureColor(in: context).stringValue == "green")
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: context).stringValue == "black")
     }
 
     @Test("With no configuration the appex fallbacks are the CLI's own defaults")
     func systemColorsFallBackToTheCLIDefaults() throws {
         let command = try parseCommand(["star.fill"])
-        #expect(try command.resolvedIconAppexEnclosureColor(in: .none) == "blue")
-        #expect(try command.resolvedIconAppexSymbolColor(in: .none) == "white")
-        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none) == "blue")
-        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none) == "white")
+        #expect(try command.resolvedIconAppexEnclosureColor(in: .none).stringValue == "blue")
+        #expect(try command.resolvedIconAppexSymbolColor(in: .none).stringValue == "white")
+        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none).stringValue == "blue")
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none).stringValue == "white")
     }
 
     @Test("A flag still overrides the configuration's appex colour")
@@ -364,9 +364,9 @@ struct ConfigFlagParityTests {
             "--badge-fg", "symbol:gear",
             "--badge-symbol-color", "orange",
         ])
-        #expect(try command.resolvedIconAppexEnclosureColor(in: context) == "purple")
-        #expect(try command.resolvedIconAppexSymbolColor(in: context) == "black", "no flag, so the configuration stands")
-        #expect(try command.resolvedBadgeAppexEnclosureColor(in: context) == "green")
-        #expect(try command.resolvedBadgeAppexSymbolColor(in: context) == "orange")
+        #expect(try command.resolvedIconAppexEnclosureColor(in: context).stringValue == "purple")
+        #expect(try command.resolvedIconAppexSymbolColor(in: context).stringValue == "black", "no flag, so the configuration stands")
+        #expect(try command.resolvedBadgeAppexEnclosureColor(in: context).stringValue == "green")
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: context).stringValue == "orange")
     }
 }

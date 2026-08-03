@@ -718,15 +718,20 @@ struct ReferenceComparisonTool: View {
     /// toggle as well as the render parameters), per the project's task-key rule.
     private var systemReferenceKey: String {
         guard referenceSource == .system else { return "off" }
-        return [settings.icon.foreground.symbolName, systemEnclosureColor, systemSymbolColor].joined(separator: "|")
+        return [settings.icon.foreground.symbolName, systemEnclosureColor.plistValue, systemSymbolColor.plistValue].joined(separator: "|")
     }
 
-    private var systemEnclosureColor: String {
-        AppexColor.rgbaString(from: (settings.icon.background.usesCustomGradient ? settings.icon.background.gradientStartColor : settings.icon.background.color).resolved)
+    // Held as `AppexColor` and projected at the call, so this tool is subject to
+    // exactly the validation the app is — a comparison harness that clamped where
+    // production rejects would compare the wrong thing.
+    private var systemEnclosureColor: AppexColor {
+        .custom(settings.icon.background.usesCustomGradient
+            ? settings.icon.background.gradientStartColor
+            : settings.icon.background.color)
     }
 
-    private var systemSymbolColor: String {
-        AppexColor.rgbaString(from: settings.icon.foreground.color.resolved)
+    private var systemSymbolColor: AppexColor {
+        .custom(settings.icon.foreground.color)
     }
 
     private func generateSystemReference() async {
@@ -735,8 +740,8 @@ struct ReferenceComparisonTool: View {
         do {
             let icon = try await appexService.referenceIcon(
                 for: settings.icon.foreground.symbolName,
-                enclosureColor: systemEnclosureColor,
-                symbolColor: systemSymbolColor
+                enclosureColor: AppexPlistColor(projecting: systemEnclosureColor, role: .enclosure),
+                symbolColor: AppexPlistColor(projecting: systemSymbolColor, role: .symbol)
             )
             // The appex render is not cancellation-aware; drop stale results
             // so fast symbol switches can't apply out of order.

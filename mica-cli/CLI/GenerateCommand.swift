@@ -6,20 +6,39 @@ import Foundation
 // The token vocabularies live in Services/SettingsTokens.swift, shared with the
 // configuration codec so the flag transforms and the config keys cannot drift.
 
-/// Resolve an appex colour argument to the plist value stored on the command.
+/// Resolve an appex colour argument to the value written to the plist.
 ///
 /// System mode accepts the same colour grammar as everything else — see COLOR
 /// FORMATS in `generate --help`. Only the *first* branch is special: one of
 /// Apple's own tokens keeps its curated rendering instead of resolving to
 /// components.
 ///
-/// Throws a `ValidationError` (nicely surfaced by ArgumentParser) on failure.
-private func resolveAppexColorArg(_ input: String, role: String) throws -> String {
+/// Both stages throw, and the two failures read differently on purpose:
+///
+/// - **The grammar** — `not-a-color` — gets the flag name and the list of forms.
+/// - **The projection** (`AppexPlistColor`) — a colour outside sRGB, or a
+///   translucent background — already explains its own limit and the way out, so
+///   its message is passed through with only the flag name prefixed. Rewriting it
+///   here would lose the nearest-sRGB suggestion it computed.
+///
+/// Every caller is behind a System-mode check in `validate()`, so this runs before
+/// any rendering and a rejection costs the user nothing (decision D2).
+private func resolveAppexColorArg(
+    _ input: String,
+    role: String,
+    key: AppexPlistColor.Role
+) throws -> AppexPlistColor {
+    let color: AppexColor
     do {
-        return try AppexColor.plistValue(fromCLIString: input)
+        color = try AppexColor.parsing(cliString: input)
     } catch {
         let tokens = AppexNamedColor.allCases.map(\.rawValue).joined(separator: ", ")
         throw ValidationError("\(role) is invalid: '\(input)'. Use a named color (\(tokens)), a hex color (e.g. #FF1736), or components in a named space (e.g. srgb:1,0.0902,0.2118). See COLOR FORMATS in 'mica-cli generate --help'.")
+    }
+    do {
+        return try AppexPlistColor(projecting: color, role: key)
+    } catch {
+        throw ValidationError("\(role): \(error.localizedDescription)")
     }
 }
 
@@ -776,7 +795,11 @@ struct GenerateCommand: AsyncParsableCommand {
             'white:0.5' is 50%.
 
             In system mode a bare token keeps Apple's curated rendering, so 'white'
-            and 'white:0.5' differ: the second is a custom colour.
+            and 'white:0.5' differ: the second is a custom colour. Two limits there,
+            both refused rather than quietly changed — the pipeline cannot show a
+            colour outside sRGB, and it ignores a *background* colour's opacity, so
+            --icon-bg-color and --badge-bg-color take no ':opacity' suffix in system
+            mode. The symbol colours do.
 
             srgb: and display-p3: name bounded spaces, so a component outside 0-1
             is an error rather than a silent clamp. The extended- forms are
@@ -933,27 +956,35 @@ struct GenerateCommand: AsyncParsableCommand {
     // on exactly the values the old `?? "blue"` literals produced.
 
     /// Icon appex enclosure colour (system icon mode), from `--icon-bg-color`.
-    func resolvedIconAppexEnclosureColor(in context: GenerationContext) throws -> String {
-        guard let raw = background.color else { return context.appexColors.iconEnclosure.plistValue }
-        return try resolveAppexColorArg(raw, role: "--icon-bg-color")
+    func resolvedIconAppexEnclosureColor(in context: GenerationContext) throws -> AppexPlistColor {
+        guard let raw = background.color else {
+            return try AppexPlistColor(projecting: context.appexColors.iconEnclosure, role: .enclosure)
+        }
+        return try resolveAppexColorArg(raw, role: "--icon-bg-color", key: .enclosure)
     }
 
     /// Icon appex symbol colour (system icon mode), from `--icon-symbol-color`.
-    func resolvedIconAppexSymbolColor(in context: GenerationContext) throws -> String {
-        guard let raw = iconForeground.symbolColor else { return context.appexColors.iconSymbol.plistValue }
-        return try resolveAppexColorArg(raw, role: "--icon-symbol-color")
+    func resolvedIconAppexSymbolColor(in context: GenerationContext) throws -> AppexPlistColor {
+        guard let raw = iconForeground.symbolColor else {
+            return try AppexPlistColor(projecting: context.appexColors.iconSymbol, role: .symbol)
+        }
+        return try resolveAppexColorArg(raw, role: "--icon-symbol-color", key: .symbol)
     }
 
     /// Badge appex enclosure colour (system badge mode), from `--badge-bg-color`.
-    func resolvedBadgeAppexEnclosureColor(in context: GenerationContext) throws -> String {
-        guard let raw = badge.backgroundColor else { return context.appexColors.badgeEnclosure.plistValue }
-        return try resolveAppexColorArg(raw, role: "--badge-bg-color")
+    func resolvedBadgeAppexEnclosureColor(in context: GenerationContext) throws -> AppexPlistColor {
+        guard let raw = badge.backgroundColor else {
+            return try AppexPlistColor(projecting: context.appexColors.badgeEnclosure, role: .enclosure)
+        }
+        return try resolveAppexColorArg(raw, role: "--badge-bg-color", key: .enclosure)
     }
 
     /// Badge appex symbol colour (system badge mode), from `--badge-symbol-color`.
-    func resolvedBadgeAppexSymbolColor(in context: GenerationContext) throws -> String {
-        guard let raw = badge.symbolColor else { return context.appexColors.badgeSymbol.plistValue }
-        return try resolveAppexColorArg(raw, role: "--badge-symbol-color")
+    func resolvedBadgeAppexSymbolColor(in context: GenerationContext) throws -> AppexPlistColor {
+        guard let raw = badge.symbolColor else {
+            return try AppexPlistColor(projecting: context.appexColors.badgeSymbol, role: .symbol)
+        }
+        return try resolveAppexColorArg(raw, role: "--badge-symbol-color", key: .symbol)
     }
 
     /// Default output basename (no extension) derived from the resolved
@@ -1200,7 +1231,7 @@ struct GenerateCommand: AsyncParsableCommand {
         // mica → ColorParser; system → appex color tokens. Validate accordingly.
         if let symbolColor = iconForeground.symbolColor {
             if isSystemIcon {
-                _ = try resolveAppexColorArg(symbolColor, role: "--icon-symbol-color")
+                _ = try resolveAppexColorArg(symbolColor, role: "--icon-symbol-color", key: .symbol)
             } else {
                 do {
                     _ = try ColorParser.parseWithOpacity(symbolColor)
@@ -1227,7 +1258,7 @@ struct GenerateCommand: AsyncParsableCommand {
         // generation mode + background kind.
         if let bgColor = background.color {
             if isSystemIcon {
-                _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color")
+                _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color", key: .enclosure)
             } else if case .preRendered = resolvedBackground() {
                 guard validPreRenderedColors.contains(normalizeBritishSpelling(bgColor)) else {
                     throw ValidationError("--icon-bg-color for prerendered-liquid-glass must be one of: \(validPreRenderedColors.joined(separator: ", ")). You provided '\(bgColor)'.")
@@ -1260,7 +1291,7 @@ struct GenerateCommand: AsyncParsableCommand {
 
             if let badgeSymbolColor = badge.symbolColor {
                 if isSystemBadge {
-                    _ = try resolveAppexColorArg(badgeSymbolColor, role: "--badge-symbol-color")
+                    _ = try resolveAppexColorArg(badgeSymbolColor, role: "--badge-symbol-color", key: .symbol)
                 } else {
                     do {
                         _ = try ColorParser.parseWithOpacity(badgeSymbolColor)
@@ -1283,7 +1314,7 @@ struct GenerateCommand: AsyncParsableCommand {
 
             if let badgeBgColor = badge.backgroundColor {
                 if isSystemBadge {
-                    _ = try resolveAppexColorArg(badgeBgColor, role: "--badge-bg-color")
+                    _ = try resolveAppexColorArg(badgeBgColor, role: "--badge-bg-color", key: .enclosure)
                 } else {
                     do {
                         _ = try ColorParser.parseWithOpacity(badgeBgColor)

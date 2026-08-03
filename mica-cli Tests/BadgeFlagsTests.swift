@@ -200,8 +200,8 @@ struct BadgeFlagsTests {
     @Test("System badge appex colors resolve from --badge-bg-color / --badge-symbol-color")
     func systemBadgeAppexColors() throws {
         let command = try parseCommand(["star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system", "--badge-bg-color", "red", "--badge-symbol-color", "white"])
-        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none) == (try AppexColor.plistValue(fromCLIString: "red")))
-        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none) == (try AppexColor.plistValue(fromCLIString: "white")))
+        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none).stringValue == (try AppexColor.plistValue(fromCLIString: "red")))
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none).stringValue == (try AppexColor.plistValue(fromCLIString: "white")))
     }
 
     // MARK: - Validation

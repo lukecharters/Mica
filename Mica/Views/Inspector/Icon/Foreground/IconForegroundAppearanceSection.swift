@@ -25,7 +25,7 @@ struct IconForegroundAppearanceSection: View {
     @ViewBuilder
     private var appleReferenceControls: some View {
         AppexColorPickerRow(label: "Symbol Color", selection: $appexSymbolColor)
-        AppexColorPickerRow(label: "Background Color", selection: $appexEnclosureColor)
+        AppexColorPickerRow(label: "Background Color", selection: $appexEnclosureColor, role: .enclosure)
     }
 
     @ViewBuilder

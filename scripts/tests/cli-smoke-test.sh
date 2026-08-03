@@ -65,6 +65,12 @@ HAPPY_CASES=(
     # ---- Generation modes ----
     "icon-generation-mode-system|star.fill|--icon-generation-mode|system|--icon-bg-color|blue|--icon-symbol-color|white"
     "badge-generation-mode-system|star.fill|--badge-fg|symbol:gear|--badge-generation-mode|system|--badge-bg-color|red|--badge-symbol-color|white"
+    # The OS honours ISSymbolColor's alpha and ignores ISEnclosureColor's, so a
+    # System-mode symbol takes an opacity suffix and a background does not.
+    "icon-generation-mode-system-symbol-opacity|star.fill|--icon-generation-mode|system|--icon-symbol-color|white:0.5"
+    "icon-generation-mode-system-srgb-components|star.fill|--icon-generation-mode|system|--icon-bg-color|srgb:0.2,0.6,0.9"
+    # mint reached System mode only once the token table was the single source.
+    "icon-generation-mode-system-mint|star.fill|--icon-generation-mode|system|--icon-bg-color|mint"
 
     # ---- Icon background ----
     "icon-bg-color-red|star.fill|--icon-bg-color|red"
@@ -190,6 +196,13 @@ NEGATIVE_CASES=(
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"
     "badge-generation-system-image-fg|image foregrounds are only supported in mica mode|star.fill|--badge-fg|\$SYMBOL_FIXTURE|--badge-generation-mode|system"
+    # Phase 4 / decision D2: System mode refuses what it cannot show rather than
+    # rendering something else. The alpha one is not obvious — the OS discards an
+    # enclosure alpha, so the icon used to come out opaque with nothing said.
+    "system-bg-opacity-refused|opacity|star.fill|--icon-generation-mode|system|--icon-bg-color|blue:0.5"
+    "system-badge-bg-opacity-refused|opacity|star.fill|--badge-fg|symbol:plus|--badge-generation-mode|system|--badge-bg-color|blue:0.5"
+    "system-bg-wide-gamut-refused|outside sRGB|star.fill|--icon-generation-mode|system|--icon-bg-color|display-p3:1,0,0"
+    "system-symbol-wide-gamut-refused|outside sRGB|star.fill|--icon-generation-mode|system|--icon-symbol-color|display-p3:0,1,0"
     "quiet-verbose-conflict|--quiet and --verbose cannot be used together|star.fill|--quiet|--verbose"
 
     # ---- extract subcommand ----

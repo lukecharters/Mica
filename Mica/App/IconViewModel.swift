@@ -107,10 +107,13 @@ final class IconViewModel: ObservableObject {
         appexIsGenerating = true
         appexError = nil
         do {
+            // Projected inside the `do`, so a colour System mode cannot express
+            // lands in `appexError` — which the preview pane shows and `canExport`
+            // reads, so the icon is not silently exported without it (decision D2).
             let image = try await service.referenceIcon(
                 for: iconSettings.icon.foreground.symbolName,
-                enclosureColor: appexEnclosureColor.plistValue,
-                symbolColor: appexSymbolColor.plistValue
+                enclosureColor: AppexPlistColor(projecting: appexEnclosureColor, role: .enclosure),
+                symbolColor: AppexPlistColor(projecting: appexSymbolColor, role: .symbol)
             )
             // .task(id:) cancellation is cooperative and the service render is not
             // itself cancelled, so a superseded request can finish late. Drop its
@@ -150,8 +153,8 @@ final class IconViewModel: ObservableObject {
         do {
             let image = try await service.referenceIcon(
                 for: iconSettings.badge.foreground.symbolName,
-                enclosureColor: badgeAppexEnclosureColor.plistValue,
-                symbolColor: badgeAppexSymbolColor.plistValue
+                enclosureColor: AppexPlistColor(projecting: badgeAppexEnclosureColor, role: .enclosure),
+                symbolColor: AppexPlistColor(projecting: badgeAppexSymbolColor, role: .symbol)
             )
             // Same late-completion guard as generateAppexIcon — see comment there.
             guard !Task.isCancelled else { return }

@@ -190,27 +190,73 @@ import AppKit
         #expect(try AppexColor.plistValue(fromCLIString: "black:0.25") == "0,0,0,0.25")
     }
 
-    @Test("system-mode icon colour flags accept a :opacity suffix")
-    func systemModeIconFlagsAcceptOpacity() throws {
+    /// System-mode *symbol* colours take an opacity suffix, because the OS honours
+    /// `ISSymbolColor`'s alpha. Background colours do not — see below.
+    @Test("system-mode symbol colour flags accept a :opacity suffix")
+    func systemModeSymbolFlagsAcceptOpacity() throws {
         let command = try parseCommand([
             "star.fill", "--icon-generation-mode", "system",
-            "--icon-bg-color", "blue:0.5", "--icon-symbol-color", "white:0.5",
+            "--badge-fg", "symbol:plus", "--badge-generation-mode", "system",
+            "--icon-symbol-color", "white:0.5", "--badge-symbol-color", "white:0.5",
         ])
         try command.performValidationForTesting()
         // The four resolvers are what IconGenerationRunner fills the appex plist
         // from; `.none` is the flags-only context, so only the flags speak here.
-        #expect(try command.resolvedIconAppexEnclosureColor(in: .none).hasSuffix(",0.5"))
-        #expect(try command.resolvedIconAppexSymbolColor(in: .none) == "1,1,1,0.5")
+        #expect(try command.resolvedIconAppexSymbolColor(in: .none).stringValue == "1,1,1,0.5")
+        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none).stringValue == "1,1,1,0.5")
     }
 
-    @Test("system-mode badge colour flags accept a :opacity suffix")
-    func systemModeBadgeFlagsAcceptOpacity() throws {
+    /// **Changed in Phase 4 (decision D2), deliberately.** These two flags used to
+    /// accept `:opacity` in System mode and write it — and the OS then discarded
+    /// it, because `ISEnclosureColor`'s alpha is ignored (0.01 through 0.99 all
+    /// render fully opaque). The icon came out opaque with nothing said. Refusing
+    /// at validation costs the user nothing and explains the limit.
+    @Test("system-mode background colours refuse a :opacity suffix", arguments: [
+        ["star.fill", "--icon-generation-mode", "system", "--icon-bg-color", "blue:0.5"],
+        ["star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system",
+         "--badge-bg-color", "blue:0.5"],
+    ])
+    func systemModeBackgroundRefusesOpacity(_ args: [String]) throws {
+        let command = try parseCommand(args)
+        // Interpolated, not `localizedDescription`: ArgumentParser's
+        // `ValidationError` is not a `LocalizedError`, so the localized form is
+        // Foundation's generic "operation couldn't be completed" and would make
+        // any message assertion vacuous.
+        let message = try #require(Self.validationMessage(command))
+        #expect(message.contains("opacity"), "should explain the limit: \(message)")
+    }
+
+    /// The same colour without the suffix still works, so the rejection is about
+    /// the alpha rather than about the flag.
+    @Test("the same background colour is fine when it is opaque")
+    func systemModeBackgroundAcceptsOpaque() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system",
-            "--badge-bg-color", "blue:0.5", "--badge-symbol-color", "white:0.5",
+            "star.fill", "--icon-generation-mode", "system", "--icon-bg-color", "blue",
         ])
         try command.performValidationForTesting()
-        #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none).hasSuffix(",0.5"))
-        #expect(try command.resolvedBadgeAppexSymbolColor(in: .none) == "1,1,1,0.5")
+        #expect(try command.resolvedIconAppexEnclosureColor(in: .none).stringValue == "blue")
+    }
+
+    /// A colour beyond sRGB is refused for either key, because the appex pipeline
+    /// rejects out-of-range components and clamping would desaturate it silently.
+    @Test("system mode refuses a wide-gamut colour", arguments: [
+        "--icon-bg-color", "--icon-symbol-color",
+    ])
+    func systemModeRefusesWideGamut(_ flag: String) throws {
+        let command = try parseCommand([
+            "star.fill", "--icon-generation-mode", "system", flag, "display-p3:1,0,0",
+        ])
+        let message = try #require(Self.validationMessage(command))
+        #expect(message.contains("srgb:"), "should offer the nearest sRGB colour: \(message)")
+    }
+
+    /// The text a validation failure produced, or nil if it did not fail.
+    private static func validationMessage(_ command: GenerateCommand) -> String? {
+        do {
+            try command.performValidationForTesting()
+            return nil
+        } catch {
+            return "\(error)"
+        }
     }
 }

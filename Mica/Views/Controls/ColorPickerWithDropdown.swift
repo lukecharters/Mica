@@ -22,6 +22,14 @@ struct ColorPickerWithDropdown: View {
     /// The swatches offered. Defaults to the presentable tokens; System mode
     /// passes the appex-native subset instead.
     var presets: [ColorToken] = ColorTokenTable.presentable
+    /// Whether the colour well offers an opacity slider.
+    ///
+    /// `false` for a System-mode *background*, because the OS ignores an
+    /// enclosure's alpha (§1.1 of `docs/plans/colour-resolution.md`) and
+    /// `AppexPlistColor` refuses one rather than render something the user did not
+    /// ask for. Hiding the slider is the same rule enforced a step earlier, where
+    /// it reads as a control that was never offered rather than an error.
+    var supportsOpacity: Bool = true
 
     @State private var forcesPresetPicker = false
 
@@ -43,7 +51,7 @@ struct ColorPickerWithDropdown: View {
     @ViewBuilder
     private var content: some View {
         if showsCustomPicker {
-            ColorPicker(selection: $value.asColor) {
+            ColorPicker(selection: $value.asColor, supportsOpacity: supportsOpacity) {
                 HStack(spacing: 12) {
                     swatch
                     Text(label)

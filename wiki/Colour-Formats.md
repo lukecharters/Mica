@@ -111,11 +111,16 @@ In System generation mode (`--icon-generation-mode system` / `--badge-generation
   purple  red  teal  white  yellow
   ```
 
-- **Anything else** — hex, `rgb()`, `srgb:`, a `label`-family token, or any of the above with an opacity suffix — resolves to exact components and is passed through as a custom colour.
+- **Anything else** — hex, `rgb()`, `srgb:`, a `label`-family token — resolves to exact components and is passed through as a custom colour.
 
-So `white` and `white:0.5` deliberately differ: the first is Apple's white, the second is a custom translucent white.
+So `white` and `white:0.5` deliberately differ for a *symbol*: the first is Apple's white, the second is a custom translucent white.
 
-Apple's pipeline cannot represent a colour outside sRGB, so a wide-gamut colour is converted at the point the icon is built.
+Two things System mode cannot do, and it says so rather than rendering something else:
+
+- **A colour outside sRGB.** Apple's pipeline rejects out-of-range components, and clamping one would desaturate your colour without telling you. `display-p3:1,0,0` is refused, with the nearest sRGB colour named in the error. A Display P3 colour *inside* sRGB — most of them — converts exactly and is fine.
+- **A translucent background.** The OS honours a symbol's opacity and ignores an enclosure's, so `--icon-bg-color blue:0.5` would render fully opaque. It is refused instead. Put the opacity on the symbol colour, where it works.
+
+  Note `label` and its family count as translucent: `labelColor` is only about 85% opaque, so it cannot be a System-mode background either.
 
 ## Pre-rendered Liquid Glass backgrounds
 

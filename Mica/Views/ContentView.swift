@@ -346,8 +346,8 @@ struct ContentView: View {
         return PNGExportDocument(
             appexExport: .init(
                 symbolName: viewModel.iconSettings.icon.foreground.symbolName,
-                enclosureColor: viewModel.appexEnclosureColor.plistValue,
-                symbolColor: viewModel.appexSymbolColor.plistValue,
+                enclosureColor: viewModel.appexEnclosureColor,
+                symbolColor: viewModel.appexSymbolColor,
                 pointSize: viewModel.iconSettings.export.size,
                 scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
                 colorSpace: viewModel.iconSettings.export.colorSpace

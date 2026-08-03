@@ -25,7 +25,7 @@ struct BadgeForegroundAppearanceSection: View {
     @ViewBuilder
     private var appleReferenceControls: some View {
         AppexColorPickerRow(label: "Symbol Color", selection: $badgeAppexSymbolColor)
-        AppexColorPickerRow(label: "Background Color", selection: $badgeAppexEnclosureColor)
+        AppexColorPickerRow(label: "Background Color", selection: $badgeAppexEnclosureColor, role: .enclosure)
     }
 
     @ViewBuilder

@@ -15,12 +15,18 @@ import SwiftUI
 struct AppexColorPickerRow: View {
     let label: String
     @Binding var selection: AppexColor
+    /// Which plist key this row feeds. It decides whether opacity is offered at
+    /// all: the OS honours a symbol's alpha and discards an enclosure's, so an
+    /// opacity slider on the background would promise something that cannot
+    /// happen — and `AppexPlistColor` would refuse the value it produced.
+    var role: AppexPlistColor.Role = .symbol
 
     var body: some View {
         ColorPickerWithDropdown(
             label: label,
             value: colorValueBinding,
-            presets: ColorTokenTable.appexNative
+            presets: ColorTokenTable.appexNative,
+            supportsOpacity: role.honoursAlpha
         )
     }
 

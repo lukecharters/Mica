@@ -139,9 +139,10 @@ class IconGenerationRunner {
         return appexImage
     }
 
-    /// `enclosureColor` / `symbolColor` are already-resolved plist values
-    /// (named token or `r,g,b,a` string) produced by the argument transforms.
-    private func renderAppexIcon(symbolName: String, enclosureColor: String, symbolColor: String, settings: IconSettings) throws -> NSImage {
+    /// `enclosureColor` / `symbolColor` have already passed `AppexPlistColor`'s
+    /// gate, in `validate()` — so by the time anything renders, a colour System
+    /// mode cannot express has already been reported and nothing was written.
+    private func renderAppexIcon(symbolName: String, enclosureColor: AppexPlistColor, symbolColor: AppexPlistColor, settings: IconSettings) throws -> NSImage {
         let scaleFactor = settings.export.isRetina ? 2 : 1
         return try AppexReferenceService.renderForExport(
             symbolName: symbolName,

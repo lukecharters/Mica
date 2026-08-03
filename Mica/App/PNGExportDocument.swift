@@ -23,9 +23,14 @@ struct PNGExportDocument: FileDocument {
 
     struct AppexExportParams {
         let symbolName: String
-        /// Plist colour value — a named token (`"blue"`) or an `"r,g,b,a"` string.
-        let enclosureColor: String
-        let symbolColor: String
+        /// The stored colours, **not** their plist projection. Projecting can fail
+        /// — a colour outside sRGB, a translucent enclosure — and `fileWrapper` is
+        /// where a failure can be reported, whereas the caller building these is a
+        /// non-throwing computed property in `ContentView`. In practice the render
+        /// has already failed by then and `canExport` has withdrawn ⇧⌘E, so this is
+        /// the second line of defence rather than the first.
+        let enclosureColor: AppexColor
+        let symbolColor: AppexColor
         let pointSize: CGFloat
         let scaleFactor: Int
         let colorSpace: ExportColorSpace
@@ -67,8 +72,8 @@ struct PNGExportDocument: FileDocument {
         if let params = appexExportParams {
             let appexImage = try AppexReferenceService.renderForExport(
                 symbolName: params.symbolName,
-                enclosureColor: params.enclosureColor,
-                symbolColor: params.symbolColor,
+                enclosureColor: AppexPlistColor(projecting: params.enclosureColor, role: .enclosure),
+                symbolColor: AppexPlistColor(projecting: params.symbolColor, role: .symbol),
                 pointSize: params.pointSize,
                 scaleFactor: params.scaleFactor,
                 colorSpace: params.colorSpace
