@@ -23,12 +23,33 @@ import UniformTypeIdentifiers
 
 /// A drag-out payload for the rendered icon.
 ///
-/// `@unchecked Sendable` because `Transferable` requires `Sendable` and
-/// `PNGExportDocument` carries `NSImage?` (the appex rasters), which is not. The
-/// images are finished rasters — produced once by `AppexReferenceService`, then only
-/// ever read — and the one place this value is consumed hops to the main actor to do
-/// it. Nothing here mutates shared state.
-struct DraggableIcon: Transferable, @unchecked Sendable {
+/// **This vends an `NSItemProvider` rather than conforming to `Transferable`, and the
+/// reason is the file name.** Both were tried live on 2026-08-03:
+///
+/// | Approach | Bytes | Name at the receiver |
+/// |---|---|---|
+/// | `.draggable` + `FileRepresentation` | correct | `PNG image.png` |
+/// | …with `allowAccessingOriginalFile: true` | correct | `PNG image.png` |
+/// | `.onDrag` + `suggestedName` including `.png` | correct | `command-mica.png.png` |
+/// | `.onDrag` + `suggestedName` as the stem | correct | `command-mica.png` |
+///
+/// SwiftUI's `Transferable` advertises the payload as `public.png` data as well as a
+/// file, and the Finder takes the data — then names it the way it names any dropped
+/// image, discarding the URL's last path component. `NSItemProvider.suggestedName` is
+/// the only knob either API exposes that the Finder actually honours.
+///
+/// The failure mode is worth remembering because of how quiet it is: the drop
+/// succeeds, the pixels are right, the bytes match the promise by SHA-256, and
+/// **every content-level assertion passes**. Only the name is wrong, and an icon
+/// generator that drops `PNG image.png` into an asset catalog has failed at the
+/// point of the feature.
+///
+/// `@unchecked Sendable` because the promise's load handler hops to the main actor to
+/// render, which requires capturing this value, and `PNGExportDocument` carries
+/// `NSImage?` (the appex rasters). Those are finished rasters — produced once by
+/// `AppexReferenceService`, thereafter only read — and nothing here mutates shared
+/// state.
+struct DraggableIcon: @unchecked Sendable {
     /// The export payload, built at drag start and rendered only if the drop lands.
     let document: PNGExportDocument
 
@@ -37,10 +58,47 @@ struct DraggableIcon: Transferable, @unchecked Sendable {
     /// same icon arrive under the same name.
     let baseName: String
 
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(exportedContentType: .png) { icon in
-            SentTransferredFile(try await icon.writeTemporaryPNG())
+    /// The name the dropped file arrives under, **without** its extension.
+    ///
+    /// `NSItemProvider.suggestedName` wants the stem: it appends the extension for the
+    /// registered type identifier itself. Handing it `"command-mica.png"` produced
+    /// `command-mica.png.png` at the receiver (observed 2026-08-03).
+    var fileNameStem: String {
+        Self.sanitizedFileName(for: baseName)
+    }
+
+    /// The full name for the temporary file the promise writes.
+    var fileName: String {
+        "\(fileNameStem).png"
+    }
+
+    /// A promise for the rendered PNG, named so the receiver keeps the name.
+    ///
+    /// Still a promise: `registerFileRepresentation`'s load handler runs when a
+    /// receiver accepts the drop, so a drag that is started and abandoned renders
+    /// nothing.
+    @MainActor
+    func itemProvider() -> NSItemProvider {
+        let provider = NSItemProvider()
+        // The whole point — see the type's doc comment. Stem only, no extension.
+        provider.suggestedName = fileNameStem
+        provider.registerFileRepresentation(
+            forTypeIdentifier: UTType.png.identifier,
+            fileOptions: [],
+            visibility: .all
+        ) { completion in
+            Task { @MainActor in
+                do {
+                    completion(try self.writeTemporaryPNG(), false, nil)
+                } catch {
+                    // Surfaced to the receiver rather than swallowed; a failed promise
+                    // must not hand over a zero-byte PNG that looks like a real one.
+                    completion(nil, false, error)
+                }
+            }
+            return nil
         }
+        return provider
     }
 
     /// Render, encode, and write to a uniquely-named temporary directory.
@@ -64,7 +122,7 @@ struct DraggableIcon: Transferable, @unchecked Sendable {
         let directory = URL.temporaryDirectory
             .appending(path: "MicaDrag-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let url = directory.appending(path: "\(Self.sanitizedFileName(for: baseName)).png")
+        let url = directory.appending(path: fileName)
         try data.write(to: url)
         return url
     }
@@ -97,9 +155,10 @@ struct DraggableIcon: Transferable, @unchecked Sendable {
     }
 }
 
-/// Applies `.draggable` only when there is something correct to drag.
+/// Makes a view a drag source for the rendered icon, when there is something correct
+/// to drag.
 ///
-/// Two reasons this is a modifier rather than a `.draggable` call at each site:
+/// Two reasons this is a modifier rather than an `.onDrag` call at each site:
 ///
 /// 1. **A nil payload must remove the drag, not vend an empty one.** `canExport` is
 ///    false while a System-mode layer's appex raster is still rendering, and a PNG
@@ -113,7 +172,11 @@ struct IconDragOut: ViewModifier {
 
     func body(content: Content) -> some View {
         if let makePayload {
-            content.draggable(makePayload())
+            // `.onDrag`, not `.draggable` — the file name is the reason. See
+            // `DraggableIcon`'s doc comment for the three variants that were measured.
+            // The drag preview is SwiftUI's own snapshot of the modified view, which
+            // for the icon layer is exactly the right picture.
+            content.onDrag { makePayload().itemProvider() }
         } else {
             content
         }

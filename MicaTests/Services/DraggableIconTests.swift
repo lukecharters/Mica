@@ -31,6 +31,16 @@ struct DraggableIconTests {
         )
     }
 
+    /// How many `MicaDrag-*` directories exist right now. Used to prove the render is
+    /// deferred: building a payload must not create one.
+    private static func micaDragDirectoryCount() -> Int {
+        let contents = (try? FileManager.default.contentsOfDirectory(
+            at: URL.temporaryDirectory,
+            includingPropertiesForKeys: nil
+        )) ?? []
+        return contents.filter { $0.lastPathComponent.hasPrefix("MicaDrag-") }.count
+    }
+
     /// Pixel width of PNG bytes, read back through ImageIO rather than NSImage —
     /// `NSImage.size` is in points and halves at 2x, which would make a size
     /// assertion quietly wrong.
@@ -88,6 +98,43 @@ struct DraggableIconTests {
     @Test("Surrounding whitespace is trimmed")
     func sanitize_trimsWhitespace() {
         #expect(DraggableIcon.sanitizedFileName(for: "  star.fill  ") == "star.fill")
+    }
+
+    // MARK: - Naming handed to the receiver
+
+    @Test("suggestedName is the stem, with no extension")
+    func provider_suggestedNameHasNoExtension() {
+        let icon = Self.micaModeIcon(baseName: "star.fill-mica")
+
+        // Pinned because getting this wrong is silent and only visible at the
+        // receiver: NSItemProvider appends the registered type's extension itself, so
+        // a stem of "star.fill-mica.png" lands as "star.fill-mica.png.png".
+        #expect(icon.fileNameStem == "star.fill-mica")
+        #expect(icon.itemProvider().suggestedName == "star.fill-mica")
+        #expect(icon.fileNameStem.hasSuffix(".png") == false)
+    }
+
+    @Test("The temporary file keeps the full name, extension included")
+    func fileName_includesTheExtension() {
+        #expect(Self.micaModeIcon(baseName: "star.fill-mica").fileName == "star.fill-mica.png")
+    }
+
+    @Test("The provider registers PNG")
+    func provider_registersPNG() {
+        #expect(Self.micaModeIcon().itemProvider()
+            .registeredTypeIdentifiers.contains(UTType.png.identifier))
+    }
+
+    @Test("Building the provider renders nothing — the promise is not redeemed early")
+    func provider_doesNotRenderAtDragStart() {
+        // Counted, not inspected: a drag that renders on pickup instead of on drop is
+        // the difference between "free to start a drag" and "stall the UI whenever the
+        // pointer twitches over the canvas", and it is invisible from the outside.
+        let before = Self.micaDragDirectoryCount()
+
+        _ = Self.micaModeIcon().itemProvider()
+
+        #expect(Self.micaDragDirectoryCount() == before)
     }
 
     // MARK: - writeTemporaryPNG
