@@ -90,17 +90,22 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
         MicaColorValue(source: .components(components))
     }
 
-    /// Capture a colour that arrived with no provenance — a colour-well pick — by
-    /// matching it against the token table by value, and falling back to
-    /// components.
+    /// Capture a colour that arrived with no provenance by matching it against the
+    /// token table by value, and falling back to components.
+    ///
+    /// **Not for a colour well.** Its caller is a *string* that names no token —
+    /// `#0088FF` from a configuration, which is worth writing back as `blue`. A
+    /// well pick goes to `.components` directly (`Binding.asColor`), because it is
+    /// custom by construction and minting a token from it swapped the inspector's
+    /// control out mid-drag; see that binding's note.
     ///
     /// Matching is on **all four components**, deliberately. It would be possible
     /// to also match RGB-only and record the alpha ratio as a token modifier, and
-    /// that is a trap: in Aqua `labelColor` is black at 84.7%, so a picked
-    /// `black` at 42% is *byte-identical* to `label` at 50% and no rule can tell
-    /// them apart. Provenance flows from where a colour is **set** — a CLI token,
-    /// a JSON token, the preset dropdown — and this initialiser is only the
-    /// last resort for a value that genuinely has none.
+    /// that is a trap: in Aqua `labelColor` is black at 84.7%, so `black` at 42% is
+    /// *byte-identical* to `label` at 50% and no rule can tell them apart.
+    /// Provenance flows from where a colour is **set** — a CLI token, a JSON token,
+    /// the preset dropdown — and this initialiser is only the last resort for a
+    /// value that genuinely has none.
     init(resolving color: Color) {
         let target = ColorParser.ExtendedComponents.resolving(color).rounded(to: Self.precision)
         for token in ColorTokenTable.all {

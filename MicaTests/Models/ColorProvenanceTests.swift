@@ -143,11 +143,12 @@ struct ColorProvenanceTests {
         #expect(!MicaColorValue.token("label").isPresentableToken)
         #expect(!MicaColorValue.components(.srgb(r: 0.2, g: 0.6, b: 0.9, a: 1)).isPresentableToken)
 
-        // The case by-value inference could never get right: a picked colour that
-        // happens to equal a preset today reads as that preset, which is correct —
-        // but a preset the user chose stays a preset even if the OS moves it.
-        let pickedBlue = MicaColorValue(resolving: Color.blue)
-        #expect(pickedBlue.isPresentableToken)
+        // By-value recovery still happens where a string arrives with no provenance
+        // — a hex value from a configuration earns its canonical spelling. It is the
+        // *colour well* that must never mint a token; `aWellPickIsNeverAToken` below
+        // is that rule.
+        let parsedBlue = MicaColorValue(resolving: Color.blue)
+        #expect(parsedBlue.isPresentableToken)
     }
 
     @Test("a token that is not a preset keeps its name while the well is shown")
@@ -159,6 +160,45 @@ struct ColorProvenanceTests {
         let binding = Binding(get: { value }, set: { value = $0 })
         binding.asColor.wrappedValue = value.resolved   // a no-op re-render write
         #expect(value.source == .token("label"))
+    }
+
+    @Test("a colour well pick is never a token, even when it lands on one")
+    func aWellPickIsNeverAToken() {
+        // The bug this pins: dragging a slider onto a system colour rewrote the
+        // value as that token, which flipped `ColorPickerWithDropdown` from the well
+        // to the preset menu mid-drag. The well vanished from the hierarchy with the
+        // shared NSColorPanel still open, so the colour froze on that token and no
+        // further dragging moved it. A wheel pick is custom by construction.
+        for landed in [Color.blue, .red, .white, .black, Color(.labelColor)] {
+            var value = MicaColorValue.components(.srgb(r: 0.2, g: 0.6, b: 0.9, a: 1))
+            let binding = Binding(get: { value }, set: { value = $0 })
+            binding.asColor.wrappedValue = landed
+
+            #expect(value.tokenName == nil, "a well pick minted the token \(value.stringValue)")
+            guard case .components = value.source else {
+                Issue.record("expected components from a well pick, got \(value.source)")
+                continue
+            }
+            // Honest provenance, not a different colour: it still renders as what
+            // the user dragged to.
+            let picked = ColorParser.ExtendedComponents.resolving(landed)
+                .rounded(to: MicaColorValue.precision)
+            #expect(value.source == .components(picked))
+        }
+    }
+
+    @Test("a preset stays a preset when the well hands back an equal colour")
+    func anEqualWriteInADifferentColourSpaceDoesNotFlattenAToken() {
+        // The panel can return the same colour in another colour space, which `!=`
+        // on `Color` reads as an edit. The guard compares components at the stored
+        // precision so it doesn't, and a token the user never touched survives.
+        var value = MicaColorValue.token("blue")
+        let binding = Binding(get: { value }, set: { value = $0 })
+        let sameColourAnotherSpace = ColorParser.ExtendedComponents
+            .resolving(value.resolved)
+            .color
+        binding.asColor.wrappedValue = sameColourAnotherSpace
+        #expect(value.source == .token("blue"))
     }
 
     // MARK: - The appex bridge
