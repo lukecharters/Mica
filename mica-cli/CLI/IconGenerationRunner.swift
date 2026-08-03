@@ -273,6 +273,27 @@ class IconGenerationRunner {
                 settings.export.colorSpace = colorSpace
             }
 
+            // Group visibility, applied *before* everything that writes a layer's
+            // own visibility, because the rule is "the group flag applies first and
+            // a layer flag overrides it". The spec's `isHidden` setter writes both
+            // layers, so this also clears a per-layer flag the configuration may
+            // have carried — the point of a group flag, and what the sidebar's eye
+            // does. (`IconSettings.setGroupVisible(_:for:)` is the GUI's wrapper for
+            // the same two setters; it is not reused here only because its
+            // `IconLayerGroup` argument is a UI-selection type the CLI does not
+            // compile. The behaviour lives in the setters, which both surfaces share.)
+            //
+            // For the badge this is also the activation bit: `BadgeSpec.isVisible`
+            // is `!fg.isHidden || !bg.isHidden`, so `--badge-visibility on` here is
+            // what opens the badge block below, and `off` is what closes it on a
+            // badge a `--config` file supplied.
+            if let iconVisible = command.groupVisibility.icon {
+                settings.icon.isHidden = !iconVisible.isOn
+            }
+            if let badgeVisible = command.groupVisibility.badge {
+                settings.badge.isHidden = !badgeVisible.isOn
+            }
+
             // Icon foreground source. Absent with `--config` means the
             // configuration's foreground stands; a flags-only `generate` requires
             // one, and its error comes from the throwing `resolvedForeground()` in
@@ -565,13 +586,19 @@ class IconGenerationRunner {
                 // Badge layer visibility. When --badge-fg activated the badge this is
                 // NOT conditional on a visibility flag: both specs default their
                 // layers to hidden, and supplying --badge-fg is what makes the badge
-                // appear, so the `?? true` is that activation rule rather than a
+                // appear, so the fallback is that activation rule rather than a
                 // restated spec default. When the badge instead came from the base
                 // document, its per-layer visibility must survive — writing both
                 // layers there would resurrect a background the user had hidden.
+                //
+                // The fallback is `--badge-visibility` when it was given, not a bare
+                // `true`: the group flag applied earlier and activation must not
+                // undo it, so `--badge-fg symbol:x --badge-visibility off` is a badge
+                // that stays off. A *layer* flag still overrides both.
                 if commandBadgeForeground != nil {
-                    settings.badge.foreground.isHidden = !(command.badge.foregroundVisibility?.isOn ?? true)
-                    settings.badge.background.isHidden = !(command.badge.backgroundVisibility?.isOn ?? true)
+                    let activationBaseline = command.groupVisibility.badge?.isOn ?? true
+                    settings.badge.foreground.isHidden = !(command.badge.foregroundVisibility?.isOn ?? activationBaseline)
+                    settings.badge.background.isHidden = !(command.badge.backgroundVisibility?.isOn ?? activationBaseline)
                 } else {
                     if let foregroundVisibility = command.badge.foregroundVisibility {
                         settings.badge.foreground.isHidden = !foregroundVisibility.isOn

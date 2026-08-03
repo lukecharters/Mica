@@ -117,6 +117,9 @@ struct MicaConfigTests {
         ("color-space", "displayP3", [:]),
         ("icon-generation-mode", "system", [:]),
         ("badge-generation-mode", "system", ["badge-fg": "symbol:plus"]),
+        // Decode-only sugar: each writes both of its group's layer keys.
+        ("icon-visibility", false, [:]),
+        ("badge-visibility", false, ["badge-fg": "symbol:plus"]),
         ("icon-fg", "symbol:bolt.fill", [:]),
         ("icon-fg-scale", 1.4, [:]),
         ("icon-symbol-rendering", "hierarchical", [:]),

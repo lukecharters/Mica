@@ -190,6 +190,42 @@ private func parseGenerationMode(_ mode: String, role: String) throws -> Generat
 }
 
 
+// MARK: - Group Visibility Options
+
+/// Whole-group visibility, matching the GUI's sidebar eye. Neither flag belongs to
+/// a layer's option group, because each writes *both* layers of its group — that is
+/// the whole point of them, and it is why they route through
+/// `IconSettings.setGroupVisible(_:for:)`, which clears a per-layer hidden flag
+/// rather than leaving one behind.
+///
+/// **The group flag applies first and a layer flag overrides it**, so
+/// `--icon-visibility off --icon-fg-visibility on` is a visible foreground on a
+/// hidden background. That matches the GUI, where the group eye sets both and you
+/// then flip one.
+struct GroupVisibilityOptions: ParsableArguments {
+    @Option(
+        name: .customLong("icon-visibility"),
+        help: ArgumentHelp(
+            "Icon visibility: on, or off to hide both icon layers. A per-layer flag overrides it.",
+            valueName: "on|off"
+        )
+    )
+    var icon: ToggleState?
+
+    // No `defaultNote`: for the badge this flag *is* the activation bit, so its
+    // default is not a spec default to quote — a badge is off until something asks
+    // for one.
+    @Option(
+        name: .customLong("badge-visibility"),
+        help: ArgumentHelp(
+            "Badge visibility: on, or off to hide both badge layers. A per-layer flag overrides it.",
+            valueName: "on|off"
+        )
+    )
+    var badge: ToggleState?
+}
+
+
 // MARK: - Icon Foreground Options
 
 struct IconForegroundOptions: ParsableArguments {
@@ -868,7 +904,10 @@ struct GenerateCommand: AsyncParsableCommand {
 
     @OptionGroup(title: "Badge")
     var badge: BadgeOptions
-    
+
+    @OptionGroup(title: "Group Visibility")
+    var groupVisibility: GroupVisibilityOptions
+
     @OptionGroup(title: "Export")
     var export: ExportOptions
 

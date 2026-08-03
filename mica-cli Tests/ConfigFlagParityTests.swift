@@ -42,6 +42,8 @@ struct ConfigFlagParityTests {
         case .colorSpace: return "displayP3"
         case .iconGenerationMode: return "mica"
         case .badgeGenerationMode: return "mica"
+        case .iconVisibility: return "off"
+        case .badgeVisibility: return "off"
         case .iconFG: return "symbol:star.fill"
         case .iconFGScale: return "1.2"
         case .iconSymbolRendering: return "hierarchical"

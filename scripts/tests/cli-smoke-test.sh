@@ -125,6 +125,11 @@ HAPPY_CASES=(
     "icon-symbol-gradient-on|star.fill|--icon-symbol-gradient|on"
     "icon-fg-shadow-off|star.fill|--icon-fg-shadow|off"
     "icon-fg-visibility-off|star.fill|--icon-fg-visibility|off"
+    # Group visibility: one flag writing both layers, and a layer flag beating it.
+    "icon-visibility-off|star.fill|--icon-visibility|off"
+    "icon-visibility-off-fg-on|star.fill|--icon-visibility|off|--icon-fg-visibility|on"
+    "badge-visibility-on|star.fill|--badge-visibility|on"
+    "badge-visibility-off-with-fg|star.fill|--badge-fg|symbol:plus.circle|--badge-visibility|off"
 
     # ---- Badge foreground (supplying --badge-fg activates the badge) ----
     "badge-enable|star.fill|--badge-fg|symbol:plus.circle"

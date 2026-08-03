@@ -62,6 +62,10 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     case iconGenerationMode = "icon-generation-mode"
     case badgeGenerationMode = "badge-generation-mode"
 
+    // Group visibility. Decode-only — see `decodeOnlyNames`.
+    case iconVisibility = "icon-visibility"
+    case badgeVisibility = "badge-visibility"
+
     // Icon foreground
     case iconFG = "icon-fg"
     case iconFGScale = "icon-fg-scale"
@@ -127,6 +131,26 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// The `generate` flags that are deliberately not configuration keys, with
     /// the message an attempt to use one gets.
     static let processLevelNames: Set<String> = ["output", "o", "json", "quiet", "q", "verbose", "v", "config"]
+
+    /// Keys accepted on the way in and never produced on the way out.
+    ///
+    /// A different thing from `processLevelNames`, which is excluded because those
+    /// flags describe an *invocation* rather than an icon. These describe the icon
+    /// perfectly well — they are sugar for writing both of a group's layer keys at
+    /// once, and the canonical output form stays the two layer keys, so a file never
+    /// carries two spellings of one state. Importing and re-exporting therefore
+    /// rewrites them, which is the format working rather than a bug.
+    ///
+    /// The precedent for a legitimate input with no canonical key is the positional
+    /// symbol. **The encoder must never emit one of these**; the flag/key parity in
+    /// both directions still holds, because each is a real flag as well as a key.
+    static let decodeOnlyNames: Set<String> = [
+        MicaConfigKey.iconVisibility.rawValue,
+        MicaConfigKey.badgeVisibility.rawValue,
+    ]
+
+    /// True for a key the decoder accepts but the encoder never writes.
+    var isDecodeOnly: Bool { Self.decodeOnlyNames.contains(rawValue) }
 
     /// True for the badge-namespace keys, which are inert without `badge-fg`
     /// (the activation rule, mirroring the CLI's).
@@ -448,6 +472,21 @@ private struct ConfigReader {
             settings.export.colorSpace = colorSpace
         }
 
+        // Group visibility, before anything that writes a layer's own visibility:
+        // the group key applies first and a layer key overrides it, mirroring the
+        // builder rule for rule. Decode-only — the encoder writes the two layer keys
+        // instead, so a round trip normalises this away.
+        // The spec's `isHidden` setter writes both layers — see the builder, which
+        // this mirrors, for why that setter rather than the GUI's
+        // `setGroupVisible(_:for:)` wrapper.
+        if let iconVisible = toggle(.iconVisibility) {
+            settings.icon.isHidden = !iconVisible
+        }
+        let badgeGroupVisible = toggle(.badgeVisibility)
+        if let badgeGroupVisible {
+            settings.badge.isHidden = !badgeGroupVisible
+        }
+
         // Icon foreground source.
         var importedForeground = false
         if let raw = string(.iconFG) {
@@ -597,17 +636,33 @@ private struct ConfigReader {
         if let badgeForegroundRaw {
             applyBadge(foregroundRaw: badgeForegroundRaw,
                        badgeMode: badgeMode,
-                       effectiveBadgeMode: effectiveBadgeMode)
+                       effectiveBadgeMode: effectiveBadgeMode,
+                       groupVisible: badgeGroupVisible)
         } else {
-            let inert = MicaConfigKey.allCases.filter { $0.isBadgeKey && $0 != .badgeFG && values[$0] != nil }
+            // `badge-visibility` is excluded from the inert list because it is not
+            // inert — it was applied above, and for the badge visibility *is* the
+            // activation bit, so `{"badge-visibility": true}` genuinely turns the
+            // badge on. The other badge keys still need a foreground to be read,
+            // which is what phase 5 of the plan changes; until then the warning has
+            // to say which of the two situations the author is in rather than
+            // claiming a badge that is on "stays off".
+            let inert = MicaConfigKey.allCases.filter {
+                $0.isBadgeKey && $0 != .badgeFG && $0 != .badgeVisibility && values[$0] != nil
+            }
             if !inert.isEmpty {
+                let consequence = settings.badge.isVisible
+                    ? "absent, so the badge draws its defaults and these keys are inert"
+                    : "absent, so the badge stays off and these keys are inert"
                 warn(MicaConfigKey.badgeFG.rawValue,
-                     "absent, so the badge stays off and these keys are inert: \(inert.map(\.rawValue).joined(separator: ", "))")
+                     "\(consequence): \(inert.map(\.rawValue).joined(separator: ", "))")
             }
         }
     }
 
-    private mutating func applyBadge(foregroundRaw: String, badgeMode: GenerationMode?, effectiveBadgeMode: GenerationMode) {
+    private mutating func applyBadge(foregroundRaw: String,
+                                     badgeMode: GenerationMode?,
+                                     effectiveBadgeMode: GenerationMode,
+                                     groupVisible: Bool?) {
         var importedBadgeForeground = false
         if let value = ForegroundValue(parsing: foregroundRaw) {
             switch value {
@@ -731,10 +786,14 @@ private struct ConfigReader {
             settings.badge.mode = badgeMode
         }
 
-        // Layer visibility: supplying `badge-fg` is what turns the badge on, so
-        // the `?? true` here is the activation rule, not a restated default.
-        settings.badge.foreground.isHidden = !(toggle(.badgeFGVisibility) ?? true)
-        settings.badge.background.isHidden = !(toggle(.badgeBGVisibility) ?? true)
+        // Layer visibility: supplying `badge-fg` is what turns the badge on, so the
+        // fallback here is the activation rule, not a restated default. It is
+        // `badge-visibility` when the file gave one — the group key applied first and
+        // activation must not undo it — and a layer key still overrides both. Mirrors
+        // the builder's `activationBaseline`.
+        let activationBaseline = groupVisible ?? true
+        settings.badge.foreground.isHidden = !(toggle(.badgeFGVisibility) ?? activationBaseline)
+        settings.badge.background.isHidden = !(toggle(.badgeBGVisibility) ?? activationBaseline)
     }
 
     /// A colour, provenance kept; failures warn under the given key.
@@ -840,6 +899,12 @@ private struct ConfigWriter {
         var output: [String: Any] = [:]
 
         func put(_ key: MicaConfigKey, _ value: Any) {
+            // The encoder is the only writer, so this is where "decode-only" is
+            // enforced. A group visibility key here would put a second spelling of
+            // one state into the file, which is exactly what the canonical form
+            // exists to prevent.
+            assert(!key.isDecodeOnly, "'\(key.rawValue)' is decode-only and must never be written")
+            guard !key.isDecodeOnly else { return }
             output[key.rawValue] = value
         }
 
@@ -1004,6 +1069,12 @@ private struct ConfigWriter {
 
     private func writeBadge(into output: inout [String: Any], assets: inout MicaConfigAssetCatalog) {
         func put(_ key: MicaConfigKey, _ value: Any) {
+            // The encoder is the only writer, so this is where "decode-only" is
+            // enforced. A group visibility key here would put a second spelling of
+            // one state into the file, which is exactly what the canonical form
+            // exists to prevent.
+            assert(!key.isDecodeOnly, "'\(key.rawValue)' is decode-only and must never be written")
+            guard !key.isDecodeOnly else { return }
             output[key.rawValue] = value
         }
 
