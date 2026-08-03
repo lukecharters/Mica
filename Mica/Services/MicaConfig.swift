@@ -176,6 +176,31 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
 
     /// True for a key that can switch the badge on.
     var canActivateBadge: Bool { Self.activatingBadgeNames.contains(rawValue) }
+
+    /// The keys that style a group's *foreground*, which is rule 2 of the foreground
+    /// rule: over an imported background, any one of these present means the user wants
+    /// a foreground, so the import's hide-it default is overruled.
+    ///
+    /// **One list, read by both halves of the codec** — the reader to decide the
+    /// baseline, the writer to decide whether that baseline was met. Two lists would
+    /// drift, and the failure would be a configuration that decodes to a different icon
+    /// than it was exported from. The corresponding CLI predicates are
+    /// `IconForegroundOptions.foregroundArgumentGiven` and
+    /// `BadgeOptions.foregroundArgumentGiven`.
+    ///
+    /// The visibility key is deliberately absent from both: it is rule 1, honoured
+    /// exactly, and counting it would make an `off` imply a wanted foreground while
+    /// asking to hide one.
+    static let iconForegroundKeys: [MicaConfigKey] = [
+        .iconFG, .iconFGScale, .iconSymbolRendering, .iconSymbolColor,
+        .iconSymbolPalette, .iconSymbolWeight, .iconSymbolGradient, .iconFGShadow,
+    ]
+
+    /// The badge's counterpart to `iconForegroundKeys`.
+    static let badgeForegroundKeys: [MicaConfigKey] = [
+        .badgeFG, .badgeFGScale, .badgeSymbolRendering, .badgeSymbolColor,
+        .badgeSymbolPalette, .badgeSymbolWeight, .badgeSymbolGradient, .badgeFGShadow,
+    ]
 }
 
 // MARK: - Results
@@ -591,8 +616,14 @@ private struct ConfigReader {
         if let gradient = toggle(.iconBGGradient) {
             settings.icon.background.usesGradient = gradient
         }
+        // The third conditional baseline: absent `icon-bg-corner-radius` + an imported
+        // icon background ⇒ `.off`, mirroring `IconSpec.applyBackgroundImage`. Artwork
+        // that fills its own bounds loses its corners to any radius at all, so a fresh
+        // import turns clipping off; encode uses the same baseline.
         if let cornerRadius = token(.iconBGCornerRadius, as: IconCornerRadiusStyle.self) {
             settings.icon.background.cornerRadiusStyle = cornerRadius
+        } else if importedBackground {
+            settings.icon.background.cornerRadiusStyle = .off
         }
         // An explicit shadow wins; otherwise only a freshly imported background
         // forces the shadow off (mirroring `IconBackgroundSpec.apply(_:)`).
@@ -865,11 +896,7 @@ private struct ConfigReader {
     /// exactly, and counting it would make `icon-fg-visibility: false` imply a wanted
     /// foreground while asking to hide one.
     private var iconForegroundKeyGiven: Bool {
-        let keys: [MicaConfigKey] = [
-            .iconFG, .iconFGScale, .iconSymbolRendering, .iconSymbolColor,
-            .iconSymbolPalette, .iconSymbolWeight, .iconSymbolGradient, .iconFGShadow,
-        ]
-        return keys.contains { values[$0] != nil }
+        MicaConfigKey.iconForegroundKeys.contains { values[$0] != nil }
     }
 
     /// True when any key styling the badge *foreground* is present — rule 2 of the
@@ -878,11 +905,7 @@ private struct ConfigReader {
     /// a wanted foreground while asking to hide one. Mirrors
     /// `BadgeOptions.foregroundArgumentGiven`.
     private var badgeForegroundKeyGiven: Bool {
-        let keys: [MicaConfigKey] = [
-            .badgeFG, .badgeFGScale, .badgeSymbolRendering, .badgeSymbolColor,
-            .badgeSymbolPalette, .badgeSymbolWeight, .badgeSymbolGradient, .badgeFGShadow,
-        ]
-        return keys.contains { values[$0] != nil }
+        MicaConfigKey.badgeForegroundKeys.contains { values[$0] != nil }
     }
 
     /// A colour, provenance kept; failures warn under the given key.
@@ -955,16 +978,14 @@ private struct ConfigWriter {
     //   1. System mode        — the appex raster reads only symbol name, symbol
     //                           colour and enclosure colour; every other
     //                           Mica-side key in that group is dropped.
-    //   2. Imported background — replaces its group's foreground outright, so
-    //                           the whole foreground goes (the badge keeps
-    //                           `badge-fg`, which is its activation key).
-    //                           **Slated for deletion outright, both groups**:
-    //                           once importing merely hides the foreground
-    //                           rather than vetoing it, gate 6 covers this and
-    //                           covers it better — including when the user
-    //                           toggles the foreground back on. `badge-fg`
-    //                           stays ungated for its own reason (activation).
-    //                           docs/plans/visibility-activation-and-imported-backgrounds.md.
+    //   2. *deleted*          — was "an imported background replaces its group's
+    //                           foreground". Deleted on 2026-08-03 with the
+    //                           render veto it mirrored: importing now merely
+    //                           *hides* the foreground, so gate 6 drops exactly
+    //                           the same keys and drops them correctly when the
+    //                           user switches the foreground back on, which this
+    //                           gate could not do. The number is left standing so
+    //                           the others keep the names they are called by.
     //   3. Non-symbol foreground — an image reads no `*-symbol-*` key.
     //   4. Rendering style    — `*-symbol-color` under palette, or
     //                           `*-symbol-palette` under anything else.
@@ -973,8 +994,16 @@ private struct ConfigWriter {
     //                           `.preRendered` reads neither gradient nor
     //                           corner radius; it is drawn as-is.
     //   6. Hidden layer       — a layer that does not draw takes its appearance
-    //                           keys with it. Visibility keys themselves are
-    //                           never gated: they are what did the hiding.
+    //                           keys with it, `badge-fg` included since gate 2
+    //                           went. Visibility keys themselves are never
+    //                           gated: they are what did the hiding.
+    //
+    // Three baselines are *conditional* on a freshly imported background, and each
+    // is applied at its emission site with the decode rule it mirrors named there:
+    // absent `icon-fg-visibility` ⇒ hidden, absent `badge-fg-visibility` ⇒ hidden,
+    // absent `icon-bg-corner-radius` ⇒ `.off`. The first two are read off the keys
+    // this encode actually wrote, using the same `MicaConfigKey.…ForegroundKeys`
+    // list decode reads, so the two halves agree by construction.
     //
     // **This is deliberately lossy**, on the same terms as the already-documented
     // invisible badge: set a palette, switch to monochrome, export, and the
@@ -1013,13 +1042,12 @@ private struct ConfigWriter {
         // colour. Every other Mica-side key describes a pipeline that did not
         // run.
         //
-        // An imported background replaces the foreground outright, not merely
-        // its colour (`IconContentView.swift:93`). That gate is on `source`
-        // alone, but this one deliberately also requires *pixels*: a source of
-        // `.image` with no image cannot be written to the file at all, so
-        // suppressing the foreground too would export a configuration that
-        // re-imports as nothing.
-        let iconFGDraws = !isSystem && !iconBGIsImage && !iconFG.isHidden
+        // Gate 2 is gone: an imported background no longer replaces the
+        // foreground, so there is nothing here for it to mirror. What used to be
+        // dropped by "imported background" is now dropped by gate 6 — a hidden
+        // layer takes its appearance keys with it — and dropped *correctly* when
+        // the user switches the foreground back on, which gate 2 could not do.
+        let iconFGDraws = !isSystem && !iconFG.isHidden
         // Symbol styling needs a symbol; an image foreground reads none of it.
         let iconSymbolStyling = iconFGDraws && !iconFGIsImage
         // Palette and the single symbol colour are mutually exclusive
@@ -1086,10 +1114,29 @@ private struct ConfigWriter {
            iconFG.drawsShadow != (iconFGIsImage ? false : defaults.icon.foreground.drawsShadow) {
             put(.iconFGShadow, iconFG.drawsShadow)
         }
-        // Visibility stays operative wherever the layer could have drawn — in
-        // System mode it is half of what gates the appex raster.
-        if isSystem || !iconBGIsImage,
-           iconFG.isHidden != defaults.icon.foreground.isHidden {
+        // Visibility is never gated — it is what did the hiding — but its baseline is
+        // conditional, mirroring decode's foreground rule: over an imported background,
+        // absent `icon-fg-visibility` means *hidden* unless another icon foreground key
+        // is present.
+        //
+        // So the baseline is read off the keys this encode actually wrote, using the
+        // same key list decode's `iconForegroundKeyGiven` reads. That is what makes the
+        // two agree by construction rather than by both being right. The pleasant
+        // consequence: over imported artwork the key is usually omitted entirely, since
+        // the presence or absence of the foreground's own keys already carries the
+        // state. The exception is real and is why this is computed rather than assumed —
+        // an image foreground with no pixels writes no `icon-fg`, so the key is needed
+        // to say the foreground is visible.
+        //
+        // `iconBGImportWritten`, not `iconBGIsImage`: in System mode gate 1 drops the
+        // background entirely, so the *file* has no imported background for decode's
+        // rule to fire on, whatever the settings hold.
+        let iconBGImportWritten = iconBGDraws && iconBGIsImage
+        let iconForegroundKeyWritten = MicaConfigKey.iconForegroundKeys.contains { output[$0.rawValue] != nil }
+        let iconFGHiddenBaseline = iconBGImportWritten
+            ? !iconForegroundKeyWritten
+            : defaults.icon.foreground.isHidden
+        if iconFG.isHidden != iconFGHiddenBaseline {
             put(.iconFGVisibility, !iconFG.isHidden)
         }
 
@@ -1125,11 +1172,20 @@ private struct ConfigWriter {
                 }
             }
             // The corner radius shapes the chiclet and clips an imported image
-            // (`IconContentView.swift:180`), but a pre-rendered asset is drawn
-            // unclipped and ignores it.
-            if iconBG.source != .preRendered,
-               iconBG.cornerRadiusStyle != defaults.icon.background.cornerRadiusStyle {
-                put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
+            // (`IconContentView`'s `.image` branch, which skips `clipShape` entirely at
+            // `.off`), but a pre-rendered asset is drawn unclipped and ignores it.
+            //
+            // Baseline mirrors decode's fresh-import rule, the third of the three: an
+            // imported background's corner radius defaults to `.off`, so a user who
+            // wants their artwork clipped produces a key and a user who accepts the
+            // import default does not.
+            if iconBG.source != .preRendered {
+                let cornerBaseline: IconCornerRadiusStyle = iconBGImportWritten
+                    ? .off
+                    : defaults.icon.background.cornerRadiusStyle
+                if iconBG.cornerRadiusStyle != cornerBaseline {
+                    put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
+                }
             }
             // Every source draws the background shadow. Baseline mirrors
             // decode's fresh-import rule: an imported background's shadow is off.
@@ -1178,13 +1234,12 @@ private struct ConfigWriter {
         // A System badge draws *only* the appex raster (`BadgeView.swift:42`),
         // so every Mica-side badge key below describes nothing.
         //
-        // An imported badge background suppresses the badge foreground
-        // (`BadgeView.swift:107`), on the same `drawsImage` answer that decides
-        // whether it draws at all — so unlike the icon's, this gate already
-        // requires pixels and a visible layer.
+        // Gate 2 is gone here too: an imported badge background no longer suppresses
+        // the badge symbol, so gate 6 does this work instead — and does it correctly
+        // when the user switches the symbol back on.
         let badgeIsSystem = badge.mode == .system
         let badgeBGDrawsImage = badgeBG.drawsImage
-        let badgeFGDraws = !badgeIsSystem && !badgeBGDrawsImage && !badgeFG.isHidden
+        let badgeFGDraws = !badgeIsSystem && !badgeFG.isHidden
         let badgeSymbolStyling = badgeFGDraws && !badgeFGIsImage
         let badgeUsesPalette = badgeFG.renderingStyle == .palette
         let badgeBGDraws = !badgeIsSystem && !badgeBG.isHidden
@@ -1193,14 +1248,30 @@ private struct ConfigWriter {
         // once the badge is visible, so a switched-off badge stays absent.
         put(.badgeGenerationMode, badge.mode.cliToken)
 
-        // The activation key, and the one badge key that is never gated:
-        // without it the whole group would decode as absent. A system badge
-        // writes its symbol name too — decode applies `badge-generation-mode`
-        // after the source, restoring `.system` as the builder does for flags.
-        if badgeFGIsImage, let image = badgeFG.image {
-            put(.badgeFG, assets.relativePath(for: image))
-        } else {
-            put(.badgeFG, ForegroundValue.symbol(badgeFG.symbolName).cliValue)
+        // `badge-fg` loses its blanket "never gated" exemption: gate 6 applies to it
+        // like any other foreground key, so an artwork-only badge writes no symbol name
+        // and re-imports as artwork-only rather than as a symbol nobody asked for.
+        //
+        // What replaces the exemption is an invariant — **a visible badge must carry at
+        // least one activating key**, or the whole group decodes as absent. `badge-bg`
+        // is the other activator, and it is written for imported artwork and for a
+        // custom gradient. It is *not* written for a plain colour background, which
+        // writes only `badge-bg-color`; that key does not activate. So `badge-fg` is
+        // also written as the fallback activator whenever nothing else would be, which
+        // is narrower than the old exemption and provable rather than assumed.
+        //
+        // A system badge writes its symbol name too — decode applies
+        // `badge-generation-mode` after the source, restoring `.system` as the builder
+        // does for flags.
+        let badgeBGKeyWritten = badgeBGDraws
+            && ((badgeBG.source == .color && badgeBG.usesCustomGradient)
+                || (badgeBG.source == .image && badgeBG.image != nil))
+        if badgeFGDraws || badgeIsSystem || !badgeBGKeyWritten {
+            if badgeFGIsImage, let image = badgeFG.image {
+                put(.badgeFG, assets.relativePath(for: image))
+            } else {
+                put(.badgeFG, ForegroundValue.symbol(badgeFG.symbolName).cliValue)
+            }
         }
         if badgeFGDraws {
             let scale = badgeFGIsImage ? badgeFG.imageScale : badgeFG.symbolScale
@@ -1232,10 +1303,24 @@ private struct ConfigWriter {
         if badgeFGDraws, badgeFG.drawsShadow != (badgeFGIsImage ? false : badgeDefault.drawsShadow) {
             put(.badgeFGShadow, badgeFG.drawsShadow)
         }
-        // The activation baseline is both layers visible, not the spec default
-        // (which is hidden) — supplying `badge-fg` is what shows the badge.
-        // Never gated: these are what switch the badge's layers off at all.
-        if badgeFG.isHidden { put(.badgeFGVisibility, false) }
+        // Never gated — these are what switch the badge's layers off at all — but the
+        // foreground's baseline is now *two* conditions composed, so it is written out
+        // in full rather than left to be recomposed by the next reader:
+        //
+        //   * The activation baseline is both layers visible, not the spec default
+        //     (which is hidden): activating the badge is what shows it.
+        //   * Over an imported badge background, absent `badge-fg-visibility` means
+        //     hidden unless another badge foreground key is present — decode's
+        //     foreground rule, read off the keys this encode actually wrote.
+        //
+        // Composed: hidden is the baseline exactly when the file describes imported
+        // artwork and no badge foreground key went with it.
+        let badgeBGImportWritten = badgeBGDraws && badgeBG.source == .image && badgeBG.image != nil
+        let badgeForegroundKeyWritten = MicaConfigKey.badgeForegroundKeys.contains { output[$0.rawValue] != nil }
+        let badgeFGHiddenBaseline = badgeBGImportWritten && !badgeForegroundKeyWritten
+        if badgeFG.isHidden != badgeFGHiddenBaseline {
+            put(.badgeFGVisibility, !badgeFG.isHidden)
+        }
         if badgeBG.isHidden { put(.badgeBGVisibility, false) }
 
         // Badge background. The badge has no corner-radius key — it is a

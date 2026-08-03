@@ -290,25 +290,117 @@ struct MicaConfigTests {
         }
     }
 
-    /// `BadgeView.swift:107` suppresses the badge symbol when an imported badge
-    /// background draws, so none of the symbol's keys are written. `badge-fg`
-    /// stays: it is the activation key, and without it the group decodes away.
-    @Test("an imported badge background drops the badge symbol's keys")
+    /// Importing badge artwork hides the badge symbol, so gate 6 takes the symbol's
+    /// keys — `badge-fg` now included, since gate 2 went and with it the exemption
+    /// that used to keep it. `badge-bg` carries activation in its place, which is the
+    /// invariant that let the exemption go.
+    @Test("an imported badge background drops the badge symbol's keys, badge-fg included")
     func importedBadgeBackgroundDropsSymbolKeys() throws {
         var settings = IconSettings()
         settings.badge.isVisible = true
         settings.badge.foreground.symbolWeight = .bold
         settings.badge.foreground.color = .red
-        settings.badge.background.apply(try ImportedImage.testFixture(sourceName: "Back.png"))
+        settings.badge.applyBackgroundImage(try ImportedImage.testFixture(sourceName: "Back.png"))
 
         var catalog = MicaConfigAssetCatalog()
         let json = try MicaConfigCodec.encode(settings: settings, assets: &catalog)
         let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
 
-        #expect(object["badge-fg"] != nil, "the activation key is never gated")
-        #expect(object["badge-bg"] != nil)
+        #expect(object["badge-bg"] != nil, "the activator the badge now decodes from")
+        #expect(object["badge-fg"] == nil, "gate 6 applies to it like any foreground key")
         #expect(object["badge-symbol-weight"] == nil)
         #expect(object["badge-symbol-color"] == nil)
+        // The conditional baseline is met exactly, so the key that says so is omitted.
+        #expect(object["badge-fg-visibility"] == nil)
+
+        // And it round-trips as artwork-only rather than decoding away.
+        let decoded = try Self.roundTrip(settings)
+        #expect(decoded.settings.badge.isVisible == true)
+        #expect(decoded.settings.badge.foreground.isHidden == true)
+        #expect(decoded.settings.badge.background.image != nil)
+    }
+
+    /// **The invariant that let `badge-fg`'s "never gated" exemption go**: whatever a
+    /// visible badge looks like, the file must carry at least one key that switches the
+    /// badge on, or the whole group decodes as absent.
+    ///
+    /// Worth a matrix rather than an argument, because the reasoning is easy to get
+    /// wrong. `badge-bg` is written for imported artwork and a custom gradient, but a
+    /// *plain colour* background writes only `badge-bg-color`, which does not activate.
+    /// The plan's version of this invariant missed that case; the fallback in the writer
+    /// exists because of it.
+    @Test("every visible badge writes at least one activator", arguments: [
+        "symbol over a plain colour",
+        "symbol over a custom gradient",
+        "symbol over imported artwork",
+        "hidden symbol over imported artwork",
+        "hidden symbol over a plain colour",
+        "hidden symbol over a custom gradient",
+        "symbol with the background hidden",
+        "imported symbol over a plain colour",
+        "system badge",
+    ])
+    func everyVisibleBadgeWritesAnActivator(_ variant: String) throws {
+        var settings = IconSettings()
+        settings.badge.isVisible = true
+
+        switch variant {
+        case "symbol over a plain colour":
+            break
+        case "symbol over a custom gradient":
+            settings.badge.background.usesCustomGradient = true
+        case "symbol over imported artwork":
+            settings.badge.applyBackgroundImage(try ImportedImage.testFixture(sourceName: "A.png"))
+            settings.badge.foreground.isHidden = false
+        case "hidden symbol over imported artwork":
+            settings.badge.applyBackgroundImage(try ImportedImage.testFixture(sourceName: "A.png"))
+        case "hidden symbol over a plain colour":
+            settings.badge.foreground.isHidden = true
+        case "hidden symbol over a custom gradient":
+            settings.badge.background.usesCustomGradient = true
+            settings.badge.foreground.isHidden = true
+        case "symbol with the background hidden":
+            settings.badge.background.isHidden = true
+        case "imported symbol over a plain colour":
+            settings.badge.foreground.apply(try ImportedImage.testFixture(sourceName: "Glyph.png"))
+        default:
+            settings.badge.mode = .system
+        }
+
+        var catalog = MicaConfigAssetCatalog()
+        let json = try MicaConfigCodec.encode(settings: settings, assets: &catalog)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        let activators = MicaConfigKey.activatingBadgeNames.filter { object[$0] != nil }
+        #expect(!activators.isEmpty,
+                "\(variant) wrote no activator, so this badge decodes away: \(object.keys.sorted())")
+
+        // And prove it rather than trusting the key list: the badge survives a round trip.
+        let decoded = try Self.roundTrip(settings)
+        #expect(decoded.settings.badge.isVisible == true, "\(variant) lost its badge")
+    }
+
+    @Test("switching the badge symbol back on writes its keys again")
+    func badgeForegroundToggledBackOn_writesItsKeys() throws {
+        // The assertion that could not have been written before: gate 2 dropped these
+        // keys on the *background's* source, so no setting could bring them back.
+        var settings = IconSettings()
+        settings.badge.isVisible = true
+        settings.badge.foreground.symbolWeight = .bold
+        settings.badge.applyBackgroundImage(try ImportedImage.testFixture(sourceName: "Back.png"))
+        settings.badge.foreground.isHidden = false
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(object["badge-fg"] != nil)
+        #expect(object["badge-symbol-weight"] as? String == "bold")
+        // Rule 2 makes the foreground visible on decode, so no visibility key is needed.
+        #expect(object["badge-fg-visibility"] == nil)
+
+        let decoded = try Self.roundTrip(settings)
+        #expect(decoded.settings.badge.foreground.isHidden == false)
+        #expect(decoded.settings.badge.foreground.symbolWeight == .bold)
     }
 
     @Test("the identity set survives a round trip unchanged")
@@ -495,21 +587,19 @@ struct MicaConfigTests {
         #expect(result.warnings.isEmpty)
     }
 
-    /// An imported icon background replaces the foreground rather than sitting
-    /// behind it, so the foreground's keys — including its imported image and
-    /// that image's sidecar — are not written. Verified against the renderer:
-    /// `--icon-bg <image>` with `star.fill` and with `heart.fill --icon-symbol-color
-    /// green --icon-symbol-weight bold` produce byte-identical PNGs.
+    /// Importing an icon background hides the foreground, so gate 6 takes the
+    /// foreground's keys — including its imported image and that image's sidecar.
+    /// Same output as gate 2 produced, reached through a reversible visibility flag
+    /// rather than a veto nothing could reach past.
     @Test("an imported icon background drops the foreground it hides")
     func importedBackgroundDropsTheForeground() throws {
         var settings = IconSettings()
         settings.icon.foreground.apply(try ImportedImage.testFixture(fill: .systemRed, sourceName: "Glyph.png"))
         settings.icon.foreground.symbolName = "Glyph"
-        var background = settings.icon.background
-        background.apply(try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Backdrop.png"))
-        background.imageScale = 1.2
-        background.compensatesForPadding = false
-        settings.icon.background = background
+        settings.icon.applyBackgroundImage(
+            try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Backdrop.png"))
+        settings.icon.background.imageScale = 1.2
+        settings.icon.background.compensatesForPadding = false
 
         var catalog = MicaConfigAssetCatalog()
         let json = try MicaConfigCodec.encode(settings: settings, assets: &catalog)
@@ -521,6 +611,56 @@ struct MicaConfigTests {
         // Nothing from the hidden foreground, and only the background's sidecar.
         #expect(object.keys.allSatisfy { !$0.hasPrefix("icon-fg") && !$0.hasPrefix("icon-symbol") })
         #expect(catalog.assets.count == 1)
+        // The corner radius went to `.off` on import, which is now the baseline, so
+        // that key is omitted too.
+        #expect(object["icon-bg-corner-radius"] == nil)
+
+        let decoded = try Self.roundTrip(settings)
+        #expect(decoded.settings.icon.foreground.isHidden == true)
+        #expect(decoded.settings.icon.background.cornerRadiusStyle == .off)
+    }
+
+    @Test("switching the icon foreground back on writes its keys again")
+    func iconForegroundToggledBackOn_writesItsKeys() throws {
+        // The assertion gate 2 made impossible: its condition was the *background's*
+        // source, so no foreground setting could bring these keys back.
+        var settings = IconSettings()
+        settings.icon.foreground.symbolName = "heart.fill"
+        settings.icon.foreground.symbolWeight = .bold
+        settings.icon.applyBackgroundImage(
+            try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Backdrop.png"))
+        settings.icon.foreground.isHidden = false
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+
+        #expect(object["icon-fg"] as? String == "symbol:heart.fill")
+        #expect(object["icon-symbol-weight"] as? String == "bold")
+        // Rule 2 makes it visible on decode from `icon-fg` alone, so no visibility key.
+        #expect(object["icon-fg-visibility"] == nil)
+
+        let decoded = try Self.roundTrip(settings)
+        #expect(decoded.settings.icon.foreground.isHidden == false)
+        #expect(decoded.settings.icon.foreground.symbolName == "heart.fill")
+        #expect(decoded.settings.icon.foreground.symbolWeight == .bold)
+        #expect(decoded.settings.icon.background.image != nil)
+    }
+
+    @Test("a wanted corner radius over imported artwork is written")
+    func cornerRadiusOverImportedArtwork_isWritten() throws {
+        // The other side of the third baseline: `.off` is the import default and is
+        // omitted, so anything else the user picks has to be written or their clipped
+        // artwork comes back unclipped.
+        var settings = IconSettings()
+        settings.icon.applyBackgroundImage(try ImportedImage.testFixture(sourceName: "Art.png"))
+        settings.icon.background.cornerRadiusStyle = .macOS26
+
+        let json = try MicaConfigCodec.encode(settings: settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["icon-bg-corner-radius"] as? String == "macos26")
+
+        let decoded = try Self.roundTrip(settings)
+        #expect(decoded.settings.icon.background.cornerRadiusStyle == .macOS26)
     }
 
     @Test("System-mode appex colours round-trip beside the settings")
