@@ -638,6 +638,11 @@ IMPORT_CASES=(
     "revealing-foreground-changes-the-render|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg-visibility|on"
     "corner-radius-defaults-off|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|macos26"
     "corner-radius-off-is-the-default|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|off"
+    # The foreground rule, end to end. Rule 2: styling a foreground reveals it, so the
+    # render changes. And the documented surprise — the positional does not count
+    # towards rule 2, but naming the same symbol with --icon-fg does.
+    "rule2-symbol-colour-reveals-the-foreground|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-symbol-color|green"
+    "rule2-explicit-icon-fg-beats-the-positional|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg|symbol:star.fill"
 )
 
 # Bounds-filling artwork, built from a rendered icon so the script needs no new

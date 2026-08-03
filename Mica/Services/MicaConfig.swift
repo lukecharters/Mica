@@ -641,8 +641,27 @@ private struct ConfigReader {
         if let gradient = toggle(.iconSymbolGradient) {
             settings.icon.foreground.fillStyle = gradient ? .gradient : .flat
         }
+        // The icon's foreground rule, mirroring the builder branch for branch:
+        //
+        //   1. `icon-fg-visibility` present → honour it exactly.
+        //   2. Else an imported background + any other icon foreground key → visible.
+        //   3. Else an imported background → hidden.
+        //
+        // Absent `icon-fg-visibility` + an imported icon background ⇒ hidden is one of
+        // the three conditional baselines phase 7 must match on encode.
+        //
+        // Unlike the badge, this writes nothing without an imported background or an
+        // explicit key: the badge's decode always writes both layers because activation
+        // is what turns it on, whereas a visible icon foreground is the spec default
+        // decode starts from. Writing unconditionally here would restate that default
+        // and lose a `--config` base's value.
+        //
+        // No positional symbol to exclude — a configuration has none, so `icon-fg` is
+        // always an explicit foreground request in a file.
         if let visibility = toggle(.iconFGVisibility) {
             settings.icon.foreground.isHidden = !visibility
+        } else if importedBackground {
+            settings.icon.foreground.isHidden = !iconForegroundKeyGiven
         }
         if let iconMode {
             settings.icon.mode = iconMode
@@ -838,6 +857,19 @@ private struct ConfigReader {
             : groupBaseline
         settings.badge.foreground.isHidden = !(toggle(.badgeFGVisibility) ?? foregroundBaseline)
         settings.badge.background.isHidden = !(toggle(.badgeBGVisibility) ?? groupBaseline)
+    }
+
+    /// True when any key styling the icon *foreground* is present — rule 2 of the
+    /// foreground rule. Mirrors `IconForegroundOptions.foregroundArgumentGiven`, and
+    /// excludes `icon-fg-visibility` for the same reason: it is rule 1, honoured
+    /// exactly, and counting it would make `icon-fg-visibility: false` imply a wanted
+    /// foreground while asking to hide one.
+    private var iconForegroundKeyGiven: Bool {
+        let keys: [MicaConfigKey] = [
+            .iconFG, .iconFGScale, .iconSymbolRendering, .iconSymbolColor,
+            .iconSymbolPalette, .iconSymbolWeight, .iconSymbolGradient, .iconFGShadow,
+        ]
+        return keys.contains { values[$0] != nil }
     }
 
     /// True when any key styling the badge *foreground* is present — rule 2 of the

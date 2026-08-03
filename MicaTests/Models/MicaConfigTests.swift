@@ -709,6 +709,40 @@ struct MicaConfigTests {
         }
     }
 
+    @Test("An imported icon background alone hides the icon foreground")
+    func importedIconBackgroundAlone_hidesTheForeground() throws {
+        // The codec's mirror of the icon's foreground rule, branch for branch with the
+        // builder. Absent `icon-fg-visibility` + an imported icon background ⇒ hidden
+        // is one of the three conditional baselines phase 7 has to match on encode.
+        let bare = try Self.decode(["icon-bg": "art.png"])
+        #expect(bare.settings.icon.background.isHidden == false)
+        #expect(bare.settings.icon.foreground.isHidden == true)
+
+        // Rule 2: any other icon foreground key is a request for a foreground.
+        let styled = try Self.decode(["icon-bg": "art.png", "icon-symbol-color": "green"])
+        #expect(styled.settings.icon.foreground.isHidden == false)
+        let named = try Self.decode(["icon-bg": "art.png", "icon-fg": "symbol:heart.fill"])
+        #expect(named.settings.icon.foreground.isHidden == false)
+
+        // Rule 1: an explicit key wins either way, and outranks rule 2.
+        let forcedOn = try Self.decode(["icon-bg": "art.png", "icon-fg-visibility": true])
+        #expect(forcedOn.settings.icon.foreground.isHidden == false)
+        let forcedOff = try Self.decode([
+            "icon-bg": "art.png", "icon-symbol-color": "green", "icon-fg-visibility": false,
+        ])
+        #expect(forcedOff.settings.icon.foreground.isHidden == true)
+    }
+
+    @Test("A generated icon background never touches the foreground", arguments: [
+        "standard", "custom-gradient", "prerendered-liquid-glass",
+    ])
+    func generatedIconBackground_leavesTheForegroundAlone(_ kind: String) throws {
+        // The rule is conditional on a freshly *imported* background; nothing else may
+        // reach the foreground's visibility.
+        let result = try Self.decode(["icon-bg": kind])
+        #expect(result.settings.icon.foreground.isHidden == false)
+    }
+
     @Test("An imported badge background alone hides the badge foreground")
     func importedBadgeBackgroundAlone_hidesTheForeground() throws {
         // The codec's mirror of the badge's foreground rule: absent

@@ -332,6 +332,31 @@ struct IconForegroundOptions: ParsableArguments {
         )
     )
     var visibility: ToggleState?
+
+    /// True when any argument styling the icon *foreground* was given.
+    ///
+    /// Rule 2 of the foreground rule: naming one of these over an imported background
+    /// means you want a foreground, so importing artwork does not hide it. The badge's
+    /// counterpart is `BadgeOptions.foregroundArgumentGiven`.
+    ///
+    /// **The positional symbol is excluded structurally**, not by a special case: it
+    /// lives on `GenerateCommand`, not in here. That is the point — the positional is
+    /// present in nearly every invocation and carries no intent about the foreground,
+    /// so counting it would make rule 3 unreachable.
+    ///
+    /// **`visibility` is excluded deliberately.** It is rule 1, honoured exactly, and
+    /// counting it would make `--icon-fg-visibility off` imply a wanted foreground
+    /// while asking to hide one.
+    var foregroundArgumentGiven: Bool {
+        foreground != nil
+            || scale != nil
+            || symbolRendering != nil
+            || symbolColor != nil
+            || symbolPalette != nil
+            || symbolWeight != nil
+            || symbolGradient != nil
+            || shadow != nil
+    }
 }
 
 // MARK: - Icon Background Options
@@ -345,8 +370,22 @@ struct IconBackgroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-bg"),
         help: ArgumentHelp(
-            "Icon background",
-            discussion: "standard (color/gradient, default), custom-gradient (two-color gradient), prerendered-liquid-glass (Liquid Glass asset), or a path to an image file.",
+            // The abstract, not the discussion: an image path hiding the symbol is the
+            // one surprising consequence of the foreground rule, and the abstract is
+            // what a reader sees first. The positional not counting is the whole reason
+            // it can surprise — `generate command --icon-bg art.png` hides the symbol
+            // while `generate --icon-fg symbol:command --icon-bg art.png` keeps it.
+            "Icon background; an image path hides the symbol unless another icon foreground argument names one",
+            discussion: """
+                standard (color/gradient, default), custom-gradient (two-color gradient), \
+                prerendered-liquid-glass (Liquid Glass asset), or a path to an image file.
+
+                An imported background hides this group's foreground by default, because \
+                most such imports are a finished icon. Any other argument in the icon \
+                foreground or symbol namespace brings it back, and --icon-fg-visibility on \
+                forces it. The positional symbol does not count: it is present in nearly \
+                every invocation and says nothing about whether you want a foreground.
+                """,
             valueName: "standard|custom-gradient|prerendered-liquid-glass|path"
         )
     )
@@ -580,8 +619,16 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-bg"),
         help: ArgumentHelp(
-            "Badge background",
-            discussion: "standard (color/gradient, default), custom-gradient (two-color gradient), or a path to an image file.",
+            "Badge background; activates the badge, and an image path hides the badge symbol",
+            discussion: """
+                standard (color/gradient, default), custom-gradient (two-color gradient), \
+                or a path to an image file.
+
+                This flag activates the badge on its own, so badge artwork needs no \
+                --badge-fg. An imported background hides the badge symbol by default; \
+                any other argument in the badge foreground or symbol namespace brings it \
+                back, and --badge-fg-visibility on forces it.
+                """,
             valueName: "standard|custom-gradient|path"
         )
     )

@@ -439,7 +439,26 @@ class IconGenerationRunner {
                 settings.icon.foreground.fillStyle = symbolGradient.isOn ? .gradient : .flat
             }
 
-            // Foreground visibility (new --icon-fg-visibility → iconForegroundHidden)
+            // The icon's foreground rule, given a freshly imported background. Three
+            // branches in this order, the badge's mirror of which lives in its own
+            // block below:
+            //
+            //   1. `--icon-fg-visibility` given → honour it exactly. An explicit
+            //      statement always wins, `off` included.
+            //   2. Else, any other icon foreground argument given → visible. Styling a
+            //      foreground means you want one, so the import's default is overruled.
+            //   3. Else → hidden, which is what `IconSpec.applyBackgroundImage` already
+            //      set. `mica-cli generate command --icon-bg app.png` therefore renders
+            //      exactly what it renders today.
+            //
+            // The positional symbol does not count towards rule 2 — it is not in
+            // `IconForegroundOptions` — so `generate command --icon-bg app.png` hides
+            // the foreground while `generate --icon-fg symbol:command --icon-bg app.png`
+            // shows it. Documented in `--icon-bg`'s help abstract, since that is where
+            // someone meets the surprise.
+            if commandImportedBackground, command.iconForeground.foregroundArgumentGiven {
+                settings.icon.foreground.isHidden = false
+            }
             if let visibility = command.iconForeground.visibility {
                 settings.icon.foreground.isHidden = !visibility.isOn
             }
