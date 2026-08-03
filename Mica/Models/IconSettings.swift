@@ -396,7 +396,17 @@ enum BadgePosition: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// How the icon's chiclet is rounded. `.off` is auto-selected when a background
+/// image is imported, because artwork that fills its own bounds loses its corners
+/// to any radius at all — the same reason an imported *badge* background is
+/// deliberately unclipped. On a colour background `.off` gives a square chiclet:
+/// an option nobody is obliged to pick.
+///
+/// Deliberately the same three-case shape as `BackgroundShadowStyle`, which
+/// already reads `off / macOS 11-15 / macOS 26` and is already auto-set to `off`
+/// on import.
 enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
+    case off = "Off"
     case macOS11 = "macOS 11-15"
     case macOS26 = "macOS 26"
 

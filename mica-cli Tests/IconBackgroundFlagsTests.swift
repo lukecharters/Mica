@@ -88,6 +88,7 @@ struct IconBackgroundFlagsTests {
     func cornerRadius() throws {
         #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.cornerRadiusStyle == .macOS26)
         #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos11"])).icon.background.cornerRadiusStyle == .macOS11)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "off"])).icon.background.cornerRadiusStyle == .off)
     }
 
     @Test("--icon-bg-visibility off hides the background")

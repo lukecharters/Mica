@@ -352,10 +352,10 @@ struct IconBackgroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-bg-corner-radius"),
-        help: ArgumentHelp("Corner radius: macos11 or macos26 (default)", valueName: "style"),
+        help: ArgumentHelp("Corner radius: off, macos11, or macos26 (default)", valueName: "style"),
         transform: { style in
             guard IconCornerRadiusStyle.from(cliToken: style) != nil else {
-                throw ValidationError("Corner radius must be 'macos11' or 'macos26'")
+                throw ValidationError("Corner radius must be 'off', 'macos11', or 'macos26'")
             }
             return style.lowercased()
         }

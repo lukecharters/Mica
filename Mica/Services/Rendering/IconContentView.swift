@@ -36,7 +36,12 @@ struct IconContentView: View {
     // Scaled layout constants
     private var iconSize: CGFloat { displaySize }
     private var cornerRadius: CGFloat {
-        let baseRadius = settings.icon.background.cornerRadiusStyle == .macOS26 ? baseCornerRadius : baseCornerRadiusSequoia
+        let baseRadius: CGFloat
+        switch settings.icon.background.cornerRadiusStyle {
+        case .off: baseRadius = 0
+        case .macOS11: baseRadius = baseCornerRadiusSequoia
+        case .macOS26: baseRadius = baseCornerRadius
+        }
         return baseRadius * scaleFactor
     }
     private var backgroundInset: CGFloat { baseBackgroundInset * scaleFactor }
@@ -169,7 +174,7 @@ struct IconContentView: View {
                     let effectiveScale = settings.icon.background.imageScale
                         * (settings.icon.background.compensatesForPadding
                             ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
-                    Image(nsImage: nsImage)
+                    let artwork = Image(nsImage: nsImage)
                         .resizable()
                         .interpolation(.high)
                         .aspectRatio(contentMode: .fit)
@@ -177,15 +182,35 @@ struct IconContentView: View {
                             width: enclosureSize * effectiveScale,
                             height: enclosureSize * effectiveScale
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                        .shadow(
-                            color: Color.black.opacity(backgroundShadowOpacity),
-                            radius: backgroundShadowRadius,
-                            y: backgroundShadowOffset
+
+                    // `.off` skips the clip entirely — not `clipShape` at radius 0,
+                    // and not a `Rectangle()` either. Unclipped, the artwork defines
+                    // its own shape through its alpha and the shadow follows that
+                    // shape, which is the rule an imported badge background already
+                    // follows. Clipping to bounds would square the shadow off even
+                    // at radius 0.
+                    if settings.icon.background.cornerRadiusStyle == .off {
+                        backgroundShadowed(artwork)
+                    } else {
+                        backgroundShadowed(
+                            artwork.clipShape(
+                                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            )
                         )
+                    }
                 }
             }
         }
+    }
+
+    /// The icon background's shadow, so the clipped and unclipped imported-artwork
+    /// branches cannot drift apart.
+    private func backgroundShadowed<Content: View>(_ view: Content) -> some View {
+        view.shadow(
+            color: Color.black.opacity(backgroundShadowOpacity),
+            radius: backgroundShadowRadius,
+            y: backgroundShadowOffset
+        )
     }
 
     @ViewBuilder

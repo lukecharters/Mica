@@ -76,6 +76,7 @@ extension BadgePosition: SettingsTokenConvertible {
 extension IconCornerRadiusStyle: SettingsTokenConvertible {
     var cliToken: String {
         switch self {
+        case .off: return "off"
         case .macOS11: return "macos11"
         case .macOS26: return "macos26"
         }
