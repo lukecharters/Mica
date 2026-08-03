@@ -79,6 +79,15 @@ HAPPY_CASES=(
     # Out-of-gamut components are legal: this is Display P3 red in extended sRGB.
     "icon-bg-color-extended-wide-gamut|star.fill|--icon-bg-color|extended-srgb:1.09300,-0.22670,-0.15010,1.00000"
     "icon-symbol-color-extended-srgb|star.fill|--icon-symbol-color|extended-srgb:1.00000,1.00000,1.00000,1.00000"
+    # The bounded space prefixes (Phase 3), which replaced the bare r,g,b triple.
+    # The alpha is optional in both.
+    "icon-bg-color-srgb|star.fill|--icon-bg-color|srgb:0.2,0.6,0.90196"
+    "icon-bg-color-srgb-alpha|star.fill|--icon-bg-color|srgb:0.2,0.6,0.90196,0.5"
+    "icon-symbol-color-srgb|star.fill|--icon-symbol-color|srgb:1,1,1"
+    # display-p3: is the readable spelling of the wide-gamut case above, and only
+    # reaches a wide-gamut PNG through --color-space displayP3.
+    "icon-bg-color-display-p3|star.fill|--icon-bg-color|display-p3:1,0.2,0"
+    "icon-bg-color-display-p3-wide-gamut|star.fill|--color-space|displayP3|--icon-bg-color|display-p3:1,0,0"
     "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
     "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
     "icon-bg-gradient-colors-opacity|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|red:0.8,orange:0.4"
@@ -165,6 +174,18 @@ NEGATIVE_CASES=(
     # reporting, not a colour name to keep guessing at.
     "icon-bg-color-extended-wrong-count|extended-srgb requires 4 components|star.fill|--icon-bg-color|extended-srgb:1,1"
     "icon-bg-color-extended-not-a-number|Components must be finite numbers|star.fill|--icon-bg-color|extended-srgb:oops"
+    # srgb: and display-p3: name bounded spaces, so an out-of-range component is
+    # reported rather than clamped — and the error names the form that can carry it.
+    "icon-bg-color-srgb-out-of-range|components are 0-1|star.fill|--icon-bg-color|srgb:1.2,0,0"
+    "icon-bg-color-display-p3-out-of-range|components are 0-1|star.fill|--icon-bg-color|display-p3:0,0,1.5"
+    "icon-bg-color-srgb-wrong-count|takes 3 or 4 components|star.fill|--icon-bg-color|srgb:1,0"
+    # The six forms Phase 3 dropped. The bare triple is the one worth pinning: it
+    # guessed between 0-1 and 0-255, so 1,1,1 was white and 2,2,2 dark gray.
+    "icon-bg-color-bare-components-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|0.2,0.6,0.9"
+    "icon-bg-color-legacy-name-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|crimson"
+    "icon-bg-color-no-dot-alias-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|systemblue"
+    "icon-bg-color-rgba-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|rgba(255,0,0,0.5)"
+    "icon-bg-color-grayscale-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|0.5"
     "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"

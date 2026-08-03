@@ -908,7 +908,7 @@ private struct ConfigWriter {
         // effective colour wins (the hierarchical well writes its own field in
         // the GUI, but decode sets both from this key, as the flags do).
         if isSystem {
-            put(.iconSymbolColor, appexColors.iconSymbol.plistValue)
+            put(.iconSymbolColor, appexColors.iconSymbol.configValue)
         } else if iconSymbolStyling, !iconUsesPalette {
             let effective = iconFG.renderingStyle == .hierarchical ? iconFG.hierarchicalColor : iconFG.color
             put(.iconSymbolColor, effective.stringValue)
@@ -984,7 +984,7 @@ private struct ConfigWriter {
             }
         }
         if isSystem {
-            put(.iconBGColor, appexColors.iconEnclosure.plistValue)
+            put(.iconBGColor, appexColors.iconEnclosure.configValue)
         }
         // As with the foreground: still what gates the appex raster in System
         // mode, so it is never suppressed.
@@ -1051,7 +1051,7 @@ private struct ConfigWriter {
         }
         // Exactly one of colour / palette, as with the icon.
         if badgeIsSystem {
-            put(.badgeSymbolColor, appexColors.badgeSymbol.plistValue)
+            put(.badgeSymbolColor, appexColors.badgeSymbol.configValue)
         } else if badgeSymbolStyling, !badgeUsesPalette {
             let effective = badgeFG.renderingStyle == .hierarchical ? badgeFG.hierarchicalColor : badgeFG.color
             put(.badgeSymbolColor, effective.stringValue)
@@ -1107,7 +1107,7 @@ private struct ConfigWriter {
             }
         }
         if badgeIsSystem {
-            put(.badgeBGColor, appexColors.badgeEnclosure.plistValue)
+            put(.badgeBGColor, appexColors.badgeEnclosure.configValue)
         }
 
         // Layout.

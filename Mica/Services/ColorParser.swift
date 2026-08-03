@@ -17,9 +17,28 @@ import AppKit
 /// one place to hold the line.
 private let colorBridgeLock = NSLock()
 
-/// Enhanced color parser supporting multiple formats with comprehensive validation
-/// Supports: Named colors, Hex codes, RGB values, HSL, CSS colors, system colors, and opacity notation
+/// Mica's colour syntax, in one place: the string forms the CLI, the JSON reader
+/// and any GUI text entry all accept.
+///
+/// Five families, and nothing else (§4.3 of `docs/plans/colour-resolution.md`):
+/// a token from `ColorTokenTable`, hex, `rgb()`/`hsl()`, a *space-prefixed*
+/// component list, and any of the first three with a `:opacity` suffix.
+///
+/// Six forms were dropped in Phase 3 on 2026-08-03, all of them footguns or
+/// duplicates: bare `r,g,b(,a)`, 18 CSS-ish colour names, percentage `rgb()`
+/// components, single-number grayscale, `systemblue`-style no-dot aliases, and
+/// `rgba()`/`hsla()`. **Do not reinstate one to make a string parse** — the point
+/// is that a colour has one spelling, so two surfaces cannot disagree about what
+/// it means. The bare triple is the one worth remembering: it read as 0–1 unless
+/// a component exceeded 1 and then as 0–255, so `1,1,1` was white and `2,2,2`
+/// was dark gray. `srgb:` says the same thing without the guess.
 struct ColorParser {
+
+    /// Bounded-space prefixes, accepted as **input only**. Nothing writes them:
+    /// a stored colour is a token or `extended-srgb:` (§4.4 of the plan), so
+    /// there is one spelling in a configuration however it was typed.
+    static let srgbSpaceName = "srgb"
+    static let displayP3SpaceName = "display-p3"
 
     /// Convert a SwiftUI `Color` to an `NSColor`, safely from any thread.
     /// See `colorBridgeLock` — call this rather than `NSColor(color)` directly.
@@ -31,26 +50,24 @@ struct ColorParser {
     
     // MARK: - Public Interface
     
-    /// Parse a color string that may include opacity (e.g., "white:0.5", "rgba(255,255,255,0.5)")
+    /// Parse a colour string that may carry a `:opacity` suffix — `"white:0.5"`,
+    /// `"#0088FF:0.5"`, `"rgb(0,136,255):0.5"`.
+    ///
+    /// The suffix **scales** the colour's own alpha rather than replacing it
+    /// (decision D4), so `label:0.5` is ~42% because `labelColor` is only ~85%
+    /// opaque. Every colour flag in the CLI goes through here rather than through
+    /// `parse`; `ColorOpacityFlagsTests` pins that.
     static func parseWithOpacity(_ input: String) throws -> Color {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Extended-component forms carry their own alpha and contain a colon, so
-        // they must be recognised before the `name:opacity` split below — which
-        // would otherwise read "extended-srgb" as a colour name.
-        if let components = try ExtendedComponents(parsing: trimmed) {
+        // Space-prefixed forms carry their own alpha and contain a colon, so they
+        // must be recognised before the `name:opacity` split below — which would
+        // otherwise read "display-p3" as a colour name and "1,0.2,0" as an
+        // opacity. Do not reorder these.
+        if let components = try spacePrefixedComponents(parsing: trimmed) {
             return components.color
         }
 
-        // Handle CSS-style rgba/hsla formats with built-in opacity
-        if trimmed.lowercased().hasPrefix("rgba(") {
-            return try parseRGBAColor(trimmed)
-        }
-        
-        if trimmed.lowercased().hasPrefix("hsla(") {
-            return try parseHSLAColor(trimmed)
-        }
-        
         // Handle opacity notation with colon separator
         let components = trimmed.split(separator: ":")
         let colorString = String(components[0])
@@ -68,21 +85,21 @@ struct ColorParser {
         return baseColor
     }
     
-    /// Parse a color string into a SwiftUI Color
-    /// Supports multiple formats: named colors, hex, RGB, HSL, CSS colors, system colors
+    /// Parse a colour string with no opacity suffix. Four families, tried in
+    /// order of how unambiguously each one identifies itself.
     static func parse(_ input: String) throws -> Color {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         guard !trimmed.isEmpty else {
             throw ColorParseError.emptyInput("Color string cannot be empty")
         }
-        
+
         // Try different parsing strategies in order of specificity
 
-        // 0. Extended-component form (`extended-srgb:` / `extended-gray:`), the
-        //    form `.mica` documents store. Tried first because it is the only one
-        //    that names its colour space, so a match is unambiguous.
-        if let components = try ExtendedComponents(parsing: trimmed) {
+        // 0. A form that names its own colour space — `srgb:`, `display-p3:`,
+        //    `extended-srgb:`, `extended-gray:`. Tried first because naming the
+        //    space is what makes a match unambiguous.
+        if let components = try spacePrefixedComponents(parsing: trimmed) {
             return components.color
         }
 
@@ -98,135 +115,149 @@ struct ColorParser {
             return color
         }
 
-        // 3. Legacy CSS-ish colour names that exist in no other Mica vocabulary.
-        if let namedColor = parseLegacyNamedColor(trimmed) {
-            return namedColor
-        }
-
-        // 4. Hex color formats (with multiple variations)
+        // 3. Hex color formats (with multiple variations)
         if let color = try? parseHexColorVariations(trimmed) {
             return color
         }
-        
-        // 5. RGB format variations
-        if trimmed.contains(",") && !trimmed.contains("(") {
-            return try parseRGBVariations(trimmed)
-        }
-        
-        // 6. Single number grayscale
-        if let color = try? parseGrayscaleColor(trimmed) {
-            return color
-        }
-        
+
         // If nothing worked, provide helpful error with suggestions
         throw ColorParseError.invalidFormat(trimmed, generateSuggestions(for: trimmed))
     }
-    
+
+    // MARK: - Space-Prefixed Components
+
+    /// The `space:components` forms — every colour that names its own colour
+    /// space, parsed in one place. Four space names in two pairs, which differ in
+    /// what they promise:
+    ///
+    /// - **`srgb:` and `display-p3:`** name *bounded* spaces, so components must
+    ///   be 0–1 and anything outside is a mistake worth reporting rather than a
+    ///   colour to quietly clamp. Alpha is optional and defaults to 1. A
+    ///   `display-p3:` colour is converted here, at the door, so everything
+    ///   downstream stores one space.
+    /// - **`extended-srgb:` and `extended-gray:`** name *extended* spaces, where
+    ///   components legitimately fall outside 0–1 — that is how a wide-gamut
+    ///   colour is carried. `extended-srgb:` is what Mica writes;
+    ///   `extended-gray:` is read-only, because Icon Composer writes it.
+    ///
+    /// Returns `nil` when `input` names no space at all, so callers fall through
+    /// to the other syntaxes. Throws when the space name matches but the
+    /// components do not — `"srgb:oops"` is a mistake worth reporting, not a
+    /// colour name to keep guessing at.
+    ///
+    /// **Every caller must try this before splitting on `:` for an opacity
+    /// suffix.** `parse`, `parseWithOpacity` and `MicaColorValue.init(parsing:)`
+    /// all do; reordering any of them makes `display-p3` read as a colour name.
+    static func spacePrefixedComponents(parsing input: String) throws -> ExtendedComponents? {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let separator = trimmed.firstIndex(of: ":") else { return nil }
+        let space = String(trimmed[trimmed.startIndex..<separator]).lowercased()
+
+        switch space {
+        case ExtendedComponents.srgbSpaceName, ExtendedComponents.graySpaceName:
+            return try ExtendedComponents(parsing: trimmed)
+        case srgbSpaceName, displayP3SpaceName:
+            return try boundedComponents(
+                space: space,
+                body: String(trimmed[trimmed.index(after: separator)...]),
+                source: trimmed
+            )
+        default:
+            return nil
+        }
+    }
+
+    /// `srgb:r,g,b(,a)` or `display-p3:r,g,b(,a)`, every component in 0–1.
+    private static func boundedComponents(
+        space: String,
+        body: String,
+        source: String
+    ) throws -> ExtendedComponents {
+        let parts = body
+            .split(separator: ",", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+
+        guard parts.count == 3 || parts.count == 4 else {
+            throw ColorParseError.invalidSpaceComponents(
+                source,
+                "\(space): takes 3 or 4 components (r,g,b or r,g,b,a), got \(parts.count)"
+            )
+        }
+
+        var values: [Double] = []
+        for part in parts {
+            guard let value = Double(part), value.isFinite else {
+                throw ColorParseError.invalidSpaceComponents(
+                    source,
+                    "Components must be numbers, e.g. \"\(space):0.2,0.6,0.9\""
+                )
+            }
+            // Bounded space, so an out-of-range component is reported rather than
+            // clamped: silently desaturating someone's colour is the failure mode
+            // this whole grammar exists to end. `extended-srgb:` is the escape.
+            guard (0.0...1.0).contains(value) else {
+                throw ColorParseError.invalidSpaceComponents(
+                    source,
+                    "\(space): components are 0-1, and \(value) is outside that. "
+                        + "Use \(ExtendedComponents.srgbSpaceName): for a colour beyond the gamut."
+                )
+            }
+            values.append(value)
+        }
+
+        let alpha = values.count == 4 ? values[3] : 1.0
+        if space == displayP3SpaceName {
+            return .convertingDisplayP3(r: values[0], g: values[1], b: values[2], a: alpha)
+        }
+        return .srgb(r: values[0], g: values[1], b: values[2], a: alpha)
+    }
+
     // MARK: - CSS-Style Color Parsing
-    
+
     private static func parseCSSStyleColor(_ input: String) throws -> Color {
         let lowercased = input.lowercased()
-        
+
         if lowercased.hasPrefix("rgb(") {
             return try parseRGBFunctionColor(input)
         }
-        
-        if lowercased.hasPrefix("rgba(") {
-            return try parseRGBAColor(input)
-        }
-        
+
         if lowercased.hasPrefix("hsl(") {
             return try parseHSLColor(input)
         }
-        
-        if lowercased.hasPrefix("hsla(") {
-            return try parseHSLAColor(input)
-        }
-        
+
         throw ColorParseError.unsupportedCSSFormat(input)
     }
-    
+
+    /// `rgb(r,g,b)` or `rgb(r,g,b,a)`. Alpha folds into `rgb()` rather than
+    /// earning a separate `rgba()` spelling — one function, one name.
     private static func parseRGBFunctionColor(_ input: String) throws -> Color {
         let content = try extractFunctionContent(input, functionName: "rgb")
         let components = parseCommaSeparatedValues(content)
-        
-        guard components.count == 3 else {
-            throw ColorParseError.invalidRGBFormat(input, "rgb() requires exactly 3 values")
+
+        guard components.count == 3 || components.count == 4 else {
+            throw ColorParseError.invalidRGBFormat(input, "rgb() takes 3 or 4 values (r,g,b or r,g,b,a)")
         }
-        
-        let rgb = try parseRGBComponents(components, source: input)
-        return Color(red: rgb.0, green: rgb.1, blue: rgb.2)
-    }
-    
-    private static func parseRGBAColor(_ input: String) throws -> Color {
-        let content = try extractFunctionContent(input, functionName: "rgba")
-        let components = parseCommaSeparatedValues(content)
-        
-        guard components.count == 4 else {
-            throw ColorParseError.invalidRGBAFormat(input, "rgba() requires exactly 4 values")
-        }
-        
+
         let rgb = try parseRGBComponents(Array(components[0..<3]), source: input)
-        let alpha = try parseAlphaComponent(components[3], source: input)
-        
+        let alpha = components.count == 4 ? try parseAlphaComponent(components[3], source: input) : 1.0
         return Color(red: rgb.0, green: rgb.1, blue: rgb.2, opacity: alpha)
     }
-    
+
+    /// `hsl(h,s%,l%)` or `hsl(h,s%,l%,a)`. Saturation and lightness keep their
+    /// `%` signs — they are percentages by definition, which is why dropping
+    /// percentage components from `rgb()` does not touch them.
     private static func parseHSLColor(_ input: String) throws -> Color {
         let content = try extractFunctionContent(input, functionName: "hsl")
         let components = parseCommaSeparatedValues(content)
-        
-        guard components.count == 3 else {
-            throw ColorParseError.invalidHSLFormat(input, "hsl() requires exactly 3 values")
+
+        guard components.count == 3 || components.count == 4 else {
+            throw ColorParseError.invalidHSLFormat(input, "hsl() takes 3 or 4 values (h,s%,l% or h,s%,l%,a)")
         }
-        
-        return try parseHSLComponents(components, alpha: 1.0, source: input)
-    }
-    
-    private static func parseHSLAColor(_ input: String) throws -> Color {
-        let content = try extractFunctionContent(input, functionName: "hsla")
-        let components = parseCommaSeparatedValues(content)
-        
-        guard components.count == 4 else {
-            throw ColorParseError.invalidHSLAFormat(input, "hsla() requires exactly 4 values")
-        }
-        
-        let alpha = try parseAlphaComponent(components[3], source: input)
+
+        let alpha = components.count == 4 ? try parseAlphaComponent(components[3], source: input) : 1.0
         return try parseHSLComponents(Array(components[0..<3]), alpha: alpha, source: input)
     }
-    
-    // MARK: - Legacy Named Color Parsing
 
-    /// CSS-ish colour names that appear in no other Mica vocabulary — not in the
-    /// GUI presets, not in the JSON writer's tokens, not in the appex grammar. They
-    /// are kept only because they already parse; §4.3 of
-    /// `docs/plans/colour-resolution.md` drops them in Phase 3, since hex says the
-    /// same thing unambiguously. **Do not add to this list** — a new colour name
-    /// belongs in `ColorTokenTable`.
-    private static func parseLegacyNamedColor(_ name: String) -> Color? {
-        switch name.lowercased() {
-        case "lightgray", "lightgrey": return Color(.lightGray)
-        case "darkgray", "darkgrey": return Color(.darkGray)
-        case "magenta": return Color(.magenta)
-        case "lime": return Color(red: 0, green: 1, blue: 0)
-        case "navy": return Color(red: 0, green: 0, blue: 0.5)
-        case "maroon": return Color(red: 0.5, green: 0, blue: 0)
-        case "olive": return Color(red: 0.5, green: 0.5, blue: 0)
-        case "silver": return Color(red: 0.75, green: 0.75, blue: 0.75)
-        case "gold": return Color(red: 1, green: 0.84, blue: 0)
-        case "crimson": return Color(red: 0.86, green: 0.08, blue: 0.24)
-        case "violet": return Color(red: 0.93, green: 0.51, blue: 0.93)
-        case "turquoise": return Color(red: 0.25, green: 0.88, blue: 0.82)
-        case "coral": return Color(red: 1, green: 0.5, blue: 0.31)
-        case "salmon": return Color(red: 0.98, green: 0.5, blue: 0.45)
-        case "khaki": return Color(red: 0.94, green: 0.9, blue: 0.55)
-        case "plum": return Color(red: 0.87, green: 0.63, blue: 0.87)
-        case "orchid": return Color(red: 0.85, green: 0.44, blue: 0.84)
-        
-        default: return nil
-        }
-    }
-    
     // MARK: - Enhanced Hex Color Parsing
     
     private static func parseHexColorVariations(_ input: String) throws -> Color {
@@ -294,84 +325,31 @@ struct ColorParser {
         return Color(red: red, green: green, blue: blue, opacity: alpha)
     }
     
-    // MARK: - Enhanced RGB Parsing
-    
-    /// Bare comma-separated `r,g,b(,a)`. Component semantics deliberately match
-    /// the System-mode resolver (`AppexColor.plistValue(fromCLIString:)`) so the
-    /// same string means the same color in both generation modes: components are
-    /// 0–1 floats, or 0–255 when any of r/g/b exceeds 1; percentages are also
-    /// accepted; alpha is always 0–1.
-    private static func parseRGBVariations(_ input: String) throws -> Color {
-        let components = parseCommaSeparatedValues(input)
+    // MARK: - RGB Components
 
-        guard components.count == 3 || components.count == 4 else {
-            throw ColorParseError.invalidRGBFormat(input, "RGB format requires 3 or 4 comma-separated values (r,g,b or r,g,b,a)")
-        }
-
-        let rgb = try parseBareRGBComponents(Array(components[0..<3]), source: input)
-        let alpha = components.count == 4 ? try parseAlphaComponent(components[3], source: input) : 1.0
-        return Color(red: rgb.0, green: rgb.1, blue: rgb.2, opacity: alpha)
-    }
-
-    private static func parseBareRGBComponents(_ components: [String], source: String) throws -> (Double, Double, Double) {
-        var values: [Double] = []
-        var isPercentage: [Bool] = []
+    /// The integer components inside `rgb()`, 0–255.
+    ///
+    /// Percentages were dropped in Phase 3: `rgb(100%,50%,0%)` and
+    /// `srgb:1,0.5,0` said the same thing, and one of them names its colour
+    /// space. The error points at the survivor.
+    private static func parseRGBComponents(_ components: [String], source: String) throws -> (Double, Double, Double) {
+        var rgbValues: [Double] = []
 
         for component in components {
             let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if trimmed.hasSuffix("%") {
-                let percentString = String(trimmed.dropLast())
-                guard let percent = Double(percentString), percent >= 0 && percent <= 100 else {
-                    throw ColorParseError.invalidRGBPercentage(source, "RGB percentage values must be 0-100%")
-                }
-                values.append(percent / 100.0)
-                isPercentage.append(true)
-            } else {
-                guard let value = Double(trimmed), value >= 0 && value <= 255 else {
-                    throw ColorParseError.invalidRGBValues(source, "RGB values must be 0-1 floats, 0-255, or percentages 0-100%")
-                }
-                values.append(value)
-                isPercentage.append(false)
+            guard let intValue = Int(trimmed), intValue >= 0 && intValue <= 255 else {
+                throw ColorParseError.invalidRGBValues(
+                    source,
+                    "rgb() values are integers 0-255. For fractional components use \"\(srgbSpaceName):r,g,b\"."
+                )
             }
+            rgbValues.append(Double(intValue) / 255.0)
         }
 
-        // Scale rule (mirrors AppexColorResolver): if any non-percentage
-        // component exceeds 1, all non-percentage components are 0-255.
-        let treatAs255 = zip(values, isPercentage).contains { value, isPercent in !isPercent && value > 1.0 }
-        let normalized = zip(values, isPercentage).map { value, isPercent in
-            (treatAs255 && !isPercent) ? value / 255.0 : value
-        }
-
-        return (normalized[0], normalized[1], normalized[2])
-    }
-    
-    private static func parseRGBComponents(_ components: [String], source: String) throws -> (Double, Double, Double) {
-        var rgbValues: [Double] = []
-        
-        for (_, component) in components.enumerated() {
-            let trimmed = component.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            // Handle percentage values (0-100%)
-            if trimmed.hasSuffix("%") {
-                let percentString = String(trimmed.dropLast())
-                guard let percent = Double(percentString), percent >= 0 && percent <= 100 else {
-                    throw ColorParseError.invalidRGBPercentage(source, "RGB percentage values must be 0-100%")
-                }
-                rgbValues.append(percent / 100.0)
-            }
-            // Handle regular values (0-255)
-            else {
-                guard let intValue = Int(trimmed), intValue >= 0 && intValue <= 255 else {
-                    throw ColorParseError.invalidRGBValues(source, "RGB values must be integers 0-255 or percentages 0-100%")
-                }
-                rgbValues.append(Double(intValue) / 255.0)
-            }
-        }
-        
         return (rgbValues[0], rgbValues[1], rgbValues[2])
     }
-    
+
+
     // MARK: - HSL Color Parsing
     
     private static func parseHSLComponents(_ components: [String], alpha: Double, source: String) throws -> Color {
@@ -429,26 +407,6 @@ struct ColorParser {
         return alpha
     }
     
-    // MARK: - Grayscale Parsing
-    
-    private static func parseGrayscaleColor(_ input: String) throws -> Color {
-        guard let value = Double(input) else {
-            throw ColorParseError.invalidGrayscale(input)
-        }
-        
-        // Support both 0-1 and 0-255 ranges
-        let normalizedValue: Double
-        if value <= 1.0 {
-            normalizedValue = value
-        } else if value <= 255.0 {
-            normalizedValue = value / 255.0
-        } else {
-            throw ColorParseError.invalidGrayscale(input, "Grayscale values must be 0-1 or 0-255")
-        }
-        
-        return Color(red: normalizedValue, green: normalizedValue, blue: normalizedValue)
-    }
-    
     // MARK: - Helper Functions
     
     private static func extractFunctionContent(_ input: String, functionName: String) throws -> String {
@@ -486,10 +444,10 @@ struct ColorParser {
         // Add format suggestions
         if suggestions.isEmpty {
             suggestions = [
-                "Named colors: blue, red, green, etc.",
-                "Hex: #FF5733 or FF5733",
-                "RGB: 255,87,51 or rgb(255,87,51)",
-                "HSL: hsl(9,100%,60%)",
+                "Named colors: blue, red, label, system.blue",
+                "Hex: #FF5733, #F53, #FF5733CC",
+                "Functions: rgb(255,87,51), hsl(9,100%,60%)",
+                "Components: srgb:1,0.34,0.2 or display-p3:1,0.34,0.2",
                 "With opacity: blue:0.5"
             ]
         }
@@ -503,8 +461,12 @@ struct ColorParser {
 extension ColorParser {
     /// A colour written as its colour space's name, a colon, then components —
     /// `"extended-srgb:0.00000,0.47843,1.00000,1.00000"` or
-    /// `"extended-gray:1.00000,1.00000"`. This is Icon Composer's encoding, and the
-    /// resolved form a `.mica` document stores (see `MicaColor`).
+    /// `"extended-gray:1.00000,1.00000"`. This is Icon Composer's encoding, and
+    /// the form `MicaColorValue` stores when a colour has no token to name it.
+    ///
+    /// It is also the type the bounded `srgb:`/`display-p3:` input forms resolve
+    /// *to*, so there is one stored space however a colour was typed. See
+    /// `ColorParser.spacePrefixedComponents(parsing:)`.
     ///
     /// Both spaces are *extended*, so components legitimately fall outside 0–1: a
     /// Display P3 red is `extended-srgb:1.09300,-0.22670,-0.15010,1.00000`. That is
@@ -620,6 +582,34 @@ extension ColorParser {
             }
         }
 
+        /// Display P3 components (0–1), converted to the extended sRGB Mica
+        /// stores — the `display-p3:` input form's destination.
+        ///
+        /// P3 is the wider gamut, so most of it lands *outside* 0–1 here: a P3 red
+        /// is `extended-srgb:1.09300,-0.22670,-0.15010,1.00000`. Nothing clamps,
+        /// because that conversion is exactly how a wide-gamut colour survives to
+        /// the Display P3 export path (§1.2 of the plan). Storing one space is
+        /// what lets the JSON writer, the renderer and the appex projection each
+        /// have a single case to handle.
+        static func convertingDisplayP3(r: Double, g: Double, b: Double, a: Double) -> ExtendedComponents {
+            let p3 = NSColor(
+                colorSpace: .displayP3,
+                components: [CGFloat(r), CGFloat(g), CGFloat(b), CGFloat(a)],
+                count: 4
+            )
+            // `usingColorSpace` returns nil only for pattern colours, which a
+            // component colour never is.
+            guard let extended = p3.usingColorSpace(.extendedSRGB) else {
+                return .srgb(r: r, g: g, b: b, a: a)
+            }
+            return .srgb(
+                r: Double(extended.redComponent),
+                g: Double(extended.greenComponent),
+                b: Double(extended.blueComponent),
+                a: Double(extended.alphaComponent)
+            )
+        }
+
         /// Resolve a `Color` to extended sRGB components.
         ///
         /// Always `.srgb`, never `.gray`: extended sRGB represents everything the
@@ -627,8 +617,8 @@ extension ColorParser {
         /// predictable. `.gray` exists to *read* what Icon Composer writes.
         ///
         /// A dynamic colour is resolved against the current drawing appearance and
-        /// stops being dynamic. That loss is why `MicaColor` prefers a semantic
-        /// token and only falls back to this.
+        /// stops being dynamic. That loss is why `MicaColorValue` keeps a token
+        /// whenever it has one and only falls back to this.
         static func resolving(_ color: Color) -> ExtendedComponents {
             let nsColor = ColorParser.nsColor(from: color)
             // `usingColorSpace` returns nil only for pattern colours, which cannot
@@ -685,17 +675,14 @@ enum ColorParseError: LocalizedError {
     case invalidHexLength(String, String)
     case invalidHexValue(String, String)
     case invalidRGBFormat(String, String)
-    case invalidRGBAFormat(String, String)
     case invalidRGBValues(String, String)
-    case invalidRGBPercentage(String, String)
     case invalidHSLFormat(String, String)
-    case invalidHSLAFormat(String, String)
     case invalidHue(String, String)
     case invalidPercentage(String, String)
     case invalidAlpha(String, String)
     case invalidOpacity(String, String)
-    case invalidGrayscale(String, String = "Invalid grayscale value")
     case invalidExtendedComponents(String, String)
+    case invalidSpaceComponents(String, String)
     case invalidFunctionFormat(String, String)
     case missingPercentageSign(String, String)
     case unknownSystemColor(String)
@@ -713,16 +700,10 @@ enum ColorParseError: LocalizedError {
             return "Invalid hex color value: '\(hex)'. \(message)"
         case .invalidRGBFormat(let rgb, let message):
             return "Invalid RGB format: '\(rgb)'. \(message)"
-        case .invalidRGBAFormat(let rgba, let message):
-            return "Invalid RGBA format: '\(rgba)'. \(message)"
         case .invalidRGBValues(let rgb, let message):
             return "Invalid RGB values: '\(rgb)'. \(message)"
-        case .invalidRGBPercentage(let source, let message):
-            return "Invalid RGB percentage in '\(source)'. \(message)"
         case .invalidHSLFormat(let hsl, let message):
             return "Invalid HSL format: '\(hsl)'. \(message)"
-        case .invalidHSLAFormat(let hsla, let message):
-            return "Invalid HSLA format: '\(hsla)'. \(message)"
         case .invalidHue(let source, let message):
             return "Invalid hue in '\(source)'. \(message)"
         case .invalidPercentage(let source, let message):
@@ -731,10 +712,10 @@ enum ColorParseError: LocalizedError {
             return "Invalid alpha in '\(source)'. \(message)"
         case .invalidOpacity(let opacity, let message):
             return "Invalid opacity value: '\(opacity)'. \(message)"
-        case .invalidGrayscale(let input, let message):
-            return "Invalid grayscale: '\(input)'. \(message)"
         case .invalidExtendedComponents(let input, let message):
             return "Invalid extended color components: '\(input)'. \(message)"
+        case .invalidSpaceComponents(let input, let message):
+            return "Invalid color components: '\(input)'. \(message)"
         case .invalidFunctionFormat(let input, let message):
             return "Invalid function format: '\(input)'. \(message)"
         case .missingPercentageSign(let source, let message):

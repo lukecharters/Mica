@@ -9,7 +9,7 @@ import AppKit
     /// Resolve a SwiftUI Color to sRGB components so tests can assert actual
     /// values, not just "didn't throw".
     private func srgb(_ color: Color) throws -> (r: Double, g: Double, b: Double, a: Double) {
-        let nsColor = try #require(NSColor(color).usingColorSpace(.sRGB))
+        let nsColor = try #require(ColorParser.nsColor(from: color).usingColorSpace(.sRGB))
         return (Double(nsColor.redComponent), Double(nsColor.greenComponent),
                 Double(nsColor.blueComponent), Double(nsColor.alphaComponent))
     }
@@ -32,10 +32,7 @@ import AppKit
     @Test(arguments: [
         "blue", "red", "green", "orange", "yellow", "pink", "purple",
         "indigo", "teal", "mint", "cyan", "brown", "white", "black",
-        "gray", "grey", "clear", "transparent",
-        "lightgray", "darkgray", "magenta", "lime", "navy", "maroon",
-        "olive", "silver", "gold", "crimson", "violet", "turquoise",
-        "coral", "salmon", "khaki", "plum", "orchid"
+        "gray", "grey", "clear", "transparent"
     ])
     func parsesNamedColor(_ name: String) throws {
         _ = try ColorParser.parse(name)
@@ -67,24 +64,25 @@ import AppKit
         #expect(throws: ColorParseError.self) { try ColorParser.parse(hex) }
     }
 
-    // MARK: - CSS functions
+    // MARK: - rgb() / hsl()
 
     @Test func parsesRGB() throws { _ = try ColorParser.parse("rgb(255,128,0)") }
-    @Test func parsesRGBA() throws { _ = try ColorParser.parse("rgba(255,128,0,0.5)") }
     @Test func parsesHSL() throws { _ = try ColorParser.parse("hsl(180,50%,50%)") }
-    @Test func parsesHSLA() throws { _ = try ColorParser.parse("hsla(180,50%,50%,0.5)") }
-    @Test func parsesRGBPercentages() throws { _ = try ColorParser.parse("rgb(100%,50%,0%)") }
+
+    /// Alpha is a 4th argument to `rgb()`/`hsl()` rather than an `rgba()`/`hsla()
+    /// spelling of its own — one function, one name (§4.3 of the colour plan).
+    @Test func rgbAndHSLTakeAFourthAlphaArgument() throws {
+        try expectColor("rgb(255,0,0,0.5)", (1, 0, 0, 0.5))
+        try expectColor("hsl(0,100%,50%,0.25)", (1, 0, 0, 0.25))
+    }
 
     @Test func rejectsRGBOutOfRange() {
         #expect(throws: ColorParseError.self) { try ColorParser.parse("rgb(256,0,0)") }
     }
 
-    @Test func rejectsRGBWrongArity() {
-        #expect(throws: ColorParseError.self) { try ColorParser.parse("rgb(1,2)") }
-    }
-
-    @Test func rejectsRGBAWrongArity() {
-        #expect(throws: ColorParseError.self) { try ColorParser.parse("rgba(1,2,3)") }
+    @Test(arguments: ["rgb(1,2)", "rgb(1,2,3,4,5)"])
+    func rejectsRGBWrongArity(_ input: String) {
+        #expect(throws: ColorParseError.self) { try ColorParser.parse(input) }
     }
 
     @Test func rejectsHSLWithoutPercentage() {
@@ -92,14 +90,13 @@ import AppKit
     }
 
     @Test func rejectsAlphaOutOfRange() {
-        #expect(throws: ColorParseError.self) { try ColorParser.parse("rgba(0,0,0,1.5)") }
+        #expect(throws: ColorParseError.self) { try ColorParser.parse("rgb(0,0,0,1.5)") }
     }
 
     // MARK: - System colors
 
     @Test(arguments: [
-        "system.blue", "systemBlue",
-        "system.red", "systemRed",
+        "system.blue", "system.red", "system.gray", "system.grey",
         "label", "secondary.label", "tertiary.label", "quaternary.label"
     ])
     func parsesSystemColor(_ name: String) throws {
@@ -116,12 +113,9 @@ import AppKit
         _ = try ColorParser.parseWithOpacity("white")
     }
 
-    @Test func parseWithOpacityHandlesRGBA() throws {
-        _ = try ColorParser.parseWithOpacity("rgba(255,0,0,0.5)")
-    }
-
-    @Test func parseWithOpacityHandlesHSLA() throws {
-        _ = try ColorParser.parseWithOpacity("hsla(180,50%,50%,0.5)")
+    @Test func parseWithOpacityHandlesFunctionForms() throws {
+        _ = try ColorParser.parseWithOpacity("rgb(255,0,0):0.5")
+        _ = try ColorParser.parseWithOpacity("hsl(180,50%,50%):0.5")
     }
 
     @Test(arguments: ["white:1.5", "white:-0.1", "white:abc"])
@@ -141,8 +135,7 @@ import AppKit
 
     @Test func rgbFunctionParsesToExpectedComponents() throws {
         try expectColor("rgb(255,128,0)", (1, 128.0 / 255, 0, 1))
-        try expectColor("rgb(100%,50%,0%)", (1, 0.5, 0, 1))
-        try expectColor("rgba(255,0,0,0.5)", (1, 0, 0, 0.5))
+        try expectColor("rgb(0,136,255)", (0, 136.0 / 255, 1, 1))
     }
 
     /// CSS HSL, not HSB: hsl(0,100%,50%) is pure red (#FF0000), and lightness
@@ -153,58 +146,90 @@ import AppKit
         try expectColor("hsl(240,100%,50%)", (0, 0, 1, 1))
         try expectColor("hsl(0,100%,100%)", (1, 1, 1, 1))
         try expectColor("hsl(0,0%,50%)", (0.5, 0.5, 0.5, 1))
-        try expectColor("hsla(0,100%,50%,0.25)", (1, 0, 0, 0.25))
     }
 
-    // MARK: - Bare r,g,b(,a) — semantics shared with the System-mode resolver
+    // MARK: - Space-prefixed components
 
-    /// Components are 0-1 floats, or 0-255 when any of r/g/b exceeds 1 —
-    /// the same rule as AppexColor.plistValue(fromCLIString:), so a color
-    /// string means the same thing in both generation modes.
-    @Test func bareRGBTreatsAllLEQOneAsFloats() throws {
-        try expectColor("1,1,1", (1, 1, 1, 1))
-        try expectColor("0.5,0.5,0.5", (0.5, 0.5, 0.5, 1))
-        try expectColor("0,0,1", (0, 0, 1, 1))
+    @Test func srgbPrefixParsesToExpectedComponents() throws {
+        try expectColor("srgb:1,0,0", (1, 0, 0, 1))
+        try expectColor("srgb:0.2,0.42,0.9", (0.2, 0.42, 0.9, 1))
+        try expectColor("srgb:1,0,0,0.5", (1, 0, 0, 0.5))
     }
 
-    @Test func bareRGBTreatsAnyGreaterThanOneAs255Scale() throws {
-        try expectColor("255,0,0", (1, 0, 0, 1))
-        try expectColor("255,128,0", (1, 128.0 / 255, 0, 1))
-        try expectColor("255,0.5,0", (1, 0.5 / 255, 0, 1))
+    /// The alpha is optional, because `srgb:` replaced a bare 3-component form
+    /// and requiring a trailing `,1` for the common case would be gratuitous.
+    @Test func srgbAlphaDefaultsToOpaque() throws {
+        try expectColor("srgb:0.5,0.5,0.5", (0.5, 0.5, 0.5, 1))
     }
 
-    @Test func bareRGBAcceptsDocumentedAlphaForm() throws {
-        try expectColor("255,0,0,0.5", (1, 0, 0, 0.5))
-        try expectColor("1,0,0,0.25", (1, 0, 0, 0.25))
+    @Test func srgbPrefixIsCaseInsensitiveAndTrimsSpaces() throws {
+        try expectColor("  SRGB: 0.2 , 0.42 , 0.9  ", (0.2, 0.42, 0.9, 1))
     }
 
-    @Test func bareRGBAcceptsPercentages() throws {
-        try expectColor("100%,50%,0%", (1, 0.5, 0, 1))
+    /// Display P3 is converted to extended sRGB at the door, so everything
+    /// downstream stores one space — and the conversion is what makes the two
+    /// spellings of a P3 red the same colour.
+    @Test func displayP3ConvertsToExtendedSRGB() throws {
+        let components = try #require(try ColorParser.spacePrefixedComponents(parsing: "display-p3:1,0,0"))
+        guard case .srgb(let r, let g, let b, let a) = components else {
+            Issue.record("display-p3: should store as extended sRGB")
+            return
+        }
+        #expect(abs(r - 1.093) < 0.01, "got r \(r)")
+        #expect(abs(g - -0.2267) < 0.01, "got g \(g)")
+        #expect(abs(b - -0.1501) < 0.01, "got b \(b)")
+        #expect(a == 1)
     }
 
-    @Test(arguments: ["256,0,0", "1,2", "1,2,3,4,5", "-1,0,0", "a,b,c"])
-    func bareRGBRejectsInvalidComponents(_ input: String) {
+    @Test func displayP3AndItsExtendedSpellingAgree() throws {
+        let viaP3 = try #require(try ColorParser.spacePrefixedComponents(parsing: "display-p3:1,0,0"))
+        let viaExtended = try #require(
+            try ColorParser.spacePrefixedComponents(parsing: "extended-srgb:1.09300,-0.22670,-0.15010,1.00000")
+        )
+        #expect(viaP3.rounded(to: 3) == viaExtended.rounded(to: 3))
+    }
+
+    /// A P3 colour inside sRGB's gamut converts to ordinary 0–1 components, so
+    /// most P3 picks are not out-of-gamut at all — which is why the appex
+    /// projection only has to refuse the ones that are.
+    @Test func displayP3InsideSRGBGamutStaysInRange() throws {
+        let components = try #require(try ColorParser.spacePrefixedComponents(parsing: "display-p3:0.5,0.5,0.5"))
+        guard case .srgb(let r, let g, let b, _) = components else {
+            Issue.record("expected sRGB components")
+            return
+        }
+        for value in [r, g, b] {
+            #expect((0.0...1.0).contains(value), "\(value) should be in gamut")
+        }
+    }
+
+    /// Bounded spaces report an out-of-range component instead of clamping it.
+    /// Clamping is exactly the silent-desaturation failure the grammar exists to
+    /// end, and the error names the unbounded form that *can* carry it.
+    @Test(arguments: ["srgb:1.2,0,0", "srgb:-0.1,0,0", "display-p3:0,0,1.5", "srgb:0,0,0,2"])
+    func rejectsOutOfRangeBoundedComponents(_ input: String) throws {
+        let error = #expect(throws: ColorParseError.self) { try ColorParser.parse(input) }
+        let message = try #require(error?.errorDescription)
+        #expect(message.contains("extended-srgb"), "should point at the unbounded form: \(message)")
+    }
+
+    @Test(arguments: ["srgb:1,0", "srgb:1,0,0,1,1", "srgb:oops", "display-p3:a,b,c", "srgb:"])
+    func rejectsMalformedBoundedComponents(_ input: String) {
         #expect(throws: ColorParseError.self) { try ColorParser.parse(input) }
     }
 
-    @Test func bareRGBRejectsAlphaOutOfRange() {
-        #expect(throws: ColorParseError.self) { try ColorParser.parse("255,0,0,1.5") }
+    /// A space prefix contains a colon, so it must be recognised before the
+    /// `name:opacity` split — otherwise `display-p3` reads as a colour name and
+    /// `1,0.2,0` as an opacity. This is the trap `ColorParser`'s header names.
+    @Test(arguments: ["srgb:0.2,0.42,0.9", "display-p3:1,0.2,0", "extended-srgb:1,0,0,1", "extended-gray:1,1"])
+    func spacePrefixSurvivesParseWithOpacity(_ input: String) throws {
+        _ = try ColorParser.parseWithOpacity(input)
     }
 
-    // MARK: - Grayscale
-
-    @Test func parsesGrayscale0To1() throws { _ = try ColorParser.parse("0.5") }
-    @Test func parsesGrayscale0To255() throws { _ = try ColorParser.parse("128") }
-
-    @Test func rejectsGrayscaleOutOfRange() {
-        // "300.0" not "300": any bare 3-digit number is consumed by the
-        // short-hex parser first (see hexWinsOverGrayscaleForThreeDigits).
-        #expect(throws: ColorParseError.self) { try ColorParser.parse("300.0") }
-    }
-
-    @Test func hexWinsOverGrayscaleForThreeDigits() throws {
-        // Precedence pin: a bare 3-digit number is short hex, never grayscale.
-        _ = try ColorParser.parse("300") // #330000, not out-of-range grayscale
+    /// The space-prefixed forms already end in an alpha, so a suffix on top of
+    /// one is rejected rather than silently taking the first components.
+    @Test func rejectsOpacitySuffixOnASpacePrefixedForm() {
+        #expect(throws: ColorParseError.self) { try ColorParser.parseWithOpacity("srgb:1,0,0,1:0.5") }
     }
 
     // MARK: - Empty / invalid
@@ -215,5 +240,12 @@ import AppKit
 
     @Test func rejectsGibberish() {
         #expect(throws: ColorParseError.self) { try ColorParser.parse("notacolor") }
+    }
+
+    /// Precedence pin: a bare 3-digit number is short hex. It was ambiguous with
+    /// single-number grayscale until Phase 3 dropped that form; hex won then too,
+    /// so `parse("300")` has always meant `#330000`.
+    @Test func threeDigitNumberIsShortHex() throws {
+        try expectColor("300", (0x33 / 255.0, 0, 0, 1))
     }
 }

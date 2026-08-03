@@ -30,6 +30,15 @@ struct ColorToken: Identifiable, Sendable {
     let name: String
 
     /// Other spellings that parse to this token. Never written.
+    ///
+    /// Only three kinds survive Phase 3: a British spelling (`grey`,
+    /// `system.grey`), a different *word* for the same colour (`transparent`),
+    /// and nothing else. The thirteen `systemblue`-style **no-dot forms were
+    /// dropped on 2026-08-03** — they were the canonical name with its dot
+    /// deleted, which is a second spelling of one token rather than a second name
+    /// for it (§4.3 of `docs/plans/colour-resolution.md`). Adding one back gives
+    /// `--icon-bg-color` two ways to say the same thing and the help text two
+    /// things to document.
     let aliases: [String]
 
     let capabilities: Capabilities
@@ -104,25 +113,25 @@ enum ColorTokenTable {
         ColorToken("brown", [.presentable, .appexNative]) { .brown },
 
         // AppKit's system palette, for colours the above does not cover.
-        ColorToken("system.blue", aliases: ["systemblue"]) { Color(.systemBlue) },
-        ColorToken("system.red", aliases: ["systemred"]) { Color(.systemRed) },
-        ColorToken("system.green", aliases: ["systemgreen"]) { Color(.systemGreen) },
-        ColorToken("system.orange", aliases: ["systemorange"]) { Color(.systemOrange) },
-        ColorToken("system.yellow", aliases: ["systemyellow"]) { Color(.systemYellow) },
-        ColorToken("system.pink", aliases: ["systempink"]) { Color(.systemPink) },
-        ColorToken("system.purple", aliases: ["systempurple"]) { Color(.systemPurple) },
-        ColorToken("system.teal", aliases: ["systemteal"]) { Color(.systemTeal) },
-        ColorToken("system.indigo", aliases: ["systemindigo"]) { Color(.systemIndigo) },
-        ColorToken("system.mint", aliases: ["systemmint"]) { Color(.systemMint) },
-        ColorToken("system.cyan", aliases: ["systemcyan"]) { Color(.systemCyan) },
-        ColorToken("system.brown", aliases: ["systembrown"]) { Color(.systemBrown) },
-        ColorToken("system.gray", aliases: ["systemgray", "system.grey", "systemgrey"]) { Color(.systemGray) },
+        ColorToken("system.blue") { Color(.systemBlue) },
+        ColorToken("system.red") { Color(.systemRed) },
+        ColorToken("system.green") { Color(.systemGreen) },
+        ColorToken("system.orange") { Color(.systemOrange) },
+        ColorToken("system.yellow") { Color(.systemYellow) },
+        ColorToken("system.pink") { Color(.systemPink) },
+        ColorToken("system.purple") { Color(.systemPurple) },
+        ColorToken("system.teal") { Color(.systemTeal) },
+        ColorToken("system.indigo") { Color(.systemIndigo) },
+        ColorToken("system.mint") { Color(.systemMint) },
+        ColorToken("system.cyan") { Color(.systemCyan) },
+        ColorToken("system.brown") { Color(.systemBrown) },
+        ColorToken("system.gray", aliases: ["system.grey"]) { Color(.systemGray) },
 
         // Appearance-dependent label colours.
         ColorToken("label") { Color(.labelColor) },
-        ColorToken("secondary.label", aliases: ["secondarylabel"]) { Color(.secondaryLabelColor) },
-        ColorToken("tertiary.label", aliases: ["tertiarylabel"]) { Color(.tertiaryLabelColor) },
-        ColorToken("quaternary.label", aliases: ["quaternarylabel"]) { Color(.quaternaryLabelColor) },
+        ColorToken("secondary.label") { Color(.secondaryLabelColor) },
+        ColorToken("tertiary.label") { Color(.tertiaryLabelColor) },
+        ColorToken("quaternary.label") { Color(.quaternaryLabelColor) },
     ]
 
     /// Preset swatches, alphabetically by display name — the order the inspector

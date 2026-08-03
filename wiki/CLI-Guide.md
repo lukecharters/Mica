@@ -47,7 +47,7 @@ mica-cli star.fill --icon-bg prerendered-liquid-glass --icon-bg-color blue
 |---|---|---|---|
 | ![Terminal](images/terminal-black.png) | ![Shield](images/hierarchical-teal.png) | ![Gradient](images/custom-gradient.png) | ![Liquid Glass](images/liquid-glass.png) |
 
-Colour values can be names, hex, `r,g,b(,a)`, or CSS functions — see [Colour Formats](Colour-Formats).
+Colour values can be names, hex, `rgb()`/`hsl()`, or components in a named space (`srgb:`, `display-p3:`) — see [Colour Formats](Colour-Formats).
 
 ## System (Apple) generation mode
 
@@ -59,7 +59,7 @@ mica-cli star.fill --icon-generation-mode system --icon-bg-color blue --icon-sym
 
 ![System mode](images/system-mode.png)
 
-In System mode the colour flags accept Apple's named tokens for the curated system look, or any custom colour (hex / `r,g,b,a`) for an exact match to your branding. The colour flags are optional — omitting them gives the default white symbol on a blue enclosure.
+In System mode the colour flags accept Apple's named tokens for the curated system look, or any custom colour (hex, `srgb:`, …) for an exact match to your branding. The colour flags are optional — omitting them gives the default white symbol on a blue enclosure.
 
 Note that macOS renders the icon in the Mac's current appearance, so on a Mac in dark mode the output is the dark variant (dark enclosure, tinted symbol).
 

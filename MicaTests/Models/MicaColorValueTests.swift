@@ -268,14 +268,21 @@ struct MicaColorValueTests {
         #expect(value.stringValue == "extended-srgb:1.09300,-0.22670,-0.15010,1.00000")
     }
 
-    @Test("a legacy CSS-ish name is stored as components, not as a token")
+    /// A name outside `ColorTokenTable` — which is every name, since Phase 3
+    /// dropped the 18 CSS-ish ones — is kept verbatim as an unresolvable token
+    /// rather than guessed at. That is what lets an error quote the offending
+    /// string, and it is why a hand-edited configuration surfaces its own typo
+    /// instead of loading as some nearby colour.
+    @Test("a name the table does not hold stays quotable and does not resolve")
     @MainActor
-    func legacyNamesAreNotTokens() throws {
-        // `crimson` parses but is in no other Mica vocabulary, so keeping it as a
-        // token would write a name the GUI and the appex plist cannot read.
+    func unknownNameIsKeptButDoesNotResolve() throws {
         let value = try MicaColorValue(parsing: "crimson")
-        #expect(value.tokenName == nil)
-        #expect(value.stringValue.hasPrefix("extended-srgb:"))
+        #expect(value.source == .token("crimson"))
+        #expect(value.tokenName == nil, "not a name the table holds")
+        #expect(value.stringValue == "crimson", "the string survives so an error can quote it")
+        #expect(throws: (any Error).self) { try value.resolvedColor() }
+        // And the CLI's entry point refuses it up front rather than at a render.
+        #expect(throws: (any Error).self) { try MicaColorValue(strictlyParsing: "crimson") }
     }
 
     @Test("the static conveniences are all presentable tokens")

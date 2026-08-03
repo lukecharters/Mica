@@ -707,10 +707,34 @@ struct MicaConfigTests {
 
     @Test("a non-token resolves to custom components that reproduce plistValue")
     func appexParsingMatchesPlistValue() throws {
-        for input in ["white:0.5", "#FF1736", "1,0.0902,0.2118,1"] {
+        for input in ["white:0.5", "#FF1736", "srgb:1,0.0902,0.2118", "display-p3:1,0.2,0"] {
             let parsed = try AppexColor.parsing(cliString: input)
             #expect(parsed.isCustom)
             #expect(parsed.plistValue == (try AppexColor.plistValue(fromCLIString: input)))
+        }
+    }
+
+    /// What a System-mode colour is *written* as, which is not what the plist
+    /// gets. `plistValue` is Apple's grammar — bare clamped components — and Mica
+    /// stopped accepting that spelling in Phase 3, so writing it into a
+    /// configuration would produce a file only the System-mode branch could read
+    /// back. `configValue` is the spelling every other colour in the file uses,
+    /// and it keeps provenance: `white:0.5` comes back following the appearance
+    /// rather than as components that merely matched on the day it was saved.
+    @Test("a System-mode colour is written in the shared grammar, not the plist's")
+    func appexConfigValueUsesTheSharedGrammar() throws {
+        #expect(AppexColor.named(.teal).configValue == "teal")
+
+        let translucent = try AppexColor.parsing(cliString: "white:0.5")
+        #expect(translucent.configValue == "white:0.5")
+        #expect(translucent.plistValue == "1,1,1,0.5", "the plist still gets Apple's form")
+
+        // A written value has to read back — and read back to the same thing.
+        for input in ["white:0.5", "#FF1736", "srgb:1,0.0902,0.2118", "teal"] {
+            let once = try AppexColor.parsing(cliString: input)
+            let twice = try AppexColor.parsing(cliString: once.configValue)
+            #expect(once == twice, "\(input) → \(once.configValue) did not survive")
+            #expect(twice.configValue == once.configValue, "\(input) is not stable")
         }
     }
 

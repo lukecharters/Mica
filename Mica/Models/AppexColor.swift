@@ -52,8 +52,29 @@ struct AppexColor {
     }
 
     /// The string written to the `.appex` `Info.plist` colour key.
+    ///
+    /// This is Apple's grammar, not Mica's: a token verbatim, or four clamped
+    /// sRGB components with no spaces. See `configValue` for what goes in a
+    /// configuration.
     var plistValue: String {
         isCustom ? AppexColor.rgbaString(from: customColor.resolved) : preset.rawValue
+    }
+
+    /// The string written to a JSON configuration.
+    ///
+    /// Deliberately **not** `plistValue`. That is the plist's bare
+    /// `"1,1,1,0.5"` component form, and Mica's colour grammar stopped accepting
+    /// bare components in Phase 3 — so writing it into a configuration would
+    /// produce a file that only the System-mode branch could read back, in a
+    /// spelling no other colour in the same file uses. `customColor.stringValue`
+    /// is that shared spelling, and it carries provenance: a System-mode
+    /// `white:0.5` survives a round trip as `white:0.5` rather than arriving back
+    /// as components that merely match today.
+    ///
+    /// Clamping to sRGB stays where it belongs — at the plist itself, which is
+    /// the only surface that cannot represent anything else.
+    var configValue: String {
+        isCustom ? customColor.stringValue : preset.rawValue
     }
 
     /// The colour shown in the UI swatch / colour picker.

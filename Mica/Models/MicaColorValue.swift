@@ -125,18 +125,18 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
     init(parsing string: String) throws {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // The extended-component forms contain a colon and carry their own alpha,
-        // so they must be recognised before the `name:opacity` split — otherwise
-        // "extended-srgb" reads as a colour name. Same ordering rule as
+        // The space-prefixed forms contain a colon and carry their own alpha, so
+        // they must be recognised before the `name:opacity` split — otherwise
+        // "display-p3" reads as a colour name. Same ordering rule as
         // `ColorParser.parseWithOpacity`; do not reorder.
-        if let components = try ColorParser.ExtendedComponents(parsing: trimmed) {
+        if let components = try ColorParser.spacePrefixedComponents(parsing: trimmed) {
             self.init(source: .components(components))
             return
         }
 
-        // A token, optionally with an opacity suffix. Checked against the table so
-        // that `crimson` — which parses but is not a token — becomes components
-        // rather than a name nothing else in Mica understands.
+        // A token, optionally with an opacity suffix. Checked against the table
+        // rather than against `ColorParser`, so a name the table does not hold
+        // cannot be stored as a `.token` nothing else in Mica understands.
         let parts = trimmed.split(separator: ":", maxSplits: 1)
         let base = String(parts.first ?? "")
         if let token = ColorTokenTable.token(named: base) {
@@ -152,7 +152,7 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
         }
 
         // Anything else ColorParser understands resolves to components now — hex,
-        // rgb(), a legacy CSS-ish name. There is no provenance to keep.
+        // rgb(), hsl(). There is no provenance to keep.
         if let color = try? ColorParser.parseWithOpacity(trimmed) {
             self.init(resolving: color)
             return

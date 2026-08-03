@@ -7,14 +7,19 @@ import Foundation
 // configuration codec so the flag transforms and the config keys cannot drift.
 
 /// Resolve an appex colour argument to the plist value stored on the command.
-/// Accepts a named token, an `r,g,b,a` value (0–1 or 0–255), or a hex colour.
+///
+/// System mode accepts the same colour grammar as everything else — see COLOR
+/// FORMATS in `generate --help`. Only the *first* branch is special: one of
+/// Apple's own tokens keeps its curated rendering instead of resolving to
+/// components.
+///
 /// Throws a `ValidationError` (nicely surfaced by ArgumentParser) on failure.
 private func resolveAppexColorArg(_ input: String, role: String) throws -> String {
     do {
         return try AppexColor.plistValue(fromCLIString: input)
     } catch {
         let tokens = AppexNamedColor.allCases.map(\.rawValue).joined(separator: ", ")
-        throw ValidationError("\(role) is invalid: '\(input)'. Use a named color (\(tokens)), an r,g,b,a value (0–1, e.g. 1,0.0902,0.2118,1), or a hex color (e.g. #FF1736).")
+        throw ValidationError("\(role) is invalid: '\(input)'. Use a named color (\(tokens)), a hex color (e.g. #FF1736), or components in a named space (e.g. srgb:1,0.0902,0.2118). See COLOR FORMATS in 'mica-cli generate --help'.")
     }
 }
 
@@ -737,8 +742,9 @@ struct GenerateCommand: AsyncParsableCommand {
             An on|off option takes true/false or "on"/"off"; a numeric one takes a
             number or a numeric string. The four options taking several colors at
             once also take a JSON array, which is the only way to pass a color
-            containing a comma (the extended- forms below). Image slots are paths,
-            and a relative one resolves against the JSON file's own directory.
+            containing a comma (the space-prefixed forms below). Image slots are
+            paths, and a relative one resolves against the JSON file's own
+            directory.
 
             The positional symbol name has no key — write "icon-fg":
             "symbol:NAME". Nor do --output/-o, --json, --quiet and --verbose: they
@@ -753,30 +759,49 @@ struct GenerateCommand: AsyncParsableCommand {
             COLOR FORMATS — every option taking a color accepts all of these:
               blue, system.blue, label        named and system tokens
               "#0088FF", "#0088FFCC"         hex, 3/6/8 digits
-              "rgb(0,136,255)"               CSS rgb()/rgba()/hsl()/hsla()
-              "0,136,255" or "0,0.53,1"      bare r,g,b(,a) — 0-255 or 0-1
+              "rgb(0,136,255)"               rgb() takes 0-255, hsl() degrees
+              "hsl(209,100%,50%)"            and percentages; a 4th value in
+                                             either one is the alpha
+              srgb:0,0.53,1                  components in a named space, 0-1,
+              display-p3:0,0.5,1             with the alpha optional
               extended-srgb:0,0.53333,1,1    a configuration's stored form, so a
               extended-gray:1,1              colour can be copied from a config
                                              file onto the command line
 
-            All but the extended forms may carry a ':opacity' suffix — white:0.5,
-            "#0088FF:0.5", "rgb(0,136,255):0.5". The extended forms already end in
-            an alpha component, so they take no suffix. The suffix scales the
-            colour's own alpha rather than replacing it, so 'label:0.5' is ~42%
-            (labelColor is only ~85% opaque to begin with), while 'white:0.5' is 50%.
+            All but the space-prefixed forms may carry a ':opacity' suffix —
+            white:0.5, "#0088FF:0.5", "rgb(0,136,255):0.5". The prefixed forms
+            already end in an alpha component, so they take no suffix. The suffix
+            scales the colour's own alpha rather than replacing it, so 'label:0.5'
+            is ~42% (labelColor is only ~85% opaque to begin with), while
+            'white:0.5' is 50%.
 
             In system mode a bare token keeps Apple's curated rendering, so 'white'
             and 'white:0.5' differ: the second is a custom colour.
 
-            Components in the extended forms may fall outside 0-1: that is how a
-            wide-gamut colour is carried, e.g. Display P3 red is
-            extended-srgb:1.09300,-0.22670,-0.15010,1.00000.
+            srgb: and display-p3: name bounded spaces, so a component outside 0-1
+            is an error rather than a silent clamp. The extended- forms are
+            unbounded, which is how a wide-gamut colour is carried: Display P3 red
+            is extended-srgb:1.09300,-0.22670,-0.15010,1.00000, and
+            display-p3:1,0,0 is the readable way to write the same colour.
+
+            Not accepted, deliberately. Each of these was a second way to say
+            something already sayable, and two of them guessed:
+              "0,136,255"        bare components read as 0-1 unless one exceeded
+                                 1 and then as 0-255, so 1,1,1 was white and
+                                 2,2,2 dark gray — write srgb:0,0.53,1
+              crimson, khaki,    18 names in no other part of Mica — use hex
+              orchid, gold, …
+              "rgb(50%,20%,0%)"  percentages in rgb() — use srgb:0.5,0.2,0
+              "0.5" or "128"     a lone number for gray — use srgb:0.5,0.5,0.5
+              systemblue         missing its dot — use system.blue
+              "rgba(…)"/"hsla(…)"  put the alpha in rgb()/hsl() instead
 
             The options taking several colors at once — --icon-bg-gradient-colors,
             --badge-bg-gradient-colors, --icon-symbol-palette and
             --badge-symbol-palette — split their value on commas, so only the
             comma-free forms above work there: a name, hex, or either with an
-            opacity suffix. That is why the default palette reads
+            opacity suffix. Neither srgb: nor the extended- forms can be used
+            inside them. That is why the default palette reads
             'white,white:0.5,white:0.26'.
 
             The output file path is written to stdout; diagnostics go to stderr,
