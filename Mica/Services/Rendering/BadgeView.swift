@@ -102,9 +102,13 @@ struct BadgeView: View {
                         )
                 }
 
-                // Badge symbol — gated on the foreground visibility toggle, and (preserving the old
-                // behavior) suppressed when the badge background is an imported image that is itself visible.
-                if !settings.badge.foreground.isHidden, !showsImportedBackground {
+                // Badge symbol — gated on the foreground's own visibility and nothing
+                // else. It used to also require `!showsImportedBackground`, so an
+                // imported badge background replaced the symbol irretrievably; the
+                // import now hides the foreground as a *default*
+                // (`BadgeSpec.applyBackgroundImage(_:defaults:)`) that the user can
+                // undo, and undoing it has to draw both. `PreviewHitTester` mirrors it.
+                if !settings.badge.foreground.isHidden {
                     badgeContent
                         .shadow(
                             color: settings.badge.foreground.drawsShadow ? Color.black.opacity(resolvedShadow.badgeSymbol.opacity) : Color.clear,

@@ -599,6 +599,103 @@ run_negative_case() {
     fi
 }
 
+# Imported-background defaults, by comparing renders of the shipped binary against
+# each other. Three claims, each expressed as "these two invocations must (not)
+# produce identical bytes":
+#
+#   1. `--icon-bg <art>` still renders exactly what it always has. Phase 2 made the
+#      import *hide* the foreground and phase 3 removed the render's veto on it, so
+#      the visible result must be unchanged — and the way to say that without
+#      keeping a golden PNG is that it equals the same invocation with the
+#      foreground explicitly switched off.
+#   2. Switching the foreground back on changes the render. Before phase 3 nothing
+#      could: the gate was in the render and no setting reached past it.
+#   3. The corner radius defaults to `off` on import, and an explicit flag beats it.
+#
+# The artwork must FILL ITS OWN BOUNDS. The committed test-background-2.png has
+# fully transparent corners, like anything Mica renders, so clipping it at any
+# radius changes nothing and claim 3 would pass while measuring nothing. Hence the
+# crop below.
+#
+# Byte comparison is sound here for the same reason as the parity section: these are
+# repeated runs of one render path, not two different paths.
+IMPORT_PASS=0
+IMPORT_FAIL=0
+
+# "slug|expectation|args-of-A|--|args-of-B", expectation being same|differ.
+IMPORT_CASES=(
+    "bare-equals-explicit-off|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg-visibility|off"
+    "revealing-foreground-changes-the-render|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg-visibility|on"
+    "corner-radius-defaults-off|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|macos26"
+    "corner-radius-off-is-the-default|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|off"
+)
+
+# Bounds-filling artwork, built from a rendered icon so the script needs no new
+# committed fixture.
+make_filled_fixture() {
+    FILLED_FIXTURE="${OUTPUT_DIR}/filled-artwork.png"
+    local source="${OUTPUT_DIR}/filled-artwork-source.png"
+    "${CLI_BINARY}" square.fill --size 256 --icon-bg-color white \
+        -o "${source}" -q >/dev/null 2>&1
+    sips --cropToHeightWidth 200 200 "${source}" --out "${FILLED_FIXTURE}" >/dev/null 2>&1
+}
+
+run_import_case() {
+    local entry="$1"
+    local slug="${entry%%|*}"
+    local rest="${entry#*|}"
+    local expectation="${rest%%|*}"
+    rest="${rest#*|}"
+
+    local a_args=() b_args=() seen_separator=0
+    local IFS='|'
+    read -r -a fields <<< "${rest}"
+    unset IFS
+    local field
+    for field in "${fields[@]}"; do
+        if [[ "${field}" == "--" ]]; then
+            seen_separator=1
+            continue
+        fi
+        field="${field//\$FILLED/${FILLED_FIXTURE}}"
+        if [[ "${seen_separator}" -eq 0 ]]; then
+            a_args+=("${field}")
+        else
+            b_args+=("${field}")
+        fi
+    done
+
+    local stem="${OUTPUT_DIR}/I__${slug}"
+    local failures=()
+    local exit_code=0
+
+    "${CLI_BINARY}" star.fill --size 512 "${a_args[@]}" -o "${stem}-a.png" -q >/dev/null 2>&1 || exit_code=$?
+    [[ "${exit_code}" -eq 0 ]] || failures+=("A exited ${exit_code}")
+    exit_code=0
+    "${CLI_BINARY}" star.fill --size 512 "${b_args[@]}" -o "${stem}-b.png" -q >/dev/null 2>&1 || exit_code=$?
+    [[ "${exit_code}" -eq 0 ]] || failures+=("B exited ${exit_code}")
+
+    if [[ "${#failures[@]}" -eq 0 ]]; then
+        if [[ ! -s "${stem}-a.png" || ! -s "${stem}-b.png" ]]; then
+            failures+=("a render produced no PNG")
+        elif cmp -s "${stem}-a.png" "${stem}-b.png"; then
+            [[ "${expectation}" == "same" ]] || failures+=("expected different renders, got identical bytes")
+        else
+            [[ "${expectation}" == "differ" ]] || failures+=("expected identical renders, got different bytes")
+        fi
+    fi
+
+    if [[ "${#failures[@]}" -eq 0 ]]; then
+        echo "PASS  I-${slug}  (${expectation})" | tee -a "${README}"
+        IMPORT_PASS=$((IMPORT_PASS + 1))
+    else
+        local joined
+        joined="$(IFS='; '; echo "${failures[*]}")"
+        echo "FAIL  I-${slug}  ${joined}" | tee -a "${README}"
+        IMPORT_FAIL=$((IMPORT_FAIL + 1))
+    fi
+}
+
 # One colour form, rendered as a flag and as a configuration, in one colour space.
 run_parity_case() {
     local slug="$1"
@@ -652,7 +749,8 @@ print_summary() {
     local extract_total=$((EXTRACT_PASS + EXTRACT_FAIL))
     local config_total=$((CONFIG_PASS + CONFIG_FAIL))
     local parity_total=$((PARITY_PASS + PARITY_FAIL))
-    local line="Happy: ${HAPPY_PASS}/${happy_total} | Config: ${CONFIG_PASS}/${config_total} | Parity: ${PARITY_PASS}/${parity_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
+    local import_total=$((IMPORT_PASS + IMPORT_FAIL))
+    local line="Happy: ${HAPPY_PASS}/${happy_total} | Config: ${CONFIG_PASS}/${config_total} | Parity: ${PARITY_PASS}/${parity_total} | Import: ${IMPORT_PASS}/${import_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
 
     echo ""
     echo "============================================================"
@@ -669,7 +767,11 @@ print_summary() {
         open "${OUTPUT_DIR}"
     fi
 
-    if [[ "${HAPPY_FAIL}" -ne 0 || "${CONFIG_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then
+    # PARITY_FAIL was missing from this list until 2026-08-03: a parity failure
+    # printed FAIL and the script still exited 0, so the cross-surface gate CLAUDE.md
+    # relies on could not fail a CI run. Every counter belongs here.
+    if [[ "${HAPPY_FAIL}" -ne 0 || "${CONFIG_FAIL}" -ne 0 || "${PARITY_FAIL}" -ne 0 \
+        || "${IMPORT_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then
         exit 1
     fi
     exit 0
@@ -687,6 +789,11 @@ main() {
     for entry in "${CONFIG_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
         run_config_case "$entry"
+    done
+    make_filled_fixture
+    for entry in "${IMPORT_CASES[@]-}"; do
+        [[ -z "$entry" ]] && continue
+        run_import_case "$entry"
     done
     for entry in "${PARITY_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue

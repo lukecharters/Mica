@@ -196,4 +196,77 @@ struct IconRenderingAssertionsTests {
         #expect(leftFraction == 0.0, "Left half is solid red")
         #expect(rightFraction == 1.0, "Right half is untouched")
     }
+
+    // MARK: - fractionDiffering(in:rect:from:)
+
+    @Test("fractionDiffering returns 0.0 for an image of exactly that colour")
+    func fractionDiffering_matchingFill() {
+        let image = NSImage(size: NSSize(width: 16, height: 16))
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: 16, height: 16).fill()
+        image.unlockFocus()
+
+        #expect(IconRenderingAssertions.fractionDiffering(
+            in: image, rect: CGRect(x: 0, y: 0, width: 16, height: 16), from: .white) == 0.0,
+                "A solid white image must not differ from white anywhere")
+    }
+
+    // The fixtures below are 64pt rather than 16pt on purpose. `lockFocus` draws
+    // into a Retina backing store, so `normalizedBitmapRep` downsamples 2:1 and
+    // leaves a one-pixel blended seam along each internal edge — genuinely
+    // "differing" from the reference, and correctly counted. At 16pt that seam was
+    // 16 of 256 pixels and moved a quarter-area fill to 0.3125; at 64pt it is under
+    // 2%, so a tolerance can be tight enough to mean something.
+
+    @Test("fractionDiffering measures the part drawn over the reference colour")
+    func fractionDiffering_measuresWhatWasDrawnOnTop() {
+        let side: CGFloat = 64
+        let image = NSImage(size: NSSize(width: side, height: side))
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: side, height: side).fill()
+        NSColor.black.setFill()
+        // A quarter of the area, drawn on top.
+        NSRect(x: 0, y: 0, width: side / 2, height: side / 2).fill()
+        image.unlockFocus()
+
+        let fraction = IconRenderingAssertions.fractionDiffering(
+            in: image, rect: CGRect(x: 0, y: 0, width: side, height: side), from: .white)
+        #expect(abs(fraction - 0.25) < 0.03,
+                "A quarter drawn in black over white should read as ≈0.25, got \(fraction)")
+    }
+
+    @Test("fractionDiffering counts transparency as differing from an opaque colour")
+    func fractionDiffering_countsTransparency() {
+        // The case that makes this usable on a rendered icon: the area outside the
+        // artwork is clear, and clear is not white.
+        let side: CGFloat = 64
+        let image = NSImage(size: NSSize(width: side, height: side))
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: side / 2, height: side).fill()
+        image.unlockFocus()
+
+        let fraction = IconRenderingAssertions.fractionDiffering(
+            in: image, rect: CGRect(x: 0, y: 0, width: side, height: side), from: .white)
+        #expect(abs(fraction - 0.5) < 0.03,
+                "Half white, half transparent should read as ≈0.5, got \(fraction)")
+    }
+
+    @Test("fractionDiffering reports .nan rather than 0.0 when it cannot measure")
+    func fractionDiffering_failsLoudly() {
+        // A zero-sized rect cannot be measured. 0.0 would read as "no differences
+        // found" — a silent pass — so the helper returns .nan, which fails any
+        // comparison an assertion makes.
+        let image = NSImage(size: NSSize(width: 8, height: 8))
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: 8, height: 8).fill()
+        image.unlockFocus()
+
+        let fraction = IconRenderingAssertions.fractionDiffering(
+            in: image, rect: .zero, from: .white)
+        #expect(fraction.isNaN, "An unmeasurable rect must not read as 0.0, got \(fraction)")
+    }
 }

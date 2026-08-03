@@ -93,9 +93,16 @@ struct IconContentView: View {
                 backgroundLayer
             }
 
-            // Icon content (SF Symbol or custom image) — hidden when background is an imported image,
-            // or when the foreground layer is explicitly hidden via the layer sidebar's eye toggle.
-            if !settings.icon.foreground.isHidden, settings.icon.background.source != .image {
+            // Icon content (SF Symbol or custom image) — gated on the foreground's
+            // own visibility and nothing else.
+            //
+            // This used to also require `background.source != .image`, which made an
+            // imported background *replace* the foreground with no way to get it
+            // back. Importing one now merely switches the foreground's visibility
+            // off (`IconSpec.applyBackgroundImage(_:defaults:)`), which the user can
+            // switch on again — and doing so has to draw both layers, so this
+            // condition must stay a single term. `PreviewHitTester` mirrors it.
+            if !settings.icon.foreground.isHidden {
                 iconContent
                     .shadow(
                         color: settings.icon.foreground.drawsShadow ? Color.black.opacity(resolvedShadow.symbol.opacity) : Color.clear,

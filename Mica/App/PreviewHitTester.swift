@@ -232,13 +232,12 @@ enum PreviewHitTester {
             guard diameter > 0 else { return nil }
 
             if selection == .badgeForeground {
-                // Box the badge glyph, sized as BadgeView sizes it (badgeSize ×
-                // multiplier × badgeSymbolScale, centred, no offsets).
-                guard settings.badge.foreground.source != .system else { return nil }
-                let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
-                let side = diameter * sizing.multiplier * settings.badge.foreground.symbolScale
-                guard side > 0 else { return nil }
-                let box = centeredSquare(center: badgeCenter, side: side)
+                guard let box = badgeForegroundBox(settings: settings, badgeCenter: badgeCenter,
+                                                   diameter: diameter,
+                                                   badgeSymbolSizing: badgeSymbolSizing) else {
+                    return nil
+                }
+                // Small radius: this is a bounding box, not a drawn shape.
                 return .roundedRect(box, cornerRadius: min(box.width, box.height) * 0.08)
             }
 
@@ -265,6 +264,27 @@ enum PreviewHitTester {
             centeredSquare(center: center, side: side),
             cornerRadius: side * badgeCornerRadiusRatio
         )
+    }
+
+    /// Bounding box of the badge's drawn glyph, sized as `BadgeView` sizes it
+    /// (badge diameter × multiplier × symbol scale, centred, no offsets). Nil when
+    /// there is no glyph of its own — System mode bakes it into the appex image.
+    ///
+    /// Shared by the outline and the hit test so clicking the glyph and outlining it
+    /// cannot disagree. That matters more than it used to: the glyph can now sit
+    /// over imported badge artwork, so this box is what splits the badge's footprint
+    /// into two layers there.
+    private static func badgeForegroundBox(
+        settings: IconSettings,
+        badgeCenter: CGPoint,
+        diameter: CGFloat,
+        badgeSymbolSizing: ResolvedSymbolSizing?
+    ) -> CGRect? {
+        guard settings.badge.foreground.source != .system else { return nil }
+        let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
+        let side = diameter * sizing.multiplier * settings.badge.foreground.symbolScale
+        guard side > 0 else { return nil }
+        return centeredSquare(center: badgeCenter, side: side)
     }
 
     /// Visible side of a squircle badge, or nil when the circular colour badge
@@ -298,8 +318,10 @@ enum PreviewHitTester {
         enclosureSize: CGFloat,
         symbolSizing: ResolvedSymbolSizing?
     ) -> CGRect? {
-        guard settings.icon.background.source != .image else { return nil }
-
+        // No `background.source != .image` gate: an imported background no longer
+        // replaces the foreground, so a foreground over imported artwork has a box
+        // to outline. Deliberately no `isHidden` gate either — a hidden-but-selected
+        // layer still outlines.
         switch settings.icon.foreground.source {
         case .symbol:
             let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
@@ -376,10 +398,25 @@ enum PreviewHitTester {
         let shape = badgeShape(settings: settings, center: badgeCenter, diameter: diameter)
         guard shapeContains(point, shape) else { return nil }
 
-        // Both squircle cases are a single editable layer: a System-mode badge
-        // bakes symbol and enclosure into one appex image, and a drawn imported
-        // background suppresses the glyph entirely (mirrors
-        // BadgeView.showsImportedBackground). So there is no glyph to split off.
+        // A System-mode badge really is one editable layer: symbol and enclosure are
+        // baked into a single appex image, so there is no glyph to split off.
+        if settings.badge.foreground.source == .system { return .badgeBackground }
+
+        // A drawn imported background used to be the same case, because it
+        // suppressed the glyph. It no longer does, so the glyph is pickable by its
+        // own box — the box the outline traces. The badgeInnerHitRatio split below
+        // is no use here: this footprint is the *artwork's* frame, which runs to
+        // ~2.5× the diameter, while the glyph is still sized off the diameter.
+        if settings.badge.background.drawsImage {
+            if !settings.badge.foreground.isHidden,
+               let glyph = badgeForegroundBox(settings: settings, badgeCenter: badgeCenter,
+                                              diameter: diameter, badgeSymbolSizing: nil),
+               glyph.contains(point) {
+                return .badgeForeground
+            }
+            return .badgeBackground
+        }
+
         guard case .circle(_, let radius) = shape else { return .badgeBackground }
 
         let distance = hypot(point.x - badgeCenter.x, point.y - badgeCenter.y)
@@ -400,11 +437,11 @@ enum PreviewHitTester {
         enclosureSize: CGFloat,
         symbolSizing: ResolvedSymbolSizing?
     ) -> Bool {
-        // Same gates as IconContentView: an imported background replaces the
-        // foreground entirely.
-        guard !settings.icon.foreground.isHidden, settings.icon.background.source != .image else {
-            return false
-        }
+        // Same single gate as IconContentView: the foreground's own visibility.
+        // An imported background no longer suppresses it, so a foreground switched
+        // back on over imported artwork is clickable — and must be, or selection
+        // would disagree with what is on screen.
+        guard !settings.icon.foreground.isHidden else { return false }
 
         switch settings.icon.foreground.source {
         case .symbol:

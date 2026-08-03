@@ -126,6 +126,62 @@ enum IconRenderingAssertions {
         return Double(clear) / Double(total)
     }
 
+    /// Fraction of pixels in `rect` that differ from `reference` by more than
+    /// `tolerance` in any channel (alpha included). Returns 0.0 for a rect entirely
+    /// of that colour.
+    ///
+    /// For "did something draw on top of this?" where both layers are opaque, so
+    /// `clearPixelFraction` cannot see the difference — a foreground over flat
+    /// imported artwork, for instance. Fill the artwork with a flat colour, pass it
+    /// here, and the result is the foreground's own coverage.
+    ///
+    /// The default tolerance absorbs the ±1 LSB of gradient dithering and the
+    /// resampling of a supersampled render; it is not tight enough to distinguish
+    /// two similar colours, which is deliberate — this answers "is anything else
+    /// here", not "what colour is it".
+    ///
+    /// Same top-origin rect convention as `clearPixelFraction`.
+    ///
+    /// Returns `.nan` if it cannot do its job, never 0.0 — a "no differences"
+    /// answer from a helper that failed is indistinguishable from a real pass, and
+    /// `.nan` makes every comparison false so the assertion fails loudly instead.
+    /// Converting the reference through `rep.colorSpace` is what used to trip this:
+    /// `normalizedBitmapRep` builds a `.deviceRGB` rep, whose `colorSpace` does not
+    /// survive `usingColorSpace(_:)`, so the guard returned 0.0 and a
+    /// same-colour-everywhere test passed while measuring nothing. Same family as
+    /// the `setColor` no-op warned about in CLAUDE.md. Convert to `.deviceRGB`
+    /// explicitly; `colorAt` already yields RGB-family colours, so the sampled
+    /// pixels need no conversion.
+    static func fractionDiffering(in image: NSImage,
+                                  rect: CGRect,
+                                  from reference: NSColor,
+                                  tolerance: CGFloat = 0.02) -> Double {
+        guard let rep = normalizedBitmapRep(for: image) else { return .nan }
+        guard let target = reference.usingColorSpace(.deviceRGB) else { return .nan }
+        let minX = max(0, Int(rect.minX))
+        let minY = max(0, Int(rect.minY))
+        let maxX = min(rep.pixelsWide, Int(rect.maxX))
+        let maxY = min(rep.pixelsHigh, Int(rect.maxY))
+        guard maxX > minX, maxY > minY else { return .nan }
+
+        var differing = 0
+        var total = 0
+        for y in minY..<maxY {
+            for x in minX..<maxX {
+                guard let colour = rep.colorAt(x: x, y: y) else { continue }
+                total += 1
+                if abs(colour.redComponent - target.redComponent) > tolerance
+                    || abs(colour.greenComponent - target.greenComponent) > tolerance
+                    || abs(colour.blueComponent - target.blueComponent) > tolerance
+                    || abs(colour.alphaComponent - target.alphaComponent) > tolerance {
+                    differing += 1
+                }
+            }
+        }
+        guard total > 0 else { return .nan }
+        return Double(differing) / Double(total)
+    }
+
     // MARK: - Private
 
     /// Renders the image at 1:1 (1 point = 1 pixel) into a known-format RGBA8

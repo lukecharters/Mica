@@ -103,11 +103,25 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(point, s) == .badgeForeground)
     }
 
-    @Test("A visible imported badge background suppresses the glyph target")
-    func badgeImportedBackground_centreIsBackground() throws {
+    @Test("A visible badge glyph over imported artwork is still the centre target")
+    func badgeImportedBackground_centreIsForeground() throws {
+        // This used to assert `.badgeBackground`: a drawn imported background
+        // suppressed the glyph, so the whole squircle was one layer. The glyph now
+        // draws over the artwork, so the centre picks it — and has to, or selection
+        // would disagree with the render.
         var s = Self.settingsWithBadge()
         s.badge.background.source = .image
         s.badge.background.image = try ImportedImage.testFixture()
+        #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeForeground)
+    }
+
+    @Test("Importing badge artwork hides the glyph, so the centre is the background")
+    func badgeImportedBackgroundViaSeam_centreIsBackground() throws {
+        // The same artwork applied the way a user applies it. The seam hides the
+        // foreground, and *that* is what makes the whole footprint one target — a
+        // visibility flag rather than a render-level veto.
+        var s = Self.settingsWithBadge()
+        s.badge.applyBackgroundImage(try ImportedImage.testFixture())
         #expect(Self.hit(Self.badgeCircle(s).centre, s) == .badgeBackground)
     }
 
@@ -261,12 +275,24 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
-    @Test("An imported background replaces the foreground target")
-    func importedBackground_centreIsBackground() throws {
+    @Test("An imported background no longer replaces the foreground target")
+    func importedBackground_centreStaysForeground() throws {
+        // This used to assert `.iconBackground`, mirroring an `IconContentView` that
+        // skipped the foreground entirely for an imported background. Both gates are
+        // gone: the foreground is gated on its own visibility and nothing else.
         var s = IconSettings()
         s.icon.background.source = .image
         s.icon.background.image = try ImportedImage.testFixture()
-        // Mirrors IconContentView, which skips the foreground entirely here.
+        #expect(Self.hit(Self.canvasCentre(s), s) == .iconForeground)
+    }
+
+    @Test("Importing a background hides the foreground, so the centre is the background")
+    func importedBackgroundViaSeam_centreIsBackground() throws {
+        // The same state reached the way a user reaches it. What makes the centre
+        // the background now is the visibility flag the seam set — reversible —
+        // rather than a render gate that nothing could reach past.
+        var s = IconSettings()
+        s.icon.applyBackgroundImage(try ImportedImage.testFixture())
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
@@ -574,16 +600,24 @@ struct PreviewHitTesterTests {
         #expect(Self.shape(.badgeForeground, noBadge) == nil)
         #expect(Self.shape(.badgeBackground, noBadge) == nil)
 
-        // An imported background replaces the icon's foreground.
-        var importedBg = IconSettings()
-        importedBg.icon.background.source = .image
-        importedBg.icon.background.image = try ImportedImage.testFixture()
-        #expect(Self.shape(.iconForeground, importedBg) == nil)
-
         // A System-mode badge has no separate glyph to box.
         var systemBadge = Self.settingsWithBadge()
         systemBadge.badge.foreground.source = .system
         #expect(Self.shape(.badgeForeground, systemBadge) == nil)
+    }
+
+    @Test("A foreground over an imported background has a box to outline")
+    func selectionShape_foregroundOverImportedBackground() throws {
+        // The clause deleted from `selectionShape_nilWhenNothingDrawn` above, kept as
+        // its own positive assertion: an imported background used to make the
+        // foreground unoutlinable, because nothing was drawn to outline.
+        var s = IconSettings()
+        s.icon.applyBackgroundImage(try ImportedImage.testFixture())
+        // Hidden by the import, and a hidden-but-selected layer still outlines.
+        #expect(Self.shape(.iconForeground, s) != nil)
+
+        s.icon.foreground.isHidden = false
+        #expect(Self.shape(.iconForeground, s) != nil)
     }
 
     @Test("A hidden layer still outlines, so the user can see what they're editing")
