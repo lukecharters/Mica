@@ -3,10 +3,12 @@
 // renderedImage, appexExport, configuration/read) and one advertised
 // content type. This suite covers the init-surface dispatch: each
 // constructor must populate the right fields and leave others cleared.
-// The write path (fileWrapper(configuration:)) requires a
-// FileDocumentWriteConfiguration whose init is not reliably accessible
-// from tests; its PNG encoding is exercised by IconRenderer tests
-// (Phase 2) and by UI smoke tests (Phase 6).
+//
+// The write path used to be untestable here, because fileWrapper(configuration:)
+// needs a FileDocumentWriteConfiguration whose init is not reliably accessible
+// from tests. That changed on 2026-08-03: the render and encode step was split
+// out as `pngData()` so the drag-out payload could reach it (DraggableIcon),
+// and it is directly callable. The "Write path" section below covers it.
 
 import Testing
 import AppKit
@@ -174,5 +176,56 @@ struct PNGExportDocumentTests {
         let actual = Self.snapshot(of: standIn)
 
         #expect(actual == expected)
+    }
+
+    // MARK: - Write path (pngData)
+
+    @Test("A settings document renders PNG bytes at the export pixel size", arguments: [
+        (CGFloat(64), false, 64),
+        (CGFloat(128), false, 128),
+        (CGFloat(128), true, 256),
+    ])
+    func pngData_rendersAtExportPixelSize(size: CGFloat, retina: Bool, expectedWidth: Int) throws {
+        var settings = IconSettings()
+        settings.export.size = size
+        settings.export.isRetina = retina
+
+        let data = try PNGExportDocument(settings: settings).pngData()
+
+        #expect(data.prefix(8) == Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
+        let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
+        let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        #expect(image.width == expectedWidth)
+        #expect(image.height == expectedWidth)
+    }
+
+    @Test("A pre-rendered image document encodes that image, not a fresh render")
+    func pngData_prefersThePreRenderedImage() throws {
+        let data = try PNGExportDocument(renderedImage: Self.makeSentinelImage(sized: 32)).pngData()
+
+        // Asserted on colour, not on size. The sentinel is built with lockFocus, which
+        // takes its backing scale from the deepest attached screen — so a 32pt image is
+        // 64px on this Mac and 32px on a non-Retina one, and a size assertion would be
+        // a display-dependent test of nothing. "Solid red all over" is what actually
+        // distinguishes the sentinel from a settings render, which is a tinted chiclet
+        // with transparent corners.
+        let image = try #require(NSImage(data: data))
+        let quadrants = try #require(IconRenderingAssertions.quadrantAverageColors(of: image))
+        for quadrant in [quadrants.topLeft, quadrants.topRight, quadrants.bottomLeft, quadrants.bottomRight] {
+            #expect(quadrant.redComponent > 0.9)
+            #expect(quadrant.greenComponent < 0.1)
+            #expect(quadrant.blueComponent < 0.1)
+        }
+    }
+
+    @Test("Rendering the same document twice gives identical bytes")
+    func pngData_isStableAcrossCalls() throws {
+        // Not a claim that two *different* render paths agree — that would be unsound,
+        // ImageRenderer is not byte-deterministic across paths. This is the weaker and
+        // true claim that one document is a pure function, which is what lets
+        // DraggableIcon defer the render to drop time without changing the result.
+        let document = PNGExportDocument(settings: IconSettings())
+
+        #expect(try document.pngData() == (try document.pngData()))
     }
 }

@@ -66,6 +66,21 @@ struct PNGExportDocument: FileDocument {
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: try pngData())
+    }
+
+    /// Render this document and encode it as PNG bytes.
+    ///
+    /// Split out of `fileWrapper(configuration:)` on 2026-08-03 so the drag-out
+    /// payload (`DraggableIcon`) reaches the same render path ⇧⌘E does, without
+    /// having to synthesize a `WriteConfiguration` it has no way to obtain.
+    ///
+    /// **Keep this the only copy.** The branch below — a Mica render, a bare appex
+    /// raster, or an appex raster composited with a badge, plus the hidden-icon-group
+    /// case that forces compositing — is the whole of what "export the current icon"
+    /// means, and the failure mode of a second copy is a drag that writes a subtly
+    /// different PNG than the Save panel does for the same settings.
+    func pngData() throws -> Data {
         let image: NSImage
         let scaleFactor: Int
 
@@ -117,10 +132,6 @@ struct PNGExportDocument: FileDocument {
             scaleFactor = settings.export.isRetina ? 2 : 1
         }
 
-        return try makePNGFileWrapper(image: image, scaleFactor: scaleFactor)
-    }
-
-    private func makePNGFileWrapper(image: NSImage, scaleFactor: Int) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: try PNGExporter.pngData(from: image, scaleFactor: scaleFactor))
+        return try PNGExporter.pngData(from: image, scaleFactor: scaleFactor)
     }
 }

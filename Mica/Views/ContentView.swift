@@ -136,7 +136,8 @@ struct ContentView: View {
                         previewPointSize: $previewPointSize,
                         onSelect: select,
                         selection: currentPreviewSelection,
-                        selectionPulse: selectionPulse
+                        selectionPulse: selectionPulse,
+                        makeDragPayload: makeDragPayload
                     )
                 }
             }
@@ -330,6 +331,26 @@ struct ContentView: View {
         }
     }
 
+    /// Builds the drag-out payload, or nil while dragging one out would be wrong.
+    ///
+    /// Returning nil withdraws the drag entirely, on the same rule that withdraws
+    /// ⇧⌘E: `canExport` is false while a System-mode layer's appex raster is still
+    /// rendering, and a PNG written in that window silently omits the pending layer.
+    /// A drag-out *is* an export, so it cannot be the one caller that ignores that.
+    ///
+    /// The payload wraps `pngExportDocument` rather than rebuilding one, so a dragged
+    /// file and a ⇧⌘E export of the same icon are the same bytes under the same name.
+    /// Nothing here renders — see `DraggableIcon`, which is a promise.
+    private var makeDragPayload: (() -> DraggableIcon)? {
+        guard viewModel.canExport else { return nil }
+        return {
+            DraggableIcon(
+                document: pngExportDocument,
+                baseName: viewModel.iconSettings.exportBaseName
+            )
+        }
+    }
+
     /// The PNG payload for the export panel.
     ///
     /// Lifted out of `body` because the whole view stopped type-checking in reasonable
@@ -416,7 +437,8 @@ struct ContentView: View {
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
                     selection: currentPreviewSelection,
-                    selectionPulse: selectionPulse
+                    selectionPulse: selectionPulse,
+                    makeDragPayload: makeDragPayload
                 )
 //                .padding()
 
