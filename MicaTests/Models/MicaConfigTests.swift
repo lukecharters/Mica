@@ -560,9 +560,10 @@ struct MicaConfigTests {
     @Test("imported images round-trip by bytes, name and layer")
     func importedImagesRoundTrip() throws {
         // The two images go on the icon foreground and the *badge* foreground.
-        // Both on the icon would mean an imported background, which suppresses
-        // the icon foreground outright (`IconContentView.swift:93`) and is
-        // therefore not written — see `importedBackgroundDropsTheForeground`.
+        // Both on the icon would mean an imported background, which *hides* the icon
+        // foreground — gate 6 then drops its keys, so the foreground image would not be
+        // written. See `importedBackgroundDropsTheForeground` for that case, and
+        // `iconForegroundToggledBackOn_writesItsKeys` for switching it back on.
         var settings = IconSettings()
         var foreground = settings.icon.foreground
         foreground.apply(try ImportedImage.testFixture(fill: .systemRed, sourceName: "Glyph.png"))
