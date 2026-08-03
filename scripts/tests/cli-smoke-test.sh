@@ -45,6 +45,9 @@ EXTRACT_FAIL=0
 CONFIG_INDEX=0
 CONFIG_PASS=0
 CONFIG_FAIL=0
+PARITY_INDEX=0
+PARITY_PASS=0
+PARITY_FAIL=0
 
 # Filled by expand_fixtures() — fixture-placeholder-expanded argument list.
 EXPANDED_ARGS=()
@@ -240,6 +243,31 @@ CONFIG_CASES=(
     "config-missing-file|1|Cannot read configuration|-|--config|\$FIXTURES/no-such-config.json"
     # A relative image path resolves against the configuration's own directory.
     "config-relative-image|0|-|-|--config|\$FIXTURES/smoke-config-relative-image.json"
+)
+
+# Cross-surface parity (Phase 5 of docs/plans/colour-resolution.md). One colour
+# form per entry, rendered twice by the SHIPPED binary — once with the colour as a
+# flag, once with the identical colour in a --config file — and the two PNGs
+# compared byte for byte, in both colour spaces.
+#
+# The in-process suite (ColorSurfaceAgreementTests) already proves the flag and
+# config parsers store the same value, and one renderer means equal settings render
+# alike. What only this can catch is the rest of the invocation: bundled resources,
+# the encoder, and the colour-space conversion actually reached on disk. Byte
+# equality is safe here because a given input is reproducible across processes —
+# the LSB dithering noise CLAUDE.md warns about is between *different* render
+# paths, not repeated identical ones.
+PARITY_CASES=(
+    "token|blue"
+    "token-alias|grey"
+    "token-dynamic|label"
+    "token-with-opacity|blue:0.5"
+    "hex|#0088FF"
+    "hex-alpha|#0088FFCC"
+    "function|rgb(0,136,255)"
+    "srgb-components|srgb:0,0.53,1"
+    "display-p3|display-p3:0,0.5,1"
+    "extended-wide-gamut|extended-srgb:1.09300,-0.22670,-0.15010,1.00000"
 )
 
 # Happy-path cases for the `extract` subcommand. Format differs from HAPPY_CASES
@@ -571,12 +599,60 @@ run_negative_case() {
     fi
 }
 
+# One colour form, rendered as a flag and as a configuration, in one colour space.
+run_parity_case() {
+    local slug="$1"
+    local color="$2"
+    local space="$3"
+
+    PARITY_INDEX=$((PARITY_INDEX + 1))
+    local index_formatted
+    printf -v index_formatted "P%03d" "${PARITY_INDEX}"
+    local stem="${OUTPUT_DIR}/${index_formatted}__${slug}-${space}"
+
+    local config_file="${OUTPUT_DIR}/${index_formatted}__${slug}-${space}.json"
+    # printf %s so a form containing a backslash could not be re-interpreted; none
+    # do today, and none of the forms contain a double quote.
+    printf '{\n  "icon-fg": "symbol:star.fill",\n  "size": 128,\n  "color-space": "%s",\n  "icon-bg-color": "%s"\n}\n' \
+        "${space}" "${color}" > "${config_file}"
+
+    local failures=()
+    local exit_code=0
+
+    "${CLI_BINARY}" --config "${config_file}" -o "${stem}-config.png" -q >/dev/null 2>&1 || exit_code=$?
+    [[ "${exit_code}" -eq 0 ]] || failures+=("--config exited ${exit_code}")
+
+    exit_code=0
+    "${CLI_BINARY}" star.fill --size 128 --color-space "${space}" --icon-bg-color "${color}" \
+        -o "${stem}-flag.png" -q >/dev/null 2>&1 || exit_code=$?
+    [[ "${exit_code}" -eq 0 ]] || failures+=("flag exited ${exit_code}")
+
+    if [[ "${#failures[@]}" -eq 0 ]]; then
+        if [[ ! -s "${stem}-config.png" || ! -s "${stem}-flag.png" ]]; then
+            failures+=("a render produced no PNG")
+        elif ! cmp -s "${stem}-config.png" "${stem}-flag.png"; then
+            failures+=("the flag and the configuration rendered differently")
+        fi
+    fi
+
+    if [[ "${#failures[@]}" -eq 0 ]]; then
+        echo "PASS  ${index_formatted}  ${slug} (${space})  [${color}]" | tee -a "${README}"
+        PARITY_PASS=$((PARITY_PASS + 1))
+    else
+        local joined
+        joined="$(IFS='; '; echo "${failures[*]}")"
+        echo "FAIL  ${index_formatted}  ${slug} (${space})  [${color}]  ${joined}" | tee -a "${README}"
+        PARITY_FAIL=$((PARITY_FAIL + 1))
+    fi
+}
+
 print_summary() {
     local happy_total=$((HAPPY_PASS + HAPPY_FAIL))
     local neg_total=$((NEG_PASS + NEG_FAIL))
     local extract_total=$((EXTRACT_PASS + EXTRACT_FAIL))
     local config_total=$((CONFIG_PASS + CONFIG_FAIL))
-    local line="Happy: ${HAPPY_PASS}/${happy_total} | Config: ${CONFIG_PASS}/${config_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
+    local parity_total=$((PARITY_PASS + PARITY_FAIL))
+    local line="Happy: ${HAPPY_PASS}/${happy_total} | Config: ${CONFIG_PASS}/${config_total} | Parity: ${PARITY_PASS}/${parity_total} | Negative: ${NEG_PASS}/${neg_total} | Extract: ${EXTRACT_PASS}/${extract_total} | Output: ${OUTPUT_DIR}"
 
     echo ""
     echo "============================================================"
@@ -611,6 +687,14 @@ main() {
     for entry in "${CONFIG_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
         run_config_case "$entry"
+    done
+    for entry in "${PARITY_CASES[@]-}"; do
+        [[ -z "$entry" ]] && continue
+        parity_slug="${entry%%|*}"
+        parity_color="${entry#*|}"
+        for parity_space in sRGB displayP3; do
+            run_parity_case "${parity_slug}" "${parity_color}" "${parity_space}"
+        done
     done
     for entry in "${EXTRACT_CASES[@]-}"; do
         [[ -z "$entry" ]] && continue
