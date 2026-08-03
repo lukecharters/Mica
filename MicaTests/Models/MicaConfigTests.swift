@@ -666,11 +666,68 @@ struct MicaConfigTests {
 
     @Test("badge keys without badge-fg are inert, and say so")
     func badgeKeysWithoutActivationWarn() throws {
+        // Both fixture keys are modifiers, so this survives phase 5 unchanged — what
+        // narrowed is the codec's own list, which now excludes the three activators
+        // rather than only `badge-fg`.
         let result = try Self.decode(["badge-position": "top-left", "badge-scale": 1.3])
         #expect(result.settings == IconSettings(), "the badge stays off")
         #expect(result.warnings.count == 1)
         #expect(result.warnings.first?.key == "badge-fg")
         #expect(result.warnings.first?.message.contains("badge-position") == true)
+    }
+
+    // Parameterised over the key name rather than a fixture dictionary, because
+    // `arguments:` requires Sendable and `[String: Any]` is not.
+    @Test("Each activating key turns the badge on and draws no inert warning",
+          arguments: MicaConfigKey.activatingBadgeNames.sorted())
+    func activatingBadgeKeysDoNotWarn(_ activator: String) throws {
+        // The other half of the warning contract: these keys are not inert, so saying
+        // they are would be false. Driven off `activatingBadgeNames` itself, so a
+        // fourth activator cannot be added without this covering it.
+        let value: Any
+        switch activator {
+        case MicaConfigKey.badgeFG.rawValue: value = "symbol:plus"
+        case MicaConfigKey.badgeVisibility.rawValue: value = true
+        default: value = "standard"
+        }
+        let result = try Self.decode([activator: value, "badge-position": "top-left"])
+
+        #expect(result.settings.badge.isVisible == true)
+        #expect(result.settings.badge.position == .topLeft, "the modifier is read once a badge exists")
+        #expect(result.warnings.filter { $0.message.contains("inert") }.isEmpty,
+                "unexpected warnings: \(result.warnings)")
+    }
+
+    @Test("badge-visibility false leaves the badge off and names the activators")
+    func badgeVisibilityFalseStillWarns() throws {
+        let result = try Self.decode(["badge-visibility": false, "badge-position": "top-left"])
+        #expect(result.settings.badge.isVisible == false)
+        let message = try #require(result.warnings.first?.message)
+        #expect(message.contains("badge-position"), "the inert key is named")
+        for activator in MicaConfigKey.activatingBadgeNames {
+            #expect(message.contains(activator), "the message should say what would activate a badge")
+        }
+    }
+
+    @Test("An imported badge background alone hides the badge foreground")
+    func importedBadgeBackgroundAlone_hidesTheForeground() throws {
+        // The codec's mirror of the badge's foreground rule: absent
+        // `badge-fg-visibility` + an imported badge background ⇒ hidden. One of the
+        // three conditional baselines phase 7 has to match on encode.
+        let bare = try Self.decode(["badge-bg": "art.png"])
+        #expect(bare.settings.badge.isVisible == true)
+        #expect(bare.settings.badge.background.isHidden == false)
+        #expect(bare.settings.badge.foreground.isHidden == true)
+
+        // Rule 2: naming a foreground key is a request for a foreground.
+        let styled = try Self.decode(["badge-bg": "art.png", "badge-symbol-color": "red"])
+        #expect(styled.settings.badge.foreground.isHidden == false)
+
+        // Rule 1: an explicit statement wins either way.
+        let forcedOn = try Self.decode(["badge-bg": "art.png", "badge-fg-visibility": true])
+        #expect(forcedOn.settings.badge.foreground.isHidden == false)
+        let forcedOff = try Self.decode(["badge-bg": "art.png", "badge-fg-visibility": false])
+        #expect(forcedOff.settings.badge.foreground.isHidden == true)
     }
 
     @Test("invalid JSON is the one fatal error")

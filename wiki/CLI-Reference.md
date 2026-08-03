@@ -60,7 +60,8 @@ mica-cli --help
 
 ### Badge
 
-Supplying `--badge-fg` is what activates the badge.
+Any of `--badge-fg`, `--badge-bg` or `--badge-visibility on` activates the badge. Every other
+flag in the namespace describes a badge rather than asking for one, and does nothing on its own.
 
 | Flag | Values | Default | Description |
 |---|---|---|---|
@@ -73,7 +74,7 @@ Supplying `--badge-fg` is what activates the badge.
 | `--badge-symbol-gradient` | `on`, `off` | `off` | Gradient fill on the badge symbol colour (macOS 26+). |
 | `--badge-fg-shadow` | `on`, `off` | `on` for SF Symbols, `off` for images | Badge foreground drop shadow. |
 | `--badge-fg-visibility` | `on`, `off` | `on` | Hide the badge foreground. |
-| `--badge-bg` | `standard`, `custom-gradient`, or an image path | `standard` | Badge background (no Liquid Glass option). |
+| `--badge-bg` | `standard`, `custom-gradient`, or an image path | `standard` | Badge background; activates the badge. An image on its own gives artwork with no symbol over it. |
 | `--badge-bg-color` | any [colour](Colour-Formats) | `gray` (mica) / `blue` (system) | Badge background colour. |
 | `--badge-bg-gradient-colors` | `c1,c2` | — | Stops for `custom-gradient` badge backgrounds. Required with `--badge-bg custom-gradient`. |
 | `--badge-bg-gradient` | `on`, `off` | `on` | Gradient on the badge background colour. |
@@ -87,6 +88,18 @@ Supplying `--badge-fg` is what activates the badge.
 | `--badge-offset-y` | −1.0–1.0 | 0.0 | Vertical fine offset from the anchor. |
 
 Write negative offsets as `--badge-offset-y=-0.05`. Given a space, `-0.05` is read as another flag and the command fails with `Missing value for '--badge-offset-y <offset>'`.
+
+### Group visibility
+
+One flag per group, writing **both** of its layers — the CLI equivalent of the sidebar's eye.
+The group flag applies first and a per-layer flag overrides it, so
+`--icon-visibility off --icon-fg-visibility on` is a visible foreground on a hidden background.
+Because it writes both layers, one flag reliably brings a whole group back.
+
+| Flag | Values | Default | Description |
+|---|---|---|---|
+| `--icon-visibility` | `on`, `off` | `on` | Show or hide both icon layers. |
+| `--badge-visibility` | `on`, `off` | `off` | Show or hide both badge layers. `on` activates the badge; `off` is the only way to turn off a badge a `--config` file supplied. |
 
 ### Export
 

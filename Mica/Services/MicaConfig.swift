@@ -152,11 +152,30 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// True for a key the decoder accepts but the encoder never writes.
     var isDecodeOnly: Bool { Self.decodeOnlyNames.contains(rawValue) }
 
-    /// True for the badge-namespace keys, which are inert without `badge-fg`
-    /// (the activation rule, mirroring the CLI's).
+    /// True for the badge-namespace keys — the *namespace*, not the activation rule.
+    ///
+    /// **Do not promote this to the activation predicate.** Three keys activate the
+    /// badge (`activatingBadgeNames`); the rest of the namespace says how a badge
+    /// looks or where it sits. Making every `badge-` key an activator would let
+    /// `badge-position` conjure a default gearshape nobody named, and would make
+    /// `badge-visibility: false` switch the badge on in order to hide it.
     var isBadgeKey: Bool {
         rawValue.hasPrefix("badge-")
     }
+
+    /// The three keys that activate the badge, mirroring the CLI's
+    /// `GenerateCommand.badgeIsActive`: the two that name what the badge *is*, plus
+    /// the one that asks for it directly. `badge-visibility` activates only when
+    /// true — see §3 of
+    /// `docs/plans/visibility-activation-and-imported-backgrounds.md`.
+    static let activatingBadgeNames: Set<String> = [
+        MicaConfigKey.badgeFG.rawValue,
+        MicaConfigKey.badgeBG.rawValue,
+        MicaConfigKey.badgeVisibility.rawValue,
+    ]
+
+    /// True for a key that can switch the badge on.
+    var canActivateBadge: Bool { Self.activatingBadgeNames.contains(rawValue) }
 }
 
 // MARK: - Results
@@ -633,49 +652,62 @@ private struct ConfigReader {
         // without it, badge keys are inert — but a config author deserves to
         // hear that, where a flag user gets the same silence the CLI gives.
         let badgeForegroundRaw = string(.badgeFG)
-        if let badgeForegroundRaw {
+        // Three keys activate the badge, mirroring the CLI's `badgeIsActive`: the two
+        // that name what the badge *is*, plus `badge-visibility` when true. Only
+        // `true` counts, so `{"badge-visibility": false}` alone leaves the badge off —
+        // a key that switches something off must never be what switches it on.
+        //
+        // A `false` does not veto the other two: activation and visibility are
+        // separate steps, so `badge-fg` still activates and its layers then start
+        // hidden, which is what lets a layer key reveal one.
+        let badgeIsActive = badgeForegroundRaw != nil
+            || string(.badgeBG) != nil
+            || badgeGroupVisible == true
+        if badgeIsActive {
             applyBadge(foregroundRaw: badgeForegroundRaw,
                        badgeMode: badgeMode,
                        effectiveBadgeMode: effectiveBadgeMode,
                        groupVisible: badgeGroupVisible)
         } else {
-            // `badge-visibility` is excluded from the inert list because it is not
-            // inert — it was applied above, and for the badge visibility *is* the
-            // activation bit, so `{"badge-visibility": true}` genuinely turns the
-            // badge on. The other badge keys still need a foreground to be read,
-            // which is what phase 5 of the plan changes; until then the warning has
-            // to say which of the two situations the author is in rather than
-            // claiming a badge that is on "stays off".
+            // Nothing asked for a badge, so the rest of the namespace is inert. The
+            // activating keys are excluded from the list: two are absent by
+            // definition here, and `badge-visibility: false` is not inert — it was
+            // applied above and is the reason we are in this branch. A config author
+            // deserves to hear this, where a flag user gets the same silence the CLI
+            // gives.
             let inert = MicaConfigKey.allCases.filter {
-                $0.isBadgeKey && $0 != .badgeFG && $0 != .badgeVisibility && values[$0] != nil
+                $0.isBadgeKey && !$0.canActivateBadge && values[$0] != nil
             }
             if !inert.isEmpty {
-                let consequence = settings.badge.isVisible
-                    ? "absent, so the badge draws its defaults and these keys are inert"
-                    : "absent, so the badge stays off and these keys are inert"
+                let activators = MicaConfigKey.activatingBadgeNames.sorted().joined(separator: ", ")
                 warn(MicaConfigKey.badgeFG.rawValue,
-                     "\(consequence): \(inert.map(\.rawValue).joined(separator: ", "))")
+                     "the badge is off — none of \(activators) asked for one — so these keys are inert: \(inert.map(\.rawValue).joined(separator: ", "))")
             }
         }
     }
 
-    private mutating func applyBadge(foregroundRaw: String,
+    /// `foregroundRaw` is optional because `badge-fg` is no longer the only key that
+    /// activates the badge: `badge-bg` or `badge-visibility: true` brings one on with
+    /// its default foreground, which is the artwork-only case.
+    private mutating func applyBadge(foregroundRaw: String?,
                                      badgeMode: GenerationMode?,
                                      effectiveBadgeMode: GenerationMode,
                                      groupVisible: Bool?) {
         var importedBadgeForeground = false
-        if let value = ForegroundValue(parsing: foregroundRaw) {
-            switch value {
-            case .symbol(let name):
-                settings.badge.foreground.source = .symbol
-                settings.badge.foreground.symbolName = name
-            case .image(let path):
-                settings.badge.foreground.source = .image
-                settings.badge.foreground.image = importImage(atPath: path, key: .badgeFG)
-                importedBadgeForeground = true
+        if let foregroundRaw {
+            if let value = ForegroundValue(parsing: foregroundRaw) {
+                switch value {
+                case .symbol(let name):
+                    settings.badge.foreground.source = .symbol
+                    settings.badge.foreground.symbolName = name
+                case .image(let path):
+                    settings.badge.foreground.source = .image
+                    settings.badge.foreground.image = importImage(atPath: path, key: .badgeFG)
+                    importedBadgeForeground = true
+                }
+            } else {
+                warn(MicaConfigKey.badgeFG.rawValue, "'symbol:' requires a symbol name, e.g. symbol:plus.circle")
             }
-        } else {
-            warn(MicaConfigKey.badgeFG.rawValue, "'symbol:' requires a symbol name, e.g. symbol:plus.circle")
         }
 
         if let scale = number(.badgeFGScale, in: ForegroundSpec.symbolScaleRange) {
@@ -786,14 +818,39 @@ private struct ConfigReader {
             settings.badge.mode = badgeMode
         }
 
-        // Layer visibility: supplying `badge-fg` is what turns the badge on, so the
-        // fallback here is the activation rule, not a restated default. It is
-        // `badge-visibility` when the file gave one — the group key applied first and
-        // activation must not undo it — and a layer key still overrides both. Mirrors
-        // the builder's `activationBaseline`.
-        let activationBaseline = groupVisible ?? true
-        settings.badge.foreground.isHidden = !(toggle(.badgeFGVisibility) ?? activationBaseline)
-        settings.badge.background.isHidden = !(toggle(.badgeBGVisibility) ?? activationBaseline)
+        // Layer visibility, in the same three-rule order as the builder: activation,
+        // then the foreground rule, then the layer keys.
+        //
+        //   1. Activation sets both layers from the group baseline — `badge-visibility`
+        //      when the file gave one, since the group key applied first and activation
+        //      must not undo it. The fallback is the activation rule, not a restated
+        //      spec default: both badge specs start hidden.
+        //   2. Over a freshly imported badge background the foreground defaults
+        //      *hidden*, unless another badge foreground key was given, which is an
+        //      unambiguous request for one.
+        //   3. A layer key wins over either.
+        //
+        // Absent `badge-fg-visibility` + an imported badge background ⇒ hidden is one
+        // of the three conditional baselines phase 7 must mirror on encode.
+        let groupBaseline = groupVisible ?? true
+        let foregroundBaseline = (importedBadgeBackground && !badgeForegroundKeyGiven)
+            ? false
+            : groupBaseline
+        settings.badge.foreground.isHidden = !(toggle(.badgeFGVisibility) ?? foregroundBaseline)
+        settings.badge.background.isHidden = !(toggle(.badgeBGVisibility) ?? groupBaseline)
+    }
+
+    /// True when any key styling the badge *foreground* is present — rule 2 of the
+    /// foreground rule. `badge-fg-visibility` is excluded deliberately: it is rule 1,
+    /// honoured exactly, and counting it would make `badge-fg-visibility: false` imply
+    /// a wanted foreground while asking to hide one. Mirrors
+    /// `BadgeOptions.foregroundArgumentGiven`.
+    private var badgeForegroundKeyGiven: Bool {
+        let keys: [MicaConfigKey] = [
+            .badgeFG, .badgeFGScale, .badgeSymbolRendering, .badgeSymbolColor,
+            .badgeSymbolPalette, .badgeSymbolWeight, .badgeSymbolGradient, .badgeFGShadow,
+        ]
+        return keys.contains { values[$0] != nil }
     }
 
     /// A colour, provenance kept; failures warn under the given key.

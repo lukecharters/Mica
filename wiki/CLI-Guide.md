@@ -65,7 +65,9 @@ Note that macOS renders the icon in the Mac's current appearance, so on a Mac in
 
 ## Badges
 
-Supplying `--badge-fg` activates the badge:
+Any of `--badge-fg`, `--badge-bg` or `--badge-visibility on` activates the badge — an argument
+that says what the badge *is*, or asks for one directly. Position, scale, offsets and the
+appearance flags describe a badge rather than ask for one, so they do nothing on their own:
 
 ```shell
 # A plus badge in the default bottom-right corner

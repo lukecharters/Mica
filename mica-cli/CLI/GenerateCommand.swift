@@ -717,6 +717,28 @@ struct BadgeOptions: ParsableArguments {
         guard let backgroundPadding else { return true }
         return !backgroundPadding.isOn
     }
+
+    /// True when any argument styling the badge *foreground* was given.
+    ///
+    /// Rule 2 of the foreground rule: naming one of these over an imported
+    /// background means you want a foreground, so importing artwork does not hide
+    /// it. Every property here is already `Optional` — they were made Optional for
+    /// `--config` — so "was this given?" costs nothing.
+    ///
+    /// **`foregroundVisibility` is deliberately excluded.** It is rule 1, honoured
+    /// exactly rather than read as an implication, and counting it would make
+    /// `--badge-fg-visibility off` imply a wanted foreground while asking to hide
+    /// one. A key that switches something off must never be what switches it on.
+    var foregroundArgumentGiven: Bool {
+        foreground != nil
+            || foregroundScale != nil
+            || symbolRendering != nil
+            || symbolColor != nil
+            || symbolPalette != nil
+            || symbolWeight != nil
+            || symbolGradient != nil
+            || foregroundShadow != nil
+    }
 }
 
 // MARK: - Main Command
@@ -959,15 +981,49 @@ struct GenerateCommand: AsyncParsableCommand {
 
     // MARK: - Badge Resolution
 
-    /// True when `--badge-fg` was supplied (which activates the badge).
-    var badgeIsActive: Bool { badge.foreground != nil }
+    /// True when an argument asked for a badge.
+    ///
+    /// **Three arguments activate the badge and nothing else does**: `--badge-fg`
+    /// and `--badge-bg`, which name what the badge *is*, and `--badge-visibility on`,
+    /// which asks for one directly. Everything else in the namespace — position,
+    /// scale, offsets, every `--badge-symbol-*`, every `--badge-bg-*` appearance key,
+    /// both layer visibility flags and `--badge-generation-mode` — says how a badge
+    /// looks or where it sits, not that there should be one, and stays
+    /// inert-and-warn.
+    ///
+    /// `--badge-visibility off` is not in the set by construction, because only `on`
+    /// counts — a key that switches something off must never be what switches it on.
+    /// It does **not** veto the other two: activation and visibility are separate
+    /// steps, so `--badge-fg symbol:x --badge-visibility off` activates a badge whose
+    /// layers then start hidden, and `--badge-fg-visibility on` can still reveal one.
+    /// Vetoing here instead would break the precedence rule the icon obeys, where
+    /// `--icon-visibility off --icon-fg-visibility on` is a visible foreground on a
+    /// hidden background.
+    ///
+    /// This is *not* `MicaConfigKey.isBadgeKey`. That predicate is the namespace,
+    /// and promoting it to the activation rule is the mistake to avoid — it would
+    /// make `--badge-position bottom-left` conjure a default gearshape nobody named.
+    /// See §3 of docs/plans/visibility-activation-and-imported-backgrounds.md.
+    var badgeIsActive: Bool {
+        badge.foreground != nil
+            || badge.background != nil
+            || groupVisibility.badge?.isOn == true
+    }
 
-    /// True when the badge is active *at all*: `--badge-fg` supplied it, or the
+    /// True when the badge is active *at all*: an argument asked for one, or the
     /// configuration already carries a visible one. This is the form every
-    /// badge-flag decision wants — gating on `--badge-fg` alone would leave a
+    /// badge-flag decision wants — gating on the flags alone would leave a
     /// configuration's badge unvalidated and unmentioned.
+    ///
+    /// An explicit `--badge-visibility off` wins over **the base**, which is the only
+    /// way to turn off a badge a `--config` file supplied. Without that clause the
+    /// flag would work on a bare invocation and quietly fail with `--config` — the
+    /// one case it exists for. It does not override a flag that asked for a badge;
+    /// see `badgeIsActive`.
     func badgeIsActive(in context: GenerationContext) -> Bool {
-        badge.foreground != nil || context.base?.badge.isVisible == true
+        if badgeIsActive { return true }
+        if groupVisibility.badge?.isOn == false { return false }
+        return context.base?.badge.isVisible == true
     }
 
     /// Resolve the badge foreground. Returns `nil` when `--badge-fg` is absent

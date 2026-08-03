@@ -451,12 +451,15 @@ class IconGenerationRunner {
                 settings.icon.mode = iconMode
             }
 
-            // Badge settings. Active when --badge-fg activates it, *or* when the base
-            // already has a visible badge — with `--config` the configuration
-            // supplies the badge, and gating purely on --badge-fg would make every
-            // other badge flag silently do nothing.
+            // Badge settings. Active when one of the three activating arguments asked
+            // for a badge (`command.badgeIsActive`), *or* when the base already has a
+            // visible badge — with `--config` the configuration supplies the badge,
+            // and gating purely on the flags would make every other badge flag
+            // silently do nothing. `--badge-visibility off` closes both routes:
+            // `badgeIsActive` refuses it, and the group flag applied above has
+            // already hidden a base badge's layers.
             let commandBadgeForeground = try command.resolvedBadgeForeground()
-            if commandBadgeForeground != nil || settings.badge.isVisible {
+            if command.badgeIsActive || settings.badge.isVisible {
                 // Badge foreground source (folds --badge-fg + --badge-fg-scale).
                 var commandImportedBadgeForeground = false
                 switch commandBadgeForeground {
@@ -595,10 +598,28 @@ class IconGenerationRunner {
                 // `true`: the group flag applied earlier and activation must not
                 // undo it, so `--badge-fg symbol:x --badge-visibility off` is a badge
                 // that stays off. A *layer* flag still overrides both.
-                if commandBadgeForeground != nil {
-                    let activationBaseline = command.groupVisibility.badge?.isOn ?? true
-                    settings.badge.foreground.isHidden = !(command.badge.foregroundVisibility?.isOn ?? activationBaseline)
-                    settings.badge.background.isHidden = !(command.badge.backgroundVisibility?.isOn ?? activationBaseline)
+                //
+                // The three rules touching these two bits run in this order —
+                // activation, then the foreground rule, then the layer flags:
+                //
+                //   1. Activation sets both layers from the group baseline. It keys
+                //      off `badgeIsActive` rather than `--badge-fg`, or
+                //      `--badge-bg art.png` alone would activate the badge and then
+                //      leave both layers at their hidden spec defaults.
+                //   2. Over *freshly imported* badge artwork the foreground defaults
+                //      hidden — the artwork-only case this change exists for. Naming
+                //      any other badge foreground argument is an unambiguous request
+                //      for a foreground, so it stays visible. This is what
+                //      `BadgeSpec.applyBackgroundImage`'s default expressed before
+                //      activation could overwrite it.
+                //   3. An explicit layer flag wins over either.
+                if command.badgeIsActive {
+                    let groupBaseline = command.groupVisibility.badge?.isOn ?? true
+                    let foregroundBaseline = (commandImportedBadgeBackground && !command.badge.foregroundArgumentGiven)
+                        ? false
+                        : groupBaseline
+                    settings.badge.foreground.isHidden = !(command.badge.foregroundVisibility?.isOn ?? foregroundBaseline)
+                    settings.badge.background.isHidden = !(command.badge.backgroundVisibility?.isOn ?? groupBaseline)
                 } else {
                     if let foregroundVisibility = command.badge.foregroundVisibility {
                         settings.badge.foreground.isHidden = !foregroundVisibility.isOn

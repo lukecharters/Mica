@@ -22,7 +22,7 @@ The sidebar lists two groups — **Icon** and **Badge** — each containing a **
 
 - Select a row to edit it in the inspector. Selecting a group header shows group-level controls (generation mode, and badge layout for the Badge group).
 - Every row has an **eye toggle** to show or hide that layer. The group header's eye is tri-state: it shows a half-closed eye when some layers are hidden, and clicking it shows or hides the whole group.
-- The **badge is hidden by default** — click its eye (or select the Badge group and reveal it) to turn it on. In the CLI, supplying `--badge-fg` is what activates the badge.
+- The **badge is hidden by default** — click its eye (or select the Badge group and reveal it) to turn it on. In the CLI, any of `--badge-fg`, `--badge-bg` or `--badge-visibility on` activates the badge.
 
 ## Generation modes: Mica vs System
 

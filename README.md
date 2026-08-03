@@ -150,8 +150,11 @@ mica-cli app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#
 # Classic macOS 11–15 look, flat colour
 mica-cli star.fill --icon-bg-corner-radius macos11 --icon-bg-gradient off
 
-# Add a badge (supplying --badge-fg turns the badge on)
+# Add a badge (--badge-fg, --badge-bg or --badge-visibility on turns it on)
 mica-cli star.fill --badge-fg symbol:plus.circle --badge-position bottom-right
+
+# Badge artwork with no symbol over it
+mica-cli star.fill --badge-bg ~/badge-art.png
 
 # Use your own image instead of an SF Symbol
 mica-cli --icon-fg ~/logo.png

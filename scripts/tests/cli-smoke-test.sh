@@ -130,6 +130,11 @@ HAPPY_CASES=(
     "icon-visibility-off-fg-on|star.fill|--icon-visibility|off|--icon-fg-visibility|on"
     "badge-visibility-on|star.fill|--badge-visibility|on"
     "badge-visibility-off-with-fg|star.fill|--badge-fg|symbol:plus.circle|--badge-visibility|off"
+    # Activation without --badge-fg: the artwork-only case, and a lone --badge-bg
+    # keyword. Both were impossible before phase 5 without naming a symbol.
+    "badge-bg-activates-alone|star.fill|--badge-bg|custom-gradient|--badge-bg-gradient-colors|red,orange"
+    "badge-bg-image-activates-alone|star.fill|--badge-bg|\$BACKGROUND_FIXTURE"
+    "badge-bg-image-alone-plus-symbol-color|star.fill|--badge-bg|\$BACKGROUND_FIXTURE|--badge-symbol-color|white"
 
     # ---- Badge foreground (supplying --badge-fg activates the badge) ----
     "badge-enable|star.fill|--badge-fg|symbol:plus.circle"
