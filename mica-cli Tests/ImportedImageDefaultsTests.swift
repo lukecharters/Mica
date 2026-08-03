@@ -85,6 +85,54 @@ struct ImportedImageDefaultsTests {
         #expect(settings.icon.background.shadowStyle == .off)
     }
 
+    // MARK: - The two seam defaults reach the CLI, at `.fixed`
+    //
+    // The CLI routes `--icon-bg`/`--badge-bg` through
+    // `IconSpec.applyBackgroundImage(_:defaults:)`, taking the default argument
+    // `.fixed`. It cannot do otherwise: `ImportDefaults.fromPreferences` lives in
+    // `Mica/App/`, which this target does not compile — so a GUI preference is
+    // structurally unable to change what `mica-cli` renders. These tests pin the
+    // resulting values so the routing cannot be quietly undone.
+
+    @Test("--icon-bg <path> turns the corner radius off")
+    func iconBackgroundImage_turnsCornerRadiusOff() throws {
+        let path = try makeTempImageFile().path
+        let settings = try IconGenerationRunner()
+            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg", path]))
+        #expect(settings.icon.background.cornerRadiusStyle == .off)
+    }
+
+    @Test("An explicit --icon-bg-corner-radius beats the import default")
+    func iconBackgroundImage_explicitCornerRadiusWins() throws {
+        let path = try makeTempImageFile().path
+        let settings = try IconGenerationRunner().buildTestSettings(
+            from: parseCommand(["star.fill", "--icon-bg", path, "--icon-bg-corner-radius", "macos26"]))
+        #expect(settings.icon.background.cornerRadiusStyle == .macOS26)
+    }
+
+    @Test("--icon-bg <path> hides the icon foreground")
+    func iconBackgroundImage_hidesForeground() throws {
+        let path = try makeTempImageFile().path
+        let settings = try IconGenerationRunner()
+            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg", path]))
+        #expect(settings.icon.foreground.isHidden == true)
+    }
+
+    // The badge's bare-import case — `--badge-bg <path>` on its own, with the
+    // foreground hidden — is not reachable from the CLI yet: `--badge-bg` does not
+    // activate the badge until phase 5 of the plan. What *is* assertable now is
+    // that naming a badge symbol keeps it, which is rule 2 of the foreground rule
+    // ("any other foreground flag in that group → foreground visible") and holds
+    // both before and after phase 6 changes why.
+    @Test("--badge-fg beside an imported --badge-bg keeps the badge symbol")
+    func badgeBackgroundImage_keepsAnExplicitlyNamedForeground() throws {
+        let path = try makeTempImageFile().path
+        let settings = try IconGenerationRunner().buildTestSettings(
+            from: parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path]))
+        #expect(settings.badge.background.source == .image)
+        #expect(settings.badge.foreground.isHidden == false)
+    }
+
     @Test("Imported badge foreground (--badge-fg <path>) turns the badge symbol shadow off")
     func badgeForegroundImage_shadowOff() throws {
         let path = try makeTempImageFile().path

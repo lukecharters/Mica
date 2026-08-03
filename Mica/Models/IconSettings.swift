@@ -83,6 +83,28 @@ struct IconSpec: Equatable {
         LayerGroupVisibility(foregroundHidden: foreground.isHidden,
                              backgroundHidden: background.isHidden)
     }
+
+    /// Import a background image, applying the defaults that reach *both* layers.
+    ///
+    /// This has to live on `IconSpec` rather than on `IconBackgroundSpec`:
+    /// `IconBackgroundSpec.apply(_:)` cannot reach the foreground, and the repo's
+    /// rule is that derived state lives on the spec owning its inputs. **Every
+    /// background import routes through here** — the File and Edit menus, the
+    /// inspector's source section, the canvas drop, the CLI's `--icon-bg` branch
+    /// and the configuration decoder. Leaving one out is the failure mode.
+    ///
+    /// Hiding the foreground is a *default*, not a veto: the user can switch it
+    /// back on and both layers draw.
+    mutating func applyBackgroundImage(_ image: ImportedImage,
+                                       defaults: ImportDefaults = .fixed) {
+        background.apply(image)                     // source, padding, shadow off
+        if defaults.turnsOffCornerRadius {
+            background.cornerRadiusStyle = .off
+        }
+        if defaults.hidesForeground {
+            foreground.isHidden = true
+        }
+    }
 }
 
 /// The Badge group: where it sits, how big, and its two layers.
@@ -149,6 +171,22 @@ struct BadgeSpec: Equatable {
     var visibility: LayerGroupVisibility {
         LayerGroupVisibility(foregroundHidden: foreground.isHidden,
                              backgroundHidden: background.isHidden)
+    }
+
+    /// Import a background image, applying the defaults that reach *both* layers.
+    /// The icon's counterpart, and the same contract — see
+    /// `IconSpec.applyBackgroundImage(_:defaults:)`.
+    ///
+    /// No corner radius here: the badge has none, its shape coming from
+    /// `BadgeGeometry.badgeCornerRadiusRatio` or, for imported artwork, from the
+    /// artwork's own alpha. `ImportDefaults.turnsOffCornerRadius` is therefore
+    /// ignored rather than absent, so one type serves both seams.
+    mutating func applyBackgroundImage(_ image: ImportedImage,
+                                       defaults: ImportDefaults = .fixed) {
+        background.apply(image)                     // source, padding, shadow off
+        if defaults.hidesForeground {
+            foreground.isHidden = true
+        }
     }
 }
 

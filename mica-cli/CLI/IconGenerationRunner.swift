@@ -338,9 +338,17 @@ class IconGenerationRunner {
                     settings.icon.background.preRenderedColorName = normalizeBritishSpelling(color)
                 }
             case .image(let path):
-                settings.icon.background.source = .image
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                settings.icon.background.image = try ImageImportService.importFromURL(url)
+                // Routes through the same seam as an interactive import, so the two
+                // interfaces cannot drift on what importing a background means.
+                // `.fixed` is the default argument and is load-bearing here: a GUI
+                // preference must never change what `mica-cli` renders.
+                //
+                // The flag blocks below then override any of it that was given
+                // explicitly — scale and padding just here, corner radius and
+                // shadow further down — which is the CLI's usual "explicit flag
+                // wins over an import default" precedence.
+                settings.icon.applyBackgroundImage(try ImageImportService.importFromURL(url))
                 if let scale = command.background.scale {
                     settings.icon.background.imageScale = scale
                 }
@@ -478,8 +486,9 @@ class IconGenerationRunner {
                     settings.badge.background.color = settings.badge.background.gradientStartColor
                 case .image(let path):
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-                    settings.badge.background.source = .image
-                    settings.badge.background.image = try ImageImportService.importFromURL(url)
+                    // The icon's seam, for the badge — see the `--icon-bg` branch
+                    // above. No corner radius in this one; the badge has none.
+                    settings.badge.applyBackgroundImage(try ImageImportService.importFromURL(url))
                     if let backgroundScale = command.badge.backgroundScale {
                         settings.badge.background.imageScale = backgroundScale
                     }

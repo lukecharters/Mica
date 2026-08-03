@@ -225,8 +225,10 @@ struct ScaledIconPreview: View {
                         do {
                             let imported = try ImageImportService.importFromURL(url)
                             // Dropped files → icon background, padding compensation on
-                            // (fill the frame) and shadow off by default.
-                            settings.icon.background.apply(imported)
+                            // (fill the frame) and shadow off by default. The rest of
+                            // the import defaults — foreground hidden, corner radius
+                            // off — are preferences, hence `.fromPreferences()`.
+                            settings.icon.applyBackgroundImage(imported, defaults: .fromPreferences())
                         } catch {
                             print("Drop import failed: \(error.localizedDescription)")
                         }

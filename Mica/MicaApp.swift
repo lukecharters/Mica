@@ -26,7 +26,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.icon.background.apply(imported)
+                        settings.icon.applyBackgroundImage(imported, defaults: .fromPreferences())
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -52,7 +52,7 @@ struct MicaApp: App {
                     guard var settings = iconSettings else { return }
                     do {
                         guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.badge.background.apply(imported)
+                        settings.badge.applyBackgroundImage(imported, defaults: .fromPreferences())
                         iconSettings = settings
                     } catch {
                         print("Paste import failed: \(error.localizedDescription)")
@@ -86,7 +86,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.icon.background.apply(imported)
+                        settings.icon.applyBackgroundImage(imported, defaults: .fromPreferences())
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()
@@ -122,7 +122,7 @@ struct MicaApp: App {
                     guard panel.runModal() == .OK, let url = panel.url else { return }
                     do {
                         let imported = try ImageImportService.importFromURL(url)
-                        settings.badge.background.apply(imported)
+                        settings.badge.applyBackgroundImage(imported, defaults: .fromPreferences())
                         iconSettings = settings
                     } catch {
                         NSAlert(error: error).runModal()

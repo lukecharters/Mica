@@ -18,7 +18,7 @@ struct IconBackgroundSourceSection: View {
         if iconSettings.icon.background.source == .image {
             ImageImportControls(
                 importedImage: $iconSettings.icon.background.image,
-                onImport: { iconSettings.icon.background.apply($0) }
+                onImport: { iconSettings.icon.applyBackgroundImage($0, defaults: .fromPreferences()) }
             )
         }
     }

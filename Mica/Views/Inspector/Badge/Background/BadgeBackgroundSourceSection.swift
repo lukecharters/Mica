@@ -17,7 +17,7 @@ struct BadgeBackgroundSourceSection: View {
         if iconSettings.badge.background.source == .image {
             ImageImportControls(
                 importedImage: $iconSettings.badge.background.image,
-                onImport: { iconSettings.badge.background.apply($0) }
+                onImport: { iconSettings.badge.applyBackgroundImage($0, defaults: .fromPreferences()) }
             )
         }
     }
