@@ -44,6 +44,36 @@ extension FocusedValues {
     /// the pasteboard with that layer missing. Copy, drag-out and ⇧⌘E are three faces
     /// of one export and answer to one rule.
     @Entry var copyIcon: FocusedAction?
+
+    // MARK: The View menu
+    //
+    // Four entries, all plain window state — the View menu shows the window you are
+    // looking at, so each is nil when nothing has focus and the menu item disables
+    // itself on that alone. None of them is gated on `canExport`: unlike Copy or
+    // Export, hiding the inspector while a System-mode raster is pending is a
+    // perfectly good thing to do.
+    //
+    // "Show Advanced Controls" is deliberately **not** here. It is an app-wide
+    // preference, so `MicaApp` reads it with `@AppStorage` directly and the item
+    // stays enabled with no window open, exactly as Settings ▸ General does.
+
+    /// The sidebar column's visibility. A `Bool` rather than the
+    /// `NavigationSplitViewVisibility` it really is, because a menu item can only
+    /// show or hide — the `.doubleColumn` case has no meaning in a two-column app.
+    @Entry var sidebarVisible: Binding<Bool>?
+
+    /// The trailing `.inspector` column's visibility.
+    @Entry var inspectorVisible: Binding<Bool>?
+
+    /// The preview's zoom level, walked by View ▸ Zoom In / Zoom Out along
+    /// `PreviewZoom.levels`.
+    @Entry var previewZoom: Binding<Double>?
+
+    /// The preview's point-size override, or nil to follow the export size. A
+    /// `Binding` to an `Optional` rather than a `@FocusedBinding`, which would make
+    /// the use site a double optional and lose the difference between "no window"
+    /// and "Match Export Size".
+    @Entry var previewPointSize: Binding<CGFloat?>?
 }
 
 /// A menu-invokable action published by the focused window.
@@ -54,6 +84,26 @@ extension FocusedValues {
 /// symmetric with every other command there.
 struct FocusedAction {
     let perform: () -> Void
+}
+
+/// Publishes the window state the View menu drives.
+///
+/// A `ViewModifier` for a mechanical reason, not an architectural one: applying
+/// these four `.focusedSceneValue`s directly in `ContentView.body` puts it past the
+/// type-checker's time limit. Here they are their own expression.
+private struct ViewMenuFocusValues: ViewModifier {
+    let sidebarVisible: Binding<Bool>
+    let inspectorVisible: Binding<Bool>
+    let previewZoom: Binding<Double>
+    let previewPointSize: Binding<CGFloat?>
+
+    func body(content: Content) -> some View {
+        content
+            .focusedSceneValue(\.sidebarVisible, sidebarVisible)
+            .focusedSceneValue(\.inspectorVisible, inspectorVisible)
+            .focusedSceneValue(\.previewZoom, previewZoom)
+            .focusedSceneValue(\.previewPointSize, previewPointSize)
+    }
 }
 
 struct ContentView: View {
@@ -236,6 +286,20 @@ struct ContentView: View {
         .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
         .focusedSceneValue(\.importConfiguration, FocusedAction { viewModel.showConfigImportDialog = true })
         .focusedSceneValue(\.copyIcon, copyIconAction)
+        // The View menu's four, as one modifier rather than four.
+        //
+        // **Four more `.focusedSceneValue` calls on `body` do not compile** — the
+        // build failed with "unable to type-check this expression in reasonable
+        // time", the same wall the configuration dialogs and the fourth alert hit.
+        // `ViewMenuFocusValues` is a `ViewModifier` purely so its four applications
+        // are type-checked in their own body. Anything else this view publishes
+        // should join it rather than extend the chain here.
+        .modifier(ViewMenuFocusValues(
+            sidebarVisible: sidebarVisibleBinding,
+            inspectorVisible: $showInspector,
+            previewZoom: $zoomLevel,
+            previewPointSize: $previewPointSize
+        ))
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //
@@ -360,6 +424,22 @@ struct ContentView: View {
     // One computed `Binding<Bool>` per alert. They live out here because four inline
     // `Binding(get:set:)` arguments inside `body` exceed the type-checker's time limit;
     // see the note at the alerts themselves.
+
+    /// `columnVisibility` as the show/hide a menu item can drive.
+    ///
+    /// Reading it as "not `.detailOnly`" rather than "== `.all`" so the transient
+    /// `.doubleColumn` a drag can leave behind still reads as shown; writing goes
+    /// to the two cases the sidebar toggle has always used.
+    ///
+    /// Out here rather than inline in `body` for the reason the alerts are — an
+    /// extra `Binding(get:set:)` argument inside `body` is what pushed this view
+    /// past the type-checker's time limit twice already.
+    private var sidebarVisibleBinding: Binding<Bool> {
+        Binding(
+            get: { columnVisibility != .detailOnly },
+            set: { columnVisibility = $0 ? .all : .detailOnly }
+        )
+    }
 
     private var copyErrorIsPresented: Binding<Bool> {
         Binding(

@@ -10,6 +10,30 @@ struct MicaApp: App {
     @FocusedValue(\.importConfiguration) private var importConfiguration
     @FocusedValue(\.copyIcon) private var copyIcon
 
+    // The View menu. Window state, so all four are focused values and each item
+    // disables itself when its own is nil.
+    @FocusedBinding(\.sidebarVisible) private var sidebarVisible
+    @FocusedBinding(\.inspectorVisible) private var inspectorVisible
+    @FocusedBinding(\.previewZoom) private var previewZoom
+    @FocusedValue(\.previewPointSize) private var previewPointSize
+
+    /// App-wide, so it is read here rather than published by the focused window —
+    /// View ▸ Show Advanced Controls stays enabled with no window open, which is
+    /// what a preference should do. Settings ▸ General reads the same key.
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
+
+    /// The rung View ▸ Zoom In would move to, or nil if there is no window or the
+    /// preview is already at the top of the ladder. Computed once and used for both
+    /// the item's action guard and its enabled state, so the menu cannot offer a
+    /// step it will not take.
+    private var nextZoomIn: Double? {
+        previewZoom.flatMap(PreviewZoom.zoomedIn(from:))
+    }
+
+    private var nextZoomOut: Double? {
+        previewZoom.flatMap(PreviewZoom.zoomedOut(from:))
+    }
+
 
     var body: some Scene {
         WindowGroup {
@@ -205,6 +229,100 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("o", modifiers: .command)
                 .disabled(importConfiguration == nil)
+            }
+
+            // The View menu. Until 2026-08-04 it held only what AppKit puts there —
+            // Show Tab Bar, Show All Tabs, Enter Full Screen — while the sidebar,
+            // the inspector and the zoom were reachable from the toolbar alone, and
+            // ⌘+ / ⌘− / ⌘0 did nothing. Item B1 of `docs/plans/mac-conventions.md`.
+            //
+            // `before: .sidebar` rather than a `CommandMenu("View")`: a second menu
+            // of that name would sit beside AppKit's rather than merge with it.
+            //
+            // **Show Tab Bar / Show All Tabs cannot be pushed below this group.**
+            // Measured 2026-08-04: `before: .sidebar` and `before: .toolbar` produce
+            // a byte-identical View menu, both landing under the tab-bar pair. Those
+            // two come from AppKit's window tabbing rather than a SwiftUI command
+            // group, so no placement reaches above them. Don't spend a build on it
+            // again.
+            CommandGroup(before: .sidebar) {
+                // Flipping titles, not checkmarks — that is how the platform writes
+                // a pane toggle (Finder, Mail, Xcode), and it is what SwiftUI's own
+                // sidebar command would have said had `NavigationSplitView` supplied
+                // one here. It does not; measured 2026-08-04, the View menu had no
+                // sidebar item at all.
+                Button(sidebarVisible == true ? "Hide Sidebar" : "Show Sidebar") {
+                    sidebarVisible?.toggle()
+                }
+                .keyboardShortcut("s", modifiers: [.control, .command])
+                .disabled(sidebarVisible == nil)
+
+                // ⌃⌘I pairs with the sidebar's ⌃⌘S. macOS has no settled shortcut
+                // for an inspector — Xcode uses ⌥⌘0, the iWork apps ⌥⌘I — and ⌥⌘0
+                // would read oddly next to ⌘0 for Actual Size below.
+                Button(inspectorVisible == true ? "Hide Inspector" : "Show Inspector") {
+                    inspectorVisible?.toggle()
+                }
+                .keyboardShortcut("i", modifiers: [.control, .command])
+                .disabled(inspectorVisible == nil)
+
+                Divider()
+
+                // Zoom In / Zoom Out walk `PreviewZoom.levels`, the same nine rungs
+                // the toolbar's ZoomMenu lists, so the keyboard cannot land on a
+                // percentage that menu does not offer. Each disables at its end.
+                Button("Zoom In") {
+                    guard let current = previewZoom,
+                          let next = PreviewZoom.zoomedIn(from: current) else { return }
+                    previewZoom = next
+                }
+                .keyboardShortcut("+", modifiers: .command)
+                .disabled(nextZoomIn == nil)
+
+                Button("Zoom Out") {
+                    guard let current = previewZoom,
+                          let next = PreviewZoom.zoomedOut(from: current) else { return }
+                    previewZoom = next
+                }
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(nextZoomOut == nil)
+
+                Button("Actual Size") {
+                    previewZoom = PreviewZoom.actualSize
+                }
+                .keyboardShortcut("0", modifiers: .command)
+                .disabled(previewZoom == nil || previewZoom == PreviewZoom.actualSize)
+
+                // The same rows as the toolbar's PreviewSizeMenu, from one view.
+                //
+                // **The `.disabled` goes on the content, not on the `Menu`.**
+                // Measured 2026-08-04: `Menu(…) { }.disabled(true)` in a
+                // `CommandGroup` renders fully enabled — with no window focused the
+                // submenu still opened, onto rows bound to `.constant(nil)` that
+                // silently did nothing. Disabling the content instead greys every
+                // row, so the one case the binding is missing cannot be clicked.
+                Menu("Preview Size") {
+                    PreviewSizeMenuContent(
+                        previewPointSize: previewPointSize ?? .constant(nil)
+                    )
+                    .disabled(previewPointSize == nil)
+                }
+
+                Divider()
+
+                // B2 moved this out of the inspector and into ⌘, alone, which left
+                // the flag two clicks and a window away from the panel it changes.
+                //
+                // A checkmark `Toggle`, not a flipping title like the two above: the
+                // wiki names it "Show Advanced Controls" in two pages, and a title
+                // that reads "Hide Advanced Controls" half the time strands both.
+                Toggle("Show Advanced Controls", isOn: $advancedControlsEnabled)
+
+                // Not decoration. A checkmark item gives its *visual group* a gutter
+                // and indents everything in it — without this divider, AppKit's
+                // Enter Full Screen sat indented under the Toggle as though it were
+                // a second preference.
+                Divider()
             }
 
             #if DEBUG

@@ -14,7 +14,7 @@ Mica's window has three regions:
 - **Preview** (centre) — a live preview of the icon. Some interactions happen directly here (badge dragging, drag-and-drop import).
 - **Inspector** (right) — the controls for whatever is selected in the sidebar, with two tabs: **Controls** (styling) and **Export**.
 
-Both side panels are resizable, and the toolbar buttons show/hide the inspector.
+Both side panels are resizable. Either can be shown or hidden from the toolbar or from the **View** menu — **Hide Sidebar ⌃⌘S** and **Hide Inspector ⌃⌘I**.
 
 ## The layer sidebar
 
@@ -139,7 +139,23 @@ The badge's Foreground and Background layers mirror the icon's controls: symbol 
   - Jamf Self Service classic — Catalog View (75 pt) and Item View (120 pt)
 - **Zoom menu** (toolbar) — 25% to 800%, or **Fit**.
 
-Previewing at the real portal size is the quickest way to check that a fine symbol still reads clearly at 40 pt.
+Both are also in the **View** menu, where the zoom has keyboard shortcuts: **Zoom In ⌘+**, **Zoom Out ⌘−** and **Actual Size ⌘0**. Zoom In and Zoom Out step between the same nine levels the toolbar menu lists, and grey out at either end.
+
+Neither affects export — the preview size and zoom are only about how big the icon is drawn on screen. Previewing at the real portal size is the quickest way to check that a fine symbol still reads clearly at 40 pt.
+
+## The View menu
+
+| Item | Shortcut |
+|---|---|
+| Show / Hide Sidebar | ⌃⌘S |
+| Show / Hide Inspector | ⌃⌘I |
+| Zoom In | ⌘+ |
+| Zoom Out | ⌘− |
+| Actual Size | ⌘0 |
+| Preview Size ▸ | — |
+| Show Advanced Controls | — |
+
+**Show Advanced Controls** is the same setting as **Mica ▸ Settings… ▸ General** — one preference in two places, because it changes the window you are looking at right now. Everything else in this menu applies to the focused window only, so with no window open they are all unavailable except that one.
 
 ## Importing
 
@@ -154,7 +170,7 @@ Images are decoded and centred on a square transparent canvas (downscaled to at 
 
 ## Exporting
 
-Switch the inspector to the **Export** tab (or just press **⌘E**):
+Switch the inspector to the **Export** tab (the toolbar's right-hand segmented control):
 
 | Control | Values | Default |
 |---|---|---|
@@ -162,11 +178,11 @@ Switch the inspector to the **Export** tab (or just press **⌘E**):
 | **2x (Retina)** | on/off — doubles the pixel dimensions | off |
 | **Color Space** | sRGB or Display P3 | sRGB |
 
-**Export** (⌘E) saves a PNG. The suggested filename is the symbol name (or imported file's name) with a `-mica` suffix.
+**File ▸ Export as PNG… (⇧⌘E)** saves a PNG. The suggested filename is the symbol name (or imported file's name) with a `-mica` suffix.
 
 ## Show Advanced Controls
 
-**Mica ▸ Settings… (⌘,) ▸ General.** It switches the whole shape of the inspector, and the setting persists between launches. (It sat at the bottom of the Controls tab until 2026-08-04.)
+**Mica ▸ Settings… (⌘,) ▸ General**, or **View ▸ Show Advanced Controls** for the same switch without leaving the window. It switches the whole shape of the inspector, and the setting persists between launches. (It sat at the bottom of the Controls tab until 2026-08-04.)
 
 **Off (the default)** — each group collapses to a single pane with the same shape as System mode, plus the shadows Mica renders itself:
 
