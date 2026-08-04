@@ -12,7 +12,7 @@ Mica's window has three regions:
 
 - **Layer sidebar** (left) — selects which layer you're editing: the Icon or Badge group, or their Foreground/Background layers.
 - **Preview** (centre) — a live preview of the icon. Some interactions happen directly here (badge dragging, drag-and-drop import).
-- **Inspector** (right) — the controls for whatever is selected in the sidebar, with two tabs: **Controls** (styling) and **Export**.
+- **Inspector** (right) — the controls for whatever is selected in the sidebar, with two tabs: **Controls** (styling) and **Export**. The Controls tab is headed by the group's name, **Icon** or **Badge**, so you can still tell which one you are editing with the sidebar hidden.
 
 Both side panels are resizable. Either can be shown or hidden from the toolbar or from the **View** menu — **Hide Sidebar ⌃⌘S** and **Hide Inspector ⌃⌘I**.
 
@@ -26,7 +26,7 @@ The sidebar lists two groups — **Icon** and **Badge** — each containing a **
 
 ## Generation modes: Mica vs System
 
-The toolbar has two generation-mode menus, **Icon** and **Badge**, each reporting its current mode in its label. The two groups are independent — a Mica icon can carry a System badge and vice versa — and both menus are always there, whichever group the sidebar has selected. (They sat at the top of each group's inspector until 2026-08-04.)
+The toolbar has two generation-mode menus, each labelled with its current mode and distinguished by its icon — a plain app tile for the icon, a badged one for the badge. The two groups are independent — a Mica icon can carry a System badge and vice versa — and both menus are always there, whichever group the sidebar has selected. (They sat at the top of each group's inspector until 2026-08-04.)
 
 | | **Mica** | **System** |
 |---|---|---|

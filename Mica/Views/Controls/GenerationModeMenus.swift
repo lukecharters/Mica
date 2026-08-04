@@ -57,7 +57,7 @@ struct GenerationModeMenu: View {
             }
         } label: {
             Label {
-                Text(verbatim: "\(group.label): \(mode.label)")
+                Text(verbatim: "\(mode.label)")
             } icon: {
                 Image(systemName: group.toolbarSymbolName)
             }
@@ -94,7 +94,7 @@ struct AdvancedControlsToolbarToggle: View {
 
     var body: some View {
         Toggle(isOn: $advancedControlsEnabled) {
-            Label("Show Advanced Controls", systemImage: "slider.horizontal.3")
+            Label("Advanced Controls", systemImage: "slider.horizontal.3")
         }
         .help("Show advanced controls")
     }

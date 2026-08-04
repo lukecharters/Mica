@@ -49,7 +49,15 @@ struct InspectorControls: View {
     /// again, only the control left. The badge's `BadgeModeMemory` went with it, to
     /// `ContentView` — also mounted for the window's life, so it cannot go stale there.
     var body: some View {
-        controlsScrollView
+        VStack(alignment: .leading, spacing: 0) {
+            // Outside the ScrollView on purpose — see `InspectorGroupHeader`.
+            InspectorGroupHeader(group: group)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+
+            controlsScrollView
+        }
     }
 
     private var controlsScrollView: some View {
@@ -201,9 +209,9 @@ struct InspectorControls: View {
     /// separately editable layers, and the simple pane deliberately mirrors
     /// System's un-tabbed shape.
     ///
-    /// The Mica/System picker that used to head this stack is in the toolbar, so the
-    /// System-mode and simple panes now open flush with the top of the inspector and
-    /// the tab bar carries its own top padding.
+    /// The Mica/System picker that used to head this stack is in the toolbar. Nothing
+    /// here carries top padding: `InspectorGroupHeader` sits above all three panes and
+    /// its bottom padding is the only gap they need.
     @ViewBuilder
     private func groupPane<SystemPane: View, SimplePane: View, TabPane: View>(
         tab: Binding<LayerTab>,
@@ -214,17 +222,12 @@ struct InspectorControls: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if isSystem {
-                // The picker used to supply this gap. Both un-tabbed panes take it
-                // here so they sit off the top edge the way the tab bar does.
                 systemContent()
-                    .padding(.top, 16)
             } else if !advancedControlsEnabled {
                 simpleContent()
-                    .padding(.top, 16)
             } else {
                 LayerTabPicker(group: group, selection: tab)
                     .padding(.horizontal, 20)
-                    .padding(.top, 16)
                     .padding(.bottom, 16)
 
                 tabContent(tab.wrappedValue)
