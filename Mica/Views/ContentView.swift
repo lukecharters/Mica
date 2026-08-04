@@ -36,6 +36,14 @@ extension FocusedValues {
     /// Open the focused window's Import Configuration… panel. An action for symmetry
     /// with `exportConfiguration`, since the pair is one feature in the File menu.
     @Entry var importConfiguration: FocusedAction?
+
+    /// Copy the focused window's rendered icon to the pasteboard.
+    ///
+    /// Gated on `canExport` exactly as `exportPNG` is, and for the same reason: a copy
+    /// made while a System-mode layer's appex raster is pending would put an icon on
+    /// the pasteboard with that layer missing. Copy, drag-out and ⇧⌘E are three faces
+    /// of one export and answer to one rule.
+    @Entry var copyIcon: FocusedAction?
 }
 
 /// A menu-invokable action published by the focused window.
@@ -136,11 +144,22 @@ struct ContentView: View {
                         previewPointSize: $previewPointSize,
                         onSelect: select,
                         selection: currentPreviewSelection,
-                        selectionPulse: selectionPulse
+                        selectionPulse: selectionPulse,
+                        makeDragPayload: makeDragPayload
                     )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Focus-resolved ⌘C. `.onCopyCommand` hooks the **standard** Copy, which is
+            // the only way the icon can answer to ⌘C at all: two menu items sharing one
+            // key equivalent are deduplicated when the menu is built and the later one
+            // silently loses its shortcut (measured 2026-08-04, see MicaApp.swift).
+            //
+            // `.focusable()` is what makes it reachable — the command routes to the
+            // focused view, so without it the canvas is never asked. A text field with a
+            // selection keeps its own Copy, which is the behaviour we want.
+            .focusable()
+            .onCopyCommand(perform: copyIconProviders)
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -211,6 +230,7 @@ struct ContentView: View {
         // export there is nothing it can be waiting on.
         .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
         .focusedSceneValue(\.importConfiguration, FocusedAction { viewModel.showConfigImportDialog = true })
+        .focusedSceneValue(\.copyIcon, copyIconAction)
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //
@@ -292,13 +312,11 @@ struct ContentView: View {
                     }
                 }
         }
-        .alert(
-            "Couldn’t Import the Configuration",
-            isPresented: Binding(
-                get: { viewModel.configImportError != nil },
-                set: { if !$0 { viewModel.configImportError = nil } }
-            )
-        ) {
+        // Every `isPresented:` here is a computed property rather than an inline
+        // `Binding(get:set:)`. Four inline ones put `body` past the type-checker's time
+        // limit — the same wall the configuration dialogs hit, recorded in CLAUDE.md.
+        // Lifting them is not tidying: it is what makes the file compile.
+        .alert("Couldn’t Import the Configuration", isPresented: configImportErrorIsPresented) {
             Button("OK", role: .cancel) { viewModel.configImportError = nil }
         } message: {
             Text(viewModel.configImportError ?? "")
@@ -306,27 +324,124 @@ struct ContentView: View {
         // Not an error: the configuration imported, but something in it could not be
         // honoured. Listed rather than summarised — "3 problems" tells the user nothing
         // about which layer came back empty.
-        .alert(
-            "Imported with Changes",
-            isPresented: Binding(
-                get: { !viewModel.configImportWarnings.isEmpty },
-                set: { if !$0 { viewModel.configImportWarnings = [] } }
-            )
-        ) {
+        .alert("Imported with Changes", isPresented: configImportWarningsArePresented) {
             Button("OK", role: .cancel) { viewModel.configImportWarnings = [] }
         } message: {
             Text(viewModel.configImportWarnings.map(\.message).joined(separator: "\n\n"))
         }
-        .alert(
-            "Couldn’t Export the Configuration",
-            isPresented: Binding(
-                get: { viewModel.configExportError != nil },
-                set: { if !$0 { viewModel.configExportError = nil } }
-            )
-        ) {
+        .alert("Couldn’t Export the Configuration", isPresented: configExportErrorIsPresented) {
             Button("OK", role: .cancel) { viewModel.configExportError = nil }
         } message: {
             Text(viewModel.configExportError ?? "")
+        }
+        // The fourth alert on this view, which is one more than there should be — see
+        // item B3, converge error presentation. Added as an alert rather than a
+        // `print()` regardless: a Copy that silently does nothing is the failure this
+        // command exists to remove.
+        //
+        // `isPresented` is a computed property rather than an inline `Binding(get:set:)`
+        // like the three above, because adding a fourth one inline pushed `body` past
+        // the type-checker's time limit — the failure CLAUDE.md records for the
+        // configuration dialogs, hit again for the same reason.
+        .alert("Couldn’t Copy the Icon", isPresented: copyErrorIsPresented) {
+            Button("OK", role: .cancel) { viewModel.copyError = nil }
+        } message: {
+            Text(viewModel.copyError ?? "")
+        }
+    }
+
+    // MARK: - Alert presentation
+    //
+    // One computed `Binding<Bool>` per alert. They live out here because four inline
+    // `Binding(get:set:)` arguments inside `body` exceed the type-checker's time limit;
+    // see the note at the alerts themselves.
+
+    private var copyErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.copyError != nil },
+            set: { if !$0 { viewModel.copyError = nil } }
+        )
+    }
+
+    private var configImportErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.configImportError != nil },
+            set: { if !$0 { viewModel.configImportError = nil } }
+        )
+    }
+
+    private var configImportWarningsArePresented: Binding<Bool> {
+        Binding(
+            get: { !viewModel.configImportWarnings.isEmpty },
+            set: { if !$0 { viewModel.configImportWarnings = [] } }
+        )
+    }
+
+    private var configExportErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.configExportError != nil },
+            set: { if !$0 { viewModel.configExportError = nil } }
+        )
+    }
+
+    /// The Copy Icon command, or nil while copying would produce the wrong icon.
+    ///
+    /// Lifted out of `body` for the same type-checking reason as the alert above.
+    private var copyIconAction: FocusedAction? {
+        guard viewModel.canExport else { return nil }
+        return FocusedAction { copyIconToPasteboard() }
+    }
+
+    /// The standard Copy's payload while the canvas is focused, or nil to leave ⌘C to
+    /// whatever else can handle it.
+    ///
+    /// Gated on `canExport` exactly as `copyIconAction` is — and returning nil here does
+    /// more than skip the work: it leaves the standard Copy *disabled*, so ⌘C cannot
+    /// quietly copy an icon with a System-mode layer still pending.
+    ///
+    /// Lifted out of `body` for the same type-checking reason as the alerts.
+    private var copyIconProviders: (() -> [NSItemProvider])? {
+        guard viewModel.canExport else { return nil }
+        return {
+            do {
+                return [try IconPasteboard.itemProvider(document: pngExportDocument)]
+            } catch {
+                viewModel.copyError = error.localizedDescription
+                return []
+            }
+        }
+    }
+
+    /// Put the rendered icon on the pasteboard as PNG and TIFF.
+    ///
+    /// Reuses `pngExportDocument`, so Copy, the drag-out and ⇧⌘E all render the same
+    /// icon from the same inputs. No symbol name goes with it: ⌘C in the Symbol field
+    /// is the standard Copy and already does that better.
+    private func copyIconToPasteboard() {
+        do {
+            try IconPasteboard.write(document: pngExportDocument)
+        } catch {
+            viewModel.copyError = error.localizedDescription
+        }
+    }
+
+    /// Builds the drag-out payload, or nil while dragging one out would be wrong.
+    ///
+    /// Returning nil withdraws the drag entirely, on the same rule that withdraws
+    /// ⇧⌘E: `canExport` is false while a System-mode layer's appex raster is still
+    /// rendering, and a PNG written in that window silently omits the pending layer.
+    /// A drag-out *is* an export, so it cannot be the one caller that ignores that.
+    ///
+    /// The payload wraps `pngExportDocument` rather than rebuilding one, so a dragged
+    /// file and a ⇧⌘E export of the same icon are the same bytes under the same name.
+    /// Nothing here renders — see `DraggableIcon`, which is a promise.
+    private var makeDragPayload: (() -> DraggableIcon)? {
+        guard viewModel.canExport else { return nil }
+        return {
+            DraggableIcon(
+                document: pngExportDocument,
+                baseName: viewModel.iconSettings.exportBaseName
+            )
         }
     }
 
@@ -416,7 +531,8 @@ struct ContentView: View {
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
                     selection: currentPreviewSelection,
-                    selectionPulse: selectionPulse
+                    selectionPulse: selectionPulse,
+                    makeDragPayload: makeDragPayload
                 )
 //                .padding()
 

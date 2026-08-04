@@ -20,6 +20,10 @@ struct AppexPreviewPane: View {
     /// Bumped on each canvas click so re-clicking the selected layer re-shows the
     /// outline after it has faded.
     var selectionPulse: Int = 0
+    /// Builds the drag-out payload, or nil to disable dragging the icon out. See
+    /// `DraggableIcon`; the owner supplies it because the System-mode payload needs
+    /// the appex export parameters.
+    var makeDragPayload: (() -> DraggableIcon)? = nil
 
     var body: some View {
         previewContent
@@ -141,6 +145,11 @@ struct AppexPreviewPane: View {
                 ) else { return }
                 onSelect?(target)
             }
+            // Applied to the whole composite here, unlike `ScaledIconPreview` which
+            // applies it to the icon layer alone. There is no badge drag overlay in
+            // System mode, so nothing competes for the gesture and there is no reason
+            // to exclude the badge from the draggable region.
+            .iconDragOut(makeDragPayload)
         } else if let error = viewModel.appexError {
             ContentUnavailableView(
                 "Generation Failed",

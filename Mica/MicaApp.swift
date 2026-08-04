@@ -8,6 +8,7 @@ struct MicaApp: App {
     @FocusedBinding(\.exportPNG) private var exportPNG
     @FocusedValue(\.exportConfiguration) private var exportConfiguration
     @FocusedValue(\.importConfiguration) private var importConfiguration
+    @FocusedValue(\.copyIcon) private var copyIcon
 
 
     var body: some Scene {
@@ -22,6 +23,31 @@ struct MicaApp: App {
         .commands {
             CommandGroup(after: .pasteboard) {
                 Divider()
+
+                // ⇧⌘C, because ⌘C is **taken** — by the standard Copy that SwiftUI puts
+                // in this menu. (An earlier comment here claimed Mica had no pasteboard
+                // command group at all. That was wrong: Cut/Copy/Paste/Delete/Select All
+                // are all present — which is why this group is `after: .pasteboard` —
+                // and ⌘C copies text in the Symbol field today.)
+                //
+                // ⌘C was measured on 2026-08-04 and **cannot** be shared. Two menu items
+                // with one key equivalent are deduplicated when the menu is *built*, not
+                // resolved at dispatch, and the later item loses outright: binding ⌘C
+                // here left this item with `AXMenuItemCmdChar = missing value` and no
+                // shortcut in any focus state, while Copy kept ⌘C. So it is not a
+                // question of which one wins per focus — the icon simply became
+                // unreachable from the keyboard.
+                //
+                // Focus-resolved ⌘C is still possible, but only through the *standard*
+                // Copy command (`.onCopyCommand` on the canvas), never a second item.
+                Button("Copy Icon") {
+                    copyIcon?.perform()
+                }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .disabled(copyIcon == nil)
+
+                Divider()
+
                 Button("Paste as Icon Background") {
                     guard var settings = iconSettings else { return }
                     do {

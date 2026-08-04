@@ -24,6 +24,11 @@ struct ScaledIconPreview: View {
     /// Bumped on each canvas click so re-clicking the selected layer re-shows the
     /// outline after it has faded.
     var selectionPulse: Int = 0
+    /// Builds the drag-out payload, or nil to disable dragging the icon out. The
+    /// owner supplies it because the payload needs the export document, which for a
+    /// System-mode layer means view-model state this view never sees. See
+    /// `DraggableIcon`.
+    var makeDragPayload: (() -> DraggableIcon)? = nil
 
     /// So a badge drag is one undo step rather than one per frame.
     @Environment(\.continuousEdit) private var continuousEdit
@@ -42,7 +47,18 @@ struct ScaledIconPreview: View {
 
     var body: some View {
         ZStack {
+            // The drag-out source is this layer, not the composite, and that placement
+            // is the whole trick: the badge drag overlay is a sibling *above* it in the
+            // ZStack, so a press on the badge hits the overlay and moves the badge,
+            // while a press anywhere else hits this and drags a PNG out. No gesture
+            // arbitration is involved, which is what keeps it clear of the problem
+            // recorded below — a parent-level `.draggable` would compete with the
+            // overlay's `DragGesture` exactly as `.onTapGesture` did.
+            //
+            // The modifier is applied here, at the call site, so `IconContentView`
+            // itself stays a pure render view per CLAUDE.md.
             IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
+                .iconDragOut(makeDragPayload)
 
             // Preview-only spinner/error where the System-mode badge will render.
             // BadgeView itself draws nothing until the appex image exists, so this
