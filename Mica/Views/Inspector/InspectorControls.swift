@@ -38,27 +38,25 @@ struct InspectorControls: View {
     @AppStorage("sidebar.badgeGroupLayout.expanded") private var badgeGroupLayoutExpanded = true
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    /// Remembers the badge's previously-picked non-system source so toggling
-    /// System → Mica restores the user's choice instead of forcing `.symbol`.
-    /// Owned here because `InspectorControls` stays mounted across every group and
-    /// tab change, so the tracked value never goes stale.
-    @State private var lastNonSystemBadgeSource: ForegroundSource = .symbol
-
+    /// No advanced-controls switch down here any more — it moved to Settings ▸
+    /// General on 2026-08-04 (item B2 of `docs/plans/mac-conventions.md`), on the
+    /// grounds that a preference does not belong inside the panel it reconfigures.
+    /// The flag is still read all over this file; only its control left.
+    ///
+    /// No Mica/System picker either, as of the same day: it is two `GenerationModeMenu`s
+    /// in the window toolbar, which show both groups at once instead of only whichever
+    /// one the sidebar has selected. This file still branches on the mode everywhere;
+    /// again, only the control left. The badge's `BadgeModeMemory` went with it, to
+    /// `ContentView` — also mounted for the window's life, so it cannot go stale there.
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Outside the ScrollView on purpose — see `InspectorGroupHeader`.
+            InspectorGroupHeader(group: group)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+
             controlsScrollView
-            Divider()
-            HStack {
-                Text("Show Advanced Controls")
-                    .font(.subheadline)
-                Spacer()
-                Toggle("Show Advanced Controls", isOn: $advancedControlsEnabled)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
         }
     }
 
@@ -80,15 +78,7 @@ struct InspectorControls: View {
             .id("\(group.rawValue).\(advancedControlsEnabled ? activeTab.rawValue : "simple")")
         }
         .onAppear {
-            if iconSettings.badge.foreground.source != .system {
-                lastNonSystemBadgeSource = iconSettings.badge.foreground.source
-            }
             revealAdvancedControlsIfNeeded()
-        }
-        .onChange(of: iconSettings.badge.foreground.source) { _, newValue in
-            if newValue != .system {
-                lastNonSystemBadgeSource = newValue
-            }
         }
         .onChange(of: advancedControlsEnabled) { _, isOn in
             // The simple pane has one row per setting, so anything needing extra
@@ -131,40 +121,13 @@ struct InspectorControls: View {
         iconSettings.badge.mode == .system
     }
 
-    /// Drives the icon group's Mica/System picker.
-    private var iconModeBinding: Binding<Bool> {
-        Binding(
-            get: { iconSettings.icon.mode == .system },
-            set: { iconSettings.icon.mode = $0 ? .system : .mica }
-        )
-    }
-
-    /// Drives the badge group's Mica/System picker. The badge's mode is derived
-    /// from its `badgeIconSource` (`.system` == System), so toggling swaps
-    /// the source and restores the prior Mica choice on the way back.
-    private var badgeModeBinding: Binding<Bool> {
-        Binding(
-            get: { iconSettings.badge.mode == .system },
-            set: { newValue in
-                if newValue {
-                    if iconSettings.badge.foreground.source != .system {
-                        lastNonSystemBadgeSource = iconSettings.badge.foreground.source
-                    }
-                    iconSettings.badge.foreground.source = .system
-                } else {
-                    iconSettings.badge.foreground.source = lastNonSystemBadgeSource
-                }
-            }
-        )
-    }
-
     // MARK: - Group panes
 
-    /// Icon: mode picker, then either the single System pane or the tabbed
-    /// Foreground / Background panes.
+    /// Icon: either the single System pane or the tabbed Foreground / Background
+    /// panes. The mode itself is switched from the toolbar.
     @ViewBuilder
     private var iconGroupControls: some View {
-        groupPane(mode: iconModeBinding, tab: $iconTab, isSystem: isIconAppleReference) {
+        groupPane(tab: $iconTab, isSystem: isIconAppleReference) {
             // System mode renders the whole icon as one appex image, so only its
             // source symbol and colours are editable.
             VStack(spacing: Self.sectionSpacing) {
@@ -200,13 +163,12 @@ struct InspectorControls: View {
         }
     }
 
-    /// Badge: mode picker, then either the single System pane (which keeps the
-    /// group-level layout controls, since position and size are applied when the
-    /// appex badge is composited) or the tabbed Layout / Foreground / Background
-    /// panes.
+    /// Badge: either the single System pane (which keeps the group-level layout
+    /// controls, since position and size are applied when the appex badge is
+    /// composited) or the tabbed Layout / Foreground / Background panes.
     @ViewBuilder
     private var badgeGroupControls: some View {
-        groupPane(mode: badgeModeBinding, tab: $badgeTab, isSystem: isBadgeAppleReference) {
+        groupPane(tab: $badgeTab, isSystem: isBadgeAppleReference) {
             VStack(spacing: Self.sectionSpacing) {
                 sectionForm {
                     Section("Source", isExpanded: $badgeSourceExpanded) {
@@ -242,13 +204,16 @@ struct InspectorControls: View {
         }
     }
 
-    /// Shared frame for both groups: the Mica/System picker, then one of the three
-    /// panes. The layer tab bar belongs to Mica mode with advanced controls on —
-    /// System mode has no separately editable layers, and the simple pane
-    /// deliberately mirrors System's un-tabbed shape.
+    /// Shared frame for both groups: one of the three panes. The layer tab bar
+    /// belongs to Mica mode with advanced controls on — System mode has no
+    /// separately editable layers, and the simple pane deliberately mirrors
+    /// System's un-tabbed shape.
+    ///
+    /// The Mica/System picker that used to head this stack is in the toolbar. Nothing
+    /// here carries top padding: `InspectorGroupHeader` sits above all three panes and
+    /// its bottom padding is the only gap they need.
     @ViewBuilder
     private func groupPane<SystemPane: View, SimplePane: View, TabPane: View>(
-        mode: Binding<Bool>,
         tab: Binding<LayerTab>,
         isSystem: Bool,
         @ViewBuilder systemContent: () -> SystemPane,
@@ -256,11 +221,6 @@ struct InspectorControls: View {
         @ViewBuilder tabContent: (LayerTab) -> TabPane
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            GroupModePicker(isSystem: mode)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
-
             if isSystem {
                 systemContent()
             } else if !advancedControlsEnabled {

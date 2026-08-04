@@ -20,6 +20,15 @@ final class IconViewModel: ObservableObject {
     @Published var iconSettings: IconSettings = IconSettings()
     @Published var showExportDialog: Bool = false
 
+    /// `export` defaults to the fixed `ExportSpec()`, so every test and every
+    /// SwiftUI preview gets the built-in defaults; only `ContentView.init()` passes
+    /// `.fromPreferences()`. Reading the preference here instead would make a
+    /// machine's Settings ▸ Export choice silently change what the test suite
+    /// asserts against.
+    init(export: ExportSpec = ExportSpec()) {
+        iconSettings.export = export
+    }
+
     /// The configuration export, prepared by `beginConfigurationExport()` rather than
     /// computed in `body`: building it encodes the JSON and collects every imported
     /// image's bytes, which is far too much to redo on each view update. The exporter

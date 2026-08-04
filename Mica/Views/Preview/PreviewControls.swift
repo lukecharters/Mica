@@ -20,24 +20,37 @@ struct MDMPortalSizePreset: Identifiable {
 }
 
 /// Zoom-level menu for the SwiftUI preview, shown in the window toolbar.
+///
+/// The rungs come from `PreviewZoom`, which View ▸ Zoom In / Zoom Out walks too, so
+/// the keyboard cannot land on a percentage this menu does not list.
 struct ZoomMenu: View {
     @Binding var zoomLevel: Double
 
-    private let zoomLevels: [Double] = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 8.0]
-
     var body: some View {
         Menu {
-            ForEach(zoomLevels, id: \.self) { level in
-                Button {
-                    zoomLevel = level
-                } label: {
-                    Text("\(Int(level * 100))%")
+            ForEach(PreviewZoom.levels, id: \.self) { level in
+                Toggle(isOn: zoomBinding(for: level)) {
+                    // `verbatim:` — a percentage is a value, not prose, and an Int
+                    // interpolated into a `LocalizedStringKey` picks up the locale's
+                    // digit grouping. Harmless at 25–800%, wrong the moment anyone
+                    // adds a rung past 1000%. See CLAUDE.md.
+                    Text(verbatim: "\(Int(level * 100))%")
                 }
             }
         } label: {
-                Text(zoomLabel)
+                Text(verbatim: zoomLabel)
         }
         .help("Preview zoom")
+    }
+
+    /// A `Toggle` rather than a `Button` so the current rung gets the menu's own
+    /// checkmark gutter. Setting it off does nothing: these are mutually exclusive,
+    /// and there is no "no zoom".
+    private func zoomBinding(for level: Double) -> Binding<Bool> {
+        Binding(
+            get: { zoomLevel == level },
+            set: { if $0 { zoomLevel = level } }
+        )
     }
 
     private var zoomLabel: String {
@@ -57,42 +70,11 @@ struct ZoomMenu: View {
 struct PreviewSizeMenu: View {
     @Binding var previewPointSize: CGFloat?
 
-    private let standardSizes: [Int] = [16, 32, 64, 128, 256, 512, 1024]
-
     var body: some View {
         Menu {
-            Button {
-                previewPointSize = nil
-            } label: {
-                Label("Match Export Size", systemImage: previewPointSize == nil ? "checkmark" : "")
-            }
-
-            Section() {
-                ForEach(standardSizes, id: \.self) { size in
-                    let pointSize = CGFloat(size)
-                    Button {
-                        previewPointSize = pointSize
-                    } label: {
-                        Label("\(size)pt", systemImage: previewPointSize == pointSize ? "checkmark" : "")
-                    }
-                }
-            }
-
-            Section() {
-                ForEach(MDMPortalSizePreset.all) { preset in
-                    let pointSize = CGFloat(preset.pointSize)
-                    Button {
-                        previewPointSize = pointSize
-                    } label: {
-                        Label(
-                            "\(preset.name) (\(preset.pointSize)pt)",
-                            systemImage: previewPointSize == pointSize ? "checkmark" : ""
-                        )
-                    }
-                }
-            }
+            PreviewSizeMenuContent(previewPointSize: $previewPointSize)
         } label: {
-            Text(sizeLabel)
+            Text(verbatim: sizeLabel)
         }
         .help("Preview size")
     }
@@ -100,6 +82,59 @@ struct PreviewSizeMenu: View {
     private var sizeLabel: String {
         guard let previewPointSize else { return "Match Export" }
         return "\(Int(previewPointSize))pt"
+    }
+}
+
+/// The rows of the preview-size menu, with no `Menu` around them.
+///
+/// Two menus show this list — the toolbar's `PreviewSizeMenu` and View ▸ Preview
+/// Size — and they are one view rather than two copies of a `ForEach`, so an MDM
+/// portal added to `MDMPortalSizePreset.all` cannot appear in only one of them.
+struct PreviewSizeMenuContent: View {
+    @Binding var previewPointSize: CGFloat?
+
+    /// Not `ExportPreferences.sizeChoices`, though it is the same seven numbers
+    /// today. These are *preview* point sizes — how big the icon is drawn on screen
+    /// — and that list is the export sizes offered in two pickers. Sharing them
+    /// would tie a change in one meaning to the other.
+    private let standardSizes: [Int] = [16, 32, 64, 128, 256, 512, 1024]
+
+    var body: some View {
+        // `Toggle` rather than `Button` + a `Label` whose systemImage was
+        // `"checkmark"` or `""`: a menu draws a Toggle's state in its own checkmark
+        // gutter, where the old spelling put an SF Symbol inline with the title and
+        // relied on an empty image name rendering as nothing. That reads as a
+        // stray icon in the menu bar, which is where this list now also appears.
+        Toggle(isOn: sizeBinding(for: nil)) {
+            Text("Match Export Size")
+        }
+
+        Section {
+            ForEach(standardSizes, id: \.self) { size in
+                Toggle(isOn: sizeBinding(for: CGFloat(size))) {
+                    // `verbatim:` — 1024 would render as "1,024pt" otherwise.
+                    Text(verbatim: "\(size)pt")
+                }
+            }
+        }
+
+        Section {
+            ForEach(MDMPortalSizePreset.all) { preset in
+                Toggle(isOn: sizeBinding(for: CGFloat(preset.pointSize))) {
+                    Text(verbatim: "\(preset.name) (\(preset.pointSize)pt)")
+                }
+            }
+        }
+    }
+
+    /// Selecting a row sets that size; switching a row *off* is meaningless here
+    /// (the rows are mutually exclusive and one is always current), so it is
+    /// ignored rather than mapped to some other size.
+    private func sizeBinding(for size: CGFloat?) -> Binding<Bool> {
+        Binding(
+            get: { previewPointSize == size },
+            set: { if $0 { previewPointSize = size } }
+        )
     }
 }
 

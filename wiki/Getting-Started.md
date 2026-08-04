@@ -27,7 +27,7 @@ Mica requires **macOS 15 Sequoia or later**. System generation mode (Liquid Glas
 
 That's the whole loop. From here, explore:
 
-- Flick on **Show Advanced Controls** (bottom of the inspector) to split each group into Foreground and Background layers and reveal imported images, rendering modes, symbol weights, corner styles, and more.
+- Flick on **Show Advanced Controls** (the sliders button in the toolbar, the **View** menu, or **Mica ▸ Settings…**, ⌘,) to split each group into Foreground and Background layers and reveal imported images, rendering modes, symbol weights, corner styles, and more.
 - Use the **preview size menu** in the toolbar to see your icon at the exact size it will appear in Jamf Self Service.
 - Turn on the **Badge** layer to overlay a second symbol — see the [App Guide](App-Guide#badge).
 

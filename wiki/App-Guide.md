@@ -12,9 +12,9 @@ Mica's window has three regions:
 
 - **Layer sidebar** (left) — selects which layer you're editing: the Icon or Badge group, or their Foreground/Background layers.
 - **Preview** (centre) — a live preview of the icon. Some interactions happen directly here (badge dragging, drag-and-drop import).
-- **Inspector** (right) — the controls for whatever is selected in the sidebar, with two tabs: **Controls** (styling) and **Export**.
+- **Inspector** (right) — the controls for whatever is selected in the sidebar, with two tabs: **Controls** (styling) and **Export**. The Controls tab is headed by the group's name, **Icon** or **Badge**, so you can still tell which one you are editing with the sidebar hidden.
 
-Both side panels are resizable, and the toolbar buttons show/hide the inspector.
+Both side panels are resizable. Either can be shown or hidden from the toolbar or from the **View** menu — **Hide Sidebar ⌃⌘S** and **Hide Inspector ⌃⌘I**.
 
 ## The layer sidebar
 
@@ -26,7 +26,7 @@ The sidebar lists two groups — **Icon** and **Badge** — each containing a **
 
 ## Generation modes: Mica vs System
 
-At the top of each group's inspector is the **Generation Mode** picker. The Icon and Badge groups have independent modes — a Mica icon can carry a System badge and vice versa.
+The toolbar has two generation-mode menus, each labelled with its current mode and distinguished by its icon — a plain app tile for the icon, a badged one for the badge. The two groups are independent — a Mica icon can carry a System badge and vice versa — and both menus are always there, whichever group the sidebar has selected. (They sat at the top of each group's inspector until 2026-08-04.)
 
 | | **Mica** | **System** |
 |---|---|---|
@@ -53,7 +53,7 @@ Choose **SF Symbol** or **Imported**.
 
 ### Appearance
 
-This whole pane appears only with **Show Advanced Controls** on (bottom of the inspector) — see [Show Advanced Controls](#show-advanced-controls) for what the simple pane shows instead.
+This whole pane appears only with **Show Advanced Controls** on (**Mica ▸ Settings… ⌘, ▸ General**) — see [Show Advanced Controls](#show-advanced-controls) for what the simple pane shows instead.
 
 | Control | What it does | CLI |
 |---|---|---|
@@ -139,7 +139,23 @@ The badge's Foreground and Background layers mirror the icon's controls: symbol 
   - Jamf Self Service classic — Catalog View (75 pt) and Item View (120 pt)
 - **Zoom menu** (toolbar) — 25% to 800%, or **Fit**.
 
-Previewing at the real portal size is the quickest way to check that a fine symbol still reads clearly at 40 pt.
+Both are also in the **View** menu, where the zoom has keyboard shortcuts: **Zoom In ⌘+**, **Zoom Out ⌘−** and **Actual Size ⌘0**. Zoom In and Zoom Out step between the same nine levels the toolbar menu lists, and grey out at either end.
+
+Neither affects export — the preview size and zoom are only about how big the icon is drawn on screen. Previewing at the real portal size is the quickest way to check that a fine symbol still reads clearly at 40 pt.
+
+## The View menu
+
+| Item | Shortcut |
+|---|---|
+| Show / Hide Sidebar | ⌃⌘S |
+| Show / Hide Inspector | ⌃⌘I |
+| Zoom In | ⌘+ |
+| Zoom Out | ⌘− |
+| Actual Size | ⌘0 |
+| Preview Size ▸ | — |
+| Show Advanced Controls | — |
+
+**Show Advanced Controls** is the same setting as the toolbar button and **Mica ▸ Settings… ▸ General** — one preference in three places, because it changes the window you are looking at right now. Everything else in this menu applies to the focused window only, so with no window open they are all unavailable except that one.
 
 ## Importing
 
@@ -154,7 +170,7 @@ Images are decoded and centred on a square transparent canvas (downscaled to at 
 
 ## Exporting
 
-Switch the inspector to the **Export** tab (or just press **⌘E**):
+Switch the inspector to the **Export** tab (the toolbar's right-hand segmented control):
 
 | Control | Values | Default |
 |---|---|---|
@@ -162,11 +178,11 @@ Switch the inspector to the **Export** tab (or just press **⌘E**):
 | **2x (Retina)** | on/off — doubles the pixel dimensions | off |
 | **Color Space** | sRGB or Display P3 | sRGB |
 
-**Export** (⌘E) saves a PNG. The suggested filename is the symbol name (or imported file's name) with a `-mica` suffix.
+**File ▸ Export as PNG… (⇧⌘E)** saves a PNG. The suggested filename is the symbol name (or imported file's name) with a `-mica` suffix.
 
 ## Show Advanced Controls
 
-The toggle at the bottom of the Controls tab. It switches the whole shape of the inspector, and the setting persists between launches.
+Three places, one setting: the **toolbar button** beside the inspector controls (the sliders icon — it looks pressed while advanced controls are on), **View ▸ Show Advanced Controls**, and **Mica ▸ Settings… (⌘,) ▸ General**. It switches the whole shape of the inspector, and the setting persists between launches. (It sat at the bottom of the Controls tab until 2026-08-04.)
 
 **Off (the default)** — each group collapses to a single pane with the same shape as System mode, plus the shadows Mica renders itself:
 
@@ -182,3 +198,20 @@ The Badge group keeps its **Badge Layout** section (position, offsets, size) bel
 Switching **off** folds each layer back to something the simple pane can show: an SF Symbol foreground on a plain colour background, monochrome rendering, one background colour. Nothing is thrown away — your imported artwork, palette colours and custom gradient colours all stay put, so switching back on and re-picking the source restores the previous look.
 
 Importing an image while the advanced controls are off (**File ▸ Import as…**, **⇧⌘I** and friends, or dropping a file on the canvas) switches them on for you, since the simple pane has no controls for an imported layer.
+
+## Settings (⌘,)
+
+**Mica ▸ Settings…** Three tabs, split by *when* each preference takes effect.
+
+| Tab | Setting | Effect |
+|---|---|---|
+| **General** | Show Advanced Controls | Changes the inspector you are looking at, straight away. See [Show Advanced Controls](#show-advanced-controls). |
+| **Export** | Size, Color Space | What the **next** window starts at. Windows already open keep their own — and both stay editable per icon in the inspector's Export tab. |
+| **Importing** | Hide the Foreground on Import | On (the default), importing a background hides the symbol over it, on the assumption the artwork is a finished icon. Turn it off if you import artwork to *put* a symbol on top. |
+| **Importing** | Set Corners to Off on Import | On (the default), importing an icon background sets **Corners** to Off, because artwork that fills its own bounds loses its corners to any rounding. Turn it off for a texture or photo that should be clipped to the icon's shape. |
+
+Both Importing settings are starting points, not decisions: the layer's eye brings a hidden foreground straight back, and **Corners** is in the icon's Background tab.
+
+**They apply to the app only.** `mica-cli` and imported configurations always hide the foreground and set Corners to Off, so one configuration renders the same icon on every machine whatever your preferences say.
+
+Mica keeps nothing else between launches — there is no document and no autosave. Work is kept by exporting a configuration; see [Exporting](#exporting).

@@ -44,6 +44,36 @@ extension FocusedValues {
     /// the pasteboard with that layer missing. Copy, drag-out and ⇧⌘E are three faces
     /// of one export and answer to one rule.
     @Entry var copyIcon: FocusedAction?
+
+    // MARK: The View menu
+    //
+    // Four entries, all plain window state — the View menu shows the window you are
+    // looking at, so each is nil when nothing has focus and the menu item disables
+    // itself on that alone. None of them is gated on `canExport`: unlike Copy or
+    // Export, hiding the inspector while a System-mode raster is pending is a
+    // perfectly good thing to do.
+    //
+    // "Show Advanced Controls" is deliberately **not** here. It is an app-wide
+    // preference, so `MicaApp` reads it with `@AppStorage` directly and the item
+    // stays enabled with no window open, exactly as Settings ▸ General does.
+
+    /// The sidebar column's visibility. A `Bool` rather than the
+    /// `NavigationSplitViewVisibility` it really is, because a menu item can only
+    /// show or hide — the `.doubleColumn` case has no meaning in a two-column app.
+    @Entry var sidebarVisible: Binding<Bool>?
+
+    /// The trailing `.inspector` column's visibility.
+    @Entry var inspectorVisible: Binding<Bool>?
+
+    /// The preview's zoom level, walked by View ▸ Zoom In / Zoom Out along
+    /// `PreviewZoom.levels`.
+    @Entry var previewZoom: Binding<Double>?
+
+    /// The preview's point-size override, or nil to follow the export size. A
+    /// `Binding` to an `Optional` rather than a `@FocusedBinding`, which would make
+    /// the use site a double optional and lose the difference between "no window"
+    /// and "Match Export Size".
+    @Entry var previewPointSize: Binding<CGFloat?>?
 }
 
 /// A menu-invokable action published by the focused window.
@@ -56,10 +86,35 @@ struct FocusedAction {
     let perform: () -> Void
 }
 
+/// Publishes the window state the View menu drives.
+///
+/// A `ViewModifier` for a mechanical reason, not an architectural one: applying
+/// these four `.focusedSceneValue`s directly in `ContentView.body` puts it past the
+/// type-checker's time limit. Here they are their own expression.
+private struct ViewMenuFocusValues: ViewModifier {
+    let sidebarVisible: Binding<Bool>
+    let inspectorVisible: Binding<Bool>
+    let previewZoom: Binding<Double>
+    let previewPointSize: Binding<CGFloat?>
+
+    func body(content: Content) -> some View {
+        content
+            .focusedSceneValue(\.sidebarVisible, sidebarVisible)
+            .focusedSceneValue(\.inspectorVisible, inspectorVisible)
+            .focusedSceneValue(\.previewZoom, previewZoom)
+            .focusedSceneValue(\.previewPointSize, previewPointSize)
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = IconViewModel()
 
-    init() {}
+    /// The one place Settings ▸ Export is read. A new window opens at the user's
+    /// preferred size and colour space; windows already open are untouched, which
+    /// is the whole difference between a default and a setting.
+    init() {
+        _viewModel = StateObject(wrappedValue: IconViewModel(export: .fromPreferences()))
+    }
 
     init(viewModel: IconViewModel, showInspector: Bool = true) {
         _ = showInspector // kept for source compatibility with existing previews
@@ -87,6 +142,11 @@ struct ContentView: View {
     /// Incremented on every canvas click. The selection outline restarts its fade
     /// when this changes, so clicking the already-selected layer still flashes it.
     @State private var selectionPulse: Int = 0
+    /// The badge's way back out of System mode. Owned here, not by the toolbar menu:
+    /// this view is mounted for the window's whole life, so the remembered source
+    /// cannot go stale. (It lived in `InspectorControls` for the same reason until
+    /// the mode picker moved to the toolbar on 2026-08-04.)
+    @State private var badgeModeMemory = BadgeModeMemory()
     @State private var appexService = AppexReferenceService()
     /// NavigationSplitView experiment: drives the sidebar column instead of the old
     /// `showLayerSidebar` flag. `.all` shows the sidebar; `.detailOnly` hides it.
@@ -193,36 +253,19 @@ struct ContentView: View {
                 max: inspectorRange.upperBound
             )
         }
+        // One `ToolbarContent` type, not an inline block. Adding the two
+        // generation-mode menus inline broke the build with "unable to type-check
+        // this expression in reasonable time" — `body`'s fourth trip over that
+        // ceiling. See `IconWindowToolbar`.
         .toolbar {
-            ToolbarItemGroup(placement: .principal) {
-                ZoomMenu(zoomLevel: $zoomLevel)
-                PreviewSizeMenu(previewPointSize: $previewPointSize)
-            }
-            ToolbarItem(placement: .automatic) {
-                Picker("Styling/Export", selection: $inspectorTab) {
-                    Label("Controls", systemImage: InspectorTab.controls.systemImage)
-                        .tag(InspectorTab.controls)
-                    Label("Export", systemImage: InspectorTab.export.systemImage)
-                        .tag(InspectorTab.export)
-                }
-                .pickerStyle(.segmented)
-                .help("Inspector tab")
-                // Selecting a tab reveals the inspector if it's hidden.
-                .onChange(of: inspectorTab) {
-                    if !showInspector { showInspector = true }
-                }
-            }
-            if #available(macOS 26.0, *) {
-                ToolbarSpacer(.fixed)
-            }
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    showInspector.toggle()
-                } label: {
-                    Label("Show Inspector", systemImage: "sidebar.right")
-                }
-                .help("Toggle Inspector")
-            }
+            IconWindowToolbar(
+                iconIsSystem: iconModeBinding,
+                badgeIsSystem: badgeModeBinding,
+                zoomLevel: $zoomLevel,
+                previewPointSize: $previewPointSize,
+                inspectorTab: $inspectorTab,
+                showInspector: $showInspector
+            )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)
@@ -231,6 +274,20 @@ struct ContentView: View {
         .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
         .focusedSceneValue(\.importConfiguration, FocusedAction { viewModel.showConfigImportDialog = true })
         .focusedSceneValue(\.copyIcon, copyIconAction)
+        // The View menu's four, as one modifier rather than four.
+        //
+        // **Four more `.focusedSceneValue` calls on `body` do not compile** — the
+        // build failed with "unable to type-check this expression in reasonable
+        // time", the same wall the configuration dialogs and the fourth alert hit.
+        // `ViewMenuFocusValues` is a `ViewModifier` purely so its four applications
+        // are type-checked in their own body. Anything else this view publishes
+        // should join it rather than extend the chain here.
+        .modifier(ViewMenuFocusValues(
+            sidebarVisible: sidebarVisibleBinding,
+            inspectorVisible: $showInspector,
+            previewZoom: $zoomLevel,
+            previewPointSize: $previewPointSize
+        ))
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //
@@ -239,8 +296,16 @@ struct ContentView: View {
         // so it can be tested in the order SwiftUI actually calls it — mutate, then
         // observe. A previous version decided that policy here and got redo wrong in a
         // way no unit test could reach.
-        .onChange(of: viewModel.iconSettings) { previous, _ in
+        .onChange(of: viewModel.iconSettings) { previous, current in
             viewModel.settingsDidChange(from: previous, undoManager: undoManager)
+            // Piggy-backing rather than taking a fifth `.onChange`: the badge can
+            // reach a new source from anywhere — the inspector, a pasted image, an
+            // imported configuration, an undo — and the toolbar's mode menu has to
+            // remember whichever one, not only the ones it set itself. `observe`
+            // ignores `.system` and is a no-op on an unchanged value, so running it
+            // on every settings change costs nothing. A dedicated `.onChange` here
+            // put `body` over the type-checker's ceiling; see the `.toolbar` note.
+            badgeModeMemory.observe(current.badge.foreground.source)
         }
         .onChange(of: viewModel.micaAppexColors) { previous, _ in
             viewModel.appexColorsDidChange(from: previous, undoManager: undoManager)
@@ -355,6 +420,46 @@ struct ContentView: View {
     // One computed `Binding<Bool>` per alert. They live out here because four inline
     // `Binding(get:set:)` arguments inside `body` exceed the type-checker's time limit;
     // see the note at the alerts themselves.
+
+    /// `columnVisibility` as the show/hide a menu item can drive.
+    ///
+    /// Reading it as "not `.detailOnly`" rather than "== `.all`" so the transient
+    /// `.doubleColumn` a drag can leave behind still reads as shown; writing goes
+    /// to the two cases the sidebar toggle has always used.
+    ///
+    /// Out here rather than inline in `body` for the reason the alerts are — an
+    /// extra `Binding(get:set:)` argument inside `body` is what pushed this view
+    /// past the type-checker's time limit twice already.
+    private var sidebarVisibleBinding: Binding<Bool> {
+        Binding(
+            get: { columnVisibility != .detailOnly },
+            set: { columnVisibility = $0 ? .all : .detailOnly }
+        )
+    }
+
+    // MARK: - Generation mode
+    //
+    // Out here for the same reason as the bindings above: `body` already sits at the
+    // type-checker's ceiling, and two more inline `Binding(get:set:)` arguments in
+    // the toolbar is exactly the shape that has pushed it over three times.
+
+    /// Drives the icon's toolbar mode menu. The icon stores its mode outright.
+    private var iconModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.iconSettings.icon.mode == .system },
+            set: { viewModel.iconSettings.icon.mode = $0 ? .system : .mica }
+        )
+    }
+
+    /// Drives the badge's toolbar mode menu. The badge has no stored mode — it is
+    /// derived from its foreground source — so switching overwrites the source and
+    /// `badgeModeMemory` is what brings the user's choice back. See `BadgeModeMemory`.
+    private var badgeModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.iconSettings.badge.mode == .system },
+            set: { badgeModeMemory.setSystem($0, in: &viewModel.iconSettings) }
+        )
+    }
 
     private var copyErrorIsPresented: Binding<Bool> {
         Binding(
