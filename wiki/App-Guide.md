@@ -26,7 +26,7 @@ The sidebar lists two groups — **Icon** and **Badge** — each containing a **
 
 ## Generation modes: Mica vs System
 
-At the top of each group's inspector is the **Generation Mode** picker. The Icon and Badge groups have independent modes — a Mica icon can carry a System badge and vice versa.
+The toolbar has two generation-mode menus, **Icon** and **Badge**, each reporting its current mode in its label. The two groups are independent — a Mica icon can carry a System badge and vice versa — and both menus are always there, whichever group the sidebar has selected. (They sat at the top of each group's inspector until 2026-08-04.)
 
 | | **Mica** | **System** |
 |---|---|---|
@@ -155,7 +155,7 @@ Neither affects export — the preview size and zoom are only about how big the 
 | Preview Size ▸ | — |
 | Show Advanced Controls | — |
 
-**Show Advanced Controls** is the same setting as **Mica ▸ Settings… ▸ General** — one preference in two places, because it changes the window you are looking at right now. Everything else in this menu applies to the focused window only, so with no window open they are all unavailable except that one.
+**Show Advanced Controls** is the same setting as the toolbar button and **Mica ▸ Settings… ▸ General** — one preference in three places, because it changes the window you are looking at right now. Everything else in this menu applies to the focused window only, so with no window open they are all unavailable except that one.
 
 ## Importing
 
@@ -182,7 +182,7 @@ Switch the inspector to the **Export** tab (the toolbar's right-hand segmented c
 
 ## Show Advanced Controls
 
-**Mica ▸ Settings… (⌘,) ▸ General**, or **View ▸ Show Advanced Controls** for the same switch without leaving the window. It switches the whole shape of the inspector, and the setting persists between launches. (It sat at the bottom of the Controls tab until 2026-08-04.)
+Three places, one setting: the **toolbar button** beside the inspector controls (the sliders icon — it looks pressed while advanced controls are on), **View ▸ Show Advanced Controls**, and **Mica ▸ Settings… (⌘,) ▸ General**. It switches the whole shape of the inspector, and the setting persists between launches. (It sat at the bottom of the Controls tab until 2026-08-04.)
 
 **Off (the default)** — each group collapses to a single pane with the same shape as System mode, plus the shadows Mica renders itself:
 

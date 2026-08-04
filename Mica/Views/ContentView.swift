@@ -142,6 +142,11 @@ struct ContentView: View {
     /// Incremented on every canvas click. The selection outline restarts its fade
     /// when this changes, so clicking the already-selected layer still flashes it.
     @State private var selectionPulse: Int = 0
+    /// The badge's way back out of System mode. Owned here, not by the toolbar menu:
+    /// this view is mounted for the window's whole life, so the remembered source
+    /// cannot go stale. (It lived in `InspectorControls` for the same reason until
+    /// the mode picker moved to the toolbar on 2026-08-04.)
+    @State private var badgeModeMemory = BadgeModeMemory()
     @State private var appexService = AppexReferenceService()
     /// NavigationSplitView experiment: drives the sidebar column instead of the old
     /// `showLayerSidebar` flag. `.all` shows the sidebar; `.detailOnly` hides it.
@@ -248,36 +253,19 @@ struct ContentView: View {
                 max: inspectorRange.upperBound
             )
         }
+        // One `ToolbarContent` type, not an inline block. Adding the two
+        // generation-mode menus inline broke the build with "unable to type-check
+        // this expression in reasonable time" — `body`'s fourth trip over that
+        // ceiling. See `IconWindowToolbar`.
         .toolbar {
-            ToolbarItemGroup(placement: .principal) {
-                ZoomMenu(zoomLevel: $zoomLevel)
-                PreviewSizeMenu(previewPointSize: $previewPointSize)
-            }
-            ToolbarItem(placement: .automatic) {
-                Picker("Styling/Export", selection: $inspectorTab) {
-                    Label("Controls", systemImage: InspectorTab.controls.systemImage)
-                        .tag(InspectorTab.controls)
-                    Label("Export", systemImage: InspectorTab.export.systemImage)
-                        .tag(InspectorTab.export)
-                }
-                .pickerStyle(.segmented)
-                .help("Inspector tab")
-                // Selecting a tab reveals the inspector if it's hidden.
-                .onChange(of: inspectorTab) {
-                    if !showInspector { showInspector = true }
-                }
-            }
-            if #available(macOS 26.0, *) {
-                ToolbarSpacer(.fixed)
-            }
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    showInspector.toggle()
-                } label: {
-                    Label("Show Inspector", systemImage: "sidebar.right")
-                }
-                .help("Toggle Inspector")
-            }
+            IconWindowToolbar(
+                iconIsSystem: iconModeBinding,
+                badgeIsSystem: badgeModeBinding,
+                zoomLevel: $zoomLevel,
+                previewPointSize: $previewPointSize,
+                inspectorTab: $inspectorTab,
+                showInspector: $showInspector
+            )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)
@@ -308,8 +296,16 @@ struct ContentView: View {
         // so it can be tested in the order SwiftUI actually calls it — mutate, then
         // observe. A previous version decided that policy here and got redo wrong in a
         // way no unit test could reach.
-        .onChange(of: viewModel.iconSettings) { previous, _ in
+        .onChange(of: viewModel.iconSettings) { previous, current in
             viewModel.settingsDidChange(from: previous, undoManager: undoManager)
+            // Piggy-backing rather than taking a fifth `.onChange`: the badge can
+            // reach a new source from anywhere — the inspector, a pasted image, an
+            // imported configuration, an undo — and the toolbar's mode menu has to
+            // remember whichever one, not only the ones it set itself. `observe`
+            // ignores `.system` and is a no-op on an unchanged value, so running it
+            // on every settings change costs nothing. A dedicated `.onChange` here
+            // put `body` over the type-checker's ceiling; see the `.toolbar` note.
+            badgeModeMemory.observe(current.badge.foreground.source)
         }
         .onChange(of: viewModel.micaAppexColors) { previous, _ in
             viewModel.appexColorsDidChange(from: previous, undoManager: undoManager)
@@ -438,6 +434,30 @@ struct ContentView: View {
         Binding(
             get: { columnVisibility != .detailOnly },
             set: { columnVisibility = $0 ? .all : .detailOnly }
+        )
+    }
+
+    // MARK: - Generation mode
+    //
+    // Out here for the same reason as the bindings above: `body` already sits at the
+    // type-checker's ceiling, and two more inline `Binding(get:set:)` arguments in
+    // the toolbar is exactly the shape that has pushed it over three times.
+
+    /// Drives the icon's toolbar mode menu. The icon stores its mode outright.
+    private var iconModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.iconSettings.icon.mode == .system },
+            set: { viewModel.iconSettings.icon.mode = $0 ? .system : .mica }
+        )
+    }
+
+    /// Drives the badge's toolbar mode menu. The badge has no stored mode — it is
+    /// derived from its foreground source — so switching overwrites the source and
+    /// `badgeModeMemory` is what brings the user's choice back. See `BadgeModeMemory`.
+    private var badgeModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.iconSettings.badge.mode == .system },
+            set: { badgeModeMemory.setSystem($0, in: &viewModel.iconSettings) }
         )
     }
 

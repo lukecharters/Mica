@@ -2,9 +2,10 @@
 import SwiftUI
 
 /// Segmented tab bar for the layers within a group — Foreground / Background for
-/// the icon, plus Layout for the badge. Sits directly beneath `GroupModePicker`
-/// at the top of the inspector and uses the same full-width segmented control
-/// (the Pages/Keynote inspector pattern).
+/// the icon, plus Layout for the badge. Sits at the top of the inspector and uses
+/// a full-width segmented control (the Pages/Keynote inspector pattern). It headed
+/// the pane jointly with a Mica/System picker until 2026-08-04, when that moved to
+/// the toolbar — hence `FillingSegmentedPicker` having only one caller now.
 ///
 /// Only shown in Mica mode: `LayerTab.availableTabs(for:isSystem:)` is empty in
 /// System mode, where the group renders as a single appex image with no
