@@ -150,6 +150,16 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Focus-resolved ⌘C. `.onCopyCommand` hooks the **standard** Copy, which is
+            // the only way the icon can answer to ⌘C at all: two menu items sharing one
+            // key equivalent are deduplicated when the menu is built and the later one
+            // silently loses its shortcut (measured 2026-08-04, see MicaApp.swift).
+            //
+            // `.focusable()` is what makes it reachable — the command routes to the
+            // focused view, so without it the canvas is never asked. A text field with a
+            // selection keeps its own Copy, which is the behaviour we want.
+            .focusable()
+            .onCopyCommand(perform: copyIconProviders)
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -382,18 +392,34 @@ struct ContentView: View {
         return FocusedAction { copyIconToPasteboard() }
     }
 
-    /// Put the rendered icon on the pasteboard as PNG, TIFF and the symbol name.
+    /// The standard Copy's payload while the canvas is focused, or nil to leave ⌘C to
+    /// whatever else can handle it.
+    ///
+    /// Gated on `canExport` exactly as `copyIconAction` is — and returning nil here does
+    /// more than skip the work: it leaves the standard Copy *disabled*, so ⌘C cannot
+    /// quietly copy an icon with a System-mode layer still pending.
+    ///
+    /// Lifted out of `body` for the same type-checking reason as the alerts.
+    private var copyIconProviders: (() -> [NSItemProvider])? {
+        guard viewModel.canExport else { return nil }
+        return {
+            do {
+                return [try IconPasteboard.itemProvider(document: pngExportDocument)]
+            } catch {
+                viewModel.copyError = error.localizedDescription
+                return []
+            }
+        }
+    }
+
+    /// Put the rendered icon on the pasteboard as PNG and TIFF.
     ///
     /// Reuses `pngExportDocument`, so Copy, the drag-out and ⇧⌘E all render the same
-    /// icon from the same inputs. The symbol name comes from the *icon's* foreground
-    /// even when the badge is what carries a glyph: the string is a fallback describing
-    /// the icon as a whole, not a description of its layers.
+    /// icon from the same inputs. No symbol name goes with it: ⌘C in the Symbol field
+    /// is the standard Copy and already does that better.
     private func copyIconToPasteboard() {
         do {
-            try IconPasteboard.write(
-                document: pngExportDocument,
-                symbolName: viewModel.iconSettings.icon.foreground.symbolName
-            )
+            try IconPasteboard.write(document: pngExportDocument)
         } catch {
             viewModel.copyError = error.localizedDescription
         }

@@ -24,17 +24,22 @@ struct MicaApp: App {
             CommandGroup(after: .pasteboard) {
                 Divider()
 
-                // ⇧⌘C, deliberately **not** ⌘C, even though ⌘C is currently unbound
-                // app-wide: this app has no pasteboard command group at all, so nothing
-                // handles Cut/Copy/Paste anywhere — verified 2026-08-03 by pressing ⌘C
-                // in the Symbol field with a sentinel on the pasteboard, which survived.
+                // ⇧⌘C, because ⌘C is **taken** — by the standard Copy that SwiftUI puts
+                // in this menu. (An earlier comment here claimed Mica had no pasteboard
+                // command group at all. That was wrong: Cut/Copy/Paste/Delete/Select All
+                // are all present — which is why this group is `after: .pasteboard` —
+                // and ⌘C copies text in the Symbol field today.)
                 //
-                // Taking ⌘C would therefore not break text copying (there is none to
-                // break) but it *would* mean a user editing the symbol name and pressing
-                // ⌘C gets the icon on the pasteboard instead of their selected text —
-                // silently wrong, which is worse than today's silently nothing. Leaving
-                // ⌘C free also leaves room to fix the real gap, which is bigger than
-                // this command: see item B6 of docs/plans/mac-conventions.md.
+                // ⌘C was measured on 2026-08-04 and **cannot** be shared. Two menu items
+                // with one key equivalent are deduplicated when the menu is *built*, not
+                // resolved at dispatch, and the later item loses outright: binding ⌘C
+                // here left this item with `AXMenuItemCmdChar = missing value` and no
+                // shortcut in any focus state, while Copy kept ⌘C. So it is not a
+                // question of which one wins per focus — the icon simply became
+                // unreachable from the keyboard.
+                //
+                // Focus-resolved ⌘C is still possible, but only through the *standard*
+                // Copy command (`.onCopyCommand` on the canvas), never a second item.
                 Button("Copy Icon") {
                     copyIcon?.perform()
                 }
