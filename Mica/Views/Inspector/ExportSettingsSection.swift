@@ -15,14 +15,15 @@ struct ExportSettingsSection: View {
             // MARK: - Export Size Section
             InspectorSection(title: "Export Size") {
                 VStack(alignment: .leading, spacing: 8) {
+                    // Same list Settings ▸ Export offers, so the two pickers cannot
+                    // drift into showing different sizes.
                     Picker("Size", selection: $iconSettings.export.size) {
-                        Text("16pt").tag(CGFloat(16))
-                        Text("32pt").tag(CGFloat(32))
-                        Text("64pt").tag(CGFloat(64))
-                        Text("128pt").tag(CGFloat(128))
-                        Text("256pt").tag(CGFloat(256))
-                        Text("512pt").tag(CGFloat(512))
-                        Text("1024pt").tag(CGFloat(1024))
+                        ForEach(ExportPreferences.sizeChoices, id: \.self) { size in
+                            // `verbatim:` matters. A plain `Text("\(Int(size))pt")`
+                            // is a `LocalizedStringKey`, whose Int interpolation
+                            // applies locale grouping — 1024 renders as "1,024pt".
+                            Text(verbatim: "\(Int(size))pt").tag(size)
+                        }
                     }
                     .pickerStyle(.menu)
                     .labelsHidden()

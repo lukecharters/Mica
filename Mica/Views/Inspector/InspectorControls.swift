@@ -44,22 +44,12 @@ struct InspectorControls: View {
     /// tab change, so the tracked value never goes stale.
     @State private var lastNonSystemBadgeSource: ForegroundSource = .symbol
 
+    /// No advanced-controls switch down here any more — it moved to Settings ▸
+    /// General on 2026-08-04 (item B2 of `docs/plans/mac-conventions.md`), on the
+    /// grounds that a preference does not belong inside the panel it reconfigures.
+    /// The flag is still read all over this file; only its control left.
     var body: some View {
-        VStack(spacing: 0) {
-            controlsScrollView
-            Divider()
-            HStack {
-                Text("Show Advanced Controls")
-                    .font(.subheadline)
-                Spacer()
-                Toggle("Show Advanced Controls", isOn: $advancedControlsEnabled)
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-        }
+        controlsScrollView
     }
 
     private var controlsScrollView: some View {

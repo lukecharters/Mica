@@ -59,7 +59,12 @@ struct FocusedAction {
 struct ContentView: View {
     @StateObject private var viewModel = IconViewModel()
 
-    init() {}
+    /// The one place Settings ▸ Export is read. A new window opens at the user's
+    /// preferred size and colour space; windows already open are untouched, which
+    /// is the whole difference between a default and a setting.
+    init() {
+        _viewModel = StateObject(wrappedValue: IconViewModel(export: .fromPreferences()))
+    }
 
     init(viewModel: IconViewModel, showInspector: Bool = true) {
         _ = showInspector // kept for source compatibility with existing previews

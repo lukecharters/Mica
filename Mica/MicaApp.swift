@@ -251,6 +251,12 @@ struct MicaApp: App {
             #endif
         }
 
+        // ⌘, and the Mica ▸ Settings… item come with the scene; there is deliberately
+        // nothing for them in the `.commands` block above.
+        Settings {
+            SettingsView()
+        }
+
         #if DEBUG
         // Every tool goes through DeferredWindowContent — a tool's `init` would
         // otherwise run on every App-body evaluation, i.e. on every settings edit.
