@@ -774,7 +774,7 @@
 				INFOPLIST_FILE = "Mica-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Mica;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Luke Charters";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -819,7 +819,7 @@
 				INFOPLIST_FILE = "Mica-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Mica;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Luke Charters";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

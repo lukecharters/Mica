@@ -354,8 +354,71 @@ struct MicaApp: App {
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
             #endif
+            // The Help menu. Item B5 of `docs/plans/mac-conventions.md`.
+            //
+            // Until 2026-08-04 it held one item — "Mica Help", which AppKit supplies
+            // for every app whether or not it has a help book. **Measured, not
+            // inferred: clicking it opened an alert reading "Help isn't available for
+            // Mica."** That is worse than an empty menu, and it is why this is
+            // `replacing: .help` rather than `after: .help`: the stock item has to go,
+            // not be pushed down by better ones.
+            //
+            // The review claimed there was no "Mica Help" item at all. There was —
+            // the third such stale claim after the pasteboard group (§2.5) and the
+            // window style, and the same lesson: an item that does nothing useful
+            // reads as absent.
+            //
+            // `Link` throughout: it opens its own destination, so there is no action
+            // closure to get wrong and the URL is visible in the declaration. Every
+            // item was verified on screen by reading the browser's address bar back,
+            // not by watching for a window — Edge opens these as *tabs*, so a window
+            // count does not move.
+            CommandGroup(replacing: .help) {
+                // **No ⌘? here, deliberately — a Help item does not carry one.**
+                //
+                // ⌘? looked free (the stock item's `AXMenuItemCmdChar` was
+                // `missing value`) and binding it "worked" in the sense that AX then
+                // reported cmdchar `?` with modifiers `0`. It was still wrong, and
+                // three measurements on 2026-08-04 say so:
+                //
+                // - **The menu never drew it.** Screenshotted with the menu open:
+                //   "Mica Help" and empty space where a shortcut renders.
+                // - **Nothing triggered it** — `keystroke "?" using {command down}`,
+                //   `key code 44` with ⇧⌘ and with ⌘, and `peekaboo hotkey`, as a
+                //   `Link` and as a `Button`, with Mica confirmed frontmost.
+                // - **Finder's Help items carry no shortcut either** (Mac User Guide,
+                //   Tips for Your Mac). Neither does Safari's or Preview's.
+                //
+                // That is the explanation: ⇧⌘/ is a *system* key that opens the Help
+                // menu, not an accelerator an item may claim. AppKit accepts the key
+                // equivalent into its metadata and then neither displays nor honours
+                // it. So the binding was invisible, inert and non-standard at once —
+                // and removing it costs nothing, because macOS's own ⌘? still opens
+                // this menu. **Don't put it back.**
+                Link("Mica Help", destination: MicaLinks.help)
+
+                Divider()
+
+                // The review's actual point about this menu: for a free
+                // GitHub-distributed app, Help is where a user finds the CLI. Named
+                // "Command Line Tool" rather than "mica-cli" because someone who has
+                // not found the CLI yet does not know it is called that.
+                Link("Command Line Tool Guide", destination: MicaLinks.cliGuide)
+                Link("Command Line Tool Reference", destination: MicaLinks.cliReference)
+
+                Divider()
+
+                Link("Release Notes", destination: MicaLinks.releaseNotes)
+
+                // Ellipsis because the form needs information from the user before
+                // the command completes, which is the HIG's actual test — not
+                // because it opens a window.
+                Link("Report an Issue…", destination: MicaLinks.reportIssue)
+            }
+
             #if DEBUG
             CommandGroup(after: .help) {
+                Divider()
                 Button("Export Shadow Variations…") {
                     Task {
                         do {

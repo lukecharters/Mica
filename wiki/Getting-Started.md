@@ -2,8 +2,7 @@
 
 ## Install
 
-<!-- TODO: replace OWNER/REPO with the real GitHub path once the repo is published -->
-Download the latest `.pkg` or `.dmg` from the [Releases page](https://github.com/OWNER/REPO/releases).
+Download the latest `.pkg` or `.dmg` from the [Releases page](https://github.com/lukecharters/Mica/releases).
 
 - The **`.pkg`** installs `Mica.app` into `/Applications` and symlinks the bundled CLI to `/usr/local/bin/mica-cli`, so `mica-cli` works in your terminal straight away.
 - The **`.dmg`** is just the app — drag `Mica.app` to `/Applications`. If you want the CLI on your `PATH` too:
