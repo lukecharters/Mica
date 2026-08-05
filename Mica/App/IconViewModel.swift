@@ -36,27 +36,44 @@ final class IconViewModel: ObservableObject {
     @Published var showConfigExportDialog: Bool = false
     @Published var configExportDocument: ConfigurationExportDocument?
 
-    /// Why a configuration export could not be prepared. Encoding a configuration has
-    /// no expected failure, so this exists to make an unexpected one visible instead of
-    /// producing a menu item that silently does nothing.
-    @Published var configExportError: String?
-
-    /// Why copying the icon to the pasteboard failed. Nearly unreachable — the render
-    /// is the only step that can throw, and `canExport` already withdraws the command
-    /// while a System-mode layer is pending — but a Copy that silently does nothing is
-    /// exactly what item A2 exists to fix, so the failure is shown rather than dropped.
-    @Published var copyError: String?
-
-    /// Whether the configuration open panel is showing, and why an import failed.
-    /// A failure installs nothing — see `importConfiguration(from:undoManager:)`.
+    /// Whether the configuration open panel is showing. A failed import installs
+    /// nothing — see `importConfiguration(from:undoManager:)`.
     @Published var showConfigImportDialog: Bool = false
-    @Published var configImportError: String?
 
-    /// Anything an imported configuration said that this build could not honour — an
-    /// unknown key, an unparseable colour, a missing sidecar image. Held rather than
-    /// discarded so the import can account for what it dropped. See
-    /// `IconViewModel+Configuration.swift`.
-    @Published var configImportWarnings: [MicaConfigWarning] = []
+    /// The one thing the window is telling the user about, or nil.
+    ///
+    /// Four separate properties fed four separate alerts until 2026-08-05 — a copy
+    /// failure, a configuration export failure, a configuration import failure and the
+    /// import's warnings — beside seven `print()`s that told the user nothing at all.
+    /// See `UserMessage` for what belongs here and what stays inline.
+    ///
+    /// **One slot, last write wins, and that cannot lose a message in practice.** Every
+    /// value here follows a discrete action, and the alert showing one is modal to its
+    /// window, so the user cannot start a second action while it is up. The only pair
+    /// that could arrive without a click between them is a configuration import's error
+    /// and its warnings, and those are exclusive by construction: a failed import
+    /// installs nothing and produces no warnings.
+    @Published var userMessage: UserMessage?
+
+    /// Show `message`, or do nothing if there is nothing to show.
+    ///
+    /// Takes an optional so a caller can pass a constructor that answers "nothing to
+    /// say" with nil — `UserMessage.configurationImportWarnings(_:)` is the one that
+    /// does — without every call site repeating the `if let`.
+    func report(_ message: UserMessage?) {
+        guard let message else { return }
+        userMessage = message
+    }
+
+    /// The reporter to hand the views and the menu. See `UserMessage`.
+    ///
+    /// `lazy` rather than computed so `ContentView` hands the *same* value to the
+    /// environment and to the focused-value modifier on every body pass. A fresh
+    /// closure each time is a fresh environment value each time, which invalidates
+    /// every descendant reading it for no reason.
+    lazy var messageReporter = UserMessageReporter { [weak self] message in
+        MainActor.assumeIsolated { self?.report(message) }
+    }
 
     // Generation mode is now per-group on `iconSettings` (iconGenerationMode +
     // badgeGenerationMode). A computed convenience for any code that still wants

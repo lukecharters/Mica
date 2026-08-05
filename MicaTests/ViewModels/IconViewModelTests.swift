@@ -287,7 +287,7 @@ struct IconViewModelTests {
 
         #expect(vm.configExportDocument != nil)
         #expect(vm.showConfigExportDialog)
-        #expect(vm.configExportError == nil)
+        #expect(vm.userMessage == nil)
     }
 
     @Test("A configuration with no imported images exports as a single JSON file")

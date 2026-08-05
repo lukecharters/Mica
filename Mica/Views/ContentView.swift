@@ -86,16 +86,20 @@ struct FocusedAction {
     let perform: () -> Void
 }
 
-/// Publishes the window state the View menu drives.
+/// Publishes the window state the View menu drives, plus the reporter the Edit
+/// and File menus tell their failures to.
 ///
 /// A `ViewModifier` for a mechanical reason, not an architectural one: applying
-/// these four `.focusedSceneValue`s directly in `ContentView.body` puts it past the
-/// type-checker's time limit. Here they are their own expression.
-private struct ViewMenuFocusValues: ViewModifier {
+/// these `.focusedSceneValue`s directly in `ContentView.body` puts it past the
+/// type-checker's time limit. Here they are their own expression, and anything
+/// else the window publishes should join them rather than extend the chain in
+/// `body` — the reporter did, when B3 needed a fifth.
+private struct WindowFocusValues: ViewModifier {
     let sidebarVisible: Binding<Bool>
     let inspectorVisible: Binding<Bool>
     let previewZoom: Binding<Double>
     let previewPointSize: Binding<CGFloat?>
+    let messageReporter: UserMessageReporter
 
     func body(content: Content) -> some View {
         content
@@ -103,6 +107,7 @@ private struct ViewMenuFocusValues: ViewModifier {
             .focusedSceneValue(\.inspectorVisible, inspectorVisible)
             .focusedSceneValue(\.previewZoom, previewZoom)
             .focusedSceneValue(\.previewPointSize, previewPointSize)
+            .focusedSceneValue(\.userMessageReporter, messageReporter)
     }
 }
 
@@ -274,20 +279,25 @@ struct ContentView: View {
         .focusedSceneValue(\.exportConfiguration, FocusedAction { viewModel.beginConfigurationExport() })
         .focusedSceneValue(\.importConfiguration, FocusedAction { viewModel.showConfigImportDialog = true })
         .focusedSceneValue(\.copyIcon, copyIconAction)
-        // The View menu's four, as one modifier rather than four.
+        // The View menu's four plus the message reporter, as one modifier.
         //
         // **Four more `.focusedSceneValue` calls on `body` do not compile** — the
         // build failed with "unable to type-check this expression in reasonable
         // time", the same wall the configuration dialogs and the fourth alert hit.
-        // `ViewMenuFocusValues` is a `ViewModifier` purely so its four applications
-        // are type-checked in their own body. Anything else this view publishes
-        // should join it rather than extend the chain here.
-        .modifier(ViewMenuFocusValues(
+        // `WindowFocusValues` is a `ViewModifier` purely so its applications are
+        // type-checked in their own body. Anything else this view publishes should
+        // join it rather than extend the chain here.
+        .modifier(WindowFocusValues(
             sidebarVisible: sidebarVisibleBinding,
             inspectorVisible: $showInspector,
             previewZoom: $zoomLevel,
-            previewPointSize: $previewPointSize
+            previewPointSize: $previewPointSize,
+            messageReporter: viewModel.messageReporter
         ))
+        // The in-window route to the same alert: the canvas drop and the
+        // inspector's Choose File… buttons, both too deep to hand a closure to.
+        // See `UserMessage`.
+        .environment(\.reportUserMessage, viewModel.messageReporter)
         // Undo. Every change to the two pieces of editable state is observed here —
         // centrally, rather than at the many bindings that write them.
         //
@@ -318,11 +328,12 @@ struct ContentView: View {
             contentType: .png,
             defaultFilename: viewModel.iconSettings.exportBaseName
         ) { result in
-            switch result {
-            case .success(let url):
-                print("Icon saved to: \(url.path)")
-            case .failure(let error):
-                print("Failed to save icon: \(error.localizedDescription)")
+            // **This was the review's worst case**: both branches were a `print()`,
+            // so a PNG export that failed told the user nothing whatever. Success
+            // stays silent on purpose — the file is where they asked for it, and an
+            // alert saying so is a dialog to dismiss for no reason.
+            if case .failure(let error) = result {
+                viewModel.report(.exportFailed(error))
             }
         }
         // The configuration export, deliberately hosted on its own view.
@@ -350,11 +361,8 @@ struct ContentView: View {
                     contentType: viewModel.configExportDocument?.contentType ?? .json,
                     defaultFilename: viewModel.iconSettings.exportBaseName
                 ) { result in
-                    switch result {
-                    case .success(let url):
-                        print("Configuration saved to: \(url.path)")
-                    case .failure(let error):
-                        viewModel.configExportError = error.localizedDescription
+                    if case .failure(let error) = result {
+                        viewModel.report(.configurationExportFailed(error))
                     }
                     viewModel.configExportDocument = nil
                 }
@@ -373,53 +381,47 @@ struct ContentView: View {
                     case .success(let url):
                         viewModel.importConfiguration(from: url, undoManager: undoManager)
                     case .failure(let error):
-                        viewModel.configImportError = error.localizedDescription
+                        viewModel.report(.configurationImportFailed(error))
                     }
                 }
         }
-        // Every `isPresented:` here is a computed property rather than an inline
-        // `Binding(get:set:)`. Four inline ones put `body` past the type-checker's time
-        // limit — the same wall the configuration dialogs hit, recorded in CLAUDE.md.
-        // Lifting them is not tidying: it is what makes the file compile.
-        .alert("Couldn’t Import the Configuration", isPresented: configImportErrorIsPresented) {
-            Button("OK", role: .cancel) { viewModel.configImportError = nil }
-        } message: {
-            Text(viewModel.configImportError ?? "")
-        }
-        // Not an error: the configuration imported, but something in it could not be
-        // honoured. Listed rather than summarised — "3 problems" tells the user nothing
-        // about which layer came back empty.
-        .alert("Imported with Changes", isPresented: configImportWarningsArePresented) {
-            Button("OK", role: .cancel) { viewModel.configImportWarnings = [] }
-        } message: {
-            Text(viewModel.configImportWarnings.map(\.message).joined(separator: "\n\n"))
-        }
-        .alert("Couldn’t Export the Configuration", isPresented: configExportErrorIsPresented) {
-            Button("OK", role: .cancel) { viewModel.configExportError = nil }
-        } message: {
-            Text(viewModel.configExportError ?? "")
-        }
-        // The fourth alert on this view, which is one more than there should be — see
-        // item B3, converge error presentation. Added as an alert rather than a
-        // `print()` regardless: a Copy that silently does nothing is the failure this
-        // command exists to remove.
+        // **The** alert. There were four here until 2026-08-05 — one per error
+        // property — beside seven `print()`s that told the user nothing at all;
+        // item B3 of `docs/plans/mac-conventions.md`. Everything a discrete action
+        // can fail at now arrives as a `UserMessage`, from the menus through a
+        // focused value and from the views through the environment.
         //
-        // `isPresented` is a computed property rather than an inline `Binding(get:set:)`
-        // like the three above, because adding a fourth one inline pushed `body` past
-        // the type-checker's time limit — the failure CLAUDE.md records for the
-        // configuration dialogs, hit again for the same reason.
-        .alert("Couldn’t Copy the Icon", isPresented: copyErrorIsPresented) {
-            Button("OK", role: .cancel) { viewModel.copyError = nil }
-        } message: {
-            Text(viewModel.copyError ?? "")
+        // `presenting:` rather than reading the property in the message closure, so
+        // the text is the message that was reported and cannot be the *next* one:
+        // SwiftUI keeps the presented value while the alert dismisses, where a
+        // fresh read would blank it mid-animation.
+        //
+        // `isPresented:` is a computed property rather than an inline
+        // `Binding(get:set:)` — four inline ones is what pushed `body` past the
+        // type-checker's time limit, and one is not an invitation to go back.
+        .alert(
+            viewModel.userMessage?.title ?? "",
+            isPresented: userMessageIsPresented,
+            presenting: viewModel.userMessage
+        ) { _ in
+            Button("OK", role: .cancel) { viewModel.userMessage = nil }
+        } message: { message in
+            Text(message.message)
         }
     }
 
     // MARK: - Alert presentation
     //
-    // One computed `Binding<Bool>` per alert. They live out here because four inline
-    // `Binding(get:set:)` arguments inside `body` exceed the type-checker's time limit;
-    // see the note at the alerts themselves.
+    // The alert's `Binding<Bool>` lives out here because inline
+    // `Binding(get:set:)` arguments inside `body` exceed the type-checker's time
+    // limit; see the note at the alert itself.
+
+    private var userMessageIsPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.userMessage != nil },
+            set: { if !$0 { viewModel.userMessage = nil } }
+        )
+    }
 
     /// `columnVisibility` as the show/hide a menu item can drive.
     ///
@@ -461,34 +463,6 @@ struct ContentView: View {
         )
     }
 
-    private var copyErrorIsPresented: Binding<Bool> {
-        Binding(
-            get: { viewModel.copyError != nil },
-            set: { if !$0 { viewModel.copyError = nil } }
-        )
-    }
-
-    private var configImportErrorIsPresented: Binding<Bool> {
-        Binding(
-            get: { viewModel.configImportError != nil },
-            set: { if !$0 { viewModel.configImportError = nil } }
-        )
-    }
-
-    private var configImportWarningsArePresented: Binding<Bool> {
-        Binding(
-            get: { !viewModel.configImportWarnings.isEmpty },
-            set: { if !$0 { viewModel.configImportWarnings = [] } }
-        )
-    }
-
-    private var configExportErrorIsPresented: Binding<Bool> {
-        Binding(
-            get: { viewModel.configExportError != nil },
-            set: { if !$0 { viewModel.configExportError = nil } }
-        )
-    }
-
     /// The Copy Icon command, or nil while copying would produce the wrong icon.
     ///
     /// Lifted out of `body` for the same type-checking reason as the alert above.
@@ -511,7 +485,7 @@ struct ContentView: View {
             do {
                 return [try IconPasteboard.itemProvider(document: pngExportDocument)]
             } catch {
-                viewModel.copyError = error.localizedDescription
+                viewModel.report(.copyFailed(error))
                 return []
             }
         }
@@ -526,7 +500,7 @@ struct ContentView: View {
         do {
             try IconPasteboard.write(document: pngExportDocument)
         } catch {
-            viewModel.copyError = error.localizedDescription
+            viewModel.report(.copyFailed(error))
         }
     }
 

@@ -32,6 +32,10 @@ struct ScaledIconPreview: View {
 
     /// So a badge drag is one undo step rather than one per frame.
     @Environment(\.continuousEdit) private var continuousEdit
+    /// Where a failed drop goes. From the environment rather than a parameter
+    /// because it is not this view's decision how a failure is shown — see
+    /// `UserMessage`.
+    @Environment(\.reportUserMessage) private var reportUserMessage
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -246,7 +250,7 @@ struct ScaledIconPreview: View {
                             // off — are preferences, hence `.fromPreferences()`.
                             settings.icon.applyBackgroundImage(imported, defaults: .fromPreferences())
                         } catch {
-                            print("Drop import failed: \(error.localizedDescription)")
+                            reportUserMessage.report(.imageImportFailed(error))
                         }
                     }
                 }

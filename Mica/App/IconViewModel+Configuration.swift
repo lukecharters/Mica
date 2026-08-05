@@ -54,7 +54,7 @@ extension IconViewModel {
             showConfigExportDialog = true
         } catch {
             configExportDocument = nil
-            configExportError = error.localizedDescription
+            report(.configurationExportFailed(error))
         }
     }
 
@@ -85,7 +85,7 @@ extension IconViewModel {
         } catch {
             // Nothing is installed on a failure: a configuration that cannot be read
             // must not leave the app half-changed.
-            configImportError = error.localizedDescription
+            report(.configurationImportFailed(error))
         }
     }
 
@@ -121,7 +121,10 @@ extension IconViewModel {
     ) {
         // An import is not part of whatever gesture or burst preceded it.
         endContinuousEdit()
-        configImportWarnings = warnings
+        // Reported before the early return below: a configuration whose settings match
+        // what is already on screen still has to account for what it dropped on the way,
+        // and "nothing changed" is the case where an unread warning matters most.
+        report(.configurationImportWarnings(warnings))
 
         let previousSettings = iconSettings
         let previousColors = micaAppexColors

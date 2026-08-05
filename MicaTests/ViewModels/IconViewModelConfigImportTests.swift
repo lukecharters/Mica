@@ -256,7 +256,11 @@ struct IconViewModelConfigImportTests {
             settings: importedConfiguration().0, warnings: warnings
         )
 
-        #expect(model.configImportWarnings == warnings)
+        // Asserted as the message the user sees rather than as the array, because
+        // there is one alert now and the message *is* the propagation — see
+        // `UserMessage`. A warning that reached the view model and never reached a
+        // string would pass an array-level check.
+        #expect(model.userMessage == .configurationImportWarnings(warnings))
     }
 
     @Test("A no-op import still reports its warnings")
@@ -273,7 +277,7 @@ struct IconViewModelConfigImportTests {
             warnings: warnings
         )
 
-        #expect(model.configImportWarnings == warnings)
+        #expect(model.userMessage == .configurationImportWarnings(warnings))
 
         // Still nothing to undo — see import_noOp_registersNothing on why this is
         // checked by undoing rather than by canUndo.

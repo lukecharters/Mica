@@ -10,6 +10,11 @@ struct ImageImportControls: View {
     /// (e.g., toggle padding compensation).
     var onImport: (ImportedImage) -> Void = { _ in }
 
+    /// Where a failed import goes. This was an `NSAlert(error:).runModal()` until
+    /// 2026-08-05 — app-modal rather than attached to the window that caused it,
+    /// and a second way of saying the same thing. See `UserMessage`.
+    @Environment(\.reportUserMessage) private var reportUserMessage
+
     var body: some View {
         // Thumbnail preview
         if let img = importedImage, let nsImg = img.nsImage {
@@ -49,7 +54,7 @@ struct ImageImportControls: View {
             importedImage = imported
             onImport(imported)
         } catch {
-            NSAlert(error: error).runModal()
+            reportUserMessage.report(.imageImportFailed(error))
         }
     }
 }

@@ -9,6 +9,11 @@ struct MicaApp: App {
     @FocusedValue(\.exportConfiguration) private var exportConfiguration
     @FocusedValue(\.importConfiguration) private var importConfiguration
     @FocusedValue(\.copyIcon) private var copyIcon
+    /// Where these commands' failures go — the focused window's one alert. The
+    /// menu route of `UserMessage`, and the reason `print()` is gone from the
+    /// eight import commands below. Nil only when nothing has focus, in which
+    /// case every one of them is already disabled.
+    @FocusedValue(\.userMessageReporter) private var messageReporter
 
     // The View menu. Window state, so all four are focused values and each item
     // disables itself when its own is nil.
@@ -32,6 +37,58 @@ struct MicaApp: App {
 
     private var nextZoomOut: Double? {
         previewZoom.flatMap(PreviewZoom.zoomedOut(from:))
+    }
+
+    // MARK: - The eight image-import commands
+    //
+    // Four Paste as… and four Import as…, each of which was an eight-line closure
+    // repeated with one line changed — and, until 2026-08-05, with its own error
+    // handling: the pastes `print()`d where the user could not see, the imports ran
+    // an app-modal `NSAlert`. Item B3 could have replaced eight copies with eight
+    // other copies; these two helpers mean the next import command cannot be
+    // written with a ninth.
+
+    /// Apply a pasted image to the focused window's settings.
+    ///
+    /// `apply` is the only thing that differs between the four Paste as… items.
+    private func pasteImage(_ apply: (inout IconSettings, ImportedImage) -> Void) {
+        guard var settings = iconSettings else { return }
+        do {
+            guard let imported = try ImageImportService.importFromPasteboard() else {
+                // Nil, not a throw: an empty pasteboard is not a failure. Saying so
+                // is still better than the silence this used to be — see
+                // `UserMessage.nothingToPaste`.
+                messageReporter?.report(.nothingToPaste)
+                return
+            }
+            apply(&settings, imported)
+            iconSettings = settings
+        } catch {
+            messageReporter?.report(.imageImportFailed(error))
+        }
+    }
+
+    /// Run an open panel and apply the chosen file to the focused window's settings.
+    ///
+    /// `prompt` is the panel's message; `apply` is the one line that differs between
+    /// the four Import as… items.
+    private func importImage(
+        prompt: String,
+        _ apply: (inout IconSettings, ImportedImage) -> Void
+    ) {
+        guard var settings = iconSettings else { return }
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.treatsFilePackagesAsDirectories = false
+        panel.message = prompt
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            apply(&settings, try ImageImportService.importFromURL(url))
+            iconSettings = settings
+        } catch {
+            messageReporter?.report(.imageImportFailed(error))
+        }
     }
 
 
@@ -73,53 +130,25 @@ struct MicaApp: App {
                 Divider()
 
                 Button("Paste as Icon Background") {
-                    guard var settings = iconSettings else { return }
-                    do {
-                        guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.icon.applyBackgroundImage(imported, defaults: .fromPreferences())
-                        iconSettings = settings
-                    } catch {
-                        print("Paste import failed: \(error.localizedDescription)")
-                    }
+                    pasteImage { $0.icon.applyBackgroundImage($1, defaults: .fromPreferences()) }
                 }
                 .keyboardShortcut("v", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
 
                 Button("Paste as Icon Symbol") {
-                    guard var settings = iconSettings else { return }
-                    do {
-                        guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.icon.foreground.apply(imported)
-                        iconSettings = settings
-                    } catch {
-                        print("Paste import failed: \(error.localizedDescription)")
-                    }
+                    pasteImage { $0.icon.foreground.apply($1) }
                 }
                 .keyboardShortcut("i", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
 
                 Button("Paste as Badge Background") {
-                    guard var settings = iconSettings else { return }
-                    do {
-                        guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.badge.applyBackgroundImage(imported, defaults: .fromPreferences())
-                        iconSettings = settings
-                    } catch {
-                        print("Paste import failed: \(error.localizedDescription)")
-                    }
+                    pasteImage { $0.badge.applyBackgroundImage($1, defaults: .fromPreferences()) }
                 }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
 
                 Button("Paste as Badge Symbol") {
-                    guard var settings = iconSettings else { return }
-                    do {
-                        guard let imported = try ImageImportService.importFromPasteboard() else { return }
-                        settings.badge.foreground.apply(imported)
-                        iconSettings = settings
-                    } catch {
-                        print("Paste import failed: \(error.localizedDescription)")
-                    }
+                    pasteImage { $0.badge.foreground.apply($1) }
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
@@ -127,73 +156,29 @@ struct MicaApp: App {
             CommandGroup(before: .saveItem) {
                 Divider()
                 Button("Import as Icon Background…") {
-                    guard var settings = iconSettings else { return }
-                    let panel = NSOpenPanel()
-                    panel.allowsMultipleSelection = false
-                    panel.canChooseDirectories = false
-                    panel.treatsFilePackagesAsDirectories = false
-                    panel.message = "Choose an image or app to use as the icon background"
-                    guard panel.runModal() == .OK, let url = panel.url else { return }
-                    do {
-                        let imported = try ImageImportService.importFromURL(url)
-                        settings.icon.applyBackgroundImage(imported, defaults: .fromPreferences())
-                        iconSettings = settings
-                    } catch {
-                        NSAlert(error: error).runModal()
+                    importImage(prompt: "Choose an image or app to use as the icon background") {
+                        $0.icon.applyBackgroundImage($1, defaults: .fromPreferences())
                     }
                 }
                 .disabled(iconSettings == nil)
 
                 Button("Import as Icon Symbol…") {
-                    guard var settings = iconSettings else { return }
-                    let panel = NSOpenPanel()
-                    panel.allowsMultipleSelection = false
-                    panel.canChooseDirectories = false
-                    panel.treatsFilePackagesAsDirectories = false
-                    panel.message = "Choose an image or app to use as the icon symbol"
-                    guard panel.runModal() == .OK, let url = panel.url else { return }
-                    do {
-                        let imported = try ImageImportService.importFromURL(url)
-                        settings.icon.foreground.apply(imported)
-                        iconSettings = settings
-                    } catch {
-                        NSAlert(error: error).runModal()
+                    importImage(prompt: "Choose an image or app to use as the icon symbol") {
+                        $0.icon.foreground.apply($1)
                     }
                 }
                 .disabled(iconSettings == nil)
 
                 Button("Import as Badge Background…") {
-                    guard var settings = iconSettings else { return }
-                    let panel = NSOpenPanel()
-                    panel.allowsMultipleSelection = false
-                    panel.canChooseDirectories = false
-                    panel.treatsFilePackagesAsDirectories = false
-                    panel.message = "Choose an image or app to use as the badge background"
-                    guard panel.runModal() == .OK, let url = panel.url else { return }
-                    do {
-                        let imported = try ImageImportService.importFromURL(url)
-                        settings.badge.applyBackgroundImage(imported, defaults: .fromPreferences())
-                        iconSettings = settings
-                    } catch {
-                        NSAlert(error: error).runModal()
+                    importImage(prompt: "Choose an image or app to use as the badge background") {
+                        $0.badge.applyBackgroundImage($1, defaults: .fromPreferences())
                     }
                 }
                 .disabled(iconSettings == nil)
 
                 Button("Import as Badge Symbol…") {
-                    guard var settings = iconSettings else { return }
-                    let panel = NSOpenPanel()
-                    panel.allowsMultipleSelection = false
-                    panel.canChooseDirectories = false
-                    panel.treatsFilePackagesAsDirectories = false
-                    panel.message = "Choose an image or app to use as the badge symbol"
-                    guard panel.runModal() == .OK, let url = panel.url else { return }
-                    do {
-                        let imported = try ImageImportService.importFromURL(url)
-                        settings.badge.foreground.apply(imported)
-                        iconSettings = settings
-                    } catch {
-                        NSAlert(error: error).runModal()
+                    importImage(prompt: "Choose an image or app to use as the badge symbol") {
+                        $0.badge.foreground.apply($1)
                     }
                 }
                 .disabled(iconSettings == nil)

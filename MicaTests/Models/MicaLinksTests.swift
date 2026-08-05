@@ -150,8 +150,13 @@ struct MicaLinksTests {
 
         let text = try #require(String(data: credits, encoding: .utf8))
         #expect(text.hasPrefix("{\\rtf"), "the About panel parses this as RTF")
-        #expect(text.contains("SF Symbols"))
-        #expect(text.contains("calibration"))
+
+        // Only the two things this file legally has to say. It asserted on
+        // "calibration" too until 2026-08-05 — a word from the first draft's prose,
+        // which `9dedc01` rewrote, leaving the suite red on main for a copy edit
+        // that broke nothing. **Pin the attribution, not the wording.**
+        #expect(text.contains("SF Symbols"), "Apple's symbols are attributed")
+        #expect(text.contains("Apache License 2.0"), "the license is named")
     }
 
     @Test("The bundle carries the keys the About panel and a bug report read")
