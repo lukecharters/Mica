@@ -21,5 +21,4 @@ Mica (Mac Icon Creation App) is a native macOS app and command-line tool for cre
 
 ## Getting help
 
-<!-- TODO: replace OWNER/REPO with the real GitHub path once the repo is published -->
-Found a bug or have a feature request? [Open an issue](https://github.com/OWNER/REPO/issues) with your macOS version, app version and, for rendering problems, the settings or the full `mica-cli` command that reproduces it.
+Found a bug or have a feature request? [Open an issue](https://github.com/lukecharters/Mica/issues) with your macOS version, app version and, for rendering problems, the settings or the full `mica-cli` command that reproduces it.
