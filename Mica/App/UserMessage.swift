@@ -106,6 +106,21 @@ struct UserMessage: Equatable {
         message: "The clipboard doesn’t contain an image Mica can use."
     )
 
+    /// A drop carrying more than one item.
+    ///
+    /// A layer holds one image, so the first is used and the rest are dropped —
+    /// and saying so is the point. Silently truncating to one is
+    /// indistinguishable from a drag that only half-arrived, which is the
+    /// failure B4 was asked to remove: *handled or visibly refused, never
+    /// silently truncated*. Reported after the import succeeds, so a genuine
+    /// failure is what the user hears about instead.
+    static func onlyFirstDroppedItemUsed(count: Int, name: String) -> UserMessage {
+        .advisory(
+            "Only One Image Imported",
+            message: "You dropped \(count) items. A layer holds one image, so Mica used “\(name)”."
+        )
+    }
+
     /// What an imported configuration could not honour, or nil if it honoured
     /// everything.
     ///

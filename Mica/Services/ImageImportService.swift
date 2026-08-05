@@ -23,7 +23,28 @@ enum ImageImportService {
 
     // MARK: - Supported types
 
-    static let allDropTypes: [UTType] = [.fileURL]
+    /// What the canvas declares to `.onDrop`, and therefore the only thing the
+    /// importer is ever offered. `ScaledIconPreview` reads this rather than
+    /// spelling a list of its own.
+    ///
+    /// It was `[.fileURL]` alone until 2026-08-05, and that — not format support
+    /// — was where the limit sat: `importFromURL` reads anything `NSImage`
+    /// handles and falls back to the Finder icon for everything else, so *any
+    /// file at all* already imported as something. What never arrived was a drag
+    /// carrying no file: image **data** or a file **promise**, which is what
+    /// Safari, Photos, Preview and most export panels put on the pasteboard.
+    /// Nothing reached the view, so the importer never ran. See B4 of
+    /// `docs/plans/mac-conventions.md`.
+    ///
+    /// `.image` is the abstract supertype, so `public.png`, `public.tiff`,
+    /// `public.jpeg`, HEIC and the rest are matched by conformance — listing
+    /// them individually would be a second list to keep in step.
+    ///
+    /// **Deliberately not `.url`.** A Safari image drag also carries a *network*
+    /// URL, and fetching one is a sandboxed network request with its own failure
+    /// and progress story: a different feature from importing, not a wider type
+    /// list.
+    static let allDropTypes: [UTType] = [.fileURL, .image]
 
     /// Pixel budget for normalized imports (longest side of the stored PNG).
     static let normalizedMaxPixel = 1024

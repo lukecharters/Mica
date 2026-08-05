@@ -56,11 +56,26 @@ struct UserMessageTests {
         }
 
         #expect(UserMessage.nothingToPaste.kind == .advisory)
+        #expect(UserMessage.onlyFirstDroppedItemUsed(count: 3, name: "A.png").kind == .advisory)
         #expect(
             UserMessage.configurationImportWarnings(
                 [MicaConfigWarning(key: "icon-fg", message: "nope")]
             )?.kind == .advisory
         )
+    }
+
+    // MARK: - Multi-item drops
+
+    @Test("A truncated drop says how many arrived and which one was used")
+    func multiItemDrop_namesTheCountAndTheFile() {
+        // Both facts are load-bearing: the count is how the user knows the other
+        // two were not lost in transit, and the name is how they know *which*
+        // one landed. B4's condition was "handled or visibly refused, never
+        // silently truncated".
+        let message = UserMessage.onlyFirstDroppedItemUsed(count: 3, name: "Logo.png")
+
+        #expect(message.message.contains("3"))
+        #expect(message.message.contains("Logo.png"))
     }
 
     // MARK: - Import warnings
