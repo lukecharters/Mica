@@ -210,7 +210,8 @@ struct ContentView: View {
                         onSelect: select,
                         selection: currentPreviewSelection,
                         selectionPulse: selectionPulse,
-                        makeDragPayload: makeDragPayload
+                        makeDragPayload: makeDragPayload,
+                        contextActions: previewContextActions
                     )
                 }
             }
@@ -502,6 +503,41 @@ struct ContentView: View {
         }
     }
 
+    /// What the canvas context menu's three command rows do, and whether the two
+    /// export-shaped ones are offered at all. See `IconContextMenu` for which rows
+    /// exist; this is only the part the settings cannot perform.
+    ///
+    /// One value rather than three or four arguments on both preview views: this
+    /// `body` has been pushed past the type-checker's time limit four times, and
+    /// every extra argument in those two initializers is a step back toward it.
+    ///
+    /// Each command routes to the *same* call its menu item makes — the copy
+    /// helper below, the export flag ⇧⌘E sets, and the shared paste action the
+    /// Edit menu's four Paste as… items use. A context menu is a second route to
+    /// a command and must never become a second implementation of it.
+    private var previewContextActions: PreviewContextActions {
+        PreviewContextActions(canExport: viewModel.canExport) { command in
+            switch command {
+            case .copyIcon:
+                copyIconToPasteboard()
+            case .exportPNG:
+                viewModel.showExportDialog = true
+            case .pasteBackground(let group):
+                ImageImportAction.paste(
+                    into: &viewModel.iconSettings,
+                    reporter: viewModel.messageReporter
+                ) { settings, image in
+                    ImageImportAction.applyBackground(
+                        image,
+                        to: group,
+                        in: &settings,
+                        defaults: .fromPreferences()
+                    )
+                }
+            }
+        }
+    }
+
     /// Move the badge by one arrow press. See `BadgeNudge`, which owns the step,
     /// the clamp and the "is there a badge to move?" question — this is the wiring
     /// only, so the decision can be tested without a view.
@@ -629,7 +665,8 @@ struct ContentView: View {
                     onSelect: select,
                     selection: currentPreviewSelection,
                     selectionPulse: selectionPulse,
-                    makeDragPayload: makeDragPayload
+                    makeDragPayload: makeDragPayload,
+                    contextActions: previewContextActions
                 )
 //                .padding()
 

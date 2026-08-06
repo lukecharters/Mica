@@ -29,6 +29,11 @@ struct ScaledIconPreview: View {
     /// System-mode layer means view-model state this view never sees. See
     /// `DraggableIcon`.
     var makeDragPayload: (() -> DraggableIcon)? = nil
+    /// What the right-click menu's Copy Icon / Export as PNG… / Paste rows do, and
+    /// whether the first two are offered. Supplied by the owner for the same
+    /// reason `makeDragPayload` is — they need the export document and the
+    /// pasteboard, which are view-model state this view never sees.
+    var contextActions: PreviewContextActions = .unavailable
 
     /// So a badge drag is one undo step rather than one per frame.
     @Environment(\.continuousEdit) private var continuousEdit
@@ -43,6 +48,22 @@ struct ScaledIconPreview: View {
     @State private var isHoveringBadge: Bool = false
     /// The single cursor this view currently has on NSCursor's stack, if any.
     @State private var pushedCursor: NSCursor? = nil
+    /// Where the pointer last was, in canvas coordinates.
+    ///
+    /// **`.contextMenu` reports no location**, so this is the only way a
+    /// right-click can know whether it landed on the badge — and it is exact
+    /// rather than an approximation: the pointer has to be over the thing to
+    /// right-click it, and a secondary click does not move it. nil until the
+    /// pointer has ever entered the canvas, which `IconContextMenu.group` reads as
+    /// the icon.
+    ///
+    /// The alternative — a second `.contextMenu` on the badge drag overlay — would
+    /// have needed no location and was rejected: the overlay is a plain circle of
+    /// the badge diameter, where `PreviewHitTester` knows about imported artwork
+    /// drawn past it and the System-mode squircle. That is a second answer to
+    /// "what is under the pointer", which this item is specifically not allowed to
+    /// grow.
+    @State private var hoverPoint: CGPoint? = nil
 
     /// Enclosure size at the current display scale
     private var enclosureSize: CGFloat {
@@ -140,6 +161,26 @@ struct ScaledIconPreview: View {
                 .stroke(isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.3),
                         lineWidth: isDropTargeted ? 2 : 1)
         )
+        // Attached after `.frame`, like the tap gesture and the drop, so the
+        // location arrives in the same `displaySize` square canvas coordinates
+        // `PreviewHitTester` expects.
+        .onContinuousHover(coordinateSpace: .local) { phase in
+            switch phase {
+            case .active(let point): hoverPoint = point
+            case .ended: hoverPoint = nil
+            }
+        }
+        .contextMenu {
+            IconContextMenuContent(
+                settings: $settings,
+                items: IconContextMenu.canvasItems(
+                    for: contextGroup,
+                    settings: settings,
+                    canExport: contextActions.canExport
+                ),
+                actions: contextActions
+            )
+        }
         // Attached after `.frame`, so `location` arrives in the same `displaySize`
         // square canvas coordinates the tap gesture above works in — which is what
         // `PreviewHitTester` expects. Verified on screen 2026-08-05 by dropping on
@@ -163,6 +204,18 @@ struct ScaledIconPreview: View {
                 dragStart = CGSize(width: settings.badge.offsetX, height: newValue)
             }
         }
+    }
+
+    /// Which group the right-click menu is about. `isSystem: false` because this
+    /// view only draws a Mica-mode icon — `AppexPreviewPane` is the canvas in
+    /// System mode, and it asks the same question with the other answer.
+    private var contextGroup: IconLayerGroup {
+        IconContextMenu.group(
+            at: hoverPoint,
+            settings: settings,
+            displaySize: displaySize,
+            isSystem: false
+        )
     }
 
     /// Canvas-fixed space the badge drag is measured in.

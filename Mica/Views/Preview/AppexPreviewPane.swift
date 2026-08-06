@@ -24,6 +24,13 @@ struct AppexPreviewPane: View {
     /// `DraggableIcon`; the owner supplies it because the System-mode payload needs
     /// the appex export parameters.
     var makeDragPayload: (() -> DraggableIcon)? = nil
+    /// The right-click menu's commands, as in `ScaledIconPreview` — this pane is
+    /// the canvas in System mode, so it carries the same menu.
+    var contextActions: PreviewContextActions = .unavailable
+
+    /// Where the pointer last was, in this pane's icon coordinates. See the note
+    /// on `ScaledIconPreview.hoverPoint`: `.contextMenu` reports no location.
+    @State private var hoverPoint: CGPoint? = nil
 
     var body: some View {
         previewContent
@@ -152,6 +159,33 @@ struct AppexPreviewPane: View {
                     iconSize: size
                 ) else { return }
                 onSelect?(target)
+            }
+            .onContinuousHover(coordinateSpace: .local) { phase in
+                switch phase {
+                case .active(let point): hoverPoint = point
+                case .ended: hoverPoint = nil
+                }
+            }
+            // `isSystem: true`, which is what makes the icon here read as one
+            // layer — and why the background rows are absent over it: the appex
+            // pipeline takes a symbol and two colours, so a pasted background
+            // would change nothing. A Mica-composited badge still resolves
+            // normally, and its rows still appear.
+            .contextMenu {
+                IconContextMenuContent(
+                    settings: $viewModel.iconSettings,
+                    items: IconContextMenu.canvasItems(
+                        for: IconContextMenu.group(
+                            at: hoverPoint,
+                            settings: viewModel.iconSettings,
+                            displaySize: size,
+                            isSystem: true
+                        ),
+                        settings: viewModel.iconSettings,
+                        canExport: contextActions.canExport
+                    ),
+                    actions: contextActions
+                )
             }
             // Applied to the whole composite here, unlike `ScaledIconPreview` which
             // applies it to the icon layer alone. There is no badge drag overlay in

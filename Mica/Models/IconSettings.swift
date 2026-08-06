@@ -105,6 +105,54 @@ struct IconSpec: Equatable {
             foreground.isHidden = true
         }
     }
+
+    /// Drop an imported background and put back everything importing it changed.
+    ///
+    /// The inverse of `applyBackgroundImage(_:defaults:)`, field for field: the
+    /// image, the source, the padding compensation, the shadow and the corner
+    /// radius. The colour and gradient are *not* touched, because an import never
+    /// touched them — so removing artwork returns the layer to the colour it had
+    /// before, not to blue.
+    ///
+    /// It reverses the hide guess too, but only while the background layer is
+    /// showing. A group whose background is hidden did not get its foreground
+    /// hidden *by* this import in any meaningful sense, and unhiding it there
+    /// would make an invisible badge reappear from a Remove.
+    ///
+    /// It cannot know whether the user re-made one of those choices deliberately
+    /// after the import — which is the honest reason the menu row says "Remove"
+    /// and the whole thing is one undo step.
+    mutating func removeBackgroundImage() {
+        let fresh = IconBackgroundSpec()
+        background.image = nil
+        background.source = fresh.source
+        background.compensatesForPadding = fresh.compensatesForPadding
+        background.shadowStyle = fresh.shadowStyle
+        background.cornerRadiusStyle = fresh.cornerRadiusStyle
+        if !background.isHidden {
+            foreground.isHidden = false
+        }
+    }
+
+    /// Everything about how this group looks, back to defaults.
+    ///
+    /// Two things survive, and neither is an appearance:
+    ///
+    /// - **The generation mode**, which is chosen in the toolbar and says which
+    ///   pipeline draws the group rather than what it looks like. A reset that
+    ///   silently left System mode would read as the reset having failed.
+    /// - **Both layers' visibility.** Resetting how a group looks should not
+    ///   decide whether it is on screen — and for the badge, whose layers both
+    ///   default to hidden, restoring the defaults there would make it vanish.
+    mutating func reset() {
+        let mode = self.mode
+        let foregroundHidden = foreground.isHidden
+        let backgroundHidden = background.isHidden
+        self = IconSpec()
+        self.mode = mode
+        foreground.isHidden = foregroundHidden
+        background.isHidden = backgroundHidden
+    }
 }
 
 /// The Badge group: where it sits, how big, and its two layers.
@@ -187,6 +235,36 @@ struct BadgeSpec: Equatable {
         if defaults.hidesForeground {
             foreground.isHidden = true
         }
+    }
+
+    /// Drop an imported background and put back everything importing it changed.
+    /// The icon's counterpart, on the same terms — see
+    /// `IconSpec.removeBackgroundImage()`. One field fewer, because the badge has
+    /// no corner radius to restore.
+    mutating func removeBackgroundImage() {
+        let fresh = BadgeBackgroundSpec()
+        background.image = nil
+        background.source = fresh.source
+        background.compensatesForPadding = fresh.compensatesForPadding
+        background.drawsShadow = fresh.drawsShadow
+        if !background.isHidden {
+            foreground.isHidden = false
+        }
+    }
+
+    /// Everything about how this badge looks and where it sits, back to defaults —
+    /// position, scale, both offsets and both layers. Keeps the generation mode
+    /// and the visibility, for the reasons `IconSpec.reset()` gives; here the
+    /// visibility matters more, since a fresh `BadgeSpec` has both layers hidden
+    /// and restoring that would make Reset Badge delete the badge.
+    mutating func reset() {
+        let mode = self.mode
+        let foregroundHidden = foreground.isHidden
+        let backgroundHidden = background.isHidden
+        self = BadgeSpec()
+        self.mode = mode
+        foreground.isHidden = foregroundHidden
+        background.isHidden = backgroundHidden
     }
 }
 

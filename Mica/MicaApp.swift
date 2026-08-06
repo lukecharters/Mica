@@ -51,21 +51,20 @@ struct MicaApp: App {
     /// Apply a pasted image to the focused window's settings.
     ///
     /// `apply` is the only thing that differs between the four Paste as… items.
+    ///
+    /// The reading, the empty-pasteboard advisory and the failure report moved to
+    /// `ImageImportAction.paste` when the canvas context menu became a second
+    /// caller (item C2). What is left here is the focused-window part: unwrap the
+    /// binding, write it back. An unchanged value produces no `onChange`, so the
+    /// unconditional write-back costs no undo entry when nothing was pasted.
     private func pasteImage(_ apply: (inout IconSettings, ImportedImage) -> Void) {
         guard var settings = iconSettings else { return }
-        do {
-            guard let imported = try ImageImportService.importFromPasteboard() else {
-                // Nil, not a throw: an empty pasteboard is not a failure. Saying so
-                // is still better than the silence this used to be — see
-                // `UserMessage.nothingToPaste`.
-                messageReporter?.report(.nothingToPaste)
-                return
-            }
-            apply(&settings, imported)
-            iconSettings = settings
-        } catch {
-            messageReporter?.report(.imageImportFailed(error))
-        }
+        ImageImportAction.paste(
+            into: &settings,
+            reporter: messageReporter ?? .unattached,
+            apply: apply
+        )
+        iconSettings = settings
     }
 
     /// Run an open panel and apply the chosen file to the focused window's settings.

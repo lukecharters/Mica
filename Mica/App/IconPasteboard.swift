@@ -83,6 +83,21 @@ enum IconPasteboard {
         return provider
     }
 
+    /// Write a symbol *name* — the one string in Mica worth copying on its own.
+    ///
+    /// This does not contradict the note above about the name being dropped from
+    /// `write(document:)`. What was wrong there was one command offering both an
+    /// image and a string, so its result depended on the receiver; Copy Symbol Name
+    /// in the symbol browser's context menu says what it copies and copies only
+    /// that. Item C2 of `docs/plans/mac-conventions.md`.
+    ///
+    /// No `throws`: a string has no representation that can fail.
+    @MainActor
+    static func write(symbolName: String, to pasteboard: NSPasteboard = .general) {
+        pasteboard.clearContents()
+        pasteboard.setString(symbolName, forType: .string)
+    }
+
     /// What an icon is offered as, richest first. **The one place that decides.**
     ///
     /// Order is the offer order, and it decides what a receiver that understands more

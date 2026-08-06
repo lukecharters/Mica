@@ -121,6 +121,22 @@ struct SymbolPickerView: View {
                 .frame(maxWidth: 122, minHeight: 30, alignment: .top)
         }
         .help(symbol)
+        // Copy the name and nothing else. A symbol name is the one thing in this
+        // sheet that is useful outside it — in a CLI invocation, a configuration
+        // file, a commit message — and until now the only way to get one out was
+        // to select the symbol and then re-select the text in the inspector's
+        // field.
+        //
+        // *Not* here, deliberately: **Open in SF Symbols**, which review finding
+        // 12 lists. There is no public URL scheme that opens that app at a given
+        // symbol, so the row could only launch it at whatever it last showed —
+        // which is a worse answer than no row, and one that does nothing at all
+        // if the app is not installed.
+        .contextMenu {
+            Button("Copy Symbol Name") {
+                IconPasteboard.write(symbolName: symbol)
+            }
+        }
     }
 
     /// A symbol name with a break opportunity after each dot.

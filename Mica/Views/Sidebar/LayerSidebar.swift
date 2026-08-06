@@ -20,6 +20,17 @@ struct LayerSidebar: View {
                     visibilityBinding: groupVisibilityBinding(for: group)
                 )
                 .tag(group)
+                // Attached here rather than inside `GroupRow` so the row view
+                // keeps taking the two values it draws instead of the whole
+                // settings binding. The menu holds only edits, so it needs no
+                // handler from `ContentView` — see `IconContextMenu.sidebarItems`,
+                // which is deliberately not a copy of the canvas menu.
+                .contextMenu {
+                    IconContextMenuContent(
+                        settings: $iconSettings,
+                        items: IconContextMenu.sidebarItems(for: group, settings: iconSettings)
+                    )
+                }
             }
         }
         .listStyle(.sidebar)
