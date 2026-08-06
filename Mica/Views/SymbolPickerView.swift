@@ -26,7 +26,7 @@ struct SymbolPickerView: View {
     }
 
     private let columns = Array(
-        repeating: GridItem(.flexible(), spacing: 12),
+        repeating: GridItem(.flexible(), spacing: 16),
         count: SymbolGridNavigation.columnCount
     )
 
@@ -36,7 +36,10 @@ struct SymbolPickerView: View {
                 .searchable(text: $searchText, placement: .toolbar, prompt: "Search")
                 .safeAreaInset(edge: .bottom) { footer }
         }
-        .frame(width: 640, height: 460)
+        // Wide enough that six columns leave each label ~120pt, which is most of a
+        // symbol name on one or two lines. The column count is fixed because the
+        // arrow keys need it — see `SymbolGridNavigation`.
+        .frame(width: 900, height: 640)
         .onAppear { cursor = selectedSymbol }
         .onChange(of: searchText) { _, _ in reseatCursor() }
         .background(WindowKeyMonitor(handler: handleKeyDown))
@@ -45,7 +48,7 @@ struct SymbolPickerView: View {
     private var grid: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 18) {
                     ForEach(filteredSymbols, id: \.self) { symbol in
                         Button {
                             commit(symbol)
@@ -56,7 +59,7 @@ struct SymbolPickerView: View {
                         .id(symbol)
                     }
                 }
-                .padding()
+                .padding(20)
             }
             .overlay {
                 if filteredSymbols.isEmpty {
@@ -96,26 +99,40 @@ struct SymbolPickerView: View {
         // the keyboard is on. They coincide when the sheet opens.
         let isSelected = symbol == selectedSymbol
         let isCursor = symbol == cursor
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             Image(systemName: symbol)
-                .font(.system(size: 26))
-                .frame(width: 56, height: 56)
+                .font(.system(size: 36))
+                .frame(width: 76, height: 76)
                 .background(
                     isSelected ? Color.accentColor.opacity(0.15)
                                : Color(nsColor: .controlBackgroundColor)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(isCursor ? Color.accentColor : Color.clear, lineWidth: 2)
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(isCursor ? Color.accentColor : Color.clear, lineWidth: 2.5)
                 )
-            Text(symbol)
-                .font(.caption2)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(maxWidth: 80)
+            Text(verbatim: Self.wrappableName(symbol))
+                .font(.system(size: 11))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                // Two lines is the common case; a third keeps the longest names whole
+                // rather than truncating them, and the minimum keeps rows level.
+                .frame(maxWidth: 122, minHeight: 30, alignment: .top)
         }
         .help(symbol)
+    }
+
+    /// A symbol name with a break opportunity after each dot.
+    ///
+    /// Symbol names are long, dot-separated and have no spaces, so the line breaker
+    /// treats each one as a single word and hyphenates it mid-component —
+    /// `rectangle.portrait.and.ar-` / `row.right`. A zero-width space is invisible and
+    /// is a legal break, and a legal break is preferred over hyphenation, so the name
+    /// wraps at its dots instead. Display only: `.help`, the search and the committed
+    /// value all use the raw name.
+    private static func wrappableName(_ symbol: String) -> String {
+        symbol.replacingOccurrences(of: ".", with: ".\u{200B}")
     }
 
     // MARK: - Keyboard
