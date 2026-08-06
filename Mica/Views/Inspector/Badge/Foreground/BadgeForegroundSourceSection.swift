@@ -36,10 +36,10 @@ struct BadgeForegroundSourceSection: View {
         if isSystem {
             // System mode renders the badge as one appex image, so visibility is
             // all-or-nothing for the group rather than per layer.
-            LayerVisibleToggle(isHidden: $iconSettings.badge.isHidden)
+            LayerVisibleToggle(layerName: "Badge", isHidden: $iconSettings.badge.isHidden)
             symbolField
         } else {
-            LayerVisibleToggle(isHidden: $iconSettings.badge.foreground.isHidden)
+            LayerVisibleToggle(layerName: "Badge Foreground", isHidden: $iconSettings.badge.foreground.isHidden)
 
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in

@@ -18,8 +18,14 @@ struct LayerTabPicker: View {
         FillingSegmentedPicker(
             segments: LayerTab.availableTabs(for: group, isSystem: false).map { ($0.label, $0) },
             selection: $selection,
-            accessibilityLabel: "Layer"
+            accessibilityLabel: "\(group.label) layer"
         )
+        // The segments say Foreground / Background / Layout; what they do not say
+        // is which of the two objects they belong to, and the tab bar sits inside
+        // a pane the sidebar can be hidden away from (⌃⌘S). `InspectorGroupHeader`
+        // answers that above; this answers it on hover, and the accessibility
+        // label above answers it for VoiceOver, which cannot see either.
+        .help("Choose which \(group.label.lowercased()) layer to edit")
     }
 }
 

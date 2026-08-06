@@ -18,10 +18,11 @@ struct IconForegroundLayoutSection: View {
                    in: ForegroundSpec.symbolScaleRange,
                    step: 0.05) {
                 Text("Symbol Scale")
-                Text("\(Int(iconSettings.icon.foreground.symbolScale * 100))%")
+                Text(verbatim: "\(Int((iconSettings.icon.foreground.symbolScale * 100).rounded()))%")
                     .foregroundStyle(.secondary)
                 //                .monospacedDigit()
             } onEditingChanged: { continuousEdit.sliderEditing($0) }
+            .help("The symbol\u{2019}s size within the icon. Mica picks a per-symbol default from its calibration data; this scales that.")
             }
         case .image:
             ImageImportLayoutControls(

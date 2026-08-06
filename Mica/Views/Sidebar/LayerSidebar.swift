@@ -87,7 +87,7 @@ private struct GroupRow: View {
                 .font(.system(size: 13, weight: .medium))
 
             Spacer(minLength: 8)
-            GroupVisibilityToggle(visibility: visibility, binding: visibilityBinding)
+            GroupVisibilityToggle(group: group, visibility: visibility, binding: visibilityBinding)
         }
     }
 }
@@ -95,6 +95,10 @@ private struct GroupRow: View {
 /// Tri-state eye for a whole group. `.mixed` shows `eye.half.closed` and clicking
 /// hides everything (consistent with the binding's setter).
 private struct GroupVisibilityToggle: View {
+    /// Only the spoken and hovered text needs this. The two eyes are otherwise
+    /// identical controls, and were **read identically by VoiceOver** — review
+    /// finding 8, and the reason this takes a group rather than just a binding.
+    let group: IconLayerGroup
     let visibility: LayerGroupVisibility
     let binding: Binding<Bool>
 
@@ -109,7 +113,23 @@ private struct GroupVisibilityToggle: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // Label, value and tooltip say three different things on purpose: *what
+        // this is*, *what state it is in* — the tri-state is a glyph difference
+        // and nothing else conveyed `.mixed` — and *what a click will do*. The
+        // `.help()` was carrying all three on its own, which is the failure C1's
+        // rule names: a tooltip may accompany an accessibility label and must
+        // never be the only description of a control.
+        .accessibilityLabel("\(group.label) layers visible")
+        .accessibilityValue(visibilityDescription)
         .help(helpText)
+    }
+
+    private var visibilityDescription: String {
+        switch visibility {
+        case .on:    return "All visible"
+        case .off:   return "All hidden"
+        case .mixed: return "Some hidden"
+        }
     }
 
     private var symbolName: String {
@@ -122,9 +142,9 @@ private struct GroupVisibilityToggle: View {
 
     private var helpText: String {
         switch visibility {
-        case .on:    return "Hide layers"
-        case .off:   return "Show layers"
-        case .mixed: return "Hide layers (currently mixed)"
+        case .on:    return "Hide the \(group.label.lowercased()) layers"
+        case .off:   return "Show the \(group.label.lowercased()) layers"
+        case .mixed: return "Hide the \(group.label.lowercased()) layers (currently mixed)"
         }
     }
 }

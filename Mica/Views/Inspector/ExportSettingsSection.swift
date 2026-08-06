@@ -26,10 +26,16 @@ struct ExportSettingsSection: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    // `.labelsHidden()` hides the label; it does not remove it,
+                    // so "Size" is still what VoiceOver reads and the tooltip is
+                    // an addition rather than the only description. Same for the
+                    // colour space picker below.
                     .labelsHidden()
+                    .help("The icon\u{2019}s size in points. Settings \u{25B8} Export sets what a new window opens at.")
 
                     Toggle("2x (Retina)", isOn: $iconSettings.export.isRetina)
                         .font(.subheadline)
+                        .help("Export at twice the point size, for Retina displays")
 
                     Text(retinaSizeDescription)
                         .font(.caption)
@@ -56,6 +62,7 @@ struct ExportSettingsSection: View {
                     }
                     .pickerStyle(.menu)
                     .labelsHidden()
+                    .help("The color profile written into the exported PNG")
 
                     Text(colorSpaceDescription)
                         .font(.caption)

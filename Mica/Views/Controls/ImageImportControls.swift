@@ -81,10 +81,11 @@ struct ImageImportLayoutControls: View {
                in: ForegroundSpec.imageScaleRange,
                step: 0.05){
             Text("Image Scale")
-            Text("\(Int(imageScale * 100))%")
+            Text(verbatim: "\(Int((imageScale * 100).rounded()))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         } onEditingChanged: { continuousEdit.sliderEditing($0) }
+        .help("How large the imported image is drawn within its layer")
     }
 }
 

@@ -225,6 +225,17 @@ struct ContentView: View {
             // selection keeps its own Copy, which is the behaviour we want.
             .focusable()
             .onCopyCommand(perform: copyIconProviders)
+            // Arrow keys nudge the badge — the keyboard equivalent of the canvas
+            // drag, which was mouse-only. Attached beside `.onCopyCommand` and
+            // not inside either preview because both commands mean "the canvas
+            // has focus", and `.focusable()` above is the one thing that makes
+            // either reachable. It therefore works in System mode too, where the
+            // canvas is `AppexPreviewPane` and there is no drag overlay at all.
+            //
+            // `perform:` takes a method rather than a closure deliberately:
+            // `body` sits at the type-checker's ceiling and has been pushed over
+            // it four times, most recently by a fifth `.onChange`.
+            .onMoveCommand(perform: nudgeBadge)
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -489,6 +500,13 @@ struct ContentView: View {
                 return []
             }
         }
+    }
+
+    /// Move the badge by one arrow press. See `BadgeNudge`, which owns the step,
+    /// the clamp and the "is there a badge to move?" question — this is the wiring
+    /// only, so the decision can be tested without a view.
+    private func nudgeBadge(_ direction: MoveCommandDirection) {
+        BadgeNudge.apply(direction, to: &viewModel.iconSettings)
     }
 
     /// Put the rendered icon on the pasteboard as PNG and TIFF.

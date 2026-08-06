@@ -121,6 +121,14 @@ struct AppexPreviewPane: View {
             // The badge is offset rather than laid out, so it doesn't grow this
             // frame — any part of it hanging outside the image isn't clickable.
             .frame(width: size, height: size)
+            // The same sentence `ScaledIconPreview` speaks, from the same
+            // function: this pane draws the same icon by a different pipeline,
+            // and describing it twice is how the two descriptions drift.
+            // `IconAccessibilityDescription` reads `icon.mode`, so it already
+            // knows to say "system-rendered" here.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(IconAccessibilityDescription.previewLabel)
+            .accessibilityValue(IconAccessibilityDescription.value(for: viewModel.iconSettings))
             .overlay {
                 if let selection,
                    let shape = PreviewHitTester.selectionShape(

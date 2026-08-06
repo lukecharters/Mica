@@ -246,6 +246,7 @@ struct InspectorControls: View {
             sectionForm {
                 Section("Source", isExpanded: $iconSourceExpanded) {
                     SimpleSourceSection(
+                        group: .icon,
                         isVisible: groupVisibleBinding(for: .icon),
                         symbolName: $iconSettings.icon.foreground.symbolName
                     )
@@ -277,6 +278,7 @@ struct InspectorControls: View {
             sectionForm {
                 Section("Source", isExpanded: $badgeSourceExpanded) {
                     SimpleSourceSection(
+                        group: .badge,
                         isVisible: groupVisibleBinding(for: .badge),
                         symbolName: $iconSettings.badge.foreground.symbolName,
                         symbolHelp: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"

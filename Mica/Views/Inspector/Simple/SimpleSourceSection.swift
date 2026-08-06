@@ -8,6 +8,11 @@ import SwiftUI
 /// Group-agnostic: the caller supplies the bindings, so the icon and badge share
 /// one implementation.
 struct SimpleSourceSection: View {
+    /// Which group this pane is editing. Only the visibility toggle's spoken name
+    /// needs it — the simple pane edits a group as one thing, so "Icon visible"
+    /// and "Badge visible" are what VoiceOver should hear where the row itself
+    /// says "Visible" either way.
+    let group: IconLayerGroup
     /// Group visibility. The caller builds this from
     /// `IconSettings.setGroupVisible(_:for:)` so switching it on also clears any
     /// per-layer hidden flag the advanced controls left behind.
@@ -16,7 +21,7 @@ struct SimpleSourceSection: View {
     var symbolHelp: String? = nil
 
     var body: some View {
-        LayerVisibleToggle(isHidden: Binding(
+        LayerVisibleToggle(layerName: group.label, isHidden: Binding(
             get: { !isVisible },
             set: { isVisible = !$0 }
         ))
@@ -29,7 +34,7 @@ struct SimpleSourceSection: View {
     @Previewable @State var symbol = "star.fill"
     Form {
         Section("Source") {
-            SimpleSourceSection(isVisible: $visible, symbolName: $symbol)
+            SimpleSourceSection(group: .icon, isVisible: $visible, symbolName: $symbol)
         }
     }
     .formStyle(.grouped)

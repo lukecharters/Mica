@@ -36,10 +36,10 @@ struct IconForegroundSourceSection: View {
         if isSystem {
             // System mode renders the icon as one appex image, so visibility is
             // all-or-nothing for the group rather than per layer.
-            LayerVisibleToggle(isHidden: $iconSettings.icon.isHidden)
+            LayerVisibleToggle(layerName: "Icon", isHidden: $iconSettings.icon.isHidden)
             symbolField
         } else {
-            LayerVisibleToggle(isHidden: $iconSettings.icon.foreground.isHidden)
+            LayerVisibleToggle(layerName: "Icon Foreground", isHidden: $iconSettings.icon.foreground.isHidden)
 
             Picker("Source", selection: sourceType) {
                 ForEach(SourceType.allCases) { type in

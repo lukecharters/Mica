@@ -5,7 +5,7 @@ struct BadgeBackgroundSourceSection: View {
     @Binding var iconSettings: IconSettings
 
     var body: some View {
-        LayerVisibleToggle(isHidden: $iconSettings.badge.background.isHidden)
+        LayerVisibleToggle(layerName: "Badge Background", isHidden: $iconSettings.badge.background.isHidden)
 
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.badge.background.source) {
             Text("Color").tag(BadgeBackgroundSource.color)

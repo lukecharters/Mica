@@ -63,6 +63,18 @@ struct ScaledIconPreview: View {
             // itself stays a pure render view per CLAUDE.md.
             IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
                 .iconDragOut(makeDragPayload)
+                // The app's central object, and not an accessibility element at
+                // all until item C1 — a VoiceOver user was told nothing about
+                // what had been generated. `children: .ignore` because the render
+                // is a stack of shapes and images with nothing individually worth
+                // hearing; the sentence describes the whole of it.
+                //
+                // Declared here rather than in `IconContentView`, which stays a
+                // pure render view — and because the same sentence has to reach
+                // `AppexPreviewPane`, which does not use that view at all.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(IconAccessibilityDescription.previewLabel)
+                .accessibilityValue(IconAccessibilityDescription.value(for: settings))
 
             // Preview-only spinner/error where the System-mode badge will render.
             // BadgeView itself draws nothing until the appex image exists, so this
@@ -217,6 +229,16 @@ struct ScaledIconPreview: View {
                         continuousEdit.end()
                     }
             )
+            // A `Circle().fill(.clear)` carrying a `DragGesture` is invisible to
+            // VoiceOver, which is what made direct badge placement mouse-only.
+            // Naming it makes the affordance audible; the hint names the arrow
+            // keys, which are the only way to *use* it without a pointer and are
+            // handled by `BadgeNudge` on the focused canvas rather than here —
+            // this view is never the first responder.
+            .accessibilityElement()
+            .accessibilityLabel(IconAccessibilityDescription.badgeHandleLabel)
+            .accessibilityValue(IconAccessibilityDescription.badgeHandleValue(for: settings))
+            .accessibilityHint(IconAccessibilityDescription.badgeHandleHint)
             .onDisappear {
                 // Badge hidden (or preview unmounted) while hovered/dragging —
                 // don't leave our cursor on the global stack.

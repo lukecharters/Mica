@@ -16,10 +16,11 @@ struct BadgeForegroundLayoutSection: View {
                    in: ForegroundSpec.symbolScaleRange,
                    step: 0.05) {
                 Text("Symbol Scale")
-                Text("\(Int(iconSettings.badge.foreground.symbolScale * 100))%")
+                Text(verbatim: "\(Int((iconSettings.badge.foreground.symbolScale * 100).rounded()))%")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             } onEditingChanged: { continuousEdit.sliderEditing($0) }
+            .help("The badge symbol\u{2019}s size within the badge. Badge \u{25B8} Layout \u{25B8} Size changes the badge itself.")
 
         case .image:
             ImageImportLayoutControls(
