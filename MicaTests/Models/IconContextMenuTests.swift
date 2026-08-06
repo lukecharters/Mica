@@ -132,19 +132,71 @@ struct IconContextMenuTests {
         #expect(IconContextCommand.pasteBackground(.badge).title == "Paste as Badge Background")
     }
 
-    @Test("A System-mode group is offered no background rows")
-    func systemMode_hasNoBackgroundRows() throws {
+    @Test("Both layers are offered, in the Edit menu's order")
+    func canvasMenu_offersBothLayersInAFixedOrder() {
+        let s = Self.settingsWithBadge()
+        for group in IconLayerGroup.allCases {
+            let commands = Self.commands(
+                IconContextMenu.canvasItems(for: group, settings: s, canExport: false)
+            )
+            // Background then symbol, matching Edit ▸ Paste as … — and *fixed*,
+            // not led by whichever layer the pointer was over. The titles already
+            // disambiguate, and rows that reorder by a sub-layer hit the user
+            // cannot see are less predictable, not more.
+            #expect(commands == [.pasteBackground(group), .pasteForeground(group)])
+        }
+        #expect(IconContextCommand.pasteForeground(.icon).title == "Paste as Icon Symbol")
+        #expect(IconContextCommand.pasteForeground(.badge).title == "Paste as Badge Symbol")
+    }
+
+    @Test("A System-mode group is offered no layer rows at all")
+    func systemMode_hasNoLayerRows() throws {
         var s = IconSettings()
         s.icon.mode = .system
         s.icon.background.apply(try .testFixture())
+        s.icon.foreground.apply(try .testFixture())
 
         let items = IconContextMenu.canvasItems(for: .icon, settings: s, canExport: true)
         // The appex pipeline takes a symbol and two colours and ignores every
-        // background key, so both of these would be rows that quietly do nothing.
+        // background *and* imported-symbol key, so all four of these would be rows
+        // that quietly do nothing.
         #expect(!Self.commands(items).contains(.pasteBackground(.icon)))
+        #expect(!Self.commands(items).contains(.pasteForeground(.icon)))
         #expect(!Self.edits(items).contains(.removeBackgroundImage(.icon)))
+        #expect(!Self.edits(items).contains(.removeForegroundImage(.icon)))
         // The group can still be hidden, which does work in System mode.
         #expect(Self.edits(items).contains(.setGroupHidden(.icon, true)))
+    }
+
+    @Test("Remove Imported Symbol appears only once the foreground holds artwork")
+    func removeForegroundRow_needsAnImage() throws {
+        var s = Self.settingsWithBadge()
+        #expect(!Self.edits(IconContextMenu.canvasItems(for: .badge, settings: s, canExport: true))
+            .contains(.removeForegroundImage(.badge)))
+
+        // Same two-part gate as the background's: the Type picker writes the source
+        // before a file is chosen, and the layer draws its symbol in that state.
+        s.badge.foreground.source = .image
+        #expect(!Self.edits(IconContextMenu.canvasItems(for: .badge, settings: s, canExport: true))
+            .contains(.removeForegroundImage(.badge)))
+
+        s.badge.foreground.image = try .testFixture()
+        #expect(Self.edits(IconContextMenu.canvasItems(for: .badge, settings: s, canExport: true))
+            .contains(.removeForegroundImage(.badge)))
+        // And it is that group's row, not the other's.
+        #expect(!Self.edits(IconContextMenu.canvasItems(for: .icon, settings: s, canExport: true))
+            .contains(.removeForegroundImage(.icon)))
+    }
+
+    @Test("A sidebar row can remove either of its group's imported layers")
+    func sidebarMenu_offersBothRemovals() throws {
+        var s = IconSettings()
+        s.icon.applyBackgroundImage(try .testFixture())
+        s.icon.foreground.apply(try .testFixture())
+
+        let edits = Self.edits(IconContextMenu.sidebarItems(for: .icon, settings: s))
+        #expect(edits.contains(.removeBackgroundImage(.icon)))
+        #expect(edits.contains(.removeForegroundImage(.icon)))
     }
 
     @Test("Remove appears only once there is artwork to remove")
@@ -218,6 +270,13 @@ struct IconContextMenuTests {
         imported.icon.applyBackgroundImage(try .testFixture())
         imported.badge.applyBackgroundImage(try .testFixture())
         shapes.append(imported)
+
+        var allFourLayersImported = Self.settingsWithBadge()
+        allFourLayersImported.icon.applyBackgroundImage(try .testFixture())
+        allFourLayersImported.badge.applyBackgroundImage(try .testFixture())
+        allFourLayersImported.icon.foreground.apply(try .testFixture())
+        allFourLayersImported.badge.foreground.apply(try .testFixture())
+        shapes.append(allFourLayersImported)
 
         var hidden = Self.settingsWithBadge()
         hidden.icon.isHidden = true
@@ -371,6 +430,43 @@ struct RemoveBackgroundImageTests {
         // Unhiding the foreground here would make the badge appear out of a row
         // called Remove — `isVisible` is "either layer showing".
         #expect(s.badge.isVisible == false)
+    }
+
+    @Test("Removing imported foreground artwork brings back the exact symbol")
+    func foregroundRemove_restoresTheSymbol() throws {
+        var s = IconSettings()
+        s.icon.foreground.symbolName = "bolt.fill"
+        s.icon.foreground.symbolScale = 1.4
+        s.icon.foreground.apply(try .testFixture())
+        #expect(s.icon.foreground.source == .image)
+        #expect(s.icon.foreground.drawsShadow == false)
+
+        s.icon.foreground.removeImage()
+
+        // The lossless one of the three removals: an image import never touched
+        // `symbolName`, so the symbol comes back rather than being reconstructed.
+        #expect(s.icon.foreground.symbolName == "bolt.fill")
+        #expect(s.icon.foreground.source == .symbol)
+        #expect(s.icon.foreground.image == nil)
+        #expect(s.icon.foreground.drawsShadow == true)
+        // Untouched by either direction — it is not one of the import's guesses.
+        #expect(s.icon.foreground.symbolScale == 1.4)
+    }
+
+    @Test("Removing foreground artwork does not change the layer's visibility")
+    func foregroundRemove_leavesVisibilityAlone() throws {
+        var s = IconSettings()
+        // The state a background import leaves behind: foreground hidden, and now
+        // also holding artwork of its own.
+        s.icon.applyBackgroundImage(try .testFixture())
+        s.icon.foreground.apply(try .testFixture())
+        #expect(s.icon.foreground.isHidden == true)
+
+        s.icon.foreground.removeImage()
+
+        // Unlike the two background removals, there is no hide guess to reverse
+        // here — a foreground import hides nothing.
+        #expect(s.icon.foreground.isHidden == true)
     }
 
     @Test("Removing a visible badge's background puts its symbol back")

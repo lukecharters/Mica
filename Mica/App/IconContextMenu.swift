@@ -38,6 +38,9 @@ enum IconContextEdit: Equatable {
     /// Undo the two guesses an imported background made — see
     /// `IconSpec.removeBackgroundImage()`.
     case removeBackgroundImage(IconLayerGroup)
+    /// Go back to drawing the symbol — see `ForegroundSpec.removeImage()`, which
+    /// keeps `symbolName` and so restores the exact symbol that was there.
+    case removeForegroundImage(IconLayerGroup)
     /// Zero the badge's manual nudge. Deliberately **not** its anchor: `position`
     /// is a picker the user set on purpose, where the offsets are what a drag or
     /// an arrow press accumulates and therefore the only part of "position" that
@@ -58,6 +61,12 @@ enum IconContextEdit: Equatable {
             // the destructive one of the pair. It also matches the Edit menu's
             // "Paste as Icon Background" wording, so the two read as inverses.
             return "Remove Imported \(group.label) Background"
+        case .removeForegroundImage(let group):
+            // "Symbol" rather than "Foreground", because that is what the Edit
+            // menu calls this layer ("Paste as Icon Symbol") even when what lands
+            // in it is an image. Two names for one layer is worse than one
+            // slightly loose name.
+            return "Remove Imported \(group.label) Symbol"
         case .resetBadgePosition:
             return "Reset Badge Position"
         case .setGroupHidden(let group, let hidden):
@@ -77,6 +86,7 @@ enum IconContextCommand: Equatable {
     case copyIcon
     case exportPNG
     case pasteBackground(IconLayerGroup)
+    case pasteForeground(IconLayerGroup)
 
     var title: String {
         switch self {
@@ -88,6 +98,8 @@ enum IconContextCommand: Equatable {
             // Word for word the Edit menu's item. One command reading two ways in
             // two places is how a user learns it is two commands.
             return "Paste as \(group.label) Background"
+        case .pasteForeground(let group):
+            return "Paste as \(group.label) Symbol"
         }
     }
 }
@@ -157,12 +169,28 @@ enum IconContextMenu {
         }
 
         // Nothing in this section reaches a System-mode render: the appex
-        // pipeline takes a symbol and two colours and ignores every background
-        // key, so offering a paste here would be a row that quietly does nothing.
+        // pipeline takes a symbol and two colours and ignores every background or
+        // imported-symbol key, so offering a paste here would be a row that
+        // quietly does nothing.
+        //
+        // **Both layers are always offered, in the Edit menu's order** (background
+        // then symbol), rather than leading with whichever layer the pointer is
+        // over. Ordering by the hit was tried on paper and rejected twice over: the
+        // titles already say which layer each row is for, so nothing is ambiguous
+        // to begin with; and a menu whose rows reorder according to a sub-layer hit
+        // the user cannot see the bounds of is less predictable than a fixed one,
+        // not more. The group still comes from the hit — that part is worth having,
+        // because it decides *which* pair of layers is on offer.
         if mode(of: group, in: settings) == .mica {
-            var content: [IconContextItem] = [.command(.pasteBackground(group))]
+            var content: [IconContextItem] = [
+                .command(.pasteBackground(group)),
+                .command(.pasteForeground(group)),
+            ]
             if hasBackgroundImage(group, in: settings) {
                 content.append(.edit(.removeBackgroundImage(group)))
+            }
+            if hasForegroundImage(group, in: settings) {
+                content.append(.edit(.removeForegroundImage(group)))
             }
             items.appendSection(content)
         }
@@ -197,8 +225,13 @@ enum IconContextMenu {
         var items: [IconContextItem] = [
             .edit(.setGroupHidden(group, !isHidden(group, in: settings)))
         ]
-        if mode(of: group, in: settings) == .mica, hasBackgroundImage(group, in: settings) {
-            items.append(.edit(.removeBackgroundImage(group)))
+        if mode(of: group, in: settings) == .mica {
+            if hasBackgroundImage(group, in: settings) {
+                items.append(.edit(.removeBackgroundImage(group)))
+            }
+            if hasForegroundImage(group, in: settings) {
+                items.append(.edit(.removeForegroundImage(group)))
+            }
         }
         items.appendSection([.edit(.resetGroup(group))])
         return items
@@ -214,6 +247,11 @@ enum IconContextMenu {
             switch group {
             case .icon:  settings.icon.removeBackgroundImage()
             case .badge: settings.badge.removeBackgroundImage()
+            }
+        case .removeForegroundImage(let group):
+            switch group {
+            case .icon:  settings.icon.foreground.removeImage()
+            case .badge: settings.badge.foreground.removeImage()
             }
         case .resetBadgePosition:
             settings.badge.offsetX = 0
@@ -259,6 +297,14 @@ enum IconContextMenu {
         case .badge:
             return settings.badge.background.source == .image && settings.badge.background.image != nil
         }
+    }
+
+    /// Whether this group's *foreground* is drawing imported artwork rather than a
+    /// symbol. Same two-part test as the background's, and for the same reason —
+    /// the inspector's Type picker can leave `source == .image` with no image.
+    private static func hasForegroundImage(_ group: IconLayerGroup, in settings: IconSettings) -> Bool {
+        let foreground = group == .icon ? settings.icon.foreground : settings.badge.foreground
+        return foreground.source == .image && foreground.image != nil
     }
 }
 

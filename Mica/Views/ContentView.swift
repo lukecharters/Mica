@@ -534,6 +534,13 @@ struct ContentView: View {
                         defaults: .fromPreferences()
                     )
                 }
+            case .pasteForeground(let group):
+                ImageImportAction.paste(
+                    into: &viewModel.iconSettings,
+                    reporter: viewModel.messageReporter
+                ) { settings, image in
+                    ImageImportAction.applyForeground(image, to: group, in: &settings)
+                }
             }
         }
     }

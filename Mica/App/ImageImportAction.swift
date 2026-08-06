@@ -63,4 +63,22 @@ enum ImageImportAction {
         case .badge: settings.badge.applyBackgroundImage(image, defaults: defaults)
         }
     }
+
+    /// Apply a pasted image as a group's foreground artwork.
+    ///
+    /// No `defaults` parameter, and that asymmetry is the point: a background
+    /// import makes two guesses that reach *other* state (hide the foreground, drop
+    /// the corner radius), which is why those are preferences. A foreground import
+    /// makes none — `ForegroundSpec.apply` sets the source and turns the drop
+    /// shadow off, both inside the layer being replaced.
+    static func applyForeground(
+        _ image: ImportedImage,
+        to group: IconLayerGroup,
+        in settings: inout IconSettings
+    ) {
+        switch group {
+        case .icon:  settings.icon.foreground.apply(image)
+        case .badge: settings.badge.foreground.apply(image)
+        }
+    }
 }

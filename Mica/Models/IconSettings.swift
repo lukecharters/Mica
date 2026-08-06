@@ -306,6 +306,23 @@ struct ForegroundSpec: Equatable {
         source = .image
         drawsShadow = false
     }
+
+    /// Drop imported artwork and go back to drawing the symbol.
+    ///
+    /// The inverse of `apply(_:)`, and the only one of the three removals that is
+    /// genuinely lossless: `symbolName` is untouched by an image import, so the
+    /// symbol that was there before comes straight back rather than being
+    /// reconstructed from a default. `image` is cleared all the same — keeping it
+    /// would leave a configuration writing a sidecar for artwork nothing draws.
+    ///
+    /// Nothing about visibility here, unlike the two background removals: a
+    /// foreground import hides no other layer, so there is no guess to reverse.
+    mutating func removeImage() {
+        let fresh = ForegroundSpec(symbolName: symbolName, isHidden: isHidden)
+        image = nil
+        source = fresh.source
+        drawsShadow = fresh.drawsShadow
+    }
 }
 
 /// The icon's background layer. Separate from the badge's because it has two
