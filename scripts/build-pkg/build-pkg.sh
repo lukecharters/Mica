@@ -18,6 +18,7 @@
 #   INSTALLER_IDENTITY  Full cert name (default: auto-detected from keychain)
 #   NOTARY_PROFILE      notarytool keychain profile name (default: mica-notary)
 #   SKIP_NOTARIZE       Set to 1 to build the .pkg but skip notarize+staple
+#   BUILD_NUMBER        CFBundleVersion (default: git commit count)
 #
 
 set -euo pipefail
@@ -38,6 +39,23 @@ EXPORT_OPTIONS="${PROJECT_DIR}/scripts/build-pkg/ExportOptions.plist"
 PKG_SCRIPTS_DIR="${PROJECT_DIR}/scripts/build-pkg/pkg-scripts"
 NOTARY_PROFILE="${NOTARY_PROFILE:-mica-notary}"
 
+# CFBundleVersion is the commit count: monotonic, reproducible from any checkout,
+# and nothing in the repo has to be edited to bump it. project.pbxproj keeps
+# CURRENT_PROJECT_VERSION = 1 for local builds; only packaged builds get a real
+# number, which is the only place it is user-visible (the About panel).
+BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || true)}"
+if [[ -z "$BUILD_NUMBER" ]]; then
+  echo "error: could not derive a build number from git (not a repository?)" >&2
+  echo "       pass one explicitly: BUILD_NUMBER=123 $0" >&2
+  exit 1
+fi
+
+# A commit count cannot describe uncommitted work, and CFBundleVersion has no
+# room to say so — it must be period-separated integers. Warn rather than encode.
+if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+  echo "warning: working tree is dirty; build $BUILD_NUMBER will not match its commit" >&2
+fi
+
 INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-$(security find-identity -v 2>/dev/null \
   | awk -F'"' '/Developer ID Installer:.*'"$TEAM_ID"'/ {print $2; exit}')}"
 
@@ -51,13 +69,14 @@ echo "==> Cleaning build directory"
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
-echo "==> Archiving ($SCHEME / $CONFIGURATION)"
+echo "==> Archiving ($SCHEME / $CONFIGURATION, build $BUILD_NUMBER)"
 xcodebuild archive \
   -project Mica.xcodeproj \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
   -destination "generic/platform=macOS" \
   -archivePath "$ARCHIVE_PATH" \
+  CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   -quiet
 
 echo "==> Exporting archive (Developer ID)"
@@ -68,7 +87,15 @@ xcodebuild -exportArchive \
   -quiet
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
-echo "==> Exported Mica $VERSION at $APP_PATH"
+BUILT_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")"
+
+# An ignored build setting is invisible in the artefact, so check rather than assume.
+if [[ "$BUILT_NUMBER" != "$BUILD_NUMBER" ]]; then
+  echo "error: exported CFBundleVersion is $BUILT_NUMBER, expected $BUILD_NUMBER" >&2
+  exit 1
+fi
+
+echo "==> Exported Mica $VERSION ($BUILD_NUMBER) at $APP_PATH"
 
 echo "==> Verifying app signature"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
