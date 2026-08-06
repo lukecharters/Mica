@@ -1,6 +1,11 @@
 #!/bin/bash
 #
-# Build a signed, notarized .pkg installer for Mica.
+# Build a signed, notarized .pkg installer and .dmg disk image for Mica.
+#
+# The two are not equivalent, and the difference is the CLI. The .pkg runs
+# pkg-scripts/postinstall, which symlinks mica-cli into /usr/local/bin; a .dmg
+# is a drag-install and can run nothing, so it delivers the app alone. Anyone
+# wanting mica-cli on their PATH from the .dmg has to symlink it themselves.
 #
 # Prerequisites (one-time):
 #   1. Install "Developer ID Application" and "Developer ID Installer" certs for
@@ -15,9 +20,13 @@
 #   ./scripts/build-pkg.sh
 #
 # Env overrides:
-#   INSTALLER_IDENTITY  Full cert name (default: auto-detected from keychain)
+#   INSTALLER_IDENTITY  Developer ID Installer cert, signs the .pkg
+#                       (default: auto-detected from keychain)
+#   APP_IDENTITY        Developer ID Application cert, signs the .dmg
+#                       (default: auto-detected from keychain)
 #   NOTARY_PROFILE      notarytool keychain profile name (default: mica-notary)
-#   SKIP_NOTARIZE       Set to 1 to build the .pkg but skip notarize+staple
+#   SKIP_NOTARIZE       Set to 1 to build both artefacts but skip notarize+staple
+#   SKIP_DMG            Set to 1 to build the .pkg only
 #   BUILD_NUMBER        CFBundleVersion (default: git commit count)
 #
 
@@ -35,6 +44,8 @@ ARCHIVE_PATH="${BUILD_DIR}/Mica.xcarchive"
 EXPORT_PATH="${BUILD_DIR}/export"
 APP_PATH="${EXPORT_PATH}/Mica.app"
 PKG_PATH="${BUILD_DIR}/Mica.pkg"
+DMG_PATH="${BUILD_DIR}/Mica.dmg"
+DMG_STAGING="${BUILD_DIR}/dmg-staging"
 EXPORT_OPTIONS="${PROJECT_DIR}/scripts/build-pkg/ExportOptions.plist"
 PKG_SCRIPTS_DIR="${PROJECT_DIR}/scripts/build-pkg/pkg-scripts"
 NOTARY_PROFILE="${NOTARY_PROFILE:-mica-notary}"
@@ -63,6 +74,19 @@ if [[ -z "$INSTALLER_IDENTITY" ]]; then
   echo "error: no 'Developer ID Installer' cert for team $TEAM_ID in keychain" >&2
   echo "       install it from https://developer.apple.com/account/resources/certificates" >&2
   exit 1
+fi
+
+# A disk image is signed with Developer ID *Application*, not Installer — the
+# Installer cert signs flat packages and nothing else.
+if [[ "${SKIP_DMG:-0}" != "1" ]]; then
+  APP_IDENTITY="${APP_IDENTITY:-$(security find-identity -v 2>/dev/null \
+    | awk -F'"' '/Developer ID Application:.*'"$TEAM_ID"'/ {print $2; exit}')}"
+
+  if [[ -z "$APP_IDENTITY" ]]; then
+    echo "error: no 'Developer ID Application' cert for team $TEAM_ID in keychain" >&2
+    echo "       install it from https://developer.apple.com/account/resources/certificates" >&2
+    exit 1
+  fi
 fi
 
 echo "==> Cleaning build directory"
@@ -116,19 +140,70 @@ pkgbuild \
 echo "==> Verifying pkg signature"
 pkgutil --check-signature "$PKG_PATH"
 
+ARTEFACTS=("$PKG_PATH")
+
+if [[ "${SKIP_DMG:-0}" == "1" ]]; then
+  echo "==> SKIP_DMG=1, skipping disk image"
+else
+  echo "==> Building disk image"
+  rm -rf "$DMG_STAGING"
+  mkdir -p "$DMG_STAGING"
+
+  # ditto, not cp -R: it carries the extended attributes the code signature
+  # lives in, so the app in the image verifies as the one that was signed.
+  ditto "$APP_PATH" "$DMG_STAGING/Mica.app"
+  ln -s /Applications "$DMG_STAGING/Applications"
+
+  hdiutil create \
+    -volname "Mica $VERSION" \
+    -srcfolder "$DMG_STAGING" \
+    -fs HFS+ \
+    -format UDZO \
+    -ov \
+    -quiet \
+    "$DMG_PATH"
+
+  rm -rf "$DMG_STAGING"
+
+  # The image is signed with the Application cert; the app inside keeps its own
+  # signature, so this is a second, outer one rather than a replacement.
+  echo "==> Signing disk image"
+  codesign --sign "$APP_IDENTITY" --timestamp "$DMG_PATH"
+  codesign --verify --strict --verbose=2 "$DMG_PATH"
+
+  ARTEFACTS+=("$DMG_PATH")
+fi
+
 if [[ "${SKIP_NOTARIZE:-0}" == "1" ]]; then
   echo "==> SKIP_NOTARIZE=1, skipping notarization"
-  echo "==> Done: $PKG_PATH (NOT notarized)"
+  for artefact in "${ARTEFACTS[@]}"; do
+    echo "==> Done: $artefact (NOT notarized)"
+  done
   exit 0
 fi
 
-echo "==> Submitting for notarization (profile: $NOTARY_PROFILE)"
-xcrun notarytool submit "$PKG_PATH" \
-  --keychain-profile "$NOTARY_PROFILE" \
-  --wait
+# Each artefact is submitted on its own. A ticket is issued per-artefact, so
+# notarizing the pkg says nothing about the dmg even though the app inside both
+# is byte-identical.
+for artefact in "${ARTEFACTS[@]}"; do
+  echo "==> Submitting $(basename "$artefact") for notarization (profile: $NOTARY_PROFILE)"
+  xcrun notarytool submit "$artefact" \
+    --keychain-profile "$NOTARY_PROFILE" \
+    --wait
 
-echo "==> Stapling notarization ticket"
-xcrun stapler staple "$PKG_PATH"
-xcrun stapler validate "$PKG_PATH"
+  echo "==> Stapling notarization ticket to $(basename "$artefact")"
+  xcrun stapler staple "$artefact"
+  xcrun stapler validate "$artefact"
+done
 
-echo "==> Done: $PKG_PATH"
+# Gatekeeper's own answer, which is the one a user's Mac will give. The pkg is
+# judged as an installer and the dmg by the app it opens, hence two contexts.
+echo "==> Verifying Gatekeeper acceptance"
+spctl --assess --type install --verbose=2 "$PKG_PATH"
+if [[ "${SKIP_DMG:-0}" != "1" ]]; then
+  spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG_PATH"
+fi
+
+for artefact in "${ARTEFACTS[@]}"; do
+  echo "==> Done: $artefact"
+done
