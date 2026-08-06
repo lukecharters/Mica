@@ -52,20 +52,20 @@ Both interfaces share the same models and services — a new feature should land
 
 Tests use the Swift Testing framework (`@Suite`, `@Test`, `#expect`).
 
-Run in Xcode via the Test Navigator, or from the command line (the signing overrides are needed for command-line test runs):
+Run in Xcode via the Test Navigator, or from the command line — no signing overrides:
 
 ```shell
 # App/shared-logic tests
-xcodebuild test -project Mica.xcodeproj -scheme Mica -destination "platform=macOS" \
-  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project Mica.xcodeproj -scheme Mica -destination "platform=macOS"
 
 # CLI tests (flag parsing and CLI contract)
-xcodebuild test -project Mica.xcodeproj -scheme mica-cli -destination "platform=macOS" \
-  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project Mica.xcodeproj -scheme mica-cli -destination "platform=macOS"
 
 # End-to-end CLI smoke test
 scripts/tests/cli-smoke-test.sh
 ```
+
+`MicaTests` and `MicaUITests` are injected into `Mica.app`, and macOS refuses to load a test bundle whose Team ID differs from the host's — so set `DEVELOPMENT_TEAM` to **your own** team on every target (Xcode ▸ target ▸ Signing & Capabilities, with "Automatically manage signing" on) rather than disabling signing on some targets and not others. Don't commit that change.
 
 Put tests for shared logic (`Models/`, `Services/`) in `MicaTests`; CLI flag-parsing tests belong in `mica-cli Tests`.
 
