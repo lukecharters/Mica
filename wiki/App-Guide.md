@@ -162,9 +162,10 @@ Neither affects export — the preview size and zoom are only about how big the 
 Ways to get your own artwork (or another app's icon) into any of the four image slots (icon/badge × foreground/background):
 
 - **Choose File…** in the relevant Source section.
-- **Drag and drop** onto the preview (imports as the icon background).
+- **Drag and drop** onto the preview — a drop on the badge replaces the badge background, anywhere else the icon background.
 - **File menu** — Import as Icon Background/Icon Symbol/Badge Background/Badge Symbol.
-- **Edit menu / paste** — Paste as Icon Background (⇧⌘V), Icon Symbol (⇧⌘I), Badge Background (⇧⌘B), Badge Symbol (⇧⌘G).
+- **Edit menu / paste** — Paste as Icon Background, Icon Symbol, Badge Background, Badge Symbol.
+- **⌘V** with the preview selected — pastes the copied image as the **icon background**. Click the preview first; ⌘V in the Symbol field still pastes text there.
 
 Images are decoded and centred on a square transparent canvas (downscaled to at most 1024 px, never upscaled). PDFs and EPS files are rendered as vectors. Apps and other non-image files import their **Finder icon** — see [Extracting Icons](Extracting-Icons).
 
@@ -197,7 +198,7 @@ The Badge group keeps its **Badge Layout** section (position, offsets, size) bel
 
 Switching **off** folds each layer back to something the simple pane can show: an SF Symbol foreground on a plain colour background, monochrome rendering, one background colour. Nothing is thrown away — your imported artwork, palette colours and custom gradient colours all stay put, so switching back on and re-picking the source restores the previous look.
 
-Importing an image while the advanced controls are off (**File ▸ Import as…**, **⇧⌘I** and friends, or dropping a file on the canvas) switches them on for you, since the simple pane has no controls for an imported layer.
+Importing an image while the advanced controls are off (**File ▸ Import as…**, **Edit ▸ Paste as…**, ⌘V on the preview, or dropping a file on the canvas) switches them on for you, since the simple pane has no controls for an imported layer.
 
 ## Settings (⌘,)
 

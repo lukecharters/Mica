@@ -159,13 +159,14 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
+    /// Read here too: the selection outline is an advanced-controls affordance, so
+    /// with them off the preview draws none (see `currentPreviewSelection`).
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
+
     /// User-adjustable panel widths, persisted across launches. Dragging a divider
     /// writes here; the values are clamped to `sidebarRange` / `inspectorRange`.
     @AppStorage("layout.sidebarWidth") private var sidebarWidth: Double = 280
     @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
-    /// Read here too: the selection outline is an advanced-controls affordance, so
-    /// with them off the preview draws none (see `currentPreviewSelection`).
-    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     private let sidebarRange: ClosedRange<Double> = 220...360
     private let inspectorRange: ClosedRange<Double> = 330...460
@@ -226,6 +227,26 @@ struct ContentView: View {
             // selection keeps its own Copy, which is the behaviour we want.
             .focusable()
             .onCopyCommand(perform: copyIconProviders)
+            // Focus-resolved ⌘V, the mirror of the ⌘C above and the replacement for
+            // the four ⇧⌘V/I/B/G paste shortcuts C4 removed. `.onPasteCommand` hooks
+            // the **standard** Paste for the same reason: a second Edit-menu item
+            // bound to ⌘V would lose the key equivalent outright when the menu is
+            // built, not per focus.
+            //
+            // **It lands on the icon background, always** — the same target a canvas
+            // drop falls back to when it hits nothing (B4), and for the same reason.
+            // A drop can name a group because it has a location; a paste has none, so
+            // routing it by the sidebar's selection would make one key mean two
+            // things depending on state the user is not looking at. C2 declined that
+            // for the context menu's row order and it is declined here too. The other
+            // three layers are the Edit menu's and the context menu's.
+            //
+            // `of:` is `allDropTypes`, which is exactly what `importFromPasteboard`
+            // reads — a file URL first, then image data — so the standard Paste is
+            // enabled when and only when this can do something. That is C6's question
+            // answered for free on this one route, by the pasteboard type check
+            // AppKit already runs; the Edit menu's four items are still advisory.
+            .onPasteCommand(of: ImageImportService.allDropTypes, perform: pasteAsIconBackground)
             // Arrow keys nudge the badge — the keyboard equivalent of the canvas
             // drag, which was mouse-only. Attached beside `.onCopyCommand` and
             // not inside either preview because both commands mean "the canvas
@@ -550,6 +571,34 @@ struct ContentView: View {
     /// only, so the decision can be tested without a view.
     private func nudgeBadge(_ direction: MoveCommandDirection) {
         BadgeNudge.apply(direction, to: &viewModel.iconSettings)
+    }
+
+    /// The standard Paste while the canvas is focused: the pasteboard image becomes
+    /// the icon background.
+    ///
+    /// **The item providers are deliberately ignored.** They are a view of the same
+    /// `NSPasteboard.general` that `ImageImportService.importFromPasteboard` reads,
+    /// and going through `ImageImportAction` is what keeps this route from becoming
+    /// a second paste implementation — which is the whole reason that type exists.
+    /// Reading the providers instead would mean this route decided for itself what
+    /// an empty pasteboard, a file promise or an un-decodable image meant, and that
+    /// difference is invisible until someone hits ⌘V with the wrong thing copied.
+    ///
+    /// A method rather than a closure in `body`, like `nudgeBadge` above: `body`
+    /// sits at the type-checker's ceiling and has been pushed over it four times.
+    private func pasteAsIconBackground(_ providers: [NSItemProvider]) {
+        _ = providers
+        ImageImportAction.paste(
+            into: &viewModel.iconSettings,
+            reporter: viewModel.messageReporter
+        ) { settings, image in
+            ImageImportAction.applyBackground(
+                image,
+                to: .icon,
+                in: &settings,
+                defaults: .fromPreferences()
+            )
+        }
     }
 
     /// Put the rendered icon on the pasteboard as PNG and TIFF.

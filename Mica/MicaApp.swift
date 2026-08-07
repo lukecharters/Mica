@@ -128,28 +128,44 @@ struct MicaApp: App {
 
                 Divider()
 
+                // **None of the four carries a key equivalent, and the standard
+                // Paste covers the common one.** Item C4 of
+                // `docs/plans/mac-conventions.md`, 2026-08-07.
+                //
+                // They were ⇧⌘V / ⇧⌘I / ⇧⌘B / ⇧⌘G. ⇧⌘V is Paste and Match Style
+                // system-wide, which is the review's finding; the other three were
+                // arbitrary — I, B and G are not mnemonics for "icon symbol",
+                // "badge background" and "badge symbol", they are the letters that
+                // happened to be free. Any replacement would be equally arbitrary,
+                // so the answer is not four different keys but *none*, plus one
+                // real one on the standard command.
+                //
+                // What replaces them, in order of how a user actually gets an image
+                // in: a drop on the canvas (B4), which is the only route that can
+                // say *which* group; the canvas context menu (C2); this menu; and
+                // **⌘V while the canvas is focused**, which lands on the icon
+                // background — `.onPasteCommand` in `ContentView`, hooking the
+                // *standard* Paste for exactly the reason ⌘C hooks the standard
+                // Copy above. The four Import as… items in File have never carried
+                // shortcuts either, and they are the same action from a file.
                 Button("Paste as Icon Background") {
                     pasteImage { $0.icon.applyBackgroundImage($1, defaults: .fromPreferences()) }
                 }
-                .keyboardShortcut("v", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
 
                 Button("Paste as Icon Symbol") {
                     pasteImage { $0.icon.foreground.apply($1) }
                 }
-                .keyboardShortcut("i", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
 
                 Button("Paste as Badge Background") {
                     pasteImage { $0.badge.applyBackgroundImage($1, defaults: .fromPreferences()) }
                 }
-                .keyboardShortcut("b", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
 
                 Button("Paste as Badge Symbol") {
                     pasteImage { $0.badge.foreground.apply($1) }
                 }
-                .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(iconSettings == nil)
             }
             CommandGroup(before: .saveItem) {
@@ -186,8 +202,9 @@ struct MicaApp: App {
 
             // Replaces the empty stock Import/Export slot rather than adding a group,
             // so the item lands where macOS already puts export commands in File.
-            // Cmd-Shift-E is free: Cmd-Shift-G is Paste as Icon Background above, and
-            // K/L/M/A/S belong to the DevTools windows in Debug builds.
+            // Cmd-Shift-E is free: only C belongs to Copy Icon above, and K/L/M/A/S
+            // to the DevTools windows in Debug builds. (This note used to add
+            // "Cmd-Shift-G is Paste as Icon Background" — C4 freed V, I, B and G.)
             CommandGroup(replacing: .importExport) {
                 Button("Export as PNG…") {
                     exportPNG = true
