@@ -119,11 +119,13 @@ struct ContentView: View {
     /// is the whole difference between a default and a setting.
     init() {
         _viewModel = StateObject(wrappedValue: IconViewModel(export: .fromPreferences()))
+        openingInspectorWidth = PaneWidthPreferences.launchWidth(.inspector)
     }
 
     init(viewModel: IconViewModel, showInspector: Bool = true) {
         _ = showInspector // kept for source compatibility with existing previews
         _viewModel = StateObject(wrappedValue: viewModel)
+        openingInspectorWidth = PaneWidthPreferences.launchWidth(.inspector)
     }
 
 
@@ -163,13 +165,20 @@ struct ContentView: View {
     /// with them off the preview draws none (see `currentPreviewSelection`).
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    /// User-adjustable panel widths, persisted across launches. Dragging a divider
-    /// writes here; the values are clamped to `sidebarRange` / `inspectorRange`.
-    @AppStorage("layout.sidebarWidth") private var sidebarWidth: Double = 280
-    @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
-
-    private let sidebarRange: ClosedRange<Double> = 220...360
-    private let inspectorRange: ClosedRange<Double> = 330...460
+    /// The width this window's inspector opens at, read from the preference once
+    /// in `init` and never again.
+    ///
+    /// **Deliberately not `@AppStorage`.** It feeds `.inspectorColumnWidth`'s
+    /// `ideal:`, which is a layout proposal — a value that changed while the user
+    /// was dragging would be a value fighting the drag. The write side is
+    /// `.reportsPaneWidth`, which goes straight to `UserDefaults`, so the read and
+    /// the write never meet within a session. See `PaneWidthPreferences`.
+    ///
+    /// It was an `@AppStorage` property that was read and never written, under a
+    /// comment claiming a divider drag wrote it — item C5 of
+    /// `docs/plans/mac-conventions.md`. Its sidebar twin is gone entirely: AppKit
+    /// already persists that divider, better than this could.
+    private let openingInspectorWidth: Double
 
 
     var body: some View {
@@ -184,10 +193,15 @@ struct ContentView: View {
                 iconSettings: $viewModel.iconSettings,
                 selection: $selectedGroup
             )
+            // **No `.reportsPaneWidth` here, and that is a finding rather than an
+            // omission.** AppKit autosaves this split view's divider and restores
+            // it *ahead of* `ideal:`, so the sidebar width already survives a
+            // relaunch and a Mica preference for it would be a second mechanism
+            // that always loses. Measured 2026-08-07 — see `PaneWidthPreferences`.
             .navigationSplitViewColumnWidth(
-                min: sidebarRange.lowerBound,
-                ideal: sidebarWidth,
-                max: sidebarRange.upperBound
+                min: PaneWidthPreferences.Pane.sidebar.range.lowerBound,
+                ideal: PaneWidthPreferences.Pane.sidebar.defaultWidth,
+                max: PaneWidthPreferences.Pane.sidebar.range.upperBound
             )
         } detail: {
             Group {
@@ -262,7 +276,9 @@ struct ContentView: View {
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
         // material, show/hide animation, and native drag-resize; width is a hint via
-        // `.inspectorColumnWidth` (seeded from the old persisted value).
+        // `.inspectorColumnWidth`, seeded from the persisted width and written back
+        // by `.reportsPaneWidth` — so a dragged width now survives a *relaunch*, not
+        // just a mode switch. See C5 and `PaneWidthPreferences`.
         //
         // It's attached to the whole NavigationSplitView (not to the detail content) on
         // purpose: the detail swaps preview panes between Mica (`previewPane`) and System
@@ -285,10 +301,11 @@ struct ContentView: View {
                 tab: inspectorTab,
                 canExport: viewModel.canExport
             )
+            .reportsPaneWidth(.inspector)
             .inspectorColumnWidth(
-                min: inspectorRange.lowerBound,
-                ideal: inspectorWidth,
-                max: inspectorRange.upperBound
+                min: PaneWidthPreferences.Pane.inspector.range.lowerBound,
+                ideal: openingInspectorWidth,
+                max: PaneWidthPreferences.Pane.inspector.range.upperBound
             )
         }
         // One `ToolbarContent` type, not an inline block. Adding the two
