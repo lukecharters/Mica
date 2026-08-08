@@ -65,29 +65,25 @@ fastlane/test_output
 *.DS_Store
 
 # Machine-local working data — regenerable, derived, or deliberately unpublished.
-# One rule covers the lot; see docs/README.md for what lives here and why.
+# One rule covers the lot:
 #   .local/xcode-docs/        Xcode AdditionalDocumentation snapshots (scripts/get-xcode-docs.sh)
 #   .local/transcripts/       session transcripts
 #   .local/container-recipes/ Apple-derived exports — these must never be
 #                             committed to this repository
 .local/
 
-# Claude Code — session state and machine-local settings only.
-# hooks/ and skills-lock.json are tracked: they are project config, not local state.
-.claude/*
-!.claude/hooks/
-.claude/hooks/.DS_Store
-.claude/handoffs/
-# Skills are vendored from marketplaces and stay untracked — except the ones this repo
-# writes itself, which are project documentation and are referenced from CLAUDE.md.
-!.claude/skills/
-.claude/skills/*
-!.claude/skills/drive-mica-on-screen/
+# Local tooling and the internal engineering record. These stay on the working machine.
+# docs/ holds the plans, research and review notes behind the decisions in this codebase;
+# they will be published once there is someone to read them. See CONTRIBUTING.md.
+docs/
+CLAUDE.md
+AGENTS.md
+.claude/
 .claude.local.md
-
-# Editor settings & agent tooling
-.vscode/
 .agents/
+
+# Editor settings
+.vscode/
 
 
 # CLI smoke-test runs
