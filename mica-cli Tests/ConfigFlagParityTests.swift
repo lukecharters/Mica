@@ -117,10 +117,14 @@ struct ConfigFlagParityTests {
 
     @Test("Every long flag in generate's help is a configuration key, an alias, or exempt")
     func everyFlagIsAKey() throws {
-        // Anything a configuration deliberately cannot say. The process-level set
-        // is the codec's own list, so the two cannot disagree about which flags
-        // describe an invocation rather than an icon.
-        let exempt = MicaConfigKey.processLevelNames.union(["help", "version"])
+        // Anything a configuration deliberately cannot say. Both sets are the
+        // codec's own, so the two halves cannot disagree about which flags describe
+        // an invocation rather than an icon, or which abbreviate a key rather than
+        // being one. Keeping the alias list in the codec is the point: a flag
+        // exempted here and unknown there would decode as "not a configuration key".
+        let exempt = MicaConfigKey.processLevelNames
+            .union(MicaConfigKey.cliOnlyAliasNames.keys)
+            .union(["help", "version"])
         let keys = Set(MicaConfigKey.allCases.map(\.rawValue))
         let aliases = Set(MicaConfigKey.britishAliases.keys)
 
@@ -140,6 +144,38 @@ struct ConfigFlagParityTests {
         }
 
         #expect(unaccounted.isEmpty, "flags with no configuration key: \(unaccounted.sorted().joined(separator: ", "))")
+    }
+
+    @Test("The CLI-only shorthands are never written to a configuration")
+    func cliOnlyAliasesAreNeverEncoded() throws {
+        // The exemption above says these flags need no key. This says the encoder
+        // agrees — a written `icon-symbol` would be a key by another name, and the
+        // decoder would reject the file it had just produced.
+        var settings = IconSettings()
+        settings.icon.foreground.source = .symbol
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.badge.foreground.source = .symbol
+        settings.badge.foreground.symbolName = "plus.circle"
+        settings.badge.foreground.isHidden = false
+
+        let data = try MicaConfigCodec.encode(settings: settings)
+        let written = try #require(
+            try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        for shorthand in MicaConfigKey.cliOnlyAliasNames.keys {
+            #expect(written[shorthand] == nil, "the encoder wrote the CLI shorthand '\(shorthand)'")
+        }
+        #expect(written["icon-fg"] as? String == "symbol:star.fill")
+    }
+
+    @Test("A CLI shorthand in a configuration warns, and names the key to use instead")
+    func cliOnlyAliasInAConfigurationNamesTheKey() throws {
+        // Reachable by anyone who met the flag first. "not a configuration key" is
+        // true and unhelpful; the warning has to carry the translation.
+        let json = #"{"icon-symbol": "star.fill"}"#.data(using: .utf8)!
+        let decoded = try MicaConfigCodec.decode(json: json, configDirectory: nil)
+        let warning = try #require(decoded.warnings.first { $0.key == "icon-symbol" })
+        #expect(warning.message.contains("icon-fg"))
     }
 
     // MARK: - 3. The semantics match

@@ -132,6 +132,24 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// the message an attempt to use one gets.
     static let processLevelNames: Set<String> = ["output", "o", "json", "quiet", "q", "verbose", "v", "config"]
 
+    /// `generate` flags that are shorthand for a key rather than a key themselves,
+    /// with the key each one abbreviates.
+    ///
+    /// A third exclusion beside `processLevelNames` and `decodeOnlyNames`, and the
+    /// only one of the three whose members are **not** configuration keys in any
+    /// spelling. `--icon-symbol star.fill` is `"icon-fg": "symbol:star.fill"`; the
+    /// prefix-free form exists because a flag can be single-purpose where the
+    /// overloaded `--icon-fg` cannot, and a file gains nothing from a second way to
+    /// write a value it already writes unambiguously.
+    ///
+    /// **Nothing may encode to one of these.** They are here so the flag/key parity
+    /// test can account for a flag with no key — the role the positional symbol used
+    /// to fill by not being a flag at all.
+    static let cliOnlyAliasNames: [String: MicaConfigKey] = [
+        "icon-symbol": .iconFG,
+        "badge-symbol": .badgeFG,
+    ]
+
     /// Keys accepted on the way in and never produced on the way out.
     ///
     /// A different thing from `processLevelNames`, which is excluded because those
@@ -350,6 +368,10 @@ private struct ConfigReader {
                 }
             } else if MicaConfigKey.processLevelNames.contains(rawKey) {
                 warn(rawKey, "'\(rawKey)' is a command-line flag, not a configuration key — pass it on the command line")
+            } else if let abbreviated = MicaConfigKey.cliOnlyAliasNames[rawKey] {
+                // Reachable by anyone who learned the flag first, so it names the
+                // key rather than reporting the shorthand as simply unknown.
+                warn(rawKey, "'--\(rawKey)' is a command-line shorthand; write it as '\(abbreviated.rawValue)': 'symbol:<name>'")
             } else {
                 warn(rawKey, "not a configuration key")
             }

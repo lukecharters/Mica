@@ -272,6 +272,31 @@ struct IconForegroundOptions: ParsableArguments {
         return foregroundFlag
     }
 
+    /// The three ways the two foreground flags can be asked for something they do
+    /// not mean. All refuse; none guesses.
+    ///
+    /// The conflict in particular is why `foreground` above does not simply pick a
+    /// winner. The positional this alias replaces let `--icon-fg` beat it silently,
+    /// and half the case for removing the positional was ending that — reinstating
+    /// it one flag over would be a poor trade.
+    func validateFlags() throws {
+        if foregroundFlag != nil, symbol != nil {
+            throw ValidationError(
+                "Pass --icon-fg or --icon-symbol, not both — --icon-symbol <name> is shorthand for --icon-fg symbol:<name>."
+            )
+        }
+        guard let symbol else { return }
+        if symbol.isEmpty {
+            throw ValidationError("--icon-symbol requires a symbol name, e.g. --icon-symbol star.fill")
+        }
+        if ForegroundValue.hasSymbolPrefix(symbol) {
+            let bare = String(symbol.dropFirst(ForegroundValue.symbolPrefix.count))
+            throw ValidationError(
+                "--icon-symbol takes a bare symbol name, so drop the 'symbol:' prefix: --icon-symbol \(bare.isEmpty ? "star.fill" : bare)"
+            )
+        }
+    }
+
     // Folds --symbol-scale + --imported-image-scale into one flag that drives
     // whichever source (symbol or image) is active.
     @Option(
@@ -576,6 +601,26 @@ struct BadgeOptions: ParsableArguments {
     var foreground: String? {
         if let symbol { return "\(ForegroundValue.symbolPrefix)\(symbol)" }
         return foregroundFlag
+    }
+
+    /// The badge's half of `IconForegroundOptions.validateFlags()`; see there for why
+    /// each of the three refuses rather than guessing.
+    func validateFlags() throws {
+        if foregroundFlag != nil, symbol != nil {
+            throw ValidationError(
+                "Pass --badge-fg or --badge-symbol, not both — --badge-symbol <name> is shorthand for --badge-fg symbol:<name>."
+            )
+        }
+        guard let symbol else { return }
+        if symbol.isEmpty {
+            throw ValidationError("--badge-symbol requires a symbol name, e.g. --badge-symbol plus.circle")
+        }
+        if ForegroundValue.hasSymbolPrefix(symbol) {
+            let bare = String(symbol.dropFirst(ForegroundValue.symbolPrefix.count))
+            throw ValidationError(
+                "--badge-symbol takes a bare symbol name, so drop the 'symbol:' prefix: --badge-symbol \(bare.isEmpty ? "plus.circle" : bare)"
+            )
+        }
     }
 
     // Folds the old --badge-symbol-scale + --badge-imported-image-scale into one
@@ -1198,10 +1243,18 @@ struct GenerateCommand: AsyncParsableCommand {
         case .symbol(let name):
             return name
         case .image(let path):
-            return ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+            return Self.basename(ofPath: path)
         case .none:
-            return symbolName ?? "icon"
+            // No foreground at all is legal for imported artwork, which is then the
+            // only thing naming the icon — the same courtesy a foreground image gets.
+            if let symbolName { return symbolName }
+            if case .image(let path) = resolvedBackground() { return Self.basename(ofPath: path) }
+            return "icon"
         }
+    }
+
+    private static func basename(ofPath path: String) -> String {
+        ((path as NSString).lastPathComponent as NSString).deletingPathExtension
     }
 
     /// Default output basename accounting for `--config`: with no foreground on
@@ -1294,6 +1347,12 @@ struct GenerateCommand: AsyncParsableCommand {
     // from the configuration when no flag overrides them.
 
     private func performValidation(in context: GenerationContext) throws {
+        // Ahead of everything: these two decide whether the group's foreground can
+        // be read at all, so a conflict must be reported as a conflict rather than
+        // as whatever the merged value then fails to be.
+        try iconForeground.validateFlags()
+        try badge.validateFlags()
+
         try validateForeground(in: context)
         try validateColorDependencies(in: context)
         try validateBadgeDependencies(in: context)
@@ -1302,12 +1361,26 @@ struct GenerateCommand: AsyncParsableCommand {
         try validateColorFormats(in: context)
     }
 
+    /// True when the icon's background is imported artwork, which is the one case
+    /// that excuses a missing foreground — see `validateForeground`.
+    private var iconBackgroundIsImage: Bool {
+        if case .image = resolvedBackground() { return true }
+        return false
+    }
+
     private func validateForeground(in context: GenerationContext) throws {
         // Without a configuration the throwing form runs, and its throw is what
         // produces the "provide an icon foreground" error. With one, an absent
         // flag means "keep the configuration's", so only what was passed is checked.
+        //
+        // Imported artwork is the third case, and it is not a relaxation for its own
+        // sake: the foreground rule *hides* the foreground over an imported
+        // background unless one was asked for, so demanding one here would require
+        // naming a symbol solely to have it hidden. Every other background still
+        // requires a foreground, or `--icon-bg-color blue` alone would quietly
+        // render whatever `ForegroundSpec.iconDefault` happens to name.
         let foreground: ForegroundValue?
-        if context.base == nil {
+        if context.base == nil, !iconBackgroundIsImage {
             foreground = try resolvedForeground()
         } else {
             foreground = try providedForeground()
