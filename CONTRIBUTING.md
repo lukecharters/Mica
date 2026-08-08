@@ -1,6 +1,22 @@
 # Contributing to Mica
 
-Thanks for your interest in contributing. Issues and pull requests are welcome.
+Thanks for your interest in contributing.
+
+## Open an issue first
+
+**Please open an issue to discuss what you'd like to change before opening a pull request.**
+Bug reports and feature ideas are very welcome and need no discussion first — file them freely.
+It's code changes that want a conversation up front.
+
+Mica is early, and a fair amount of the design has reasoning behind it that isn't visible in the
+code yet: why the badge clamps inward instead of growing the canvas, why a colour carries its
+provenance, why an imported background hides the foreground. That reasoning is written down, but
+it isn't published yet, so an unsolicited pull request is likely to run into a constraint neither
+of us can see coming — and that wastes your time more than mine.
+
+Tell me what you want to build in an issue and I'll tell you what you need to know about that part
+of the codebase, and publish the relevant design notes. As people start doing that, more of those
+notes will be published as a matter of course.
 
 ## AI-assisted contributions
 
@@ -90,6 +106,7 @@ The project uses [Conventional Commits](https://www.conventionalcommits.org): `f
 
 ## Pull requests
 
+- Link the issue where the change was discussed.
 - Summarise the intent of the change.
 - List the test commands you ran.
 - Mention any documentation updates (README / wiki).
