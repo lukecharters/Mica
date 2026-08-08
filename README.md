@@ -147,8 +147,8 @@ mica-cli shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color wh
 # Custom two-colour gradient background
 mica-cli app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
 
-# Classic macOS 11–15 look, flat colour
-mica-cli star.fill --icon-bg-corner-radius macos11 --icon-bg-gradient off
+# Classic macOS 15 look, flat colour
+mica-cli star.fill --icon-bg-corner-radius macos15 --icon-bg-gradient off
 
 # Add a badge (--badge-fg, --badge-bg or --badge-visibility on turns it on)
 mica-cli star.fill --badge-fg symbol:plus.circle --badge-position bottom-right

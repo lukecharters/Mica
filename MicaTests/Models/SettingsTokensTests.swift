@@ -3,7 +3,7 @@
 // source the flag transforms, the settings builder and the configuration codec
 // all read. These tests pin the two properties that make that safe: every case
 // round-trips through its own token, and the handful of deliberate spellings
-// (`.sequoia` → "macos11", raw-value-backed modes) stay what they are.
+// (raw-value-backed modes, the superseded "macos11") stay what they are.
 
 import Testing
 import Foundation
@@ -65,9 +65,58 @@ struct SettingsTokensTests {
 
     // MARK: - Deliberate spellings
 
-    @Test("BackgroundShadowStyle.sequoia spells as macos11")
-    func sequoiaSpellsAsMacOS11() {
-        #expect(BackgroundShadowStyle.sequoia.cliToken == "macos11")
+    @Test("The macOS 11-15 design spells as macos15 on both flags")
+    func macOS15SpellsAsMacOS15() {
+        #expect(BackgroundShadowStyle.macOS15.cliToken == "macos15")
+        #expect(IconCornerRadiusStyle.macOS15.cliToken == "macos15")
+    }
+
+    // MARK: - Superseded spellings
+
+    // "macos11" was the shipped token for both flags until 2026-08-08. It still
+    // decodes so configurations exported before then keep loading, but it is
+    // never written and never offered — see `supersededTokensAreNeverOffered`.
+
+    @Test("macos11 still decodes to the macOS 15 style")
+    func supersededTokenStillDecodes() {
+        #expect(BackgroundShadowStyle.from(cliToken: "macos11") == .macOS15)
+        #expect(IconCornerRadiusStyle.from(cliToken: "macos11") == .macOS15)
+        #expect(BackgroundShadowStyle.from(cliToken: "MacOS11") == .macOS15, "matched case-insensitively too")
+    }
+
+    @Test("A superseded token is never offered as a valid one")
+    func supersededTokensAreNeverOffered() {
+        #expect(!BackgroundShadowStyle.allCLITokens.contains("macos11"))
+        #expect(!IconCornerRadiusStyle.allCLITokens.contains("macos11"))
+        #expect(BackgroundShadowStyle.allCLITokens == ["off", "macos15", "macos26"])
+        #expect(IconCornerRadiusStyle.allCLITokens == ["off", "macos15", "macos26"])
+    }
+
+    @Test("A superseded token normalises to the canonical spelling")
+    func supersededTokenNormalises() throws {
+        let style = try #require(BackgroundShadowStyle.from(cliToken: "macos11"))
+        #expect(style.cliToken == "macos15", "re-encoding a decoded macos11 writes macos15")
+    }
+
+    @Test("No enum but the two style pairs supersedes anything")
+    func onlyStylesHaveSupersededTokens() {
+        #expect(SymbolRenderingStyle.allCases.allSatisfy { $0.supersededCLITokens.isEmpty })
+        #expect(SymbolWeight.allCases.allSatisfy { $0.supersededCLITokens.isEmpty })
+        #expect(BadgePosition.allCases.allSatisfy { $0.supersededCLITokens.isEmpty })
+        #expect(GenerationMode.allCases.allSatisfy { $0.supersededCLITokens.isEmpty })
+        #expect(ExportColorSpace.allCases.allSatisfy { $0.supersededCLITokens.isEmpty })
+    }
+
+    @Test("A superseded token cannot shadow another case's canonical one")
+    func canonicalTokensWinOverSuperseded() {
+        // Guards the lookup order in `from(cliToken:)`: every canonical token
+        // must still resolve to its own case, whatever any superseded list says.
+        for style in BackgroundShadowStyle.allCases {
+            #expect(BackgroundShadowStyle.from(cliToken: style.cliToken) == style)
+        }
+        for style in IconCornerRadiusStyle.allCases {
+            #expect(IconCornerRadiusStyle.from(cliToken: style.cliToken) == style)
+        }
     }
 
     @Test("Token matching is case-insensitive")
@@ -81,7 +130,7 @@ struct SettingsTokensTests {
     func unknownTokenIsNil() {
         #expect(SymbolRenderingStyle.from(cliToken: "vibrant") == nil)
         #expect(BadgePosition.from(cliToken: "centre") == nil)
-        #expect(BackgroundShadowStyle.from(cliToken: "sequoia") == nil, "the case name is not a token")
+        #expect(BackgroundShadowStyle.from(cliToken: "sequoia") == nil, "the old case name was never a token, and supersession did not make it one")
     }
 
     // MARK: - Overloaded source values

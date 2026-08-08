@@ -427,10 +427,10 @@ struct IconBackgroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-bg-corner-radius"),
-        help: ArgumentHelp("Corner radius: off, macos11, or macos26 (default)", valueName: "style"),
+        help: ArgumentHelp("Corner radius: off, macos15, or macos26 (default)", valueName: "style"),
         transform: { style in
             guard IconCornerRadiusStyle.from(cliToken: style) != nil else {
-                throw ValidationError("Corner radius must be 'off', 'macos11', or 'macos26'")
+                throw ValidationError("Corner radius must be 'off', 'macos15', or 'macos26'")
             }
             return style.lowercased()
         }
@@ -448,10 +448,10 @@ struct IconBackgroundOptions: ParsableArguments {
     // backgrounds to macOS 26.
     @Option(
         name: .customLong("icon-bg-shadow"),
-        help: ArgumentHelp("Background shadow: off, macos11, or macos26 (default: off for image backgrounds, macos26 otherwise)", valueName: "style"),
+        help: ArgumentHelp("Background shadow: off, macos15, or macos26 (default: off for image backgrounds, macos26 otherwise)", valueName: "style"),
         transform: { style in
             guard BackgroundShadowStyle.from(cliToken: style) != nil else {
-                throw ValidationError("Background shadow must be 'off', 'macos11', or 'macos26'")
+                throw ValidationError("Background shadow must be 'off', 'macos15', or 'macos26'")
             }
             return style.lowercased()
         }

@@ -25,7 +25,7 @@ struct IconContentView: View {
 
     // Base layout constants tuned for 256pt reference
     private let baseSize: CGFloat = 256
-    private let baseCornerRadiusSequoia: CGFloat = 46
+    private let baseCornerRadiusMacOS15: CGFloat = 46
     private let baseCornerRadius: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
 
@@ -39,7 +39,7 @@ struct IconContentView: View {
         let baseRadius: CGFloat
         switch settings.icon.background.cornerRadiusStyle {
         case .off: baseRadius = 0
-        case .macOS11: baseRadius = baseCornerRadiusSequoia
+        case .macOS15: baseRadius = baseCornerRadiusMacOS15
         case .macOS26: baseRadius = baseCornerRadius
         }
         return baseRadius * scaleFactor

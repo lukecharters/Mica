@@ -46,8 +46,8 @@ struct BaseOverrideTests {
         settings.icon.background.usesGradient = false
         settings.icon.background.gradientStartColor = .pink
         settings.icon.background.gradientEndColor = .brown
-        settings.icon.background.cornerRadiusStyle = .macOS11
-        settings.icon.background.shadowStyle = .sequoia
+        settings.icon.background.cornerRadiusStyle = .macOS15
+        settings.icon.background.shadowStyle = .macOS15
 
         settings.badge.isVisible = true
         settings.badge.position = .topLeft
@@ -125,7 +125,7 @@ struct BaseOverrideTests {
     @Test("An absent --icon-bg-shadow keeps the base's shadow style")
     func absentBackgroundShadow_keepsTheBaseStyle() throws {
         let result = try Self.build([], onto: Self.distinctiveBase())
-        #expect(result.icon.background.shadowStyle == .sequoia)
+        #expect(result.icon.background.shadowStyle == .macOS15)
     }
 
     @Test("An absent --icon-fg-shadow keeps the base's symbol shadow")

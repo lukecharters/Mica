@@ -262,7 +262,7 @@ struct ReferenceComparisonTool: View {
             }
             HStack {
                 Button("Load macOS 26") { shadow = .macOS26 }
-                Button("Load Sequoia") { shadow = .sequoia }
+                Button("Load macOS 15") { shadow = .macOS15 }
             }
             .controlSize(.small)
 

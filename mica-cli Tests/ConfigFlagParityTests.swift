@@ -57,7 +57,7 @@ struct ConfigFlagParityTests {
         case .iconBGColor: return "green"
         case .iconBGGradientColors: return "red,blue"
         case .iconBGGradient: return "off"
-        case .iconBGCornerRadius: return "macos11"
+        case .iconBGCornerRadius: return "macos15"
         case .iconBGScale: return "1.1"
         case .iconBGShadow: return "off"
         case .iconBGPadding: return "on"
@@ -218,8 +218,8 @@ struct ConfigFlagParityTests {
         .init(name: "icon background", config: [
             "icon-bg-color": "teal",
             "icon-bg-gradient": false,
-            "icon-bg-corner-radius": "macos11",
-            "icon-bg-shadow": "macos11",
+            "icon-bg-corner-radius": "macos15",
+            "icon-bg-shadow": "macos15",
             "icon-bg-visibility": false,
         ]),
 

@@ -87,8 +87,23 @@ struct IconBackgroundFlagsTests {
     @Test("--icon-bg-corner-radius maps to the corner-radius style")
     func cornerRadius() throws {
         #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.cornerRadiusStyle == .macOS26)
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos11"])).icon.background.cornerRadiusStyle == .macOS11)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos15"])).icon.background.cornerRadiusStyle == .macOS15)
         #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "off"])).icon.background.cornerRadiusStyle == .off)
+    }
+
+    // "macos15" replaced "macos11" as the token for the macOS 11–15 design on
+    // 2026-08-08. The old spelling is still accepted on both flags so scripts
+    // and exported configurations written before then keep working; it is never
+    // written back — `SettingsTokensTests` pins that half.
+    @Test("The superseded macos11 token still parses on both style flags")
+    func supersededTokenStillParses() throws {
+        let radius = try IconGenerationRunner()
+            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos11"]))
+        #expect(radius.icon.background.cornerRadiusStyle == .macOS15)
+
+        let shadow = try IconGenerationRunner()
+            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-shadow", "macos11"]))
+        #expect(shadow.icon.background.shadowStyle == .macOS15)
     }
 
     @Test("--icon-bg-visibility off hides the background")

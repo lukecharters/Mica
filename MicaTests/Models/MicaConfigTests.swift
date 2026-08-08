@@ -133,7 +133,7 @@ struct MicaConfigTests {
         ("icon-bg-color", "red", [:]),
         ("icon-bg-gradient-colors", ["pink", "brown"], ["icon-bg": "custom-gradient"]),
         ("icon-bg-gradient", false, [:]),
-        ("icon-bg-corner-radius", "macos11", [:]),
+        ("icon-bg-corner-radius", "macos15", [:]),
         ("icon-bg-scale", 1.5, ["icon-bg": "bg.png"]),
         ("icon-bg-shadow", "off", [:]),
         ("icon-bg-padding", true, ["icon-bg": "bg.png"]),
@@ -275,8 +275,8 @@ struct MicaConfigTests {
         settings.icon.foreground.symbolName = "shield.fill"
         settings.icon.foreground.symbolWeight = .bold
         settings.icon.foreground.symbolScale = 1.3
-        settings.icon.background.cornerRadiusStyle = .macOS11
-        settings.icon.background.shadowStyle = .sequoia
+        settings.icon.background.cornerRadiusStyle = .macOS15
+        settings.icon.background.shadowStyle = .macOS15
 
         let json = try MicaConfigCodec.encode(settings: settings)
         let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
@@ -471,8 +471,8 @@ struct MicaConfigTests {
         settings.icon.background.gradientEndColor = .brown
         settings.icon.background.color = .pink   // canonical: decode mirrors the start colour
         settings.icon.background.usesGradient = false
-        settings.icon.background.cornerRadiusStyle = .macOS11
-        settings.icon.background.shadowStyle = .sequoia
+        settings.icon.background.cornerRadiusStyle = .macOS15
+        settings.icon.background.shadowStyle = .macOS15
 
         settings.badge.isVisible = true
         settings.badge.position = .topLeft
@@ -530,7 +530,7 @@ struct MicaConfigTests {
         var settings = IconSettings()
         settings.icon.background.source = .preRendered
         settings.icon.background.usesGradient = !IconSettings().icon.background.usesGradient
-        settings.icon.background.cornerRadiusStyle = .macOS11
+        settings.icon.background.cornerRadiusStyle = .macOS15
 
         let json = try MicaConfigCodec.encode(settings: settings)
         let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
@@ -742,6 +742,26 @@ struct MicaConfigTests {
         #expect(tie.settings.icon.background.color == .red)
         #expect(tie.warnings.count == 1)
         #expect(tie.warnings.first?.key == "icon-bg-colour")
+    }
+
+    /// The macOS 11–15 design spelled as "macos11" until 2026-08-08. Configurations
+    /// exported before then are the reason the old token still decodes — and the
+    /// reason it must not survive a round trip, since a configuration that keeps
+    /// re-emitting the superseded spelling never converges on the new one.
+    @Test("the superseded macos11 token decodes and normalises to macos15")
+    func supersededStyleTokenDecodes() throws {
+        let decoded = try Self.decode([
+            "icon-bg-corner-radius": "macos11",
+            "icon-bg-shadow": "macos11",
+        ])
+        #expect(decoded.settings.icon.background.cornerRadiusStyle == .macOS15)
+        #expect(decoded.settings.icon.background.shadowStyle == .macOS15)
+        #expect(decoded.warnings.isEmpty, "an accepted spelling is not a mistake to report")
+
+        let json = try MicaConfigCodec.encode(settings: decoded.settings)
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["icon-bg-corner-radius"] as? String == "macos15")
+        #expect(object["icon-bg-shadow"] as? String == "macos15")
     }
 
     @Test("the export scale takes 2x or the bare number 2")

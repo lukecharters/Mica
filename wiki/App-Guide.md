@@ -95,15 +95,15 @@ Weights compared (`star`):
 
 | Control | What it does | CLI |
 |---|---|---|
-| **Corners** *(advanced)* | Chiclet silhouette: **macOS 11-15** (smaller radius) or **macOS 26** (squircle). | `--icon-bg-corner-radius` |
+| **Corners** *(advanced)* | Chiclet silhouette: **macOS 15** (smaller radius) or **macOS 26** (squircle). | `--icon-bg-corner-radius` |
 | **Color** | The background colour (Standard) or the pre-rendered asset colour (Pre-Rendered). | `--icon-bg-color` |
 | **Gradient** *(advanced)* | Derive a top-to-bottom gradient from the colour; off gives a flat fill. | `--icon-bg-gradient` |
 | **Custom Gradient** *(advanced)* | Pick your own two gradient stops (Primary/Secondary). | `--icon-bg custom-gradient --icon-bg-gradient-colors` |
-| **Shadow** | Background drop shadow. With advanced controls on you can pick the **Off / macOS 11-15 / macOS 26** shadow styles. | `--icon-bg-shadow` |
+| **Shadow** | Background drop shadow. With advanced controls on you can pick the **Off / macOS 15 / macOS 26** shadow styles. | `--icon-bg-shadow` |
 
-| Corners: macOS 11-15 | Corners: macOS 26 | Gradient on | Gradient off | Custom gradient | Pre-rendered Liquid Glass |
+| Corners: macOS 15 | Corners: macOS 26 | Gradient on | Gradient off | Custom gradient | Pre-rendered Liquid Glass |
 |---|---|---|---|---|---|
-| ![macOS 11 corners](images/corners-macos11.png) | ![macOS 26 corners](images/corners-macos26.png) | ![Gradient on](images/bg-gradient-on.png) | ![Gradient off](images/bg-gradient-off.png) | ![Custom gradient](images/custom-gradient.png) | ![Liquid Glass](images/liquid-glass.png) |
+| ![macOS 15 corners](images/corners-macos15.png) | ![macOS 26 corners](images/corners-macos26.png) | ![Gradient on](images/bg-gradient-on.png) | ![Gradient off](images/bg-gradient-off.png) | ![Custom gradient](images/custom-gradient.png) | ![Liquid Glass](images/liquid-glass.png) |
 
 ## Badge
 

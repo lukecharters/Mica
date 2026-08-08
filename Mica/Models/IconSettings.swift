@@ -536,11 +536,15 @@ enum BadgePosition: String, CaseIterable, Identifiable {
 /// an option nobody is obliged to pick.
 ///
 /// Deliberately the same three-case shape as `BackgroundShadowStyle`, which
-/// already reads `off / macOS 11-15 / macOS 26` and is already auto-set to `off`
+/// already reads `off / macOS 15 / macOS 26` and is already auto-set to `off`
 /// on import.
+///
+/// `.macOS15` names the design Apple shipped from macOS 11 through 15. It was
+/// `.macOS11` here and `.sequoia` on `BackgroundShadowStyle` — one design with
+/// three spellings across the code, the UI and the CLI — until 2026-08-08.
 enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
     case off = "Off"
-    case macOS11 = "macOS 11-15"
+    case macOS15 = "macOS 15"
     case macOS26 = "macOS 26"
 
     var id: String { rawValue }
@@ -548,7 +552,7 @@ enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
 
 enum BackgroundShadowStyle: String, CaseIterable, Identifiable {
     case off = "Off"
-    case sequoia = "macOS 11-15"
+    case macOS15 = "macOS 15"
     case macOS26 = "macOS 26"
 
     var id: String { rawValue }

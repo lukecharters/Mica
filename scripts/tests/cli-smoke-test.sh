@@ -105,9 +105,9 @@ HAPPY_CASES=(
     "icon-bg-image-scale|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-scale|1.3"
     "icon-bg-image-padding-on|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|on"
     "icon-bg-image-padding-off|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|off"
-    "icon-bg-corner-radius-macos11|star.fill|--icon-bg-corner-radius|macos11"
+    "icon-bg-corner-radius-macos15|star.fill|--icon-bg-corner-radius|macos15"
     "icon-bg-shadow-off|star.fill|--icon-bg-shadow|off"
-    "icon-bg-shadow-macos11|star.fill|--icon-bg-shadow|macos11"
+    "icon-bg-shadow-macos15|star.fill|--icon-bg-shadow|macos15"
     "icon-bg-visibility-off|star.fill|--icon-bg-visibility|off"
 
     # ---- Icon foreground ----
@@ -610,7 +610,7 @@ run_negative_case() {
 }
 
 # Imported-background defaults, by comparing renders of the shipped binary against
-# each other. Three claims, each expressed as "these two invocations must (not)
+# each other. Four claims, each expressed as "these two invocations must (not)
 # produce identical bytes":
 #
 #   1. `--icon-bg <art>` still renders exactly what it always has. Phase 2 made the
@@ -621,6 +621,10 @@ run_negative_case() {
 #   2. Switching the foreground back on changes the render. Before phase 3 nothing
 #      could: the gate was in the render and no setting reached past it.
 #   3. The corner radius defaults to `off` on import, and an explicit flag beats it.
+#   4. The superseded `macos11` token renders exactly as `macos15` does. This claim
+#      needs no imported artwork and uses none — it is here because the A/B harness
+#      is, and because a token that still parses but resolves elsewhere is a
+#      failure only a render comparison can see.
 #
 # The artwork must FILL ITS OWN BOUNDS. The committed test-background-2.png has
 # fully transparent corners, like anything Mica renders, so clipping it at any
@@ -643,6 +647,13 @@ IMPORT_CASES=(
     # towards rule 2, but naming the same symbol with --icon-fg does.
     "rule2-symbol-colour-reveals-the-foreground|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-symbol-color|green"
     "rule2-explicit-icon-fg-beats-the-positional|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg|symbol:star.fill"
+    # The superseded style token, on the shipped binary. "macos11" named the
+    # macOS 11-15 design until 2026-08-08 and still decodes, so a script or an
+    # exported configuration written before then must render byte-identically to
+    # the same call spelled "macos15". A unit test can only pin the enum; this is
+    # the flag surface end to end.
+    "superseded-corner-radius-token|same|--icon-bg-corner-radius|macos11|--|--icon-bg-corner-radius|macos15"
+    "superseded-shadow-token|same|--icon-bg-shadow|macos11|--|--icon-bg-shadow|macos15"
 )
 
 # Bounds-filling artwork, built from a rendered icon so the script needs no new

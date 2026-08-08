@@ -36,8 +36,8 @@ struct ConfigOverrideTests {
 
         "icon-bg-color": "teal",
         "icon-bg-gradient": false,
-        "icon-bg-corner-radius": "macos11",
-        "icon-bg-shadow": "macos11",
+        "icon-bg-corner-radius": "macos15",
+        "icon-bg-shadow": "macos15",
 
         "badge-fg": "symbol:bell.fill",
         "badge-symbol-color": "yellow",
@@ -177,7 +177,7 @@ struct ConfigOverrideTests {
         // …and everything they did not name still comes from the file.
         #expect(result.export.size == 256)
         #expect(result.icon.foreground.symbolWeight == .bold)
-        #expect(result.icon.background.cornerRadiusStyle == .macOS11)
+        #expect(result.icon.background.cornerRadiusStyle == .macOS15)
         #expect(result.badge.scale == 1.3)
         #expect(result.badge.offsetX == 0.2)
     }
