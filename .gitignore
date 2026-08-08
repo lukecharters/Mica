@@ -85,16 +85,10 @@ fastlane/test_output
 !.claude/skills/drive-mica-on-screen/
 .claude.local.md
 
-# Superpowers brainstorm sessions
-.superpowers/
-.worktrees/
-
 # Editor settings & agent tooling
 .vscode/
 .agents/
-.github/hooks/
 
-screenshots/
 
 # CLI smoke-test runs
 scripts/tests/smoke-output/
