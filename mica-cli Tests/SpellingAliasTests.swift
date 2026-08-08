@@ -31,26 +31,26 @@ struct SpellingAliasTests {
     @Test("--colour-space is an alias for --color-space")
     func colourSpaceAlias() throws {
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--colour-space", "displayP3"]))
+            from: parseCommand(["--icon-symbol", "star.fill", "--colour-space", "displayP3"]))
         #expect(settings.export.colorSpace == .displayP3)
     }
 
     @Test("--icon-symbol-colour is an alias for --icon-symbol-color")
     func iconSymbolColourAlias() throws {
-        let command = try parseCommand(["star.fill", "--icon-symbol-colour", "red"])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-symbol-colour", "red"])
         #expect(command.iconForeground.symbolColor == "red")
     }
 
     @Test("--icon-bg-colour is an alias for --icon-bg-color")
     func iconBackgroundColourAlias() throws {
-        let command = try parseCommand(["star.fill", "--icon-bg-colour", "red"])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-colour", "red"])
         #expect(command.background.color == "red")
     }
 
     @Test("--icon-bg-gradient-colours is an alias for --icon-bg-gradient-colors")
     func iconGradientColoursAlias() throws {
         let command = try parseCommand([
-            "star.fill", "--icon-bg", "custom-gradient",
+            "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
             "--icon-bg-gradient-colours", "red,blue",
         ])
         #expect(command.background.gradientColors == "red,blue")
@@ -59,7 +59,7 @@ struct SpellingAliasTests {
     @Test("--badge-symbol-colour is an alias for --badge-symbol-color")
     func badgeSymbolColourAlias() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus.circle",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus.circle",
             "--badge-symbol-colour", "yellow",
         ])
         #expect(command.badge.symbolColor == "yellow")
@@ -68,7 +68,7 @@ struct SpellingAliasTests {
     @Test("--badge-bg-colour is an alias for --badge-bg-color")
     func badgeBackgroundColourAlias() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus.circle",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus.circle",
             "--badge-bg-colour", "teal",
         ])
         #expect(command.badge.backgroundColor == "teal")
@@ -77,7 +77,7 @@ struct SpellingAliasTests {
     @Test("--badge-bg-gradient-colours is an alias for --badge-bg-gradient-colors")
     func badgeGradientColoursAlias() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus.circle",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus.circle",
             "--badge-bg", "custom-gradient",
             "--badge-bg-gradient-colours", "red,orange",
         ])
@@ -88,14 +88,14 @@ struct SpellingAliasTests {
 
     @Test("--icon-symbol-rendering accepts multicolour")
     func iconRenderingMulticolour() throws {
-        let command = try parseCommand(["star.fill", "--icon-symbol-rendering", "multicolour"])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-symbol-rendering", "multicolour"])
         #expect(command.iconForeground.symbolRendering == "multicolor")
     }
 
     @Test("--badge-symbol-rendering accepts multicolour")
     func badgeRenderingMulticolour() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus.circle",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus.circle",
             "--badge-symbol-rendering", "multicolour",
         ])
         #expect(command.badge.symbolRendering == "multicolor")
@@ -106,7 +106,7 @@ struct SpellingAliasTests {
     @Test("prerendered-liquid-glass accepts grey colour names", arguments: ["grey", "darkgrey", "lightgrey"])
     func preRenderedGreyValidates(_ name: String) throws {
         let command = try parseCommand([
-            "star.fill", "--icon-bg", "prerendered-liquid-glass",
+            "--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass",
             "--icon-bg-colour", name,
         ])
         try command.performValidationForTesting()

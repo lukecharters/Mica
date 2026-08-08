@@ -54,6 +54,8 @@ EXPANDED_ARGS=()
 
 # ---- case data ---------------------------------------------------------------
 # Entry format: slug|symbol[|arg1|arg2|...]
+# The symbol field is a bare SF Symbol name; set_symbol_args() turns it into
+# `--icon-symbol <name>`, and an empty field into no foreground at all.
 # Use $SYMBOL_FIXTURE / $BACKGROUND_FIXTURE placeholders for fixture image paths.
 HAPPY_CASES=(
     # ---- baseline ----
@@ -176,8 +178,9 @@ HAPPY_CASES=(
 )
 
 # Negative cases. Entry format: name|expectedSubstring|symbol[|arg1|...]
-# The runner invokes `mica-cli <symbol> <args…>`; passing "extract" as the
-# "symbol" dispatches to the extract subcommand (generate is the default).
+# The runner invokes `mica-cli --icon-symbol <symbol> <args…>`; passing "extract"
+# as the "symbol" dispatches to the extract subcommand (generate is the default),
+# and set_symbol_args() keeps that one word positional.
 NEGATIVE_CASES=(
     # ---- generate ----
     "size-too-large|Size must be between|star.fill|--size|9999"
@@ -314,6 +317,26 @@ expand_fixtures() {
     done
 }
 
+# A case's "symbol" field is a bare SF Symbol name, which reaches the CLI as
+# `--icon-symbol <name>`. It was the positional argument until that was removed;
+# translating here rather than in ~120 data rows keeps each row readable and keeps
+# the one exception in one place.
+#
+# That exception is "extract": four negative cases put it in the symbol field to
+# dispatch to the other subcommand, which is a positional and must pass through
+# untouched. A blind rewrite of the rows would have turned those four into
+# `--icon-symbol extract` — a generate run with a nonexistent symbol, which still
+# fails, and still matches its expected substring for the wrong reason.
+SYMBOL_ARGS=()
+set_symbol_args() {
+    SYMBOL_ARGS=()
+    case "$1" in
+        '')      ;;
+        extract) SYMBOL_ARGS=("extract") ;;
+        *)       SYMBOL_ARGS=("--icon-symbol" "$1") ;;
+    esac
+}
+
 # ---- phase functions ---------------------------------------------------------
 
 build_cli() {
@@ -436,8 +459,9 @@ run_happy_case() {
     stderr_file="$(mktemp)"
     local exit_code=0
     expand_fixtures ${rest[@]+"${rest[@]}"}
+    set_symbol_args "${symbol}"
 
-    "${CLI_BINARY}" "${symbol}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
+    "${CLI_BINARY}" ${SYMBOL_ARGS[@]+"${SYMBOL_ARGS[@]}"} ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
         || exit_code=$?
 
     if [[ "${exit_code}" -eq 0 && -s "${output_file}" ]]; then
@@ -597,7 +621,8 @@ run_negative_case() {
     local output
     local exit_code=0
     expand_fixtures ${rest[@]+"${rest[@]}"}
-    output="$("${CLI_BINARY}" "${symbol}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} 2>&1)" || exit_code=$?
+    set_symbol_args "${symbol}"
+    output="$("${CLI_BINARY}" ${SYMBOL_ARGS[@]+"${SYMBOL_ARGS[@]}"} ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} 2>&1)" || exit_code=$?
 
     if [[ "${exit_code}" -ne 0 ]] && echo "${output}" | grep -qi -- "${expected}"; then
         NEG_PASS=$((NEG_PASS + 1))
@@ -661,7 +686,7 @@ IMPORT_CASES=(
 make_filled_fixture() {
     FILLED_FIXTURE="${OUTPUT_DIR}/filled-artwork.png"
     local source="${OUTPUT_DIR}/filled-artwork-source.png"
-    "${CLI_BINARY}" square.fill --size 256 --icon-bg-color white \
+    "${CLI_BINARY}" --icon-symbol square.fill --size 256 --icon-bg-color white \
         -o "${source}" -q >/dev/null 2>&1
     sips --cropToHeightWidth 200 200 "${source}" --out "${FILLED_FIXTURE}" >/dev/null 2>&1
 }
@@ -695,10 +720,10 @@ run_import_case() {
     local failures=()
     local exit_code=0
 
-    "${CLI_BINARY}" star.fill --size 512 "${a_args[@]}" -o "${stem}-a.png" -q >/dev/null 2>&1 || exit_code=$?
+    "${CLI_BINARY}" --icon-symbol star.fill --size 512 "${a_args[@]}" -o "${stem}-a.png" -q >/dev/null 2>&1 || exit_code=$?
     [[ "${exit_code}" -eq 0 ]] || failures+=("A exited ${exit_code}")
     exit_code=0
-    "${CLI_BINARY}" star.fill --size 512 "${b_args[@]}" -o "${stem}-b.png" -q >/dev/null 2>&1 || exit_code=$?
+    "${CLI_BINARY}" --icon-symbol star.fill --size 512 "${b_args[@]}" -o "${stem}-b.png" -q >/dev/null 2>&1 || exit_code=$?
     [[ "${exit_code}" -eq 0 ]] || failures+=("B exited ${exit_code}")
 
     if [[ "${#failures[@]}" -eq 0 ]]; then
@@ -746,7 +771,7 @@ run_parity_case() {
     [[ "${exit_code}" -eq 0 ]] || failures+=("--config exited ${exit_code}")
 
     exit_code=0
-    "${CLI_BINARY}" star.fill --size 128 --color-space "${space}" --icon-bg-color "${color}" \
+    "${CLI_BINARY}" --icon-symbol star.fill --size 128 --color-space "${space}" --icon-bg-color "${color}" \
         -o "${stem}-flag.png" -q >/dev/null 2>&1 || exit_code=$?
     [[ "${exit_code}" -eq 0 ]] || failures+=("flag exited ${exit_code}")
 

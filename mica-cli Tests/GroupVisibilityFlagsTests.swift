@@ -23,7 +23,7 @@ struct GroupVisibilityFlagsTests {
 
     @Test("--icon-visibility off hides both icon layers")
     func iconVisibilityOff_hidesBothLayers() throws {
-        let settings = try build(["star.fill", "--icon-visibility", "off"])
+        let settings = try build(["--icon-symbol", "star.fill", "--icon-visibility", "off"])
         #expect(settings.icon.foreground.isHidden == true)
         #expect(settings.icon.background.isHidden == true)
         #expect(settings.icon.isHidden == true)
@@ -31,14 +31,14 @@ struct GroupVisibilityFlagsTests {
 
     @Test("--icon-visibility on leaves both icon layers visible")
     func iconVisibilityOn_showsBothLayers() throws {
-        let settings = try build(["star.fill", "--icon-visibility", "on"])
+        let settings = try build(["--icon-symbol", "star.fill", "--icon-visibility", "on"])
         #expect(settings.icon.foreground.isHidden == false)
         #expect(settings.icon.background.isHidden == false)
     }
 
     @Test("Omitting the flag changes nothing")
     func absentFlag_leavesTheDefaults() throws {
-        let settings = try build(["star.fill"])
+        let settings = try build(["--icon-symbol", "star.fill"])
         #expect(settings.icon.isHidden == false)
         #expect(settings.badge.isVisible == false)
     }
@@ -48,7 +48,7 @@ struct GroupVisibilityFlagsTests {
         // For the badge, group visibility *is* the activation bit: `isVisible` is
         // `!fg.isHidden || !bg.isHidden`. So this flag necessarily activates, which
         // is also §3's rule arriving for one of its three activators.
-        let settings = try build(["star.fill", "--badge-visibility", "on"])
+        let settings = try build(["--icon-symbol", "star.fill", "--badge-visibility", "on"])
         #expect(settings.badge.isVisible == true)
         #expect(settings.badge.foreground.isHidden == false)
         #expect(settings.badge.background.isHidden == false)
@@ -56,7 +56,7 @@ struct GroupVisibilityFlagsTests {
 
     @Test("--badge-visibility off leaves an unasked-for badge off")
     func badgeVisibilityOff_staysOff() throws {
-        let settings = try build(["star.fill", "--badge-visibility", "off"])
+        let settings = try build(["--icon-symbol", "star.fill", "--badge-visibility", "off"])
         #expect(settings.badge.isVisible == false)
     }
 
@@ -65,14 +65,14 @@ struct GroupVisibilityFlagsTests {
     @Test("A layer flag overrides the group flag, in both directions")
     func layerFlagOverridesTheGroup() throws {
         let visibleForeground = try build([
-            "star.fill", "--icon-visibility", "off", "--icon-fg-visibility", "on",
+            "--icon-symbol", "star.fill", "--icon-visibility", "off", "--icon-fg-visibility", "on",
         ])
         #expect(visibleForeground.icon.foreground.isHidden == false)
         #expect(visibleForeground.icon.background.isHidden == true,
                 "the group flag must still reach the layer the layer flag did not name")
 
         let hiddenBackground = try build([
-            "star.fill", "--icon-visibility", "on", "--icon-bg-visibility", "off",
+            "--icon-symbol", "star.fill", "--icon-visibility", "on", "--icon-bg-visibility", "off",
         ])
         #expect(hiddenBackground.icon.foreground.isHidden == false)
         #expect(hiddenBackground.icon.background.isHidden == true)
@@ -84,7 +84,7 @@ struct GroupVisibilityFlagsTests {
         // this, activation would write both layers with `?? true` and silently undo
         // the flag the user just passed.
         let settings = try build([
-            "star.fill", "--badge-fg", "symbol:plus", "--badge-visibility", "off",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-visibility", "off",
         ])
         #expect(settings.badge.isVisible == false)
     }
@@ -92,7 +92,7 @@ struct GroupVisibilityFlagsTests {
     @Test("A badge layer flag still overrides --badge-visibility off")
     func badgeLayerFlagOverridesTheGroup() throws {
         let settings = try build([
-            "star.fill", "--badge-fg", "symbol:plus",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus",
             "--badge-visibility", "off", "--badge-fg-visibility", "on",
         ])
         #expect(settings.badge.foreground.isHidden == false)
@@ -149,6 +149,6 @@ struct GroupVisibilityFlagsTests {
 
     private static func build(_ args: [String], onto context: GenerationContext) throws -> IconSettings {
         try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill"] + args), onto: context.base ?? IconSettings())
+            from: parseCommand(["--icon-symbol", "star.fill"] + args), onto: context.base ?? IconSettings())
     }
 }

@@ -14,7 +14,7 @@ struct IconBackgroundFlagsTests {
 
     @Test("Omitted icon-background flags are nil, leaving the IconBackgroundSpec defaults")
     func omittedIconBackgroundFlagsAreNil() throws {
-        let bg = try parseCommand(["star.fill"]).background
+        let bg = try parseCommand(["--icon-symbol", "star.fill"]).background
         #expect(bg.selection == nil)
         #expect(bg.gradient == nil)
         #expect(bg.cornerRadius == nil)
@@ -28,10 +28,10 @@ struct IconBackgroundFlagsTests {
 
     @Test("--icon-bg resolves the four background kinds")
     func backgroundResolution() throws {
-        if case .standard = try parseCommand(["star.fill"]).resolvedBackground() {} else { Issue.record("expected standard") }
-        if case .customGradient = try parseCommand(["star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"]).resolvedBackground() {} else { Issue.record("expected custom-gradient") }
-        if case .preRendered = try parseCommand(["star.fill", "--icon-bg", "prerendered-liquid-glass"]).resolvedBackground() {} else { Issue.record("expected preRendered") }
-        guard case .image(let path) = try parseCommand(["star.fill", "--icon-bg", "/tmp/bg.png"]).resolvedBackground() else {
+        if case .standard = try parseCommand(["--icon-symbol", "star.fill"]).resolvedBackground() {} else { Issue.record("expected standard") }
+        if case .customGradient = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"]).resolvedBackground() {} else { Issue.record("expected custom-gradient") }
+        if case .preRendered = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass"]).resolvedBackground() {} else { Issue.record("expected preRendered") }
+        guard case .image(let path) = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "/tmp/bg.png"]).resolvedBackground() else {
             Issue.record("expected image"); return
         }
         #expect(path == "/tmp/bg.png")
@@ -41,7 +41,7 @@ struct IconBackgroundFlagsTests {
 
     @Test("Standard background uses --icon-bg-color as the base color")
     func standardBaseColor() throws {
-        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-color", "red"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-color", "red"]))
         #expect(settings.icon.background.source == .color)
         #expect(settings.icon.background.usesCustomGradient == false)
         #expect(settings.icon.background.color == (try MicaColorValue(parsing: "red")))
@@ -52,7 +52,7 @@ struct IconBackgroundFlagsTests {
     @Test("custom-gradient maps --icon-bg-gradient-colors to the two custom colors")
     func customGradientColors() throws {
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"])
+            from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"])
         )
         #expect(settings.icon.background.source == .color)
         #expect(settings.icon.background.usesCustomGradient == true)
@@ -65,13 +65,13 @@ struct IconBackgroundFlagsTests {
     @Test("prerendered-liquid-glass selects the named gradient/solid asset")
     func preRenderedAsset() throws {
         let gradient = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray"])
+            from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray"])
         )
         #expect(gradient.icon.background.source == .preRendered)
         #expect(gradient.icon.background.preRenderedAssetName == "background-darkgray-gradient")
 
         let solid = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray", "--icon-bg-gradient", "off"])
+            from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray", "--icon-bg-gradient", "off"])
         )
         #expect(solid.icon.background.preRenderedAssetName == "background-darkgray-solid")
     }
@@ -80,15 +80,15 @@ struct IconBackgroundFlagsTests {
 
     @Test("--icon-bg-gradient toggles the background gradient")
     func gradientToggle() throws {
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.usesGradient == true)
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-gradient", "off"])).icon.background.usesGradient == false)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"])).icon.background.usesGradient == true)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-gradient", "off"])).icon.background.usesGradient == false)
     }
 
     @Test("--icon-bg-corner-radius maps to the corner-radius style")
     func cornerRadius() throws {
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.cornerRadiusStyle == .macOS26)
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos15"])).icon.background.cornerRadiusStyle == .macOS15)
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "off"])).icon.background.cornerRadiusStyle == .off)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"])).icon.background.cornerRadiusStyle == .macOS26)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-corner-radius", "macos15"])).icon.background.cornerRadiusStyle == .macOS15)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-corner-radius", "off"])).icon.background.cornerRadiusStyle == .off)
     }
 
     // "macos15" replaced "macos11" as the token for the macOS 11–15 design on
@@ -98,18 +98,18 @@ struct IconBackgroundFlagsTests {
     @Test("The superseded macos11 token still parses on both style flags")
     func supersededTokenStillParses() throws {
         let radius = try IconGenerationRunner()
-            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-corner-radius", "macos11"]))
+            .buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-corner-radius", "macos11"]))
         #expect(radius.icon.background.cornerRadiusStyle == .macOS15)
 
         let shadow = try IconGenerationRunner()
-            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-shadow", "macos11"]))
+            .buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-shadow", "macos11"]))
         #expect(shadow.icon.background.shadowStyle == .macOS15)
     }
 
     @Test("--icon-bg-visibility off hides the background")
     func visibilityToggle() throws {
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"])).icon.background.isHidden == false)
-        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill", "--icon-bg-visibility", "off"])).icon.background.isHidden == true)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"])).icon.background.isHidden == false)
+        #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-visibility", "off"])).icon.background.isHidden == true)
     }
 
     // MARK: - Validation
@@ -117,21 +117,21 @@ struct IconBackgroundFlagsTests {
     @Test("custom-gradient without --icon-bg-gradient-colors is rejected")
     func customGradientRequiresColors() {
         #expect(throws: (any Error).self) {
-            try parseCommand(["star.fill", "--icon-bg", "custom-gradient"]).performValidationForTesting()
+            try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient"]).performValidationForTesting()
         }
     }
 
     @Test("prerendered-liquid-glass rejects a non-asset color")
     func preRenderedColorValidation() {
         #expect(throws: (any Error).self) {
-            try parseCommand(["star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "maroon"]).performValidationForTesting()
+            try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "maroon"]).performValidationForTesting()
         }
     }
 
     @Test("--icon-bg-gradient-colors requires exactly two colors")
     func gradientColorsCountValidation() {
         #expect(throws: (any Error).self) {
-            try parseCommand(["star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,green,blue"]).performValidationForTesting()
+            try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,green,blue"]).performValidationForTesting()
         }
     }
 }

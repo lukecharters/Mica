@@ -30,7 +30,10 @@ struct IconForegroundRuleTests {
 
     @Test("An imported background alone hides the icon foreground")
     func bareImport_hidesTheForeground() throws {
-        let settings = try build(["command", "--icon-bg", imageFixture()])
+        // Naming no foreground at all is how rule 3 is reached. It used to require
+        // naming one and having it discounted, because the positional symbol this
+        // invocation carried was excluded from rule 2 — `--icon-symbol` is not.
+        let settings = try build(["--icon-bg", imageFixture()])
         #expect(settings.icon.background.isHidden == false)
         #expect(settings.icon.foreground.isHidden == true)
     }
@@ -41,7 +44,7 @@ struct IconForegroundRuleTests {
     func generatedBackground_leavesTheForegroundAlone(_ kind: String) throws {
         // The rule is conditional on a *freshly imported* background. Nothing else
         // should touch the foreground's visibility.
-        var args = ["command", "--icon-bg", kind]
+        var args = ["--icon-symbol", "command", "--icon-bg", kind]
         if kind == "custom-gradient" { args += ["--icon-bg-gradient-colors", "red,orange"] }
         #expect(try build(args).icon.foreground.isHidden == false)
     }
@@ -50,6 +53,7 @@ struct IconForegroundRuleTests {
 
     @Test("Any icon foreground argument keeps the foreground over an import", arguments: [
         ["--icon-fg", "symbol:heart.fill"],
+        ["--icon-symbol", "heart.fill"],
         ["--icon-fg-scale", "1.2"],
         ["--icon-symbol-rendering", "hierarchical"],
         ["--icon-symbol-color", "green"],
@@ -59,7 +63,7 @@ struct IconForegroundRuleTests {
         ["--icon-fg-shadow", "off"],
     ])
     func foregroundArgumentKeepsTheForeground(_ args: [String]) throws {
-        let settings = try build(["command", "--icon-bg", imageFixture()] + args)
+        let settings = try build(["--icon-bg", imageFixture()] + args)
         #expect(settings.icon.foreground.isHidden == false,
                 "\(args.joined(separator: " ")) is a request for a foreground")
     }
@@ -69,7 +73,7 @@ struct IconForegroundRuleTests {
     @Test("--icon-fg-visibility is honoured exactly over an import",
           arguments: [("on", false), ("off", true)])
     func explicitVisibilityWins(_ value: String, _ expectHidden: Bool) throws {
-        let settings = try build(["command", "--icon-bg", imageFixture(),
+        let settings = try build(["--icon-bg", imageFixture(),
                                   "--icon-fg-visibility", value])
         #expect(settings.icon.foreground.isHidden == expectHidden)
     }
@@ -78,29 +82,34 @@ struct IconForegroundRuleTests {
     func explicitOffBeatsRuleTwo() throws {
         // Rule 1 outranks rule 2: `off` is the one foreground flag that does not imply
         // a wanted foreground, so it must not be self-defeating.
-        let settings = try build(["command", "--icon-bg", imageFixture(),
+        let settings = try build(["--icon-bg", imageFixture(),
                                   "--icon-symbol-color", "green",
                                   "--icon-fg-visibility", "off"])
         #expect(settings.icon.foreground.isHidden == true)
     }
 
-    // MARK: - The positional does not count
+    // MARK: - Naming a symbol is what separates rules 2 and 3
 
-    @Test("The positional symbol does not count towards rule 2")
-    func positionalDoesNotCount() throws {
-        // The one place a user could be surprised, and the reason it is documented in
-        // `--icon-bg`'s help abstract. Counting the positional would make rule 3
-        // unreachable, since nearly every invocation has one.
+    @Test("Naming a symbol is the whole difference between rules 3 and 2")
+    func namingASymbolIsTheDifference() throws {
+        // The two invocations differ by nothing but the foreground, which is what
+        // makes the rule readable. Until `--icon-symbol` replaced the positional
+        // these two lines both named a symbol and only one of them counted, and
+        // that discrepancy was the surprise `--icon-bg`'s abstract had to document.
         let path = try imageFixture()
-        #expect(try build(["command", "--icon-bg", path]).icon.foreground.isHidden == true)
+        #expect(try build(["--icon-bg", path]).icon.foreground.isHidden == true)
+        #expect(try build(["--icon-symbol", "command", "--icon-bg", path])
+                    .icon.foreground.isHidden == false)
+        // And the long form it abbreviates agrees, or the two are not aliases.
         #expect(try build(["--icon-fg", "symbol:command", "--icon-bg", path])
                     .icon.foreground.isHidden == false)
     }
 
-    @Test("A positional beside a foreground argument still shows the foreground")
-    func positionalPlusForegroundArgument() throws {
-        // Rule 2 fires on the *other* argument; the positional supplies the symbol.
-        let settings = try build(["heart.fill", "--icon-bg", imageFixture(),
+    @Test("A symbol beside another foreground argument still shows the foreground")
+    func symbolPlusForegroundArgument() throws {
+        // Two independent reasons for rule 2 to fire; the symbol must still be the
+        // one that lands, rather than a default the other argument styles.
+        let settings = try build(["--icon-symbol", "heart.fill", "--icon-bg", imageFixture(),
                                   "--icon-symbol-color", "green"])
         #expect(settings.icon.foreground.isHidden == false)
         #expect(settings.icon.foreground.symbolName == "heart.fill")
@@ -114,8 +123,8 @@ struct IconForegroundRuleTests {
         // always has. Asserted on the settings here and on the rendered bytes by the
         // smoke test's import section.
         let path = try imageFixture()
-        let bare = try build(["command", "--icon-bg", path])
-        let explicit = try build(["command", "--icon-bg", path, "--icon-fg-visibility", "off"])
+        let bare = try build(["--icon-bg", path])
+        let explicit = try build(["--icon-bg", path, "--icon-fg-visibility", "off"])
         #expect(bare.icon.foreground.isHidden == explicit.icon.foreground.isHidden)
         #expect(bare.icon.background.isHidden == explicit.icon.background.isHidden)
         #expect(bare.icon.background.cornerRadiusStyle == explicit.icon.background.cornerRadiusStyle)

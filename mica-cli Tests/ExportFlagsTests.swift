@@ -15,7 +15,7 @@ struct ExportFlagsTests {
 
     @Test("Export defaults: 512px, 1x, sRGB")
     func defaults() throws {
-        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"]))
         #expect(settings.export.size == 512)
         #expect(settings.export.isRetina == false)
         #expect(settings.export.colorSpace == .sRGB)
@@ -31,7 +31,7 @@ struct ExportFlagsTests {
 
     @Test("Omitted export flags parse as nil, so a config document can supply them")
     func omittedExportFlagsAreNil() throws {
-        let command = try parseCommand(["star.fill"])
+        let command = try parseCommand(["--icon-symbol", "star.fill"])
         #expect(command.export.size == nil)
         #expect(command.export.scale == nil)
         #expect(command.export.colorSpace == nil)
@@ -40,7 +40,7 @@ struct ExportFlagsTests {
     @Test("Export flags passed their default value still parse as non-nil")
     func explicitDefaultValuesAreNotNil() throws {
         let command = try parseCommand([
-            "star.fill", "--size", "512", "--scale", "1x", "--color-space", "sRGB",
+            "--icon-symbol", "star.fill", "--size", "512", "--scale", "1x", "--color-space", "sRGB",
         ])
         #expect(command.export.size == 512)
         #expect(command.export.scale == .oneX)
@@ -52,7 +52,7 @@ struct ExportFlagsTests {
     @Test("--size maps to export.size", arguments: [16, 128, 256, 1024])
     func sizeMapsToExportSize(_ size: Int) throws {
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--size", "\(size)"]))
+            from: parseCommand(["--icon-symbol", "star.fill", "--size", "\(size)"]))
         #expect(settings.export.size == CGFloat(size))
     }
 
@@ -60,7 +60,7 @@ struct ExportFlagsTests {
           arguments: ["15", "1025", "0", "512.5", "abc"])
     func sizeRejectsInvalid(_ size: String) {
         #expect(throws: (any Error).self) {
-            _ = try parseCommand(["star.fill", "--size", size])
+            _ = try parseCommand(["--icon-symbol", "star.fill", "--size", size])
         }
     }
 
@@ -70,22 +70,22 @@ struct ExportFlagsTests {
     func scaleMapsToRetina() throws {
         let runner = IconGenerationRunner()
         #expect(try runner.buildTestSettings(
-            from: parseCommand(["star.fill", "--scale", "2x"])).export.isRetina == true)
+            from: parseCommand(["--icon-symbol", "star.fill", "--scale", "2x"])).export.isRetina == true)
         #expect(try runner.buildTestSettings(
-            from: parseCommand(["star.fill", "--scale", "1x"])).export.isRetina == false)
+            from: parseCommand(["--icon-symbol", "star.fill", "--scale", "1x"])).export.isRetina == false)
     }
 
     @Test("export.pixelSize doubles at 2x")
     func finalExportSizeDoubles() throws {
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--size", "512", "--scale", "2x"]))
+            from: parseCommand(["--icon-symbol", "star.fill", "--size", "512", "--scale", "2x"]))
         #expect(settings.export.pixelSize == 1024)
     }
 
     @Test("--scale rejects unsupported factors", arguments: ["3x", "0x", "2", "x2"])
     func scaleRejectsInvalid(_ scale: String) {
         #expect(throws: (any Error).self) {
-            _ = try parseCommand(["star.fill", "--scale", scale])
+            _ = try parseCommand(["--icon-symbol", "star.fill", "--scale", scale])
         }
     }
 
@@ -95,15 +95,15 @@ struct ExportFlagsTests {
     func colorSpaceMapping() throws {
         let runner = IconGenerationRunner()
         #expect(try runner.buildTestSettings(
-            from: parseCommand(["star.fill", "--color-space", "displayP3"])).export.colorSpace == .displayP3)
+            from: parseCommand(["--icon-symbol", "star.fill", "--color-space", "displayP3"])).export.colorSpace == .displayP3)
         #expect(try runner.buildTestSettings(
-            from: parseCommand(["star.fill", "--color-space", "sRGB"])).export.colorSpace == .sRGB)
+            from: parseCommand(["--icon-symbol", "star.fill", "--color-space", "sRGB"])).export.colorSpace == .sRGB)
     }
 
     @Test("--color-space rejects unknown values")
     func colorSpaceRejectsInvalid() {
         #expect(throws: (any Error).self) {
-            _ = try parseCommand(["star.fill", "--color-space", "adobeRGB"])
+            _ = try parseCommand(["--icon-symbol", "star.fill", "--color-space", "adobeRGB"])
         }
     }
 }

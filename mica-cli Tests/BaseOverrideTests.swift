@@ -315,7 +315,7 @@ struct BaseOverrideTests {
 
     @Test("generate still seeds the CLI's white palette")
     func generateStillSeedsTheCLIPalette() throws {
-        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"]))
         #expect(settings.icon.foreground.palettePrimaryColor == (try MicaColorValue(parsing: "white")))
         #expect(settings.icon.foreground.paletteSecondaryColor == (try MicaColorValue(parsing: "white:0.5")))
         #expect(settings.icon.foreground.paletteTertiaryColor == (try MicaColorValue(parsing: "white:0.26")))

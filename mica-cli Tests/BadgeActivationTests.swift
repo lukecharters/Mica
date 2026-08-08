@@ -16,7 +16,7 @@ import Foundation
 struct BadgeActivationTests {
 
     private func build(_ args: [String]) throws -> IconSettings {
-        try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"] + args))
+        try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"] + args))
     }
 
     private func imageFixture() throws -> String {

@@ -98,7 +98,7 @@ struct ConfigFlagParityTests {
             ) {
                 // The `=` form throughout: two of these flags take negatives, and a
                 // space would have ArgumentParser read the value as another flag.
-                try parseCommand(["star.fill", "--\(key.rawValue)=\(value)"])
+                try parseCommand(["--icon-symbol", "star.fill", "--\(key.rawValue)=\(value)"])
             }
         }
     }
@@ -108,7 +108,7 @@ struct ConfigFlagParityTests {
         for (alias, canonical) in MicaConfigKey.britishAliases {
             let value = Self.sampleFlagValue(for: canonical)
             #expect(throws: Never.self, "'\(alias)' is accepted on decode but is not a flag") {
-                try parseCommand(["star.fill", "--\(alias)=\(value)"])
+                try parseCommand(["--icon-symbol", "star.fill", "--\(alias)=\(value)"])
             }
         }
     }
@@ -365,7 +365,7 @@ struct ConfigFlagParityTests {
         // The flag side resolves these at render time rather than into IconSettings,
         // so they are compared through the command's own resolvers — which is also
         // what proves the fallback chain lands on the configuration's values.
-        let command = try parseCommand(["star.fill"])
+        let command = try parseCommand(["--icon-symbol", "star.fill"])
         let context = GenerationContext(
             base: decoded.settings,
             appexColors: decoded.appexColors,
@@ -380,7 +380,7 @@ struct ConfigFlagParityTests {
 
     @Test("With no configuration the appex fallbacks are the CLI's own defaults")
     func systemColorsFallBackToTheCLIDefaults() throws {
-        let command = try parseCommand(["star.fill"])
+        let command = try parseCommand(["--icon-symbol", "star.fill"])
         #expect(try command.resolvedIconAppexEnclosureColor(in: .none).stringValue == "blue")
         #expect(try command.resolvedIconAppexSymbolColor(in: .none).stringValue == "white")
         #expect(try command.resolvedBadgeAppexEnclosureColor(in: .none).stringValue == "blue")
@@ -397,7 +397,7 @@ struct ConfigFlagParityTests {
             warnings: []
         )
         let command = try parseCommand([
-            "star.fill",
+            "--icon-symbol", "star.fill",
             "--icon-bg-color", "purple",
             "--badge-fg", "symbol:gear",
             "--badge-symbol-color", "orange",

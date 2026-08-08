@@ -241,7 +241,7 @@ struct ConfigOverrideTests {
     @Test("--icon-bg custom-gradient still requires colours without a configuration")
     func customGradientStillNeedsColorsWithoutAConfiguration() throws {
         #expect(throws: (any Error).self) {
-            try parseCommand(["star.fill", "--icon-bg", "custom-gradient"]).performValidationForTesting()
+            try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient"]).performValidationForTesting()
         }
     }
 
@@ -261,7 +261,7 @@ struct ConfigOverrideTests {
         #expect(systemMessage?.contains("Use a named color") == true, "got: \(systemMessage ?? "no error")")
 
         let micaMessage = Self.validationMessage(
-            try parseCommand(["star.fill", "--icon-bg-color", "not-a-color"]), in: .none
+            try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-color", "not-a-color"]), in: .none
         )
         #expect(micaMessage?.contains("Invalid color format for --icon-bg-color") == true,
                 "got: \(micaMessage ?? "no error")")
@@ -298,7 +298,7 @@ struct ConfigOverrideTests {
     @Test("A positional symbol name still names the output")
     func positionalNameWinsOverTheConfiguration() throws {
         let context = try GenerationContext.load(configPath: Self.writeConfig(Self.distinctiveConfig, name: "my-icon"))
-        let command = try parseCommand(["star.fill"])
+        let command = try parseCommand(["--icon-symbol", "star.fill"])
         #expect(command.defaultOutputBasename(in: context) == "star.fill")
     }
 
@@ -311,7 +311,7 @@ struct ConfigOverrideTests {
 
     @Test("Without a configuration the basename is unchanged")
     func basenameWithoutAConfigurationIsUnchanged() throws {
-        let command = try parseCommand(["star.fill"])
+        let command = try parseCommand(["--icon-symbol", "star.fill"])
         #expect(command.defaultOutputBasename(in: .none) == command.defaultOutputBasename())
     }
 
