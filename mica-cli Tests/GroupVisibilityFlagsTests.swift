@@ -1,7 +1,7 @@
 // GroupVisibilityFlagsTests.swift
 // `--icon-visibility` / `--badge-visibility`: whole-group visibility, matching the
 // GUI's sidebar eye. Phase 4 of
-// docs/plans/visibility-activation-and-imported-backgrounds.md.
+// the visibility-and-imported-backgrounds plan.
 //
 // The rule under test throughout is **the group flag applies first and a layer flag
 // overrides it**, so a group flag can never win an argument with an explicit layer

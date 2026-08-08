@@ -1,6 +1,6 @@
 // BadgeActivationTests.swift
 // What switches the badge on. Phase 5 of
-// docs/plans/visibility-activation-and-imported-backgrounds.md §3.
+// the visibility-and-imported-backgrounds plan §3.
 //
 // Three arguments activate the badge — `--badge-fg`, `--badge-bg`,
 // `--badge-visibility on` — and nothing else does. The principle behind the set,

@@ -940,7 +940,7 @@ struct MicaConfigTests {
     @Test("relative image paths resolve against the configuration's directory")
     func relativePathsAnchorToConfigDirectory() throws {
         nonisolated(unsafe) var seen: URL?
-        let directory = URL(fileURLWithPath: "/tmp/claude/configs")
+        let directory = URL(fileURLWithPath: "/tmp/mica/configs")
         _ = try Self.decode(
             ["icon-bg": "Assets/bg.png"],
             configDirectory: directory,
@@ -949,7 +949,7 @@ struct MicaConfigTests {
                 return try ImportedImage.testFixture(sourceName: url.lastPathComponent)
             }
         )
-        #expect(seen?.path == "/tmp/claude/configs/Assets/bg.png")
+        #expect(seen?.path == "/tmp/mica/configs/Assets/bg.png")
     }
 
     // MARK: - AppexColor.parsing

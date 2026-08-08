@@ -1,6 +1,6 @@
 // IconForegroundRuleTests.swift
 // Whether the icon's foreground draws over an imported background. Phase 6 of
-// docs/plans/visibility-activation-and-imported-backgrounds.md.
+// the visibility-and-imported-backgrounds plan.
 //
 // Three branches, in order:
 //

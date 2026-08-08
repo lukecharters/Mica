@@ -1,6 +1,6 @@
 // ColorSurfaceAgreementTests.swift
 //
-// Phase 5 of `docs/plans/colour-resolution.md`, and the phase that proves the
+// Phase 5 of the colour-resolution plan, and the phase that proves the
 // workstream's goal: **a colour means the same thing and is written the same way
 // across the GUI, `mica-cli` and a JSON configuration.** Phases 1–4 only made that
 // possible — one token table, provenance in the stored value, one grammar, a

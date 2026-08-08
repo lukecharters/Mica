@@ -1,6 +1,6 @@
 // ColorGrammarTests.swift
 //
-// One grammar, enumerated. §4.3 of `docs/plans/colour-resolution.md` narrowed
+// One grammar, enumerated. §4.3 of the colour-resolution plan narrowed
 // Mica's colour syntax to five families in Phase 3 (2026-08-03) and dropped six
 // forms; this file is the list, and it asserts the two things the plan actually
 // claims:
