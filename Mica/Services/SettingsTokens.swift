@@ -19,18 +19,32 @@ import Foundation
 
 /// A model enum with one stable CLI/config spelling per case.
 protocol SettingsTokenConvertible: CaseIterable {
-    /// The stable CLI/config spelling for this case (e.g. "top-left", "macos11").
+    /// The stable CLI/config spelling for this case (e.g. "top-left", "macos15").
     var cliToken: String { get }
+
+    /// Superseded spellings still accepted on input. Read by `from(cliToken:)`
+    /// and by nothing else: they are absent from `allCLITokens`, so they never
+    /// reach help text, an error message or the configuration encoder. A
+    /// configuration carrying one therefore round-trips to the canonical token.
+    var supersededCLITokens: [String] { get }
 }
 
 extension SettingsTokenConvertible {
+    /// No superseded spellings, which is the case for every enum but one.
+    var supersededCLITokens: [String] { [] }
+
     /// Every valid token, in case order — for help text and error messages.
     static var allCLITokens: [String] { allCases.map(\.cliToken) }
 
-    /// The case for a token, matched case-insensitively; nil for an unknown token.
+    /// The case for a token, matched case-insensitively; nil for an unknown
+    /// token. Canonical spellings are tried first, so a token that is canonical
+    /// for one case can never be shadowed by another case's superseded list.
     static func from(cliToken token: String) -> Self? {
         let lowered = token.lowercased()
-        return allCases.first { $0.cliToken.lowercased() == lowered }
+        if let canonical = allCases.first(where: { $0.cliToken.lowercased() == lowered }) {
+            return canonical
+        }
+        return allCases.first { $0.supersededCLITokens.contains { $0.lowercased() == lowered } }
     }
 }
 
@@ -77,8 +91,18 @@ extension IconCornerRadiusStyle: SettingsTokenConvertible {
     var cliToken: String {
         switch self {
         case .off: return "off"
-        case .macOS11: return "macos11"
+        case .macOS15: return "macos15"
         case .macOS26: return "macos26"
+        }
+    }
+
+    var supersededCLITokens: [String] {
+        switch self {
+        // "macos11" named the *first* release of the macOS 11–15 design and was
+        // the shipped token until 2026-08-08. Still decoded so configurations
+        // exported before then keep loading; never written.
+        case .macOS15: return ["macos11"]
+        case .off, .macOS26: return []
         }
     }
 }
@@ -87,10 +111,17 @@ extension BackgroundShadowStyle: SettingsTokenConvertible {
     var cliToken: String {
         switch self {
         case .off: return "off"
-        // `.sequoia` spells as "macos11": the case is named for the last release
-        // of the design it draws, the token for the range users recognise.
-        case .sequoia: return "macos11"
+        case .macOS15: return "macos15"
         case .macOS26: return "macos26"
+        }
+    }
+
+    /// Same supersession as `IconCornerRadiusStyle` — the two flags always took
+    /// the same vocabulary and must keep doing so.
+    var supersededCLITokens: [String] {
+        switch self {
+        case .macOS15: return ["macos11"]
+        case .off, .macOS26: return []
         }
     }
 }

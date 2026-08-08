@@ -13,8 +13,8 @@
 
   "icon-bg-color": "teal",
   "icon-bg-gradient": false,
-  "icon-bg-corner-radius": "macos11",
-  "icon-bg-shadow": "macos11",
+  "icon-bg-corner-radius": "macos15",
+  "icon-bg-shadow": "macos15",
 
   "badge-fg": "symbol:bell.fill",
   "badge-fg-scale": 1.1,

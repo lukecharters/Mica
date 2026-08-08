@@ -52,11 +52,16 @@ mica-cli --help
 | `--icon-bg-color` | any [colour](Colour-Formats); for `prerendered-liquid-glass` a named asset colour | `blue` | Background colour: base colour (mica), appex enclosure colour (system), or Liquid Glass asset colour. |
 | `--icon-bg-gradient-colors` | `c1,c2` (top,bottom) | — | The two stops for `custom-gradient` backgrounds. Required with `--icon-bg custom-gradient`. |
 | `--icon-bg-gradient` | `on`, `off` | `on` | Gradient derived from the base colour (standard backgrounds). |
-| `--icon-bg-corner-radius` | `macos11`, `macos26` | `macos26` | Corner-radius silhouette style. |
+| `--icon-bg-corner-radius` | `off`, `macos15`, `macos26` | `macos26` (`off` for image backgrounds) | Corner-radius silhouette style. |
 | `--icon-bg-scale` | 0.3–2.0 | 1.0 | Scale for an imported background image. |
-| `--icon-bg-shadow` | `off`, `macos11`, `macos26` | `macos26` (`off` for image backgrounds) | Background drop-shadow style. |
+| `--icon-bg-shadow` | `off`, `macos15`, `macos26` | `macos26` (`off` for image backgrounds) | Background drop-shadow style. |
 | `--icon-bg-padding` | `on`, `off` | `off` | Keep an imported background's native macOS icon padding (`on`), or fill the frame (`off`). |
 | `--icon-bg-visibility` | `on`, `off` | `on` | Hide the background entirely with `off`. |
+
+`macos15` names the icon design Apple shipped from macOS 11 through macOS 15. It was
+spelled `macos11` in earlier versions of Mica; that spelling is still accepted by both
+style flags and in configuration files, so older scripts keep working. Exporting a
+configuration writes `macos15`.
 
 ### Badge
 

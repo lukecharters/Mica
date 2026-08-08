@@ -123,7 +123,7 @@ struct IconSettingsSimpleInspectorTests {
         var settings = IconSettings()
         settings.icon.background.usesGradient = false
         settings.icon.foreground.symbolWeight = .bold
-        settings.icon.background.cornerRadiusStyle = .macOS11
+        settings.icon.background.cornerRadiusStyle = .macOS15
         settings.icon.foreground.symbolScale = 0.8
         settings.badge.foreground.symbolScale = 0.7
 
@@ -131,7 +131,7 @@ struct IconSettingsSimpleInspectorTests {
 
         #expect(settings.icon.background.usesGradient == false)
         #expect(settings.icon.foreground.symbolWeight == .bold)
-        #expect(settings.icon.background.cornerRadiusStyle == .macOS11)
+        #expect(settings.icon.background.cornerRadiusStyle == .macOS15)
         #expect(settings.icon.foreground.symbolScale == 0.8)
         #expect(settings.badge.foreground.symbolScale == 0.7)
     }

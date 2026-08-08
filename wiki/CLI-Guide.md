@@ -31,8 +31,8 @@ mica-cli command --icon-bg-colour red --icon-bg-gradient off
 # Custom two-colour gradient
 mica-cli paintbrush.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
 
-# Classic macOS 11–15 chiclet
-mica-cli gear --icon-bg-corner-radius macos11
+# Classic macOS 15 chiclet
+mica-cli gear --icon-bg-corner-radius macos15
 
 # Symbol rendering, colour, and weight
 mica-cli shield.lefthalf.filled --icon-symbol-rendering hierarchical --icon-bg-color teal

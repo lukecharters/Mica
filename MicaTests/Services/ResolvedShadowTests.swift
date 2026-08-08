@@ -1,7 +1,7 @@
 // ResolvedShadowTests.swift
 // Unit tests pinning the ResolvedShadow presets to the shipped shadow constants
 // and the preset(for:) resolution rules. The macOS26 values were lightened in
-// 1b1a985 ("tweak to macos26 shadows"); sequoia was left as it was, so the two
+// 1b1a985 ("tweak to macos26 shadows"); macOS15 was left as it was, so the two
 // presets now differ in the symbol shadow as well as the background.
 
 import Testing
@@ -23,11 +23,11 @@ struct ResolvedShadowTests {
         #expect(style.badgeSymbol == ResolvedShadow.BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15))
     }
 
-    @Test("sequoia preset matches its shipped constants")
-    func sequoia_matchesShippedConstants() {
-        let style = ResolvedShadow.sequoia
+    @Test("macOS15 preset matches its shipped constants")
+    func macOS15_matchesShippedConstants() {
+        let style = ResolvedShadow.macOS15
         #expect(style.background == ResolvedShadow.CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.31))
-        // Sequoia keeps the heavier pre-1b1a985 symbol shadow, so it now differs
+        // macOS15 keeps the heavier pre-1b1a985 symbol shadow, so it now differs
         // from macOS26 on the symbol too — not just the background.
         #expect(style.symbol == ResolvedShadow.CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.23))
         #expect(style.symbol != ResolvedShadow.macOS26.symbol)
@@ -41,7 +41,7 @@ struct ResolvedShadowTests {
     @Test("preset(for:) maps the settings styles to their presets")
     func preset_mapsStyles() {
         #expect(ResolvedShadow.preset(for: .macOS26) == .macOS26)
-        #expect(ResolvedShadow.preset(for: .sequoia) == .sequoia)
+        #expect(ResolvedShadow.preset(for: .macOS15) == .macOS15)
     }
 
     @Test(".off zeroes only the background shadow")

@@ -79,7 +79,7 @@ struct SettingsChangeTests {
         case "icon.background.gradientStartColor": settings.icon.background.gradientStartColor = .brown
         case "icon.background.gradientEndColor": settings.icon.background.gradientEndColor = .brown
         case "icon.background.preRenderedColorName": settings.icon.background.preRenderedColorName = "Teal"
-        case "icon.background.cornerRadiusStyle": settings.icon.background.cornerRadiusStyle = .macOS11
+        case "icon.background.cornerRadiusStyle": settings.icon.background.cornerRadiusStyle = .macOS15
         case "icon.background.shadowStyle": settings.icon.background.shadowStyle = .off
         case "icon.background.image": settings.icon.background.image = Self.image
         case "icon.background.imageScale": settings.icon.background.imageScale = 1.7

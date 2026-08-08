@@ -374,7 +374,7 @@ enum PreviewHitTester {
         let base: CGFloat
         switch settings.icon.background.cornerRadiusStyle {
         case .off: base = 0
-        case .macOS11: base = 46
+        case .macOS15: base = 46
         case .macOS26: base = 54
         }
         return base * (displaySize / 256)
