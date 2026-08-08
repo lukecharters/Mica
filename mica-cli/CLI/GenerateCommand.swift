@@ -230,17 +230,47 @@ struct GroupVisibilityOptions: ParsableArguments {
 
 struct IconForegroundOptions: ParsableArguments {
     // Folds the old --icon-source + --imported-image. `symbol:<name>` selects an
-    // SF Symbol; anything else is treated as an image file path. When omitted,
-    // the positional symbol-name shorthand on the command supplies the value.
+    // SF Symbol; anything else is treated as an image file path.
+    //
+    // Read `foreground` below, never this — `--icon-symbol` supplies the same value.
     @Option(
         name: .customLong("icon-fg"),
         help: ArgumentHelp(
             "Icon foreground source",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. Overrides the positional symbol-name shorthand.",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. For a symbol, --icon-symbol says the same thing without the prefix.",
             valueName: "symbol:NAME|path"
         )
     )
-    var foreground: String?
+    var foregroundFlag: String?
+
+    // The head of the --icon-symbol-* family, which styles the symbol this names.
+    // Before it existed the family had no head: you wrote `--icon-fg symbol:star.fill
+    // --icon-symbol-color blue` and named one layer two ways in one invocation.
+    @Option(
+        name: .customLong("icon-symbol"),
+        help: ArgumentHelp(
+            "Icon SF Symbol name, with no 'symbol:' prefix",
+            discussion: "Shorthand for --icon-fg symbol:<name>, e.g. --icon-symbol star.fill. Use --icon-fg for an image file; giving both is an error.",
+            valueName: "name"
+        )
+    )
+    var symbol: String?
+
+    /// The foreground as `--icon-fg` spells it, whichever flag supplied it.
+    ///
+    /// **Normalising here is the point.** Every reader above this struct —
+    /// `resolvedForeground()`, `providedForeground()`, `foregroundArgumentGiven`,
+    /// the output basename — sees one value and needs no knowledge of the alias, so
+    /// there is no list of sites to keep in step. The badge's identical property
+    /// also feeds `badgeIsActive`, where forgetting the alias would not fail loudly:
+    /// it would render the icon with no badge at all.
+    ///
+    /// The conflict is caught in `validateForeground`, not resolved here, so this
+    /// stays total and the error can name both flags.
+    var foreground: String? {
+        if let symbol { return "\(ForegroundValue.symbolPrefix)\(symbol)" }
+        return foregroundFlag
+    }
 
     // Folds --symbol-scale + --imported-image-scale into one flag that drives
     // whichever source (symbol or image) is active.
@@ -343,6 +373,11 @@ struct IconForegroundOptions: ParsableArguments {
     /// lives on `GenerateCommand`, not in here. That is the point — the positional is
     /// present in nearly every invocation and carries no intent about the foreground,
     /// so counting it would make rule 3 unreachable.
+    ///
+    /// **`--icon-symbol` is included structurally**, by the same mechanism read the
+    /// other way: it lives in here, and `foreground` merges it. That is the honest
+    /// reading — a flag typed deliberately does carry intent, where the positional
+    /// was boilerplate — and it is why the alias needs no clause of its own.
     ///
     /// **`visibility` is excluded deliberately.** It is rule 1, honoured exactly, and
     /// counting it would make `--icon-fg-visibility off` imply a wanted foreground
@@ -508,16 +543,40 @@ struct BadgeOptions: ParsableArguments {
 
     // Presence of --badge-fg activates the badge (replaces the old --badge).
     // `symbol:<name>` selects an SF Symbol; anything else is treated as an image
-    // file path. There is no positional shorthand for the badge.
+    // file path.
+    //
+    // Read `foreground` below, never this — `--badge-symbol` supplies the same
+    // value, and `badgeIsActive` is one of the readers that must see it.
     @Option(
         name: .customLong("badge-fg"),
         help: ArgumentHelp(
             "Badge foreground source (supplying this activates the badge)",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:plus.circle) or a path to an image file.",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:plus.circle) or a path to an image file. For a symbol, --badge-symbol says the same thing without the prefix.",
             valueName: "symbol:NAME|path"
         )
     )
-    var foreground: String?
+    var foregroundFlag: String?
+
+    // The head of the --badge-symbol-* family, and an activation flag like --badge-fg.
+    @Option(
+        name: .customLong("badge-symbol"),
+        help: ArgumentHelp(
+            "Badge SF Symbol name, with no 'symbol:' prefix (supplying this activates the badge)",
+            discussion: "Shorthand for --badge-fg symbol:<name>, e.g. --badge-symbol plus.circle. Use --badge-fg for an image file; giving both is an error.",
+            valueName: "name"
+        )
+    )
+    var symbol: String?
+
+    /// The foreground as `--badge-fg` spells it, whichever flag supplied it.
+    ///
+    /// See `IconForegroundOptions.foreground` for why the merge lives here. The
+    /// badge raises the stakes: `badgeIsActive` reads this, so a `--badge-symbol`
+    /// that bypassed it would render the icon with no badge and no diagnostic.
+    var foreground: String? {
+        if let symbol { return "\(ForegroundValue.symbolPrefix)\(symbol)" }
+        return foregroundFlag
+    }
 
     // Folds the old --badge-symbol-scale + --badge-imported-image-scale into one
     // flag that drives whichever source (symbol or image) is active.
@@ -776,6 +835,9 @@ struct BadgeOptions: ParsableArguments {
     /// exactly rather than read as an implication, and counting it would make
     /// `--badge-fg-visibility off` imply a wanted foreground while asking to hide
     /// one. A key that switches something off must never be what switches it on.
+    ///
+    /// `--badge-symbol` needs no clause: `foreground` already merges it, the same
+    /// way it reaches `badgeIsActive`.
     var foregroundArgumentGiven: Bool {
         foreground != nil
             || foregroundScale != nil
