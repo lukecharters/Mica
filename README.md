@@ -5,7 +5,7 @@
 <!-- SCREENSHOT PLACEHOLDER — hero image
 Replace with a screenshot of the main Mica window: an icon mid-edit with the
 layer sidebar and inspector visible.
-<img src="docs/images/screenshot-app-hero.png" alt="The Mica main window" width="800">
+<img src="assets/images/screenshot-app-hero.png" alt="The Mica main window" width="800">
 -->
 
 ## Table of Contents
@@ -32,7 +32,7 @@ Mica (Mac Icon Creation App) is an app for Mac Admins to create icons for self s
 
 It pairs customisable SwiftUI elements with SF Symbols or imported graphics to enable you to quickly create visually consistent icons that look native on Apple platforms.
 
-| ![Star icon](docs/images/examples/star.png) | ![Terminal icon](docs/images/examples/terminal.png) | ![Shield icon](docs/images/examples/shield.png) | ![Badge icon](docs/images/examples/badge.png) | ![Gradient icon](docs/images/examples/gradient.png) | ![Liquid Glass icon](docs/images/examples/liquidglass.png) |
+| ![Star icon](assets/images/examples/star.png) | ![Terminal icon](assets/images/examples/terminal.png) | ![Shield icon](assets/images/examples/shield.png) | ![Badge icon](assets/images/examples/badge.png) | ![Gradient icon](assets/images/examples/gradient.png) | ![Liquid Glass icon](assets/images/examples/liquidglass.png) |
 |---|---|---|---|---|---|
 
 *Every one of these was generated with a single `mica-cli` command.*
@@ -111,7 +111,7 @@ mica-cli --help
 <!-- SCREENSHOT PLACEHOLDER — annotated window
 Replace with a screenshot of the window with the sidebar, preview, and
 inspector visible (ideally annotated with the step numbers below).
-<img src="docs/images/screenshot-app-annotated.png" alt="The Mica window: layer sidebar, preview, and inspector" width="800">
+<img src="assets/images/screenshot-app-annotated.png" alt="The Mica window: layer sidebar, preview, and inspector" width="800">
 -->
 
 1. **Pick a symbol.** Open the symbol browser and choose an SF Symbol, or switch the icon source to *Imported* and drag in your own artwork.
