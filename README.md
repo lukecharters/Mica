@@ -95,7 +95,7 @@ Open the app and start experimenting until you've made something that looks good
 
 ```shell
 # The minimum required to create an icon is an SF Symbol name
-mica-cli star.fill
+mica-cli --icon-symbol star.fill
 
 # The minimum required to extract an icon
 mica-cli extract /System/Applications/Calculator.app
@@ -136,34 +136,34 @@ Every control is documented in the [App Guide](../../wiki/App-Guide).
 
 ```shell
 # A symbol on the default blue gradient, saved as star.fill.png
-mica-cli star.fill
+mica-cli --icon-symbol star.fill
 
 # Choose output path, size, and background colour
-mica-cli folder.fill -o ~/Desktop/folder-icon.png --size 512 --icon-bg-color red
+mica-cli --icon-symbol folder.fill -o ~/Desktop/folder-icon.png --size 512 --icon-bg-color red
 
 # Symbol styling
-mica-cli shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
+mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
 
 # Custom two-colour gradient background
-mica-cli app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
+mica-cli --icon-symbol app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
 
 # Classic macOS 15 look, flat colour
-mica-cli star.fill --icon-bg-corner-radius macos15 --icon-bg-gradient off
+mica-cli --icon-symbol star.fill --icon-bg-corner-radius macos15 --icon-bg-gradient off
 
 # Add a badge (--badge-fg, --badge-bg or --badge-visibility on turns it on)
-mica-cli star.fill --badge-fg symbol:plus.circle --badge-position bottom-right
+mica-cli --icon-symbol star.fill --badge-symbol plus.circle --badge-position bottom-right
 
 # Badge artwork with no symbol over it
-mica-cli star.fill --badge-bg ~/badge-art.png
+mica-cli --icon-symbol star.fill --badge-bg ~/badge-art.png
 
 # Use your own image instead of an SF Symbol
 mica-cli --icon-fg ~/logo.png
 
 # System mode: macOS renders the icon (Liquid Glass on macOS 26+)
-mica-cli star.fill --icon-generation-mode system --icon-bg-color blue --icon-symbol-color white
+mica-cli --icon-symbol star.fill --icon-generation-mode system --icon-bg-color blue --icon-symbol-color white
 
 # High-resolution export
-mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
+mica-cli --icon-symbol app.fill --size 1024 --scale 2x --color-space displayP3
 ```
 
 Colours can be named (`blue`, `grey`, `label`, …), hex (`"#FF6B35"`), `rgb()`/`hsl()` values, or components in a named colour space (`srgb:0.2,0.42,0.9`, `display-p3:1,0.2,0`). Both spellings of colour flags work — every `--…-color` flag has a `--…-colour` alias. See [Colour Formats](../../wiki/Colour-Formats).
@@ -171,9 +171,9 @@ Colours can be named (`blue`, `grey`, `label`, …), hex (`"#FF6B35"`), `rgb()`/
 For scripting, the saved path goes to stdout and diagnostics go to stderr, so `mica-cli` pipes cleanly:
 
 ```shell
-mica-cli star.fill --json      # machine-readable result on stdout
-mica-cli star.fill --quiet     # only the saved path on stdout
-mica-cli star.fill --verbose   # per-phase progress on stderr
+mica-cli --icon-symbol star.fill --json      # machine-readable result on stdout
+mica-cli --icon-symbol star.fill --quiet     # only the saved path on stdout
+mica-cli --icon-symbol star.fill --verbose   # per-phase progress on stderr
 ```
 
 #### Extracting existing icons

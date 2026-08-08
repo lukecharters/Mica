@@ -130,7 +130,7 @@ The badge's Foreground and Background layers mirror the icon's controls: symbol 
 
 ![Styled badge](images/badge-styled.png)
 
-*A folder icon with a gear badge on a custom red–orange gradient: `mica-cli folder.fill --badge-fg symbol:gearshape.fill --badge-bg custom-gradient --badge-bg-gradient-colors "red,orange"`*
+*A folder icon with a gear badge on a custom red–orange gradient: `mica-cli --icon-symbol folder.fill --badge-symbol gearshape.fill --badge-bg custom-gradient --badge-bg-gradient-colors "red,orange"`*
 
 ## Previewing
 
