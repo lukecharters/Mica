@@ -6,11 +6,11 @@ import Foundation
 /// One list, read by both surfaces that offer zoom: the toolbar's `ZoomMenu`, which
 /// shows every rung, and View ▸ Zoom In / Zoom Out, which walks between them. They
 /// were the same nine numbers in one private array until the View menu arrived
-/// (item B1 of `docs/plans/mac-conventions.md`); a second copy would have let ⌘+
+/// (item B1 of the Mac-conventions plan); a second copy would have let ⌘+
 /// stop at a percentage the menu does not offer.
 ///
 /// **`App/`, not `Views/`** — the CLI has no preview and never compiles this, and
-/// the stepping is the part worth testing on its own. See NOTES.md's rule on which
+/// the stepping is the part worth testing on its own. See the project notes' rule on which
 /// list a new file joins.
 enum PreviewZoom {
     /// The rungs, ascending. `1.0` is Actual Size; the extremes are the ends that

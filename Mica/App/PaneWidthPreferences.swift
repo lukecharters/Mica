@@ -1,7 +1,7 @@
 // App/PaneWidthPreferences.swift
 //
 // The two side panes' widths: where each opens, which one Mica persists, and why
-// it is only one. Item C5 of `docs/plans/mac-conventions.md`, 2026-08-07.
+// it is only one. Item C5 of the Mac-conventions plan, 2026-08-07.
 //
 // `layout.sidebarWidth` and `layout.inspectorWidth` predate the
 // `NavigationSplitView` migration and were **read and never written**, under a

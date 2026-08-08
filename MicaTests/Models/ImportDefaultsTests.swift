@@ -1,7 +1,7 @@
 // ImportDefaultsTests.swift
 // The two background-import seams and the preferences behind them.
 //
-// See §5 of docs/plans/visibility-activation-and-imported-backgrounds.md. The
+// See §5 of the visibility-and-imported-backgrounds plan. The
 // load-bearing assertion in here is `fixedDefaults_areNotTheUsersPreferences`:
 // everything else would still pass if a preference leaked into the CLI or the
 // configuration codec, and that leak is the one failure mode with no visible

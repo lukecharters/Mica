@@ -36,7 +36,7 @@ struct ColorToken: Identifiable, Sendable {
     /// and nothing else. The thirteen `systemblue`-style **no-dot forms were
     /// dropped on 2026-08-03** — they were the canonical name with its dot
     /// deleted, which is a second spelling of one token rather than a second name
-    /// for it (§4.3 of `docs/plans/colour-resolution.md`). Adding one back gives
+    /// for it (§4.3 of the colour-resolution plan). Adding one back gives
     /// `--icon-bg-color` two ways to say the same thing and the help text two
     /// things to document.
     let aliases: [String]

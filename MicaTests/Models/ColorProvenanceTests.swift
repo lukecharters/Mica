@@ -1,6 +1,6 @@
 // ColorProvenanceTests.swift
 //
-// Phase 2 of docs/plans/colour-resolution.md: `IconSettings` stores colours *with
+// Phase 2 of the colour-resolution plan: `IconSettings` stores colours *with
 // their provenance*, so a token stays a token from the flag or the file all the way
 // back out again.
 //

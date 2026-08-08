@@ -2,7 +2,7 @@
 //
 // What happens when something is dragged onto the canvas: which layer it lands
 // on, and how a drag provider becomes an `ImportedImage`. Item B4 of
-// `docs/plans/mac-conventions.md`.
+// the Mac-conventions plan.
 //
 // Split out of `ScaledIconPreview` so the routing decision is testable — the
 // provider plumbing below is not, but the geometry and the type matching are,

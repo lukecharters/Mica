@@ -1,6 +1,6 @@
 // IconContextMenuTests.swift
 // What a right-click offers, and what each row does. Item C2 of
-// docs/plans/mac-conventions.md.
+// the Mac-conventions plan.
 //
 // The rows are tested rather than the menus because a context-menu row fails
 // quietly in a way a view test could not see either: a row that should not have

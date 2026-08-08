@@ -149,7 +149,7 @@ enum IconRenderingAssertions {
     /// `normalizedBitmapRep` builds a `.deviceRGB` rep, whose `colorSpace` does not
     /// survive `usingColorSpace(_:)`, so the guard returned 0.0 and a
     /// same-colour-everywhere test passed while measuring nothing. Same family as
-    /// the `setColor` no-op warned about in NOTES.md. Convert to `.deviceRGB`
+    /// the `setColor` no-op warned about in the project notes. Convert to `.deviceRGB`
     /// explicitly; `colorAt` already yields RGB-family colours, so the sampled
     /// pixels need no conversion.
     static func fractionDiffering(in image: NSImage,

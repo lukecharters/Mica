@@ -1,6 +1,6 @@
 // DraggableIconTests.swift
 //
-// DraggableIcon is the drag-out payload (item A1 of docs/plans/mac-conventions.md).
+// DraggableIcon is the drag-out payload (item A1 of the Mac-conventions plan).
 // Two things here are worth testing and one is not:
 //
 // - `sanitizedFileName` is pure and has four named hazards, so it gets a table.

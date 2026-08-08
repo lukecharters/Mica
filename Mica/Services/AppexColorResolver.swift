@@ -21,7 +21,7 @@ extension AppexColor {
     /// meant the same thing in both generation modes. `ColorParser` dropped that
     /// form, so the mirror had to go with it — otherwise `--icon-bg-color 1,0.5,0`
     /// would work in System mode and fail in Mica mode, which is precisely the
-    /// per-surface divergence `docs/plans/colour-resolution.md` exists to end.
+    /// per-surface divergence the colour-resolution plan exists to end.
     /// The `"r,g,b,a"` string remains what gets *written* to the plist; `srgb:` is
     /// how one is typed.
     ///

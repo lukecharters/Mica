@@ -1,7 +1,7 @@
 // App/BadgeNudge.swift
 //
 // Arrow-key badge movement — the keyboard equivalent of the canvas drag, which
-// was mouse-only. Item C1 of `docs/plans/mac-conventions.md`; the review filed it
+// was mouse-only. Item C1 of the Mac-conventions plan; the review filed it
 // under *Accessibility* as "no arrow-key nudge for badge position", and it is
 // reached through `.onMoveCommand` on the focused canvas in `ContentView`.
 //
@@ -11,7 +11,7 @@
 // type-checker's ceiling and has been pushed over it four times, so the handler
 // arrives there as a method reference and does its thinking here.
 //
-// The placement itself still belongs to `BadgeGeometry` — NOTES.md's rule that
+// The placement itself still belongs to `BadgeGeometry` — the project notes' rule that
 // new badge placement logic goes there and not to a call site. This adds no
 // geometry; it steps a stored offset and asks that enum where the limits are.
 import SwiftUI
@@ -82,7 +82,7 @@ enum BadgeNudge {
     /// and that is intended: past `badge.scale ≈ 1.09` the legal range no longer
     /// contains zero, so an untouched 0% is out of bounds. The canvas drag does
     /// the same on its first frame. What neither does is re-clamp on its own —
-    /// NOTES.md's rule that stored offsets are clamped by live gestures only,
+    /// the project notes' rule that stored offsets are clamped by live gestures only,
     /// or resizing a badge would silently rewrite a user's 0% into −6%.
     private static func stepped(_ value: Double, by delta: Double, into range: ClosedRange<Double>) -> Double {
         let moved = ((value + delta) * 10_000).rounded() / 10_000

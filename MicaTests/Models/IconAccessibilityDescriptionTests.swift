@@ -1,6 +1,6 @@
 // IconAccessibilityDescriptionTests.swift
 //
-// What VoiceOver is told about the canvas. C1 of `docs/plans/mac-conventions.md`.
+// What VoiceOver is told about the canvas. C1 of the Mac-conventions plan.
 //
 // The assertions are on *content* rather than on exact sentences wherever the
 // wording is not itself the point — a description that has to be re-approved
@@ -107,7 +107,7 @@ struct IconAccessibilityDescriptionTests {
     // MARK: - Colours
 
     /// `MicaColorValue` records where a colour came from, and this reads that
-    /// rather than matching values — the distinction NOTES.md keeps under
+    /// rather than matching values — the distinction the project notes keeps under
     /// *A stored colour carries its provenance*. A custom pick has no name to
     /// speak, and reading four decimals of extended sRGB aloud describes nothing.
     @Test("A custom colour is described as custom, not as four decimals")

@@ -187,7 +187,7 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// `GenerateCommand.badgeIsActive`: the two that name what the badge *is*, plus
     /// the one that asks for it directly. `badge-visibility` activates only when
     /// true — see §3 of
-    /// `docs/plans/visibility-activation-and-imported-backgrounds.md`.
+    /// the visibility-and-imported-backgrounds plan.
     static let activatingBadgeNames: Set<String> = [
         MicaConfigKey.badgeFG.rawValue,
         MicaConfigKey.badgeBG.rawValue,

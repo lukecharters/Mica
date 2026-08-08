@@ -10,7 +10,7 @@
 // installed, still compiles and still passes everything below.
 // `UserMessageReporter.unattached` logging rather than swallowing is the one
 // hedge against the second case; the first needs the on-screen checks listed in
-// `docs/plans/mac-conventions.md` under B3.
+// the Mac-conventions plan under B3.
 
 import Testing
 import SwiftUI

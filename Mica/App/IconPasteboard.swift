@@ -1,7 +1,7 @@
 // App/IconPasteboard.swift
 //
 // Copy: what the rendered icon looks like on the pasteboard. Item A2 of
-// docs/plans/mac-conventions.md.
+// the Mac-conventions plan.
 //
 // An icon and nothing else. Copying *text* is the standard Copy's job and has
 // always worked in Mica's text fields — see `write(document:to:)`.
@@ -10,7 +10,7 @@
 // drag-out take, so Copy cannot disagree with either about the same settings.
 //
 // App-only — `mica-cli` has no pasteboard — so this never joins the two
-// `membershipExceptions` lists. See NOTES.md, "Adding a file".
+// `membershipExceptions` lists. See the project notes, "Adding a file".
 import AppKit
 import UniformTypeIdentifiers
 
@@ -89,7 +89,7 @@ enum IconPasteboard {
     /// `write(document:)`. What was wrong there was one command offering both an
     /// image and a string, so its result depended on the receiver; Copy Symbol Name
     /// in the symbol browser's context menu says what it copies and copies only
-    /// that. Item C2 of `docs/plans/mac-conventions.md`.
+    /// that. Item C2 of the Mac-conventions plan.
     ///
     /// No `throws`: a string has no representation that can fail.
     @MainActor

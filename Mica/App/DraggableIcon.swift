@@ -2,7 +2,7 @@
 //
 // What leaves the app when you drag the preview out — to the Finder, to Slack, to
 // an Xcode asset catalog. Added 2026-08-03 as item A1 of
-// docs/plans/mac-conventions.md.
+// the Mac-conventions plan.
 //
 // **It is a promise, not a render.** `FileRepresentation`'s exporting closure does
 // not run when the drag begins; it runs when a receiver accepts the drop. So
@@ -17,7 +17,7 @@
 // would mean a drag and a Save panel could disagree about the same settings.
 //
 // App-only by design — `mica-cli` already writes files, so this never needs to
-// join the two `membershipExceptions` lists. See NOTES.md, "Adding a file".
+// join the two `membershipExceptions` lists. See the project notes, "Adding a file".
 import SwiftUI
 import UniformTypeIdentifiers
 

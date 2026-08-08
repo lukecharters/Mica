@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// macOS supplies the **Mica ▸ Settings…** item, its shortcut and the window title
 /// for a `Settings` scene, so nothing in `MicaApp`'s `.commands` block mentions it —
-/// and ⌘, is not in `docs/project-structure.md`'s shortcut table for the same
+/// and ⌘, is not in the project-structure notes's shortcut table for the same
 /// reason: it is not ours to bind.
 ///
 /// The three tabs split by **when a preference takes effect**, not by how advanced
@@ -21,7 +21,7 @@ import SwiftUI
 /// actually about.
 ///
 /// Every key here was already shipping and reachable only by editing the defaults
-/// domain by hand — see §2.2 of `docs/plans/mac-conventions.md`, which is the debt
+/// domain by hand — see §2.2 of the Mac-conventions plan, which is the debt
 /// this window pays off.
 struct SettingsView: View {
     private enum Tab: Hashable { case general, export, importing }

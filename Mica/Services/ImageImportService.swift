@@ -34,7 +34,7 @@ enum ImageImportService {
     /// carrying no file: image **data** or a file **promise**, which is what
     /// Safari, Photos, Preview and most export panels put on the pasteboard.
     /// Nothing reached the view, so the importer never ran. See B4 of
-    /// `docs/plans/mac-conventions.md`.
+    /// the Mac-conventions plan.
     ///
     /// `.image` is the abstract supertype, so `public.png`, `public.tiff`,
     /// `public.jpeg`, HEIC and the rest are matched by conformance — listing

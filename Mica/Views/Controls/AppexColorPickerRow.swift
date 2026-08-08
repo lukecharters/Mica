@@ -38,7 +38,7 @@ struct AppexColorPickerRow: View {
             set: { newValue in
                 // Only an appex-native token can stay a preset — the pipeline
                 // accepts no other name, and anything else has to be resolved to
-                // components (§4.4 of docs/plans/colour-resolution.md).
+                // components (§4.4 of the colour-resolution plan).
                 if let name = newValue.tokenName,
                    let preset = AppexNamedColor(rawValue: name) {
                     selection.preset = preset

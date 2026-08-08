@@ -4,12 +4,12 @@ import Foundation
 /// Every URL the app links out to, derived from one repository path.
 ///
 /// Mica is distributed free on GitHub and has no help book, so the Help menu *is*
-/// the documentation — item B5 of `docs/plans/mac-conventions.md`. That makes a
+/// the documentation — item B5 of the Mac-conventions plan. That makes a
 /// dead link a shipped defect rather than a cosmetic one, and the failure is quiet:
 /// a wrong URL opens a GitHub 404 that looks like the page merely moved.
 ///
 /// **`App/`, not `Models/`** — the CLI prints its own help and never opens a
-/// browser, so it does not compile this. See NOTES.md's rule on which list a new
+/// browser, so it does not compile this. See the project notes' rule on which list a new
 /// file joins; a file here costs no `membershipExceptions` edits.
 ///
 /// Two things hold it together:

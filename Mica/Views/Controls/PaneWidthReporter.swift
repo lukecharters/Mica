@@ -1,7 +1,7 @@
 // Views/Controls/PaneWidthReporter.swift
 //
 // The one thing that writes a pane width back. Item C5 of
-// `docs/plans/mac-conventions.md`.
+// the Mac-conventions plan.
 //
 // `NavigationSplitView` and `.inspector` own their dividers and report nothing
 // about them — there is no "the user resized this column" callback, and the

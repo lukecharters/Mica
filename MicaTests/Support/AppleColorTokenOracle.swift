@@ -11,7 +11,7 @@
 // risk is the opposite one — that a resolution silently changes and nobody
 // notices, or that a refactor freezes a token to a component triple. This table
 // is the one place in the repo where an Apple system colour may be compared to a
-// literal, and it names the OS version it encodes. `NOTES.md`'s "never pin an
+// literal, and it names the OS version it encodes. the project notes' "never pin an
 // Apple system colour to a literal in a test" applies everywhere else.
 //
 // ## Provenance, and why it is transcribed rather than read
@@ -21,7 +21,7 @@
 // "Dark Standard" columns) which is kept, Apple-derived and unpublished, in
 // `.local/sf-symbols-app/`. This file is a hand transcription of fifteen rows
 // rather than a copy of Apple's file, decided as D6 in
-// `docs/plans/colour-resolution.md` on 2026-08-02. Do not add a build step that
+// the colour-resolution plan on 2026-08-02. Do not add a build step that
 // reads the CSV — it is gitignored, so such a test is a no-op on any other Mac.
 //
 // ## Known deviations

@@ -1,6 +1,6 @@
 // AppexPlistColorTests.swift
 //
-// §1.1 of `docs/plans/colour-resolution.md` as a unit test on the writer.
+// §1.1 of the colour-resolution plan as a unit test on the writer.
 //
 // This suite exists because **the render cannot be the check.** IconServices
 // discards a plist colour it does not recognise and draws its fallback tile at

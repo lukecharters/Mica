@@ -10,7 +10,7 @@
 #     the warning and fatal paths, and relative image resolution.
 #   - extract subcommand: <path> -o <dir> [--size --scale --color-space --recursive --depth].
 # Produces per-case PNGs in a timestamped output directory and a README.txt summary.
-# See docs/superpowers/specs/2026-04-17-cli-smoke-test-design.md for the original design.
+# See the original design notes for the original design.
 
 set -u
 set -o pipefail
@@ -269,7 +269,7 @@ CONFIG_CASES=(
     "config-relative-image|0|-|-|--config|\$FIXTURES/smoke-config-relative-image.json"
 )
 
-# Cross-surface parity (Phase 5 of docs/plans/colour-resolution.md). One colour
+# Cross-surface parity (Phase 5 of the colour-resolution plan). One colour
 # form per entry, rendered twice by the SHIPPED binary — once with the colour as a
 # flag, once with the identical colour in a --config file — and the two PNGs
 # compared byte for byte, in both colour spaces.
@@ -279,7 +279,7 @@ CONFIG_CASES=(
 # alike. What only this can catch is the rest of the invocation: bundled resources,
 # the encoder, and the colour-space conversion actually reached on disk. Byte
 # equality is safe here because a given input is reproducible across processes —
-# the LSB dithering noise NOTES.md warns about is between *different* render
+# the LSB dithering noise the project notes warns about is between *different* render
 # paths, not repeated identical ones.
 PARITY_CASES=(
     "token|blue"
@@ -836,7 +836,7 @@ print_summary() {
     fi
 
     # PARITY_FAIL was missing from this list until 2026-08-03: a parity failure
-    # printed FAIL and the script still exited 0, so the cross-surface gate NOTES.md
+    # printed FAIL and the script still exited 0, so the cross-surface gate the project notes
     # relies on could not fail a CI run. Every counter belongs here.
     if [[ "${HAPPY_FAIL}" -ne 0 || "${CONFIG_FAIL}" -ne 0 || "${PARITY_FAIL}" -ne 0 \
         || "${IMPORT_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then

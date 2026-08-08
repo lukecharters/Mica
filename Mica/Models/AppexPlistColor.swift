@@ -9,7 +9,7 @@ import AppKit
 ///
 /// The plist grammar is closed and **fails silently.** `ISEnclosureColor` /
 /// `ISSymbolColor` take exactly two forms, measured against ~50 candidates in §1.1
-/// of `docs/plans/colour-resolution.md`: one of 15 lowercase token names, or four
+/// of the colour-resolution plan: one of 15 lowercase token names, or four
 /// plain decimals `"r,g,b,a"` in sRGB 0–1 with **no spaces**. Everything else —
 /// `grey`, `#FF0000`, `srgb:1,0,0`, `" 1, 0, 0, 1 "`, `255,0,0,255`, a trailing
 /// comma, `1e-05`, or any non-string plist type — is discarded by IconServices,

@@ -39,7 +39,7 @@ struct InspectorControls: View {
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     /// No advanced-controls switch down here any more — it moved to Settings ▸
-    /// General on 2026-08-04 (item B2 of `docs/plans/mac-conventions.md`), on the
+    /// General on 2026-08-04 (item B2 of the Mac-conventions plan), on the
     /// grounds that a preference does not belong inside the panel it reconfigures.
     /// The flag is still read all over this file; only its control left.
     ///

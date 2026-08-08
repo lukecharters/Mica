@@ -1,7 +1,7 @@
 // App/IconContextMenu.swift
 //
 // What a right-click offers, and where each row's work happens. Item C2 of
-// `docs/plans/mac-conventions.md`; the candidate list is review finding 12.
+// the Mac-conventions plan; the candidate list is review finding 12.
 //
 // The decision is here rather than in the two menu views because it is the part
 // that can be wrong quietly: a row that should not be offered (paste a
@@ -11,7 +11,7 @@
 //
 // App-only on purpose: a context menu does not exist in the CLI, so this file
 // stays out of `Models/` and `Services/` and off both `membershipExceptions`
-// lists. See NOTES.md, "Adding a file".
+// lists. See the project notes, "Adding a file".
 
 import Foundation
 import os

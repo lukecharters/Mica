@@ -1,7 +1,7 @@
 #!/bin/bash
 # check-help-links.sh — every wiki page the Help menu links to exists in wiki/.
 #
-# Item B5 of docs/plans/mac-conventions.md. The Help menu is Mica's only
+# Item B5 of the Mac-conventions plan. The Help menu is Mica's only
 # documentation surface, so a renamed wiki page is a shipped dead link — and a quiet
 # one: it opens a GitHub 404 that reads like the page merely moved.
 #

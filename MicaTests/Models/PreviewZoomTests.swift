@@ -1,6 +1,6 @@
 // PreviewZoomTests.swift
 // The preview zoom ladder and the two steps along it — item B1 of
-// docs/plans/mac-conventions.md, which added View ▸ Zoom In / Zoom Out.
+// the Mac-conventions plan, which added View ▸ Zoom In / Zoom Out.
 //
 // The load-bearing assertions are the off-ladder ones. `zoomLevel` is a plain
 // `Double`, not an index, and `ContentView` already stores `0` as its Fit sentinel:

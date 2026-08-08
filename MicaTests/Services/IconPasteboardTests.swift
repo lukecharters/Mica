@@ -1,6 +1,6 @@
 // IconPasteboardTests.swift
 //
-// Copy (item A2 of docs/plans/mac-conventions.md). What matters here is what a
+// Copy (item A2 of the Mac-conventions plan). What matters here is what a
 // *receiver* finds, which is the thing the drag-out taught us assertions can miss:
 // correct bytes under a wrong description is a passing test and a broken feature.
 //

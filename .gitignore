@@ -76,7 +76,6 @@ fastlane/test_output
 # docs/ holds the plans, research and review notes behind the decisions in this codebase;
 # they will be published once there is someone to read them. See CONTRIBUTING.md.
 docs/
-NOTES.md
 CLAUDE.md
 AGENTS.md
 .claude/

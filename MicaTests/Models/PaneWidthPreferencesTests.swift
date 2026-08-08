@@ -2,7 +2,7 @@
 //
 // The side panes' widths — the inspector's, which Mica persists, and the
 // sidebar's, which it deliberately does not. C5 of
-// `docs/plans/mac-conventions.md`.
+// the Mac-conventions plan.
 //
 // The write-back itself is a `GeometryReader` inside a split-view column and no
 // test can reach it — which is exactly why the *decisions* are a pure type. Same

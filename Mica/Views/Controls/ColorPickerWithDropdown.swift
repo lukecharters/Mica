@@ -25,7 +25,7 @@ struct ColorPickerWithDropdown: View {
     /// Whether the colour well offers an opacity slider.
     ///
     /// `false` for a System-mode *background*, because the OS ignores an
-    /// enclosure's alpha (§1.1 of `docs/plans/colour-resolution.md`) and
+    /// enclosure's alpha (§1.1 of the colour-resolution plan) and
     /// `AppexPlistColor` refuses one rather than render something the user did not
     /// ask for. Hiding the slider is the same rule enforced a step earlier, where
     /// it reads as a control that was never offered rather than an error.

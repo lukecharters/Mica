@@ -2,7 +2,7 @@
 //
 // What VoiceOver is told about the preview canvas — the app's central object,
 // which had no label, no value and no custom actions until item C1 of
-// `docs/plans/mac-conventions.md`. A sighted user reads the icon; a VoiceOver
+// the Mac-conventions plan. A sighted user reads the icon; a VoiceOver
 // user was told nothing whatever had been generated.
 //
 // Pure functions over `IconSettings` rather than anything a view holds, for two
@@ -13,7 +13,7 @@
 // and describing it twice is how the two descriptions drift.
 //
 // It lives in `App/` because the CLI has no canvas to describe — see the table
-// in NOTES.md ▸ *Adding a file: which list does it join?*, which is what keeps
+// in the project notes ▸ *Adding a file: which list does it join?*, which is what keeps
 // it out of the two `membershipExceptions` lists.
 import Foundation
 
@@ -55,7 +55,7 @@ enum IconAccessibilityDescription {
     /// The offset is reported in the same percent units the inspector's two
     /// sliders show, so what VoiceOver says and what the sliders read cannot
     /// disagree. Interpolated into a `String` rather than a `Text`, which would
-    /// group the digits — see NOTES.md ▸ `Text("\(anInt)")` *is a
+    /// group the digits — see the project notes ▸ `Text("\(anInt)")` *is a
     /// `LocalizedStringKey`*.
     static func badgeHandleValue(for settings: IconSettings) -> String {
         let corner = settings.badge.position.rawValue.lowercased()
@@ -168,7 +168,7 @@ enum IconAccessibilityDescription {
     /// inside a sentence; anything else is "a custom colour", because a
     /// components source is a point in extended sRGB and reading four decimals
     /// aloud describes nothing. This is exactly the difference `MicaColorValue`
-    /// records — see NOTES.md ▸ *A stored colour carries its provenance* — so it
+    /// records — see the project notes ▸ *A stored colour carries its provenance* — so it
     /// is read here rather than guessed at by matching values.
     private static func name(_ value: MicaColorValue) -> String {
         guard let token = value.tokenName,

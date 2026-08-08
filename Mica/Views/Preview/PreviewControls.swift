@@ -33,7 +33,7 @@ struct ZoomMenu: View {
                     // `verbatim:` — a percentage is a value, not prose, and an Int
                     // interpolated into a `LocalizedStringKey` picks up the locale's
                     // digit grouping. Harmless at 25–800%, wrong the moment anyone
-                    // adds a rung past 1000%. See NOTES.md.
+                    // adds a rung past 1000%. See the project notes.
                     Text(verbatim: "\(Int(level * 100))%")
                 }
             }

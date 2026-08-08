@@ -176,7 +176,7 @@ struct ContentView: View {
     ///
     /// It was an `@AppStorage` property that was read and never written, under a
     /// comment claiming a divider drag wrote it — item C5 of
-    /// `docs/plans/mac-conventions.md`. Its sidebar twin is gone entirely: AppKit
+    /// the Mac-conventions plan. Its sidebar twin is gone entirely: AppKit
     /// already persists that divider, better than this could.
     private let openingInspectorWidth: Double
 
@@ -437,7 +437,7 @@ struct ContentView: View {
         }
         // **The** alert. There were four here until 2026-08-05 — one per error
         // property — beside seven `print()`s that told the user nothing at all;
-        // item B3 of `docs/plans/mac-conventions.md`. Everything a discrete action
+        // item B3 of the Mac-conventions plan. Everything a discrete action
         // can fail at now arrives as a `UserMessage`, from the menus through a
         // focused value and from the views through the environment.
         //

@@ -1,7 +1,7 @@
 // App/UserMessage.swift
 //
 // The one thing Mica tells the user about after an action, and the two routes
-// anything in the app uses to say it. Item B3 of `docs/plans/mac-conventions.md`.
+// anything in the app uses to say it. Item B3 of the Mac-conventions plan.
 //
 // ## What this replaces
 //

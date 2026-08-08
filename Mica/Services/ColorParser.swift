@@ -20,7 +20,7 @@ private let colorBridgeLock = NSLock()
 /// Mica's colour syntax, in one place: the string forms the CLI, the JSON reader
 /// and any GUI text entry all accept.
 ///
-/// Five families, and nothing else (§4.3 of `docs/plans/colour-resolution.md`):
+/// Five families, and nothing else (§4.3 of the colour-resolution plan):
 /// a token from `ColorTokenTable`, hex, `rgb()`/`hsl()`, a *space-prefixed*
 /// component list, and any of the first three with a `:opacity` suffix.
 ///
@@ -551,7 +551,7 @@ extension ColorParser {
 
         /// Rounded to `places` decimal places. `MicaColorValue` applies this at
         /// construction so that equality means "writes the same string" — see D5
-        /// in `docs/plans/colour-resolution.md`.
+        /// in the colour-resolution plan.
         ///
         /// Deliberately rounds the components rather than clamping them: an
         /// out-of-gamut Display P3 pick has to survive this.

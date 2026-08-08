@@ -1,7 +1,7 @@
 // GroupVisibilityConfigTests.swift
 // `icon-visibility` / `badge-visibility` as configuration keys: accepted on the way
 // in, never produced on the way out. Phase 4 of
-// docs/plans/visibility-activation-and-imported-backgrounds.md.
+// the visibility-and-imported-backgrounds plan.
 //
 // The category is new — `processLevelNames` excludes flags that describe an
 // *invocation*, which these do not; they describe the icon perfectly well and are

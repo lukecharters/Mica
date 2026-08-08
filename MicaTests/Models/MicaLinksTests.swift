@@ -1,6 +1,6 @@
 // MicaLinksTests.swift
 // The Help menu's links and the About panel's two resources — item B5 of
-// docs/plans/mac-conventions.md.
+// the Mac-conventions plan.
 //
 // Every failure this pins is **silent in the app**. A renamed wiki page still opens,
 // as a GitHub 404 that reads like the page merely moved. A `Credits.rtf` dropped from
@@ -67,7 +67,7 @@ struct MicaLinksTests {
     // It lives in `scripts/tests/check-help-links.sh` instead, which runs outside the
     // sandbox. Deliberately *not* in `mica-cli Tests` — that target is unsandboxed and
     // could host it, but it would have to keep its own copy of the slug list, which is
-    // the duplication being guarded against, and NOTES.md's CLI baseline must not
+    // the duplication being guarded against, and the project notes' CLI baseline must not
     // move for app-only work.
     //
     // What stays here is the half that needs no filesystem: the link table and the

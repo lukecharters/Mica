@@ -1,7 +1,7 @@
 // Views/Controls/IconContextMenuContent.swift
 //
 // The rows of a context menu, rendered from whatever `IconContextMenu` decided.
-// Item C2 of `docs/plans/mac-conventions.md`.
+// Item C2 of the Mac-conventions plan.
 //
 // One view for all three menus — the canvas, both sidebar rows — because the
 // difference between them is which items they ask for, not how a row is drawn. A

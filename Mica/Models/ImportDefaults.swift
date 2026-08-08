@@ -6,7 +6,7 @@ import Foundation
 ///
 /// Both are guesses at something the file cannot tell us, so both are
 /// preferences in the GUI — see §5 of
-/// `docs/plans/visibility-activation-and-imported-backgrounds.md`. This type is
+/// the visibility-and-imported-backgrounds plan. This type is
 /// how that preference reaches `IconSpec.applyBackgroundImage(_:defaults:)`
 /// without either spec reading `UserDefaults` itself.
 ///

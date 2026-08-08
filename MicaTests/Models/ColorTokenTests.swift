@@ -106,7 +106,7 @@ struct ColorTokenTests {
     // MARK: - The appex-native subset
 
     /// The exact list the appex `Info.plist` accepts, established empirically on
-    /// 2026-08-02 (§1.1 of `docs/plans/colour-resolution.md`). This is a *closed*
+    /// 2026-08-02 (§1.1 of the colour-resolution plan). This is a *closed*
     /// set defined by Apple's pipeline, not by Mica, so it is spelled out here
     /// rather than derived — that is the whole point of the assertion.
     private static let appexAcceptedTokens: Set<String> = [

@@ -1,7 +1,7 @@
 // ExportPreferencesTests.swift
 // Settings ▸ Export — the default size and colour space a new window opens with.
 //
-// See item B2 of docs/plans/mac-conventions.md. The load-bearing assertions are
+// See item B2 of the Mac-conventions plan. The load-bearing assertions are
 // `fixedSpec_isNotTheUsersPreferences` and `viewModel_usesTheFixedSpec`: everything
 // else here would still pass if the preference leaked into `ExportSpec()`, and that
 // leak has no visible symptom — it would quietly re-point every test, every SwiftUI

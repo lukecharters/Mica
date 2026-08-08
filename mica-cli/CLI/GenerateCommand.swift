@@ -1149,7 +1149,7 @@ struct GenerateCommand: AsyncParsableCommand {
     /// This is *not* `MicaConfigKey.isBadgeKey`. That predicate is the namespace,
     /// and promoting it to the activation rule is the mistake to avoid — it would
     /// make `--badge-position bottom-left` conjure a default gearshape nobody named.
-    /// See §3 of docs/plans/visibility-activation-and-imported-backgrounds.md.
+    /// See §3 of the visibility-and-imported-backgrounds plan.
     var badgeIsActive: Bool {
         badge.foreground != nil
             || badge.background != nil

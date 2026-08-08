@@ -12,7 +12,7 @@
 // Each test asserts *both* styles, so a fixture or geometry mistake that made
 // the patch permanently empty could not read as a pass.
 //
-// Testing trap, per docs/plans/visibility-activation-and-imported-backgrounds.md
+// Testing trap, per the visibility-and-imported-backgrounds plan
 // §2: the artwork must fill its own bounds. A Mica-rendered PNG already has
 // transparent corners, so clipping it at any radius changes nothing and the
 // setting reads as inert.

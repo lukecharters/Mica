@@ -2,7 +2,7 @@
 //
 // Pasting an image into a layer, in one place. Extracted from `MicaApp`'s
 // `pasteImage` helper when the canvas context menu (item C2 of
-// `docs/plans/mac-conventions.md`) became its second caller.
+// the Mac-conventions plan) became its second caller.
 //
 // The extraction is the point rather than a tidy-up. B3's note on the eight
 // import commands says converging error handling could have replaced eight copies

@@ -8,7 +8,7 @@
 // Renamed from IconDocument on 2026-07-28. The `.mica` document format it used to
 // refer to was abandoned on 2026-07-31; the app has no document model and keeps
 // work by exporting a configuration instead — see ConfigurationExportDocument and
-// docs/plans/json-config-format.md.
+// the JSON-configuration-format plan.
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO

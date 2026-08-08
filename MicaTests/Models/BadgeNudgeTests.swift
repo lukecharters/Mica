@@ -1,7 +1,7 @@
 // BadgeNudgeTests.swift
 //
 // Arrow-key badge movement — the keyboard equivalent of the canvas drag. C1 of
-// `docs/plans/mac-conventions.md`.
+// the Mac-conventions plan.
 //
 // These test the *decision*, which is the only part a test can reach: the
 // `.onMoveCommand` that delivers a direction lives in `ContentView.body`, and

@@ -130,7 +130,7 @@ struct MicaApp: App {
 
                 // **None of the four carries a key equivalent, and the standard
                 // Paste covers the common one.** Item C4 of
-                // `docs/plans/mac-conventions.md`, 2026-08-07.
+                // the Mac-conventions plan, 2026-08-07.
                 //
                 // They were ⇧⌘V / ⇧⌘I / ⇧⌘B / ⇧⌘G. ⇧⌘V is Paste and Match Style
                 // system-wide, which is the review's finding; the other three were
@@ -235,7 +235,7 @@ struct MicaApp: App {
             // The View menu. Until 2026-08-04 it held only what AppKit puts there —
             // Show Tab Bar, Show All Tabs, Enter Full Screen — while the sidebar,
             // the inspector and the zoom were reachable from the toolbar alone, and
-            // ⌘+ / ⌘− / ⌘0 did nothing. Item B1 of `docs/plans/mac-conventions.md`.
+            // ⌘+ / ⌘− / ⌘0 did nothing. Item B1 of the Mac-conventions plan.
             //
             // `before: .sidebar` rather than a `CommandMenu("View")`: a second menu
             // of that name would sit beside AppKit's rather than merge with it.
@@ -355,7 +355,7 @@ struct MicaApp: App {
                 .keyboardShortcut("S", modifiers: [.command, .shift])
             }
             #endif
-            // The Help menu. Item B5 of `docs/plans/mac-conventions.md`.
+            // The Help menu. Item B5 of the Mac-conventions plan.
             //
             // Until 2026-08-04 it held one item — "Mica Help", which AppKit supplies
             // for every app whether or not it has a help book. **Measured, not
