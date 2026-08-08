@@ -119,11 +119,13 @@ struct ContentView: View {
     /// is the whole difference between a default and a setting.
     init() {
         _viewModel = StateObject(wrappedValue: IconViewModel(export: .fromPreferences()))
+        openingInspectorWidth = PaneWidthPreferences.launchWidth(.inspector)
     }
 
     init(viewModel: IconViewModel, showInspector: Bool = true) {
         _ = showInspector // kept for source compatibility with existing previews
         _viewModel = StateObject(wrappedValue: viewModel)
+        openingInspectorWidth = PaneWidthPreferences.launchWidth(.inspector)
     }
 
 
@@ -159,16 +161,24 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
-    /// User-adjustable panel widths, persisted across launches. Dragging a divider
-    /// writes here; the values are clamped to `sidebarRange` / `inspectorRange`.
-    @AppStorage("layout.sidebarWidth") private var sidebarWidth: Double = 280
-    @AppStorage("layout.inspectorWidth") private var inspectorWidth: Double = 380
     /// Read here too: the selection outline is an advanced-controls affordance, so
     /// with them off the preview draws none (see `currentPreviewSelection`).
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    private let sidebarRange: ClosedRange<Double> = 220...360
-    private let inspectorRange: ClosedRange<Double> = 330...460
+    /// The width this window's inspector opens at, read from the preference once
+    /// in `init` and never again.
+    ///
+    /// **Deliberately not `@AppStorage`.** It feeds `.inspectorColumnWidth`'s
+    /// `ideal:`, which is a layout proposal — a value that changed while the user
+    /// was dragging would be a value fighting the drag. The write side is
+    /// `.reportsPaneWidth`, which goes straight to `UserDefaults`, so the read and
+    /// the write never meet within a session. See `PaneWidthPreferences`.
+    ///
+    /// It was an `@AppStorage` property that was read and never written, under a
+    /// comment claiming a divider drag wrote it — item C5 of
+    /// `docs/plans/mac-conventions.md`. Its sidebar twin is gone entirely: AppKit
+    /// already persists that divider, better than this could.
+    private let openingInspectorWidth: Double
 
 
     var body: some View {
@@ -183,10 +193,15 @@ struct ContentView: View {
                 iconSettings: $viewModel.iconSettings,
                 selection: $selectedGroup
             )
+            // **No `.reportsPaneWidth` here, and that is a finding rather than an
+            // omission.** AppKit autosaves this split view's divider and restores
+            // it *ahead of* `ideal:`, so the sidebar width already survives a
+            // relaunch and a Mica preference for it would be a second mechanism
+            // that always loses. Measured 2026-08-07 — see `PaneWidthPreferences`.
             .navigationSplitViewColumnWidth(
-                min: sidebarRange.lowerBound,
-                ideal: sidebarWidth,
-                max: sidebarRange.upperBound
+                min: PaneWidthPreferences.Pane.sidebar.range.lowerBound,
+                ideal: PaneWidthPreferences.Pane.sidebar.defaultWidth,
+                max: PaneWidthPreferences.Pane.sidebar.range.upperBound
             )
         } detail: {
             Group {
@@ -226,6 +241,26 @@ struct ContentView: View {
             // selection keeps its own Copy, which is the behaviour we want.
             .focusable()
             .onCopyCommand(perform: copyIconProviders)
+            // Focus-resolved ⌘V, the mirror of the ⌘C above and the replacement for
+            // the four ⇧⌘V/I/B/G paste shortcuts C4 removed. `.onPasteCommand` hooks
+            // the **standard** Paste for the same reason: a second Edit-menu item
+            // bound to ⌘V would lose the key equivalent outright when the menu is
+            // built, not per focus.
+            //
+            // **It lands on the icon background, always** — the same target a canvas
+            // drop falls back to when it hits nothing (B4), and for the same reason.
+            // A drop can name a group because it has a location; a paste has none, so
+            // routing it by the sidebar's selection would make one key mean two
+            // things depending on state the user is not looking at. C2 declined that
+            // for the context menu's row order and it is declined here too. The other
+            // three layers are the Edit menu's and the context menu's.
+            //
+            // `of:` is `allDropTypes`, which is exactly what `importFromPasteboard`
+            // reads — a file URL first, then image data — so the standard Paste is
+            // enabled when and only when this can do something. That is C6's question
+            // answered for free on this one route, by the pasteboard type check
+            // AppKit already runs; the Edit menu's four items are still advisory.
+            .onPasteCommand(of: ImageImportService.allDropTypes, perform: pasteAsIconBackground)
             // Arrow keys nudge the badge — the keyboard equivalent of the canvas
             // drag, which was mouse-only. Attached beside `.onCopyCommand` and
             // not inside either preview because both commands mean "the canvas
@@ -241,7 +276,9 @@ struct ContentView: View {
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
         // material, show/hide animation, and native drag-resize; width is a hint via
-        // `.inspectorColumnWidth` (seeded from the old persisted value).
+        // `.inspectorColumnWidth`, seeded from the persisted width and written back
+        // by `.reportsPaneWidth` — so a dragged width now survives a *relaunch*, not
+        // just a mode switch. See C5 and `PaneWidthPreferences`.
         //
         // It's attached to the whole NavigationSplitView (not to the detail content) on
         // purpose: the detail swaps preview panes between Mica (`previewPane`) and System
@@ -264,10 +301,11 @@ struct ContentView: View {
                 tab: inspectorTab,
                 canExport: viewModel.canExport
             )
+            .reportsPaneWidth(.inspector)
             .inspectorColumnWidth(
-                min: inspectorRange.lowerBound,
-                ideal: inspectorWidth,
-                max: inspectorRange.upperBound
+                min: PaneWidthPreferences.Pane.inspector.range.lowerBound,
+                ideal: openingInspectorWidth,
+                max: PaneWidthPreferences.Pane.inspector.range.upperBound
             )
         }
         // One `ToolbarContent` type, not an inline block. Adding the two
@@ -550,6 +588,34 @@ struct ContentView: View {
     /// only, so the decision can be tested without a view.
     private func nudgeBadge(_ direction: MoveCommandDirection) {
         BadgeNudge.apply(direction, to: &viewModel.iconSettings)
+    }
+
+    /// The standard Paste while the canvas is focused: the pasteboard image becomes
+    /// the icon background.
+    ///
+    /// **The item providers are deliberately ignored.** They are a view of the same
+    /// `NSPasteboard.general` that `ImageImportService.importFromPasteboard` reads,
+    /// and going through `ImageImportAction` is what keeps this route from becoming
+    /// a second paste implementation — which is the whole reason that type exists.
+    /// Reading the providers instead would mean this route decided for itself what
+    /// an empty pasteboard, a file promise or an un-decodable image meant, and that
+    /// difference is invisible until someone hits ⌘V with the wrong thing copied.
+    ///
+    /// A method rather than a closure in `body`, like `nudgeBadge` above: `body`
+    /// sits at the type-checker's ceiling and has been pushed over it four times.
+    private func pasteAsIconBackground(_ providers: [NSItemProvider]) {
+        _ = providers
+        ImageImportAction.paste(
+            into: &viewModel.iconSettings,
+            reporter: viewModel.messageReporter
+        ) { settings, image in
+            ImageImportAction.applyBackground(
+                image,
+                to: .icon,
+                in: &settings,
+                defaults: .fromPreferences()
+            )
+        }
     }
 
     /// Put the rendered icon on the pasteboard as PNG and TIFF.
