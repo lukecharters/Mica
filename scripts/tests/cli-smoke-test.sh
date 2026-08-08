@@ -54,6 +54,8 @@ EXPANDED_ARGS=()
 
 # ---- case data ---------------------------------------------------------------
 # Entry format: slug|symbol[|arg1|arg2|...]
+# The symbol field is a bare SF Symbol name; set_symbol_args() turns it into
+# `--icon-symbol <name>`, and an empty field into no foreground at all.
 # Use $SYMBOL_FIXTURE / $BACKGROUND_FIXTURE placeholders for fixture image paths.
 HAPPY_CASES=(
     # ---- baseline ----
@@ -111,9 +113,11 @@ HAPPY_CASES=(
     "icon-bg-visibility-off|star.fill|--icon-bg-visibility|off"
 
     # ---- Icon foreground ----
-    "icon-fg-symbol-explicit|star.fill|--icon-fg|symbol:heart.fill"
-    "icon-fg-image|star.fill|--icon-fg|\$SYMBOL_FIXTURE"
-    "icon-fg-image-scale|star.fill|--icon-fg|\$SYMBOL_FIXTURE|--icon-fg-scale|0.9"
+    # Empty symbol field: --icon-fg is the foreground, and pairing it with
+    # --icon-symbol would be refused as a conflict rather than tested.
+    "icon-fg-symbol-explicit||--icon-fg|symbol:heart.fill"
+    "icon-fg-image||--icon-fg|\$SYMBOL_FIXTURE"
+    "icon-fg-image-scale||--icon-fg|\$SYMBOL_FIXTURE|--icon-fg-scale|0.9"
     "icon-fg-scale|star.fill|--icon-fg-scale|1.3"
     "icon-symbol-rendering-hierarchical|shield.fill|--icon-symbol-rendering|hierarchical"
     "icon-symbol-rendering-multicolor|star.fill|--icon-symbol-rendering|multicolor"
@@ -176,8 +180,9 @@ HAPPY_CASES=(
 )
 
 # Negative cases. Entry format: name|expectedSubstring|symbol[|arg1|...]
-# The runner invokes `mica-cli <symbol> <args…>`; passing "extract" as the
-# "symbol" dispatches to the extract subcommand (generate is the default).
+# The runner invokes `mica-cli --icon-symbol <symbol> <args…>`; passing "extract"
+# as the "symbol" dispatches to the extract subcommand (generate is the default),
+# and set_symbol_args() keeps that one word positional.
 NEGATIVE_CASES=(
     # ---- generate ----
     "size-too-large|Size must be between|star.fill|--size|9999"
@@ -187,7 +192,16 @@ NEGATIVE_CASES=(
     "icon-symbol-rendering-invalid|Symbol rendering mode must be one of|star.fill|--icon-symbol-rendering|invalid"
     "icon-symbol-weight-invalid|Symbol weight must be one of|star.fill|--icon-symbol-weight|notaweight"
     "icon-fg-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--icon-fg-scale|5.0"
-    "icon-fg-symbol-empty|requires a symbol name|star.fill|--icon-fg|symbol:"
+    "icon-fg-symbol-empty|requires a symbol name||--icon-fg|symbol:"
+    # The new refusals: the shorthand cannot carry the prefix it exists to omit,
+    # and cannot be given alongside the flag it abbreviates.
+    "icon-symbol-with-prefix|drop the 'symbol:' prefix||--icon-symbol|symbol:star.fill"
+    # A missing value prints the *abstract* and nothing else — see --badge-offset-y's
+    # note on the same mechanism. So the abstract has to carry the "no prefix" hint,
+    # which is exactly the moment someone needs it. This row is what says it does.
+    "icon-symbol-missing-value|no 'symbol:' prefix||--icon-symbol"
+    "icon-symbol-conflicts-with-icon-fg|not both|star.fill|--icon-fg|symbol:heart.fill"
+    "badge-symbol-conflicts-with-badge-fg|not both|star.fill|--badge-symbol|plus.circle|--badge-fg|symbol:gear"
     "icon-bg-color-invalid|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|not-a-color"
     # A recognised space name with the wrong component count is a mistake worth
     # reporting, not a colour name to keep guessing at.
@@ -314,6 +328,26 @@ expand_fixtures() {
     done
 }
 
+# A case's "symbol" field is a bare SF Symbol name, which reaches the CLI as
+# `--icon-symbol <name>`. It was the positional argument until that was removed;
+# translating here rather than in ~120 data rows keeps each row readable and keeps
+# the one exception in one place.
+#
+# That exception is "extract": four negative cases put it in the symbol field to
+# dispatch to the other subcommand, which is a positional and must pass through
+# untouched. A blind rewrite of the rows would have turned those four into
+# `--icon-symbol extract` — a generate run with a nonexistent symbol, which still
+# fails, and still matches its expected substring for the wrong reason.
+SYMBOL_ARGS=()
+set_symbol_args() {
+    SYMBOL_ARGS=()
+    case "$1" in
+        '')      ;;
+        extract) SYMBOL_ARGS=("extract") ;;
+        *)       SYMBOL_ARGS=("--icon-symbol" "$1") ;;
+    esac
+}
+
 # ---- phase functions ---------------------------------------------------------
 
 build_cli() {
@@ -436,8 +470,9 @@ run_happy_case() {
     stderr_file="$(mktemp)"
     local exit_code=0
     expand_fixtures ${rest[@]+"${rest[@]}"}
+    set_symbol_args "${symbol}"
 
-    "${CLI_BINARY}" "${symbol}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
+    "${CLI_BINARY}" ${SYMBOL_ARGS[@]+"${SYMBOL_ARGS[@]}"} ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} -o "${output_file}" 2>"${stderr_file}" >/dev/null \
         || exit_code=$?
 
     if [[ "${exit_code}" -eq 0 && -s "${output_file}" ]]; then
@@ -597,7 +632,8 @@ run_negative_case() {
     local output
     local exit_code=0
     expand_fixtures ${rest[@]+"${rest[@]}"}
-    output="$("${CLI_BINARY}" "${symbol}" ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} 2>&1)" || exit_code=$?
+    set_symbol_args "${symbol}"
+    output="$("${CLI_BINARY}" ${SYMBOL_ARGS[@]+"${SYMBOL_ARGS[@]}"} ${EXPANDED_ARGS[@]+"${EXPANDED_ARGS[@]}"} 2>&1)" || exit_code=$?
 
     if [[ "${exit_code}" -ne 0 ]] && echo "${output}" | grep -qi -- "${expected}"; then
         NEG_PASS=$((NEG_PASS + 1))
@@ -642,18 +678,20 @@ IMPORT_CASES=(
     "revealing-foreground-changes-the-render|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg-visibility|on"
     "corner-radius-defaults-off|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|macos26"
     "corner-radius-off-is-the-default|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|off"
-    # The foreground rule, end to end. Rule 2: styling a foreground reveals it, so the
-    # render changes. And the documented surprise — the positional does not count
-    # towards rule 2, but naming the same symbol with --icon-fg does.
+    # The foreground rule, end to end. Rule 2: naming or styling a foreground reveals
+    # it, so the render changes. Both spellings of "naming" are here, because
+    # --icon-symbol and --icon-fg symbol: must not disagree about a rule this visible.
     "rule2-symbol-colour-reveals-the-foreground|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-symbol-color|green"
-    "rule2-explicit-icon-fg-beats-the-positional|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg|symbol:star.fill"
+    "rule2-icon-symbol-reveals-the-foreground|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-symbol|star.fill"
+    "rule2-icon-fg-reveals-the-foreground|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg|symbol:star.fill"
     # The superseded style token, on the shipped binary. "macos11" named the
     # macOS 11-15 design until 2026-08-08 and still decodes, so a script or an
     # exported configuration written before then must render byte-identically to
     # the same call spelled "macos15". A unit test can only pin the enum; this is
-    # the flag surface end to end.
-    "superseded-corner-radius-token|same|--icon-bg-corner-radius|macos11|--|--icon-bg-corner-radius|macos15"
-    "superseded-shadow-token|same|--icon-bg-shadow|macos11|--|--icon-bg-shadow|macos15"
+    # the flag surface end to end. These two need a foreground of their own: they
+    # import no artwork, so nothing else would supply one.
+    "superseded-corner-radius-token|same|--icon-symbol|star.fill|--icon-bg-corner-radius|macos11|--|--icon-symbol|star.fill|--icon-bg-corner-radius|macos15"
+    "superseded-shadow-token|same|--icon-symbol|star.fill|--icon-bg-shadow|macos11|--|--icon-symbol|star.fill|--icon-bg-shadow|macos15"
 )
 
 # Bounds-filling artwork, built from a rendered icon so the script needs no new
@@ -661,7 +699,7 @@ IMPORT_CASES=(
 make_filled_fixture() {
     FILLED_FIXTURE="${OUTPUT_DIR}/filled-artwork.png"
     local source="${OUTPUT_DIR}/filled-artwork-source.png"
-    "${CLI_BINARY}" square.fill --size 256 --icon-bg-color white \
+    "${CLI_BINARY}" --icon-symbol square.fill --size 256 --icon-bg-color white \
         -o "${source}" -q >/dev/null 2>&1
     sips --cropToHeightWidth 200 200 "${source}" --out "${FILLED_FIXTURE}" >/dev/null 2>&1
 }
@@ -695,10 +733,14 @@ run_import_case() {
     local failures=()
     local exit_code=0
 
-    "${CLI_BINARY}" star.fill --size 512 "${a_args[@]}" -o "${stem}-a.png" -q >/dev/null 2>&1 || exit_code=$?
+    # No foreground is supplied here. It used to be a positional `star.fill`, which
+    # was invisible to rule 2 and so harmless; `--icon-symbol` is not, and would
+    # reveal the very foreground the bare-import cases exist to see hidden. Each row
+    # names its own foreground when it wants one.
+    "${CLI_BINARY}" --size 512 "${a_args[@]}" -o "${stem}-a.png" -q >/dev/null 2>&1 || exit_code=$?
     [[ "${exit_code}" -eq 0 ]] || failures+=("A exited ${exit_code}")
     exit_code=0
-    "${CLI_BINARY}" star.fill --size 512 "${b_args[@]}" -o "${stem}-b.png" -q >/dev/null 2>&1 || exit_code=$?
+    "${CLI_BINARY}" --size 512 "${b_args[@]}" -o "${stem}-b.png" -q >/dev/null 2>&1 || exit_code=$?
     [[ "${exit_code}" -eq 0 ]] || failures+=("B exited ${exit_code}")
 
     if [[ "${#failures[@]}" -eq 0 ]]; then
@@ -746,7 +788,7 @@ run_parity_case() {
     [[ "${exit_code}" -eq 0 ]] || failures+=("--config exited ${exit_code}")
 
     exit_code=0
-    "${CLI_BINARY}" star.fill --size 128 --color-space "${space}" --icon-bg-color "${color}" \
+    "${CLI_BINARY}" --icon-symbol star.fill --size 128 --color-space "${space}" --icon-bg-color "${color}" \
         -o "${stem}-flag.png" -q >/dev/null 2>&1 || exit_code=$?
     [[ "${exit_code}" -eq 0 ]] || failures+=("flag exited ${exit_code}")
 

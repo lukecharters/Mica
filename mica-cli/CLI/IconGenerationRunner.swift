@@ -448,14 +448,15 @@ class IconGenerationRunner {
             //   2. Else, any other icon foreground argument given → visible. Styling a
             //      foreground means you want one, so the import's default is overruled.
             //   3. Else → hidden, which is what `IconSpec.applyBackgroundImage` already
-            //      set. `mica-cli generate command --icon-bg app.png` therefore renders
-            //      exactly what it renders today.
+            //      set. `mica-cli generate --icon-bg app.png` is therefore a complete
+            //      invocation: imported artwork needs no symbol behind it.
             //
-            // The positional symbol does not count towards rule 2 — it is not in
-            // `IconForegroundOptions` — so `generate command --icon-bg app.png` hides
-            // the foreground while `generate --icon-fg symbol:command --icon-bg app.png`
-            // shows it. Documented in `--icon-bg`'s help abstract, since that is where
-            // someone meets the surprise.
+            // Rule 3 is reached by naming no foreground at all. It used to be reached
+            // with one named, because the positional symbol was excluded from rule 2 —
+            // `generate command --icon-bg app.png` hid the symbol it had just been
+            // given. `--icon-symbol` counts, so that shape is gone and the rule reads
+            // as it sounds. The surviving surprise is `--config`, where the hidden
+            // foreground was named in the file; documented in `--icon-bg`'s abstract.
             if commandImportedBackground, command.iconForeground.foregroundArgumentGiven {
                 settings.icon.foreground.isHidden = false
             }

@@ -9,8 +9,9 @@
 //
 // - **Keys are the flag names** (`"icon-bg-color"`, `"size"`, `"badge-fg"`).
 //   Process-level flags (`output`, `json`, `quiet`, `verbose`) are deliberately
-//   not keys — they describe an invocation, not an icon. The positional symbol
-//   shorthand has no key; use `"icon-fg": "symbol:star.fill"`.
+//   not keys — they describe an invocation, not an icon. Nor are the
+//   `--icon-symbol` / `--badge-symbol` shorthands, which abbreviate a key rather
+//   than being one; use `"icon-fg": "symbol:star.fill"`.
 // - **Decode is liberal**: toggles take JSON booleans or `"on"`/`"off"`; numbers
 //   take JSON numbers or numeric strings; the four multi-colour keys take a
 //   JSON array of colour strings or the CLI's comma-joined form (the array form
@@ -132,6 +133,24 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// the message an attempt to use one gets.
     static let processLevelNames: Set<String> = ["output", "o", "json", "quiet", "q", "verbose", "v", "config"]
 
+    /// `generate` flags that are shorthand for a key rather than a key themselves,
+    /// with the key each one abbreviates.
+    ///
+    /// A third exclusion beside `processLevelNames` and `decodeOnlyNames`, and the
+    /// only one of the three whose members are **not** configuration keys in any
+    /// spelling. `--icon-symbol star.fill` is `"icon-fg": "symbol:star.fill"`; the
+    /// prefix-free form exists because a flag can be single-purpose where the
+    /// overloaded `--icon-fg` cannot, and a file gains nothing from a second way to
+    /// write a value it already writes unambiguously.
+    ///
+    /// **Nothing may encode to one of these.** They are here so the flag/key parity
+    /// test can account for a flag with no key — the role the positional symbol used
+    /// to fill by not being a flag at all.
+    static let cliOnlyAliasNames: [String: MicaConfigKey] = [
+        "icon-symbol": .iconFG,
+        "badge-symbol": .badgeFG,
+    ]
+
     /// Keys accepted on the way in and never produced on the way out.
     ///
     /// A different thing from `processLevelNames`, which is excluded because those
@@ -141,9 +160,10 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// carries two spellings of one state. Importing and re-exporting therefore
     /// rewrites them, which is the format working rather than a bug.
     ///
-    /// The precedent for a legitimate input with no canonical key is the positional
-    /// symbol. **The encoder must never emit one of these**; the flag/key parity in
-    /// both directions still holds, because each is a real flag as well as a key.
+    /// The other legitimate input with no canonical key is `cliOnlyAliasNames` above,
+    /// which the positional symbol preceded. **The encoder must never emit one of
+    /// these**; the flag/key parity in both directions still holds, because each is a
+    /// real flag as well as a key.
     static let decodeOnlyNames: Set<String> = [
         MicaConfigKey.iconVisibility.rawValue,
         MicaConfigKey.badgeVisibility.rawValue,
@@ -350,6 +370,10 @@ private struct ConfigReader {
                 }
             } else if MicaConfigKey.processLevelNames.contains(rawKey) {
                 warn(rawKey, "'\(rawKey)' is a command-line flag, not a configuration key — pass it on the command line")
+            } else if let abbreviated = MicaConfigKey.cliOnlyAliasNames[rawKey] {
+                // Reachable by anyone who learned the flag first, so it names the
+                // key rather than reporting the shorthand as simply unknown.
+                warn(rawKey, "'--\(rawKey)' is a command-line shorthand; write it as '\(abbreviated.rawValue)': 'symbol:<name>'")
             } else {
                 warn(rawKey, "not a configuration key")
             }
@@ -687,8 +711,9 @@ private struct ConfigReader {
         // decode starts from. Writing unconditionally here would restate that default
         // and lose a `--config` base's value.
         //
-        // No positional symbol to exclude — a configuration has none, so `icon-fg` is
-        // always an explicit foreground request in a file.
+        // `icon-fg` is always an explicit foreground request in a file: a
+        // configuration has no shorthand to discount, the way the flag surface once
+        // had to discount its positional symbol.
         if let visibility = toggle(.iconFGVisibility) {
             settings.icon.foreground.isHidden = !visibility
         } else if importedBackground {

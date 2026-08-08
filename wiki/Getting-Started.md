@@ -34,10 +34,10 @@ That's the whole loop. From here, explore:
 
 ```shell
 # A star on the default blue gradient, saved as star.fill.png in the working directory
-mica-cli star.fill
+mica-cli --icon-symbol star.fill
 
 # Somewhere specific, bigger, red
-mica-cli star.fill -o ~/Desktop/star.png --size 1024 --icon-bg-color red
+mica-cli --icon-symbol star.fill -o ~/Desktop/star.png --size 1024 --icon-bg-color red
 ```
 
 The CLI and the app share the same rendering engine — identical settings produce identical pixels. See the [CLI Guide](CLI-Guide) for more.

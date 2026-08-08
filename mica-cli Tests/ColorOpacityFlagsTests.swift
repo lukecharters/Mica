@@ -40,19 +40,19 @@ import AppKit
 
     private static let singleColorFlags: [ColorFlagCase] = [
         ColorFlagCase(flag: "--icon-symbol-color",
-                      args: ["star.fill", "--icon-symbol-color", "white:0.5"],
+                      args: ["--icon-symbol", "star.fill", "--icon-symbol-color", "white:0.5"],
                       read: { $0.icon.foreground.color }),
         ColorFlagCase(flag: "--icon-symbol-color (hierarchical)",
-                      args: ["star.fill", "--icon-symbol-rendering", "hierarchical", "--icon-symbol-color", "white:0.5"],
+                      args: ["--icon-symbol", "star.fill", "--icon-symbol-rendering", "hierarchical", "--icon-symbol-color", "white:0.5"],
                       read: { $0.icon.foreground.hierarchicalColor }),
         ColorFlagCase(flag: "--icon-bg-color",
-                      args: ["star.fill", "--icon-bg-color", "blue:0.5"],
+                      args: ["--icon-symbol", "star.fill", "--icon-bg-color", "blue:0.5"],
                       read: { $0.icon.background.color }),
         ColorFlagCase(flag: "--badge-symbol-color",
-                      args: ["star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-color", "white:0.5"],
+                      args: ["--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-color", "white:0.5"],
                       read: { $0.badge.foreground.color }),
         ColorFlagCase(flag: "--badge-bg-color",
-                      args: ["star.fill", "--badge-fg", "symbol:plus", "--badge-bg-color", "gray:0.5"],
+                      args: ["--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-bg-color", "gray:0.5"],
                       read: { $0.badge.background.color }),
     ]
 
@@ -72,7 +72,7 @@ import AppKit
     @Test("all three icon palette slots accept a :opacity suffix")
     func iconPaletteSlotsAcceptOpacity() throws {
         let command = try parseCommand([
-            "gear", "--icon-symbol-rendering", "palette",
+            "--icon-symbol", "gear", "--icon-symbol-rendering", "palette",
             "--icon-symbol-palette", "blue:0.8,white:0.5,white:0.25",
         ])
         try command.performValidationForTesting()
@@ -85,7 +85,7 @@ import AppKit
     @Test("all three badge palette slots accept a :opacity suffix")
     func badgePaletteSlotsAcceptOpacity() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-rendering", "palette",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-symbol-rendering", "palette",
             "--badge-symbol-palette", "blue:0.8,white:0.5,white:0.25",
         ])
         try command.performValidationForTesting()
@@ -100,7 +100,7 @@ import AppKit
     @Test("both icon gradient colours accept a :opacity suffix")
     func iconGradientColorsAcceptOpacity() throws {
         let command = try parseCommand([
-            "star.fill", "--icon-bg", "custom-gradient",
+            "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
             "--icon-bg-gradient-colors", "red:0.8,orange:0.4",
         ])
         try command.performValidationForTesting()
@@ -112,7 +112,7 @@ import AppKit
     @Test("both badge gradient colours accept a :opacity suffix")
     func badgeGradientColorsAcceptOpacity() throws {
         let command = try parseCommand([
-            "star.fill", "--badge-fg", "symbol:plus", "--badge-bg", "custom-gradient",
+            "--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-bg", "custom-gradient",
             "--badge-bg-gradient-colors", "red:0.8,orange:0.4",
         ])
         try command.performValidationForTesting()
@@ -125,7 +125,7 @@ import AppKit
 
     /// The alpha `--icon-bg-color <value>` ends up storing.
     private func storedAlpha(of value: String) throws -> Double {
-        let command = try parseCommand(["star.fill", "--icon-bg-color", value])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-color", value])
         try command.performValidationForTesting()
         return alpha(try IconGenerationRunner().buildTestSettings(from: command).icon.background.color)
     }
@@ -158,19 +158,19 @@ import AppKit
     @Test("an extended form takes no suffix — it already ends in an alpha component")
     func extendedFormRejectsASuffix() throws {
         // Accepted without one…
-        let ok = try parseCommand(["star.fill", "--icon-bg-color", "extended-srgb:0,0.5,1,0.5"])
+        let ok = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-color", "extended-srgb:0,0.5,1,0.5"])
         try ok.performValidationForTesting()
         let settings = try IconGenerationRunner().buildTestSettings(from: ok)
         #expect(abs(alpha(settings.icon.background.color) - 0.5) < 0.001)
 
         // …and rejected with one, rather than silently taking the first four values.
-        let bad = try parseCommand(["star.fill", "--icon-bg-color", "extended-srgb:0,0.5,1,1:0.5"])
+        let bad = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-color", "extended-srgb:0,0.5,1,1:0.5"])
         #expect(throws: (any Error).self) { try bad.performValidationForTesting() }
     }
 
     @Test("a bad opacity is still rejected", arguments: ["white:5.0", "white:-1", "white:abc", "notacolor:0.5"])
     func badOpacityStillRejected(_ value: String) throws {
-        let command = try parseCommand(["star.fill", "--icon-bg-color", value])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-color", value])
         #expect(throws: (any Error).self) { try command.performValidationForTesting() }
     }
 
@@ -195,7 +195,7 @@ import AppKit
     @Test("system-mode symbol colour flags accept a :opacity suffix")
     func systemModeSymbolFlagsAcceptOpacity() throws {
         let command = try parseCommand([
-            "star.fill", "--icon-generation-mode", "system",
+            "--icon-symbol", "star.fill", "--icon-generation-mode", "system",
             "--badge-fg", "symbol:plus", "--badge-generation-mode", "system",
             "--icon-symbol-color", "white:0.5", "--badge-symbol-color", "white:0.5",
         ])
@@ -212,8 +212,8 @@ import AppKit
     /// render fully opaque). The icon came out opaque with nothing said. Refusing
     /// at validation costs the user nothing and explains the limit.
     @Test("system-mode background colours refuse a :opacity suffix", arguments: [
-        ["star.fill", "--icon-generation-mode", "system", "--icon-bg-color", "blue:0.5"],
-        ["star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system",
+        ["--icon-symbol", "star.fill", "--icon-generation-mode", "system", "--icon-bg-color", "blue:0.5"],
+        ["--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-generation-mode", "system",
          "--badge-bg-color", "blue:0.5"],
     ])
     func systemModeBackgroundRefusesOpacity(_ args: [String]) throws {
@@ -231,7 +231,7 @@ import AppKit
     @Test("the same background colour is fine when it is opaque")
     func systemModeBackgroundAcceptsOpaque() throws {
         let command = try parseCommand([
-            "star.fill", "--icon-generation-mode", "system", "--icon-bg-color", "blue",
+            "--icon-symbol", "star.fill", "--icon-generation-mode", "system", "--icon-bg-color", "blue",
         ])
         try command.performValidationForTesting()
         #expect(try command.resolvedIconAppexEnclosureColor(in: .none).stringValue == "blue")
@@ -244,7 +244,7 @@ import AppKit
     ])
     func systemModeRefusesWideGamut(_ flag: String) throws {
         let command = try parseCommand([
-            "star.fill", "--icon-generation-mode", "system", flag, "display-p3:1,0,0",
+            "--icon-symbol", "star.fill", "--icon-generation-mode", "system", flag, "display-p3:1,0,0",
         ])
         let message = try #require(Self.validationMessage(command))
         #expect(message.contains("srgb:"), "should offer the nearest sRGB colour: \(message)")

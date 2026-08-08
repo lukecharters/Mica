@@ -178,11 +178,19 @@ enum ForegroundValue: Equatable, Sendable {
     case symbol(String)
     case image(String)
 
+    /// The disambiguator, and the whole reason it exists: this value is overloaded
+    /// between a symbol name and an image path, so a symbol has to say so.
+    ///
+    /// `--icon-symbol` / `--badge-symbol` are *not* overloaded, which is why they
+    /// take a bare name and reject this prefix rather than tolerating it — there is
+    /// nothing there to disambiguate from.
+    static let symbolPrefix = "symbol:"
+
     /// nil only when the value is `symbol:` with an empty name — the caller owns
     /// the error or warning wording for that.
     init?(parsing raw: String) {
-        if raw.lowercased().hasPrefix("symbol:") {
-            let name = String(raw.dropFirst("symbol:".count))
+        if raw.lowercased().hasPrefix(Self.symbolPrefix) {
+            let name = String(raw.dropFirst(Self.symbolPrefix.count))
             guard !name.isEmpty else { return nil }
             self = .symbol(name)
         } else {
@@ -190,10 +198,18 @@ enum ForegroundValue: Equatable, Sendable {
         }
     }
 
+    /// True when `raw` carries the `symbol:` prefix, whatever follows it — including
+    /// the empty name `init(parsing:)` rejects. The check a bare-name flag needs, and
+    /// deliberately not spelled `init(parsing:) != nil`, which cannot tell a prefixed
+    /// value from an image path.
+    static func hasSymbolPrefix(_ raw: String) -> Bool {
+        raw.lowercased().hasPrefix(symbolPrefix)
+    }
+
     /// The CLI/config spelling of this value.
     var cliValue: String {
         switch self {
-        case .symbol(let name): return "symbol:\(name)"
+        case .symbol(let name): return "\(Self.symbolPrefix)\(name)"
         case .image(let path): return path
         }
     }

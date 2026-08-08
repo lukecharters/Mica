@@ -3,13 +3,15 @@
 Complete reference for `mica-cli`. For a task-oriented introduction, see the [CLI Guide](CLI-Guide).
 
 ```
-mica-cli [generate] <symbol-name> [<options>]   # generate an icon (default subcommand)
-mica-cli extract <path> [<options>]             # extract icons from apps/files
+mica-cli [generate] --icon-symbol <name> [<options>]   # generate an icon (default subcommand)
+mica-cli extract <path> [<options>]                    # extract icons from apps/files
 mica-cli --version
 mica-cli --help
 ```
 
-`generate` is the default subcommand — `mica-cli star.fill` and `mica-cli generate star.fill` are identical.
+`generate` is the default subcommand — `mica-cli --icon-symbol star.fill` and `mica-cli generate --icon-symbol star.fill` are identical.
+
+`generate` takes no positional argument. It accepted a bare symbol name until 2026-08-08; because `generate` is the default subcommand, that first word was read as a subcommand name first, so every future subcommand would have silently shadowed a symbol of the same name — and `square`, `circle`, `list`, `tag`, `link`, `app`, `book` and `bell` are all real SF Symbols.
 
 **Spelling:** every `--…-color` flag also accepts a `--…-colour` alias, `grey` is accepted wherever `gray` is, and `multicolour` works for `multicolor`. The US spellings are canonical in `--help`.
 
@@ -17,11 +19,13 @@ mica-cli --help
 
 ## `generate`
 
-### Argument
+### Naming a symbol
 
-| Argument | Description |
-|---|---|
-| `<symbol-name>` | The SF Symbol to render — shorthand for `--icon-fg symbol:<name>`. Optional when `--icon-fg` is given (`--icon-fg` wins if both are present). |
+`--icon-symbol` and `--badge-symbol` take a bare SF Symbol name and are shorthand for `--icon-fg symbol:<name>` / `--badge-fg symbol:<name>`. Use the `--…-fg` form for an image file, which is the only thing it can say that the shorthand cannot.
+
+The shorthand is exact — same foreground, same effect on every rule below. Three things it refuses rather than guessing at: a `symbol:` prefix (it takes a bare name; the prefix exists only to tell a symbol from a path on the overloaded flag), an empty name, and being passed alongside the flag it abbreviates.
+
+Neither shorthand is a configuration key. In a `.json` file, write `"icon-fg": "symbol:star.fill"`.
 
 ### Generation
 
@@ -34,6 +38,7 @@ mica-cli --help
 
 | Flag | Values | Default | Description |
 |---|---|---|---|
+| `--icon-symbol` | an SF Symbol name | — | The symbol to render, with no `symbol:` prefix. Shorthand for `--icon-fg symbol:<name>`. |
 | `--icon-fg` | `symbol:NAME` or an image path | — | Foreground source. `symbol:star.fill` selects an SF Symbol; anything else is treated as an image file path. |
 | `--icon-fg-scale` | 0.3–2.0 | 1.0 | Foreground scale multiplier (drives whichever source is active). |
 | `--icon-symbol-rendering` | `monochrome`, `hierarchical`, `multicolor`, `palette` | `monochrome` | SF Symbol rendering mode. |
@@ -65,11 +70,13 @@ configuration writes `macos15`.
 
 ### Badge
 
-Any of `--badge-fg`, `--badge-bg` or `--badge-visibility on` activates the badge. Every other
-flag in the namespace describes a badge rather than asking for one, and does nothing on its own.
+Any of `--badge-symbol`, `--badge-fg`, `--badge-bg` or `--badge-visibility on` activates the badge.
+Every other flag in the namespace describes a badge rather than asking for one, and does nothing on
+its own.
 
 | Flag | Values | Default | Description |
 |---|---|---|---|
+| `--badge-symbol` | an SF Symbol name | — | The badge symbol, with no `symbol:` prefix; activates the badge. Shorthand for `--badge-fg symbol:<name>`. |
 | `--badge-fg` | `symbol:NAME` or an image path | — | Badge foreground source; activates the badge. |
 | `--badge-fg-scale` | 0.3–2.0 | 1.0 | Badge foreground scale multiplier. |
 | `--badge-symbol-rendering` | `monochrome`, `hierarchical`, `multicolor`, `palette` | `monochrome` | Badge symbol rendering mode. |

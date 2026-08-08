@@ -371,7 +371,7 @@ struct ColorSurfaceAgreementTests {
         // The same value as a flag cannot work: the comma is the separator.
         #expect(throws: (any Error).self) {
             let command = try parseCommand([
-                "star.fill", "--icon-bg", "custom-gradient",
+                "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
                 "--icon-bg-gradient-colors", "display-p3:1,0.2,0",
             ])
             try command.performValidationForTesting()
@@ -391,7 +391,7 @@ struct ColorSurfaceAgreementTests {
         let decoded = try Self.decode(config)
         let built = try IconGenerationRunner().buildTestSettings(
             from: parseCommand([
-                "star.fill", "--icon-bg", "custom-gradient",
+                "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
                 "--icon-bg-gradient-colors", "\(form.text),white",
             ]),
             onto: IconSettings()

@@ -26,8 +26,8 @@ struct GenerationContext {
     /// no-configuration case needs no special-casing at the call sites.
     let appexColors: MicaAppexColors
 
-    /// The configuration file's stem. Used to name the output file when neither
-    /// the positional symbol nor `--icon-fg` gave anything to name it after.
+    /// The configuration file's stem. Used to name the output file when no icon
+    /// foreground argument gave anything to name it after.
     let outputBasename: String?
 
     /// Anything the configuration said that this build could not honour. Never

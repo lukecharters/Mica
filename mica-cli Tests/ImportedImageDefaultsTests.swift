@@ -15,13 +15,13 @@ struct ImportedImageDefaultsTests {
 
     @Test("Background shadow defaults off for image backgrounds, macOS 26 otherwise")
     func effectiveShadowStyle_imageAware() throws {
-        #expect(try parseCommand(["star.fill"]).background.effectiveShadowStyle == "macos26")
-        #expect(try parseCommand(["star.fill", "--icon-bg", "/tmp/bg.png"]).background.effectiveShadowStyle == "off")
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).background.effectiveShadowStyle == "macos26")
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "/tmp/bg.png"]).background.effectiveShadowStyle == "off")
     }
 
     @Test("Explicit --icon-bg-shadow overrides the image-background default")
     func effectiveShadowStyle_explicitOverride() throws {
-        let command = try parseCommand(["star.fill", "--icon-bg", "/tmp/bg.png", "--icon-bg-shadow", "macos26"])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "/tmp/bg.png", "--icon-bg-shadow", "macos26"])
         #expect(command.background.effectiveShadowStyle == "macos26")
     }
 
@@ -31,23 +31,23 @@ struct ImportedImageDefaultsTests {
     // (compensation on).
     @Test("--icon-bg-padding on disables compensation; off/unspecified fill the frame")
     func effectivePaddingCompensation_default() throws {
-        #expect(try parseCommand(["star.fill"]).background.effectivePaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "off"]).background.effectivePaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--icon-bg-padding", "on"]).background.effectivePaddingCompensation == false)
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).background.effectivePaddingCompensation == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-padding", "off"]).background.effectivePaddingCompensation == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-bg-padding", "on"]).background.effectivePaddingCompensation == false)
     }
 
     @Test("--badge-bg-padding on disables compensation; off/unspecified fill the frame")
     func effectiveBadgePaddingCompensation_default() throws {
-        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear"]).badge.effectiveBackgroundPaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "off"]).badge.effectiveBackgroundPaddingCompensation == true)
-        #expect(try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "on"]).badge.effectiveBackgroundPaddingCompensation == false)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:gear"]).badge.effectiveBackgroundPaddingCompensation == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "off"]).badge.effectiveBackgroundPaddingCompensation == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "on"]).badge.effectiveBackgroundPaddingCompensation == false)
     }
 
     @Test("--icon-fg-shadow parses to an on|off toggle, unspecified is nil")
     func iconForegroundShadowFlag_toggle() throws {
-        #expect(try parseCommand(["star.fill"]).iconForeground.shadow == nil)
-        #expect(try parseCommand(["star.fill", "--icon-fg-shadow", "off"]).iconForeground.shadow == .off)
-        #expect(try parseCommand(["star.fill", "--icon-fg-shadow", "on"]).iconForeground.shadow == .on)
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).iconForeground.shadow == nil)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "off"]).iconForeground.shadow == .off)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "on"]).iconForeground.shadow == .on)
     }
 
     // MARK: - End-to-end through buildIconSettings
@@ -63,7 +63,7 @@ struct ImportedImageDefaultsTests {
 
     @Test("SF Symbol icon keeps its shadow on")
     func iconSymbol_shadowOn() throws {
-        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["star.fill"]))
+        let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"]))
         #expect(settings.icon.foreground.drawsShadow == true)
     }
 
@@ -78,7 +78,7 @@ struct ImportedImageDefaultsTests {
     @Test("Image icon background (--icon-bg <path>) fills the frame and drops its shadow")
     func iconBackgroundImage_defaults() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--icon-bg", path])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", path])
         let settings = try IconGenerationRunner().buildTestSettings(from: command)
         #expect(settings.icon.background.source == .image)
         #expect(settings.icon.background.compensatesForPadding == true)
@@ -98,7 +98,7 @@ struct ImportedImageDefaultsTests {
     func iconBackgroundImage_turnsCornerRadiusOff() throws {
         let path = try makeTempImageFile().path
         let settings = try IconGenerationRunner()
-            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg", path]))
+            .buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", path]))
         #expect(settings.icon.background.cornerRadiusStyle == .off)
     }
 
@@ -106,15 +106,19 @@ struct ImportedImageDefaultsTests {
     func iconBackgroundImage_explicitCornerRadiusWins() throws {
         let path = try makeTempImageFile().path
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--icon-bg", path, "--icon-bg-corner-radius", "macos26"]))
+            from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", path, "--icon-bg-corner-radius", "macos26"]))
         #expect(settings.icon.background.cornerRadiusStyle == .macOS26)
     }
 
-    @Test("--icon-bg <path> hides the icon foreground")
+    @Test("--icon-bg <path> alone hides the icon foreground")
     func iconBackgroundImage_hidesForeground() throws {
+        // "Alone" is the operative word, and it is new: this invocation used to
+        // carry a positional symbol name that did not count towards rule 2. With
+        // `--icon-symbol` it would count, so the import case is now spelled with no
+        // foreground argument at all — which is also the shape a user reaches for.
         let path = try makeTempImageFile().path
         let settings = try IconGenerationRunner()
-            .buildTestSettings(from: parseCommand(["star.fill", "--icon-bg", path]))
+            .buildTestSettings(from: parseCommand(["--icon-bg", path]))
         #expect(settings.icon.foreground.isHidden == true)
     }
 
@@ -128,7 +132,7 @@ struct ImportedImageDefaultsTests {
     func badgeBackgroundImage_keepsAnExplicitlyNamedForeground() throws {
         let path = try makeTempImageFile().path
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path]))
+            from: parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path]))
         #expect(settings.badge.background.source == .image)
         #expect(settings.badge.foreground.isHidden == false)
     }
@@ -136,7 +140,7 @@ struct ImportedImageDefaultsTests {
     @Test("Imported badge foreground (--badge-fg <path>) turns the badge symbol shadow off")
     func badgeForegroundImage_shadowOff() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--badge-fg", path])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", path])
         let settings = try IconGenerationRunner().buildTestSettings(from: command)
         #expect(settings.badge.foreground.source == .image)
         #expect(settings.badge.foreground.drawsShadow == false)
@@ -145,7 +149,7 @@ struct ImportedImageDefaultsTests {
     @Test("Image badge background (--badge-bg <path>) fills the frame and drops its shadow")
     func badgeBackgroundImage_defaults() throws {
         let path = try makeTempImageFile().path
-        let command = try parseCommand(["star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path])
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:gear", "--badge-bg", path])
         let settings = try IconGenerationRunner().buildTestSettings(from: command)
         #expect(settings.badge.background.source == .image)
         #expect(settings.badge.background.compensatesForPadding == true)

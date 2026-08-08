@@ -97,7 +97,7 @@ struct ExportOptions: ParsableArguments {
         name: [.customLong("output"), .customShort("o")],
         help: ArgumentHelp(
             "Output file path",
-            discussion: "If not specified, saves to current directory as '{symbol-name}.png'",
+            discussion: "If not specified, saves to the current directory, named after the symbol or the imported image",
             valueName: "path"
         )
     )
@@ -230,17 +230,72 @@ struct GroupVisibilityOptions: ParsableArguments {
 
 struct IconForegroundOptions: ParsableArguments {
     // Folds the old --icon-source + --imported-image. `symbol:<name>` selects an
-    // SF Symbol; anything else is treated as an image file path. When omitted,
-    // the positional symbol-name shorthand on the command supplies the value.
+    // SF Symbol; anything else is treated as an image file path.
+    //
+    // Read `foreground` below, never this — `--icon-symbol` supplies the same value.
     @Option(
         name: .customLong("icon-fg"),
         help: ArgumentHelp(
             "Icon foreground source",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. Overrides the positional symbol-name shorthand.",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. For a symbol, --icon-symbol says the same thing without the prefix.",
             valueName: "symbol:NAME|path"
         )
     )
-    var foreground: String?
+    var foregroundFlag: String?
+
+    // The head of the --icon-symbol-* family, which styles the symbol this names.
+    // Before it existed the family had no head: you wrote `--icon-fg symbol:star.fill
+    // --icon-symbol-color blue` and named one layer two ways in one invocation.
+    @Option(
+        name: .customLong("icon-symbol"),
+        help: ArgumentHelp(
+            "Icon SF Symbol name, with no 'symbol:' prefix",
+            discussion: "Shorthand for --icon-fg symbol:<name>, e.g. --icon-symbol star.fill. Use --icon-fg for an image file; giving both is an error.",
+            valueName: "name"
+        )
+    )
+    var symbol: String?
+
+    /// The foreground as `--icon-fg` spells it, whichever flag supplied it.
+    ///
+    /// **Normalising here is the point.** Every reader above this struct —
+    /// `resolvedForeground()`, `providedForeground()`, `foregroundArgumentGiven`,
+    /// the output basename — sees one value and needs no knowledge of the alias, so
+    /// there is no list of sites to keep in step. The badge's identical property
+    /// also feeds `badgeIsActive`, where forgetting the alias would not fail loudly:
+    /// it would render the icon with no badge at all.
+    ///
+    /// The conflict is caught in `validateForeground`, not resolved here, so this
+    /// stays total and the error can name both flags.
+    var foreground: String? {
+        if let symbol { return "\(ForegroundValue.symbolPrefix)\(symbol)" }
+        return foregroundFlag
+    }
+
+    /// The three ways the two foreground flags can be asked for something they do
+    /// not mean. All refuse; none guesses.
+    ///
+    /// The conflict in particular is why `foreground` above does not simply pick a
+    /// winner. The positional this alias replaces let `--icon-fg` beat it silently,
+    /// and half the case for removing the positional was ending that — reinstating
+    /// it one flag over would be a poor trade.
+    func validateFlags() throws {
+        if foregroundFlag != nil, symbol != nil {
+            throw ValidationError(
+                "Pass --icon-fg or --icon-symbol, not both — --icon-symbol <name> is shorthand for --icon-fg symbol:<name>."
+            )
+        }
+        guard let symbol else { return }
+        if symbol.isEmpty {
+            throw ValidationError("--icon-symbol requires a symbol name, e.g. --icon-symbol star.fill")
+        }
+        if ForegroundValue.hasSymbolPrefix(symbol) {
+            let bare = String(symbol.dropFirst(ForegroundValue.symbolPrefix.count))
+            throw ValidationError(
+                "--icon-symbol takes a bare symbol name, so drop the 'symbol:' prefix: --icon-symbol \(bare.isEmpty ? "star.fill" : bare)"
+            )
+        }
+    }
 
     // Folds --symbol-scale + --imported-image-scale into one flag that drives
     // whichever source (symbol or image) is active.
@@ -339,10 +394,15 @@ struct IconForegroundOptions: ParsableArguments {
     /// means you want a foreground, so importing artwork does not hide it. The badge's
     /// counterpart is `BadgeOptions.foregroundArgumentGiven`.
     ///
-    /// **The positional symbol is excluded structurally**, not by a special case: it
-    /// lives on `GenerateCommand`, not in here. That is the point — the positional is
-    /// present in nearly every invocation and carries no intent about the foreground,
-    /// so counting it would make rule 3 unreachable.
+    /// **`--icon-symbol` is included, and needs no clause of its own**: it lives in
+    /// here, and `foreground` merges it before anything reads either.
+    ///
+    /// That is a deliberate change from the positional symbol name it replaced, which
+    /// was excluded — structurally, by living on `GenerateCommand` rather than in
+    /// here. The positional appeared in nearly every invocation and so carried no
+    /// intent about the foreground; counting it would have made rule 3 unreachable.
+    /// A flag someone typed on purpose is the opposite, so it counts, and rule 3 is
+    /// now reached by naming no foreground at all.
     ///
     /// **`visibility` is excluded deliberately.** It is rule 1, honoured exactly, and
     /// counting it would make `--icon-fg-visibility off` imply a wanted foreground
@@ -372,19 +432,18 @@ struct IconBackgroundOptions: ParsableArguments {
         help: ArgumentHelp(
             // The abstract, not the discussion: an image path hiding the symbol is the
             // one surprising consequence of the foreground rule, and the abstract is
-            // what a reader sees first. The positional not counting is the whole reason
-            // it can surprise — `generate command --icon-bg art.png` hides the symbol
-            // while `generate --icon-fg symbol:command --icon-bg art.png` keeps it.
-            "Icon background; an image path hides the symbol unless another icon foreground argument names one",
+            // what a reader sees first. It surprises most over --config, where the
+            // symbol being hidden was named in the file rather than on this line.
+            "Icon background; an image path hides the foreground unless an icon foreground argument names one",
             discussion: """
                 standard (color/gradient, default), custom-gradient (two-color gradient), \
                 prerendered-liquid-glass (Liquid Glass asset), or a path to an image file.
 
                 An imported background hides this group's foreground by default, because \
-                most such imports are a finished icon. Any other argument in the icon \
-                foreground or symbol namespace brings it back, and --icon-fg-visibility on \
-                forces it. The positional symbol does not count: it is present in nearly \
-                every invocation and says nothing about whether you want a foreground.
+                most such imports are a finished icon — so `--icon-bg art.png` alone is a \
+                complete invocation and needs no symbol. Any argument in the icon \
+                foreground or symbol namespace brings the foreground back, \
+                --icon-symbol included, and --icon-fg-visibility on forces it.
                 """,
             valueName: "standard|custom-gradient|prerendered-liquid-glass|path"
         )
@@ -508,16 +567,60 @@ struct BadgeOptions: ParsableArguments {
 
     // Presence of --badge-fg activates the badge (replaces the old --badge).
     // `symbol:<name>` selects an SF Symbol; anything else is treated as an image
-    // file path. There is no positional shorthand for the badge.
+    // file path.
+    //
+    // Read `foreground` below, never this — `--badge-symbol` supplies the same
+    // value, and `badgeIsActive` is one of the readers that must see it.
     @Option(
         name: .customLong("badge-fg"),
         help: ArgumentHelp(
             "Badge foreground source (supplying this activates the badge)",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:plus.circle) or a path to an image file.",
+            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:plus.circle) or a path to an image file. For a symbol, --badge-symbol says the same thing without the prefix.",
             valueName: "symbol:NAME|path"
         )
     )
-    var foreground: String?
+    var foregroundFlag: String?
+
+    // The head of the --badge-symbol-* family, and an activation flag like --badge-fg.
+    @Option(
+        name: .customLong("badge-symbol"),
+        help: ArgumentHelp(
+            "Badge SF Symbol name, with no 'symbol:' prefix (supplying this activates the badge)",
+            discussion: "Shorthand for --badge-fg symbol:<name>, e.g. --badge-symbol plus.circle. Use --badge-fg for an image file; giving both is an error.",
+            valueName: "name"
+        )
+    )
+    var symbol: String?
+
+    /// The foreground as `--badge-fg` spells it, whichever flag supplied it.
+    ///
+    /// See `IconForegroundOptions.foreground` for why the merge lives here. The
+    /// badge raises the stakes: `badgeIsActive` reads this, so a `--badge-symbol`
+    /// that bypassed it would render the icon with no badge and no diagnostic.
+    var foreground: String? {
+        if let symbol { return "\(ForegroundValue.symbolPrefix)\(symbol)" }
+        return foregroundFlag
+    }
+
+    /// The badge's half of `IconForegroundOptions.validateFlags()`; see there for why
+    /// each of the three refuses rather than guessing.
+    func validateFlags() throws {
+        if foregroundFlag != nil, symbol != nil {
+            throw ValidationError(
+                "Pass --badge-fg or --badge-symbol, not both — --badge-symbol <name> is shorthand for --badge-fg symbol:<name>."
+            )
+        }
+        guard let symbol else { return }
+        if symbol.isEmpty {
+            throw ValidationError("--badge-symbol requires a symbol name, e.g. --badge-symbol plus.circle")
+        }
+        if ForegroundValue.hasSymbolPrefix(symbol) {
+            let bare = String(symbol.dropFirst(ForegroundValue.symbolPrefix.count))
+            throw ValidationError(
+                "--badge-symbol takes a bare symbol name, so drop the 'symbol:' prefix: --badge-symbol \(bare.isEmpty ? "plus.circle" : bare)"
+            )
+        }
+    }
 
     // Folds the old --badge-symbol-scale + --badge-imported-image-scale into one
     // flag that drives whichever source (symbol or image) is active.
@@ -776,6 +879,9 @@ struct BadgeOptions: ParsableArguments {
     /// exactly rather than read as an implication, and counting it would make
     /// `--badge-fg-visibility off` imply a wanted foreground while asking to hide
     /// one. A key that switches something off must never be what switches it on.
+    ///
+    /// `--badge-symbol` needs no clause: `foreground` already merges it, the same
+    /// way it reaches `badgeIsActive`.
     var foregroundArgumentGiven: Bool {
         foreground != nil
             || foregroundScale != nil
@@ -800,54 +906,55 @@ struct GenerateCommand: AsyncParsableCommand {
         commandName: "generate",
         abstract: "Generate customized macOS app icons using SF Symbols",
         usage: """
-            mica-cli [generate] <symbol-name> [<options>]
-            mica-cli star.fill -o ~/Desktop/my-icon.png
-            mica-cli generate folder.fill --size 512 --icon-bg-color red
+            mica-cli [generate] --icon-symbol <name> [<options>]
+            mica-cli --icon-symbol star.fill -o ~/Desktop/my-icon.png
+            mica-cli generate --icon-symbol folder.fill --size 512 --icon-bg-color red
             mica-cli --config icon.json [<options>]
             """,
         discussion: """
             EXAMPLES (the `generate` subcommand name is optional — it is the default):
 
             Basic usage:
-              mica-cli star.fill
-              mica-cli folder.fill -o ~/Desktop/folder-icon.png
+              mica-cli --icon-symbol star.fill
+              mica-cli --icon-symbol folder.fill -o ~/Desktop/folder-icon.png
 
             Symbol color and rendering:
-              mica-cli shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
-              mica-cli gear --icon-symbol-rendering palette --icon-symbol-palette "blue,white:0.5,white:0.26"
+              mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
+              mica-cli --icon-symbol gear --icon-symbol-rendering palette --icon-symbol-palette "blue,white:0.5,white:0.26"
 
             Symbol adjustments:
-              mica-cli star.fill --icon-symbol-weight bold --icon-fg-scale 1.3
-              mica-cli star.fill --icon-symbol-gradient on --icon-fg-shadow off
+              mica-cli --icon-symbol star.fill --icon-symbol-weight bold --icon-fg-scale 1.3
+              mica-cli --icon-symbol star.fill --icon-symbol-gradient on --icon-fg-shadow off
 
             Backgrounds:
-              mica-cli star.fill --icon-bg-color red --icon-bg-gradient on
-              mica-cli star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
-              mica-cli star.fill --icon-bg prerendered-liquid-glass --icon-bg-color blue
-              mica-cli star.fill --icon-bg ~/bg.png --icon-bg-scale 0.9
+              mica-cli --icon-symbol star.fill --icon-bg-color red --icon-bg-gradient on
+              mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
+              mica-cli --icon-symbol star.fill --icon-bg prerendered-liquid-glass --icon-bg-color blue
+              mica-cli --icon-symbol star.fill --icon-bg ~/bg.png --icon-bg-scale 0.9
 
             System (Apple) generation mode:
-              mica-cli star.fill --icon-generation-mode system \\
+              mica-cli --icon-symbol star.fill --icon-generation-mode system \\
                 --icon-bg-color blue --icon-symbol-color white
 
-            Imported image foreground:
+            Imported artwork (no symbol needed — the foreground hides by default):
               mica-cli --icon-fg ~/my-icon.png --icon-fg-scale 0.9
+              mica-cli --icon-bg ~/artwork.png
 
-            Badges (supplying --badge-fg turns the badge on):
-              mica-cli star.fill --badge-fg symbol:plus.circle.fill --badge-position bottom-right
-              mica-cli folder.fill --badge-fg symbol:gearshape.fill \\
+            Badges (supplying --badge-symbol or --badge-fg turns the badge on):
+              mica-cli --icon-symbol star.fill --badge-symbol plus.circle.fill --badge-position bottom-right
+              mica-cli --icon-symbol folder.fill --badge-symbol gearshape.fill \\
                 --badge-bg custom-gradient --badge-bg-gradient-colors "red,orange"
-              mica-cli star.fill --badge-fg ~/overlay.png --badge-scale 1.2 --badge-offset-x 0.1
+              mica-cli --icon-symbol star.fill --badge-fg ~/overlay.png --badge-scale 1.2 --badge-offset-x 0.1
               # attach a negative offset with =, or -0.15 is read as another flag
-              mica-cli star.fill --badge-fg symbol:plus --badge-offset-y=-0.15
+              mica-cli --icon-symbol star.fill --badge-symbol plus --badge-offset-y=-0.15
 
             High-resolution export:
-              mica-cli app.fill --size 1024 --scale 2x --color-space displayP3
+              mica-cli --icon-symbol app.fill --size 1024 --scale 2x --color-space displayP3
 
             Output modes:
-              mica-cli star.fill --json            # JSON result to stdout
-              mica-cli star.fill --quiet           # only the path on stdout
-              mica-cli star.fill --verbose         # per-phase progress on stderr
+              mica-cli --icon-symbol star.fill --json      # JSON result to stdout
+              mica-cli --icon-symbol star.fill --quiet     # only the path on stdout
+              mica-cli --icon-symbol star.fill --verbose   # per-phase progress on stderr
 
             Configuration files (what Mica.app's Export Configuration writes):
               mica-cli --config icon.json
@@ -870,10 +977,10 @@ struct GenerateCommand: AsyncParsableCommand {
             paths, and a relative one resolves against the JSON file's own
             directory.
 
-            The positional symbol name has no key — write "icon-fg":
-            "symbol:NAME". Nor do --output/-o, --json, --quiet and --verbose: they
-            describe an invocation rather than an icon, so they stay on the command
-            line. An unknown key or an unusable value is a warning on stderr and
+            The --icon-symbol and --badge-symbol shorthands have no key — write
+            "icon-fg": "symbol:NAME". Nor do --output/-o, --json, --quiet and
+            --verbose: they describe an invocation rather than an icon, so they stay
+            on the command line. An unknown key or an unusable value is a warning and
             the rest of the file still loads; only malformed JSON stops the run.
 
             Every flag is optional with --config, and an absent one leaves the
@@ -937,17 +1044,14 @@ struct GenerateCommand: AsyncParsableCommand {
             """
     )
 
-    // Optional: the positional name is shorthand for `--icon-fg symbol:<name>`.
-    // Either the positional name or an explicit `--icon-fg` must be supplied.
-    @Argument(
-        help: ArgumentHelp(
-            "The SF Symbol name to render (shorthand for --icon-fg symbol:<name>)",
-            discussion: "Use any valid SF Symbol name (e.g., 'star.fill', 'folder.badge.plus'). Optional when --icon-fg is given; --icon-fg wins if both are present.",
-            valueName: "symbol-name"
-        )
-    )
-    var symbolName: String?
-
+    // `generate` takes no positional argument. It took a symbol name until the
+    // `--icon-symbol` flag replaced it: `mica-cli star.fill` worked only because
+    // `generate` is the default subcommand, which made every future subcommand name
+    // a silent collision with the SF Symbol namespace — `square`, `circle`, `list`,
+    // `tag`, `link`, `app`, `book` and `bell` are all real symbols, and any of them
+    // taken as a subcommand would have stopped being reachable as a symbol with no
+    // error to say so. `extract` already occupies the name it needs.
+    //
     // Deliberately not in an OptionGroup: every other flag *is* a setting, while
     // this one says where the settings come from. It is also the reason all of
     // them are Optional — a flag has to be able to read as "not passed" so that a
@@ -956,7 +1060,7 @@ struct GenerateCommand: AsyncParsableCommand {
         name: .customLong("config"),
         help: ArgumentHelp(
             "Start from a JSON configuration file; any flag given overrides it",
-            discussion: "Keys are the long flag names without their leading '--'. See CONFIG FORMAT in `mica-cli generate --help`. With --config the positional symbol name is optional.",
+            discussion: "Keys are the long flag names without their leading '--'. See CONFIG FORMAT in `mica-cli generate --help`. With --config an icon foreground argument is optional — the file already carries one.",
             valueName: "path"
         )
     )
@@ -985,36 +1089,31 @@ struct GenerateCommand: AsyncParsableCommand {
 
     // MARK: - Foreground Resolution
 
-    /// Resolve the icon foreground. An explicit `--icon-fg` wins over the
-    /// positional symbol-name shorthand. A `symbol:` prefix selects an SF
-    /// Symbol; any other value is treated as an image file path.
+    /// Resolve the icon foreground from `--icon-symbol` or `--icon-fg`, whichever
+    /// was given — `IconForegroundOptions.foreground` has already merged them. A
+    /// `symbol:` prefix selects an SF Symbol; any other value is an image file path.
     func resolvedForeground() throws -> ForegroundValue {
-        let raw: String
-        if let foreground = iconForeground.foreground {
-            raw = foreground
-        } else if let symbolName {
-            raw = "symbol:\(symbolName)"
-        } else {
-            throw ValidationError("Provide an icon foreground: a positional SF Symbol name, or --icon-fg <symbol:NAME|path>.")
+        guard let raw = iconForeground.foreground else {
+            throw ValidationError("Provide an icon foreground: --icon-symbol <name> for an SF Symbol, or --icon-fg <symbol:NAME|path>.")
         }
-
         guard let value = ForegroundValue(parsing: raw) else {
             throw ValidationError("--icon-fg 'symbol:' requires a symbol name, e.g. symbol:star.fill")
         }
         return value
     }
 
-    /// The icon foreground the command *supplied*, or `nil` when neither the
-    /// positional name nor `--icon-fg` was given.
+    /// The icon foreground the command *supplied*, or `nil` when neither
+    /// `--icon-symbol` nor `--icon-fg` was given.
     ///
     /// A flags-only `generate` requires a foreground, so it goes through
-    /// `resolvedForeground()` and lets the throw stand. `--config` does not: the
-    /// configuration already carries one, and an absent flag there means "keep it"
-    /// rather than "error". Only the settings builder uses this — validation still
-    /// uses the throwing form, which is what preserves the "provide an icon
+    /// `resolvedForeground()` and lets the throw stand — unless the background is
+    /// imported artwork, which is excused. `--config` does not require one either:
+    /// the configuration already carries one, and an absent flag there means "keep
+    /// it" rather than "error". Only the settings builder uses this — validation
+    /// still uses the throwing form, which is what preserves the "provide an icon
     /// foreground" error.
     func providedForeground() throws -> ForegroundValue? {
-        guard iconForeground.foreground != nil || symbolName != nil else { return nil }
+        guard iconForeground.foreground != nil else { return nil }
         return try resolvedForeground()
     }
 
@@ -1136,17 +1235,24 @@ struct GenerateCommand: AsyncParsableCommand {
         case .symbol(let name):
             return name
         case .image(let path):
-            return ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+            return Self.basename(ofPath: path)
         case .none:
-            return symbolName ?? "icon"
+            // No foreground at all is legal for imported artwork, which is then the
+            // only thing naming the icon — the same courtesy a foreground image gets.
+            if case .image(let path) = resolvedBackground() { return Self.basename(ofPath: path) }
+            return "icon"
         }
+    }
+
+    private static func basename(ofPath path: String) -> String {
+        ((path as NSString).lastPathComponent as NSString).deletingPathExtension
     }
 
     /// Default output basename accounting for `--config`: with no foreground on
     /// the command line there is no symbol or image to name the file after, so the
     /// configuration's own filename stands in — `icon.json` renders `icon.png`.
     func defaultOutputBasename(in context: GenerationContext) -> String {
-        if iconForeground.foreground == nil, symbolName == nil, let configBasename = context.outputBasename {
+        if iconForeground.foreground == nil, let configBasename = context.outputBasename {
             return configBasename
         }
         return defaultOutputBasename()
@@ -1232,6 +1338,12 @@ struct GenerateCommand: AsyncParsableCommand {
     // from the configuration when no flag overrides them.
 
     private func performValidation(in context: GenerationContext) throws {
+        // Ahead of everything: these two decide whether the group's foreground can
+        // be read at all, so a conflict must be reported as a conflict rather than
+        // as whatever the merged value then fails to be.
+        try iconForeground.validateFlags()
+        try badge.validateFlags()
+
         try validateForeground(in: context)
         try validateColorDependencies(in: context)
         try validateBadgeDependencies(in: context)
@@ -1240,12 +1352,26 @@ struct GenerateCommand: AsyncParsableCommand {
         try validateColorFormats(in: context)
     }
 
+    /// True when the icon's background is imported artwork, which is the one case
+    /// that excuses a missing foreground — see `validateForeground`.
+    private var iconBackgroundIsImage: Bool {
+        if case .image = resolvedBackground() { return true }
+        return false
+    }
+
     private func validateForeground(in context: GenerationContext) throws {
         // Without a configuration the throwing form runs, and its throw is what
         // produces the "provide an icon foreground" error. With one, an absent
         // flag means "keep the configuration's", so only what was passed is checked.
+        //
+        // Imported artwork is the third case, and it is not a relaxation for its own
+        // sake: the foreground rule *hides* the foreground over an imported
+        // background unless one was asked for, so demanding one here would require
+        // naming a symbol solely to have it hidden. Every other background still
+        // requires a foreground, or `--icon-bg-color blue` alone would quietly
+        // render whatever `ForegroundSpec.iconDefault` happens to name.
         let foreground: ForegroundValue?
-        if context.base == nil {
+        if context.base == nil, !iconBackgroundIsImage {
             foreground = try resolvedForeground()
         } else {
             foreground = try providedForeground()

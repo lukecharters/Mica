@@ -14,23 +14,23 @@ struct OutputModeTests {
 
     @Test("Output flags parse on the generate command")
     func flagsParse() throws {
-        #expect(try parseCommand(["star.fill"]).output.json == false)
-        #expect(try parseCommand(["star.fill", "--json"]).output.json == true)
-        #expect(try parseCommand(["star.fill", "-q"]).output.quiet == true)
-        #expect(try parseCommand(["star.fill", "-v"]).output.verbose == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).output.json == false)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--json"]).output.json == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "-q"]).output.quiet == true)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "-v"]).output.verbose == true)
     }
 
     @Test("Verbosity resolves from --quiet / --verbose with normal as the default")
     func verbosityResolution() throws {
-        #expect(try parseCommand(["star.fill"]).output.verbosity == .normal)
-        #expect(try parseCommand(["star.fill", "--quiet"]).output.verbosity == .quiet)
-        #expect(try parseCommand(["star.fill", "--verbose"]).output.verbosity == .verbose)
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).output.verbosity == .normal)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--quiet"]).output.verbosity == .quiet)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--verbose"]).output.verbosity == .verbose)
     }
 
     @Test("--quiet and --verbose together are rejected")
     func quietVerboseConflict() {
         #expect(throws: (any Error).self) {
-            try parseCommand(["star.fill", "-q", "-v"])
+            try parseCommand(["--icon-symbol", "star.fill", "-q", "-v"])
         }
     }
 
