@@ -67,7 +67,7 @@ struct MicaLinksTests {
     // It lives in `scripts/tests/check-help-links.sh` instead, which runs outside the
     // sandbox. Deliberately *not* in `mica-cli Tests` — that target is unsandboxed and
     // could host it, but it would have to keep its own copy of the slug list, which is
-    // the duplication being guarded against, and CLAUDE.md's CLI baseline must not
+    // the duplication being guarded against, and NOTES.md's CLI baseline must not
     // move for app-only work.
     //
     // What stays here is the half that needs no filesystem: the link table and the

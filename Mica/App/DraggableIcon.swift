@@ -17,7 +17,7 @@
 // would mean a drag and a Save panel could disagree about the same settings.
 //
 // App-only by design — `mica-cli` already writes files, so this never needs to
-// join the two `membershipExceptions` lists. See CLAUDE.md, "Adding a file".
+// join the two `membershipExceptions` lists. See NOTES.md, "Adding a file".
 import SwiftUI
 import UniformTypeIdentifiers
 

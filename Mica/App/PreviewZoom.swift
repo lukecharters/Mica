@@ -10,7 +10,7 @@ import Foundation
 /// stop at a percentage the menu does not offer.
 ///
 /// **`App/`, not `Views/`** — the CLI has no preview and never compiles this, and
-/// the stepping is the part worth testing on its own. See CLAUDE.md's rule on which
+/// the stepping is the part worth testing on its own. See NOTES.md's rule on which
 /// list a new file joins.
 enum PreviewZoom {
     /// The rungs, ascending. `1.0` is Actual Size; the extremes are the ends that

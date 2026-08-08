@@ -23,7 +23,7 @@ struct InspectorGroupHeader: View {
     var body: some View {
         // `group.label` is a `String` variable, which resolves to `Text`'s
         // non-localizing overload — so no `verbatim:` needed here, and no
-        // `LocalizedStringKey` interpolation to go wrong. See CLAUDE.md.
+        // `LocalizedStringKey` interpolation to go wrong. See NOTES.md.
         Text(group.label)
             .font(.title2.bold())
             .frame(maxWidth: .infinity, alignment: .leading)

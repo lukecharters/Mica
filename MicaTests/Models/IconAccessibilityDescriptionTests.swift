@@ -107,7 +107,7 @@ struct IconAccessibilityDescriptionTests {
     // MARK: - Colours
 
     /// `MicaColorValue` records where a colour came from, and this reads that
-    /// rather than matching values — the distinction CLAUDE.md keeps under
+    /// rather than matching values — the distinction NOTES.md keeps under
     /// *A stored colour carries its provenance*. A custom pick has no name to
     /// speak, and reading four decimals of extended sRGB aloud describes nothing.
     @Test("A custom colour is described as custom, not as four decimals")

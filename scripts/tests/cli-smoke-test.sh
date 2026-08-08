@@ -279,7 +279,7 @@ CONFIG_CASES=(
 # alike. What only this can catch is the rest of the invocation: bundled resources,
 # the encoder, and the colour-space conversion actually reached on disk. Byte
 # equality is safe here because a given input is reproducible across processes —
-# the LSB dithering noise CLAUDE.md warns about is between *different* render
+# the LSB dithering noise NOTES.md warns about is between *different* render
 # paths, not repeated identical ones.
 PARITY_CASES=(
     "token|blue"
@@ -836,7 +836,7 @@ print_summary() {
     fi
 
     # PARITY_FAIL was missing from this list until 2026-08-03: a parity failure
-    # printed FAIL and the script still exited 0, so the cross-surface gate CLAUDE.md
+    # printed FAIL and the script still exited 0, so the cross-surface gate NOTES.md
     # relies on could not fail a CI run. Every counter belongs here.
     if [[ "${HAPPY_FAIL}" -ne 0 || "${CONFIG_FAIL}" -ne 0 || "${PARITY_FAIL}" -ne 0 \
         || "${IMPORT_FAIL}" -ne 0 || "${NEG_FAIL}" -ne 0 || "${EXTRACT_FAIL}" -ne 0 ]]; then

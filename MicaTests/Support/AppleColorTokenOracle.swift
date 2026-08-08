@@ -11,7 +11,7 @@
 // risk is the opposite one — that a resolution silently changes and nobody
 // notices, or that a refactor freezes a token to a component triple. This table
 // is the one place in the repo where an Apple system colour may be compared to a
-// literal, and it names the OS version it encodes. `CLAUDE.md`'s "never pin an
+// literal, and it names the OS version it encodes. `NOTES.md`'s "never pin an
 // Apple system colour to a literal in a test" applies everywhere else.
 //
 // ## Provenance, and why it is transcribed rather than read

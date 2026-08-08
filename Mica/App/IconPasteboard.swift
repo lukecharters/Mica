@@ -10,7 +10,7 @@
 // drag-out take, so Copy cannot disagree with either about the same settings.
 //
 // App-only — `mica-cli` has no pasteboard — so this never joins the two
-// `membershipExceptions` lists. See CLAUDE.md, "Adding a file".
+// `membershipExceptions` lists. See NOTES.md, "Adding a file".
 import AppKit
 import UniformTypeIdentifiers
 

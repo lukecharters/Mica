@@ -2,10 +2,10 @@
 //
 // The interactive preview: the render view plus the badge drag overlay,
 // click-to-select hit testing and drag-and-drop import. Split out of
-// ContentView.swift on 2026-07-28 — CLAUDE.md had to write "ScaledIconPreview
+// ContentView.swift on 2026-07-28 — NOTES.md had to write "ScaledIconPreview
 // (in ContentView.swift)" to help anyone find it.
 //
-// The pure render view it wraps is IconContentView; per CLAUDE.md, gestures and
+// The pure render view it wraps is IconContentView; per NOTES.md, gestures and
 // interactive state belong here and never there.
 import SwiftUI
 import UniformTypeIdentifiers
@@ -81,7 +81,7 @@ struct ScaledIconPreview: View {
             // overlay's `DragGesture` exactly as `.onTapGesture` did.
             //
             // The modifier is applied here, at the call site, so `IconContentView`
-            // itself stays a pure render view per CLAUDE.md.
+            // itself stays a pure render view per NOTES.md.
             IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
                 .iconDragOut(makeDragPayload)
                 // The app's central object, and not an accessibility element at

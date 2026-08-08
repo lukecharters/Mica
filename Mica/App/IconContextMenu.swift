@@ -11,7 +11,7 @@
 //
 // App-only on purpose: a context menu does not exist in the CLI, so this file
 // stays out of `Models/` and `Services/` and off both `membershipExceptions`
-// lists. See CLAUDE.md, "Adding a file".
+// lists. See NOTES.md, "Adding a file".
 
 import Foundation
 import os

@@ -2,7 +2,7 @@
 //
 // Two pure geometry enums, kept in one file because both are stateless
 // arithmetic over the icon grid and neither is useful without the other's
-// units. CLAUDE.md names `BadgeGeometry` the single source of truth for badge
+// units. NOTES.md names `BadgeGeometry` the single source of truth for badge
 // placement: every consumer routes through `offset(for:enclosureSize:)`, so new
 // placement logic belongs here rather than at a call site.
 import CoreGraphics

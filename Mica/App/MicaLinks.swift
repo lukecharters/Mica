@@ -9,7 +9,7 @@ import Foundation
 /// a wrong URL opens a GitHub 404 that looks like the page merely moved.
 ///
 /// **`App/`, not `Models/`** — the CLI prints its own help and never opens a
-/// browser, so it does not compile this. See CLAUDE.md's rule on which list a new
+/// browser, so it does not compile this. See NOTES.md's rule on which list a new
 /// file joins; a file here costs no `membershipExceptions` edits.
 ///
 /// Two things hold it together:
