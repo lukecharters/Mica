@@ -81,6 +81,7 @@ AGENTS.md
 .claude/
 .claude.local.md
 .agents/
+skills-lock.json
 
 # Editor settings
 .vscode/
