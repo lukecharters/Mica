@@ -77,6 +77,15 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
             self.parent = parent
         }
 
+        /// `@MainActor` because the body reaches `parent`, and `FillingSegmentedPicker`
+        /// is a `NSViewRepresentable` and so main-actor isolated, while an `@objc`
+        /// method is nonisolated by default. It is an AppKit target/action, which is
+        /// only ever delivered on the main thread, so this annotates the isolation
+        /// that already holds rather than adding a hop.
+        ///
+        /// Without it, Swift 6 mode reports three warnings here — the two `segments`
+        /// reads and the `selection` write — that a later language mode makes errors.
+        @MainActor
         @objc func segmentChanged(_ sender: NSSegmentedControl) {
             let index = sender.selectedSegment
             guard parent.segments.indices.contains(index) else { return }
