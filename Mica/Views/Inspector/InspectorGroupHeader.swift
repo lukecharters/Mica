@@ -25,7 +25,7 @@ struct InspectorGroupHeader: View {
         // non-localizing overload — so no `verbatim:` needed here, and no
         // `LocalizedStringKey` interpolation to go wrong. See the project notes.
         Text(group.label)
-            .font(.title2.bold())
+            .font(.title.bold())
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }

@@ -40,7 +40,7 @@ struct IconForegroundAppearanceSection: View {
                     Text(verbatim: mode.rawValue.localizedFromCatalog).tag(mode)
                 }
             }
-            .pickerStyle(.inline)
+            .pickerStyle(.menu)
         }
 
         symbolColorControls

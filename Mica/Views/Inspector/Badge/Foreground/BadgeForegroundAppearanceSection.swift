@@ -38,7 +38,7 @@ struct BadgeForegroundAppearanceSection: View {
                     Text(verbatim: mode.rawValue.localizedFromCatalog).tag(mode)
                 }
             }
-            .pickerStyle(.inline)
+            .pickerStyle(.menu)
         }
 
         badgeSymbolColorControls
