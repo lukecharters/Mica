@@ -165,15 +165,22 @@ import AppKit
     /// The message has to be actionable in both places it appears — `mica-cli`
     /// stderr and the System-mode preview pane — so it names the nearest sRGB
     /// colour it computed rather than only stating the limit.
-    @Test("the out-of-gamut message offers the nearest sRGB colour and the token list")
-    func outOfGamutMessageIsActionable() throws {
+    ///
+    /// It names the **role** for the same reason. A group has two colour keys and
+    /// the icon and badge make four, so "'x' is outside sRGB" alone does not say
+    /// which one was refused. The case carried a `Role` from the start and the
+    /// message dropped it — an unused-binding warning was the only thing that said so.
+    @Test("the out-of-gamut message offers the nearest sRGB colour, the token list and the role",
+          arguments: AppexPlistColor.Role.allCases)
+    func outOfGamutMessageIsActionable(_ role: AppexPlistColor.Role) throws {
         let color = AppexColor.custom(try MicaColorValue(strictlyParsing: "display-p3:1,0,0"))
         let error = #expect(throws: AppexColorError.self) {
-            try AppexPlistColor(projecting: color, role: .enclosure)
+            try AppexPlistColor(projecting: color, role: role)
         }
         let message = try #require(error?.errorDescription)
         #expect(message.contains("srgb:"), "should name the nearest sRGB colour: \(message)")
         #expect(message.contains("blue"), "should list the tokens: \(message)")
+        #expect(message.contains(role.noun), "should name the \(role.noun) role: \(message)")
     }
 
     // MARK: - Presets keep Apple's curated rendering

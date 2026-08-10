@@ -236,10 +236,14 @@ enum AppexColorError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .outOfSRGBGamut(let input, let role, let offending, let nearest):
+            // Names the role like the other three cases do. It carried one all along
+            // and dropped it, so a failure did not say *which* colour was refused —
+            // and a group has two, four across the icon and the badge.
             return """
                 '\(input)' is outside sRGB (component \(String(format: "%.4f", offending))), \
-                and System mode cannot show it: Apple's icon pipeline rejects out-of-range \
-                components, and clamping would change the colour without saying so. \
+                so it cannot be a System-mode \(role.noun) colour: Apple's icon pipeline \
+                rejects out-of-range components, and clamping would change the colour \
+                without saying so. \
                 Use srgb:\(nearest) for the nearest sRGB colour, or one of: \(Self.tokenList).
                 """
         case .enclosureAlphaIgnored(let input):
