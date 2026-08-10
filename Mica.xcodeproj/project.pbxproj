@@ -460,6 +460,13 @@
 			knownRegions = (
 				en,
 				Base,
+				"en-AU",
+				"en-CA",
+				"en-GB",
+				"en-IE",
+				"en-IN",
+				"en-NZ",
+				"en-ZA",
 			);
 			mainGroup = 8C71CC902DBDDDD2006FB320;
 			minimizedProjectReferenceProxies = 1;

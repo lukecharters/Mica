@@ -231,7 +231,11 @@ extension IconViewModel {
                 )
             }
         }
-        undoManager.setActionName(name)
+        // `name` comes from `SettingsChange`'s field table, half of it built by
+        // interpolating an "Icon"/"Badge" subject into a shared template — a
+        // runtime key, so it needs the bundle lookup rather than
+        // `String(localized:)`. Nineteen of the 66 names say "Color".
+        undoManager.setActionName(name.localizedFromCatalog)
     }
 
     /// The appex colours' equivalent. Unnamed for now: the four colours are edited by
@@ -247,6 +251,6 @@ extension IconViewModel {
                 target.registerAppexColorUndo(restoring: current, undoManager: undoManager)
             }
         }
-        undoManager.setActionName("Change System Colors")
+        undoManager.setActionName(String(localized: "Change System Colors"))
     }
 }

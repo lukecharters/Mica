@@ -156,7 +156,7 @@ enum IconAccessibilityDescription {
                 + "\(name(foreground.paletteSecondaryColor)) and "
                 + "\(name(foreground.paletteTertiaryColor)) palette"
         case .multicolor:
-            return "in its own colors"
+            return String(localized: "in its own colors")
         }
     }
 
@@ -173,9 +173,12 @@ enum IconAccessibilityDescription {
     private static func name(_ value: MicaColorValue) -> String {
         guard let token = value.tokenName,
               let display = ColorTokenTable.token(named: token)?.displayName else {
-            return "a custom color"
+            return String(localized: "a custom color")
         }
-        return display.lowercased()
+        // Localise before lowercasing, not after: the catalog is keyed on the
+        // title-case display name `ColorTokenTable` derives ("Gray" → "Grey"),
+        // which is the same key the preset dropdown looks up.
+        return display.localizedFromCatalog.lowercased()
     }
 
     /// SF Symbol names are dot-separated identifiers, and a speech synthesiser

@@ -13,7 +13,9 @@ import SwiftUI
 /// by-value inference this pass exists to remove — and which silently discarded
 /// the custom colour behind a preset.
 struct AppexColorPickerRow: View {
-    let label: String
+    /// See `ColorPickerWithDropdown.label` — a `String` here would bypass the
+    /// string catalog on its way to `Text`.
+    let label: LocalizedStringKey
     @Binding var selection: AppexColor
     /// Which plist key this row feeds. It decides whether opacity is offered at
     /// all: the OS honours a symbol's alpha and discards an enclosure's, so an

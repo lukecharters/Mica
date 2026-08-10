@@ -1,0 +1,1463 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Background Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Background Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Background Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Gradient Primary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Primary Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Gradient Secondary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Gradient Secondary Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Hierarchical Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Hierarchical Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Palette Primary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Primary Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Palette Secondary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Secondary Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Palette Tertiary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Palette Tertiary Colour"
+          }
+        }
+      }
+    },
+    "Change Badge Symbol Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Badge Symbol Colour"
+          }
+        }
+      }
+    },
+    "Change Color Space": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Colour Space"
+          }
+        }
+      }
+    },
+    "Change Icon Background Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Background Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Gradient Primary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Primary Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Gradient Secondary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Gradient Secondary Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Hierarchical Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Hierarchical Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Palette Primary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Primary Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Palette Secondary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Secondary Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Palette Tertiary Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Palette Tertiary Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Pre-Rendered Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Pre-Rendered Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Symbol Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Icon Symbol Colour"
+          }
+        }
+      }
+    },
+    "Change System Colors": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change System Colours"
+          }
+        }
+      }
+    },
+    "Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour"
+          }
+        }
+      }
+    },
+    "Color Space": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour Space"
+          }
+        }
+      }
+    },
+    "Gray": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grey"
+          }
+        }
+      }
+    },
+    "Multicolor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multicolour"
+          }
+        }
+      }
+    },
+    "Standard color space for web and most displays.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard colour space for web and most displays."
+          }
+        }
+      }
+    },
+    "Symbol Color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Symbol Colour"
+          }
+        }
+      }
+    },
+    "System Gray": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System Grey"
+          }
+        }
+      }
+    },
+    "The color profile written into the exported PNG": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The colour profile written into the exported PNG"
+          }
+        }
+      }
+    },
+    "Wider color gamut for modern Apple displays.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wider colour gamut for modern Apple displays."
+          }
+        }
+      }
+    },
+    "a custom color": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a custom colour"
+          }
+        }
+      }
+    },
+    "in its own colors": {
+      "extractionState": "manual",
+      "localizations": {
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        },
+        "en-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        },
+        "en-IE": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        },
+        "en-IN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        },
+        "en-NZ": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        },
+        "en-ZA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in its own colours"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

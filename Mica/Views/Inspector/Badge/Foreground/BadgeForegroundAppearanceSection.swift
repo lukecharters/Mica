@@ -33,7 +33,9 @@ struct BadgeForegroundAppearanceSection: View {
         if advancedControlsEnabled {
             Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.badge.foreground.renderingStyle) {
                 ForEach(SymbolRenderingStyle.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    // See the icon's copy of this picker: "Multicolor" needs the
+                    // catalog, and `Text(aString)` would skip it.
+                    Text(verbatim: mode.rawValue.localizedFromCatalog).tag(mode)
                 }
             }
             .pickerStyle(.inline)
