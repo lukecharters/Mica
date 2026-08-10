@@ -1,1463 +1,2525 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Background Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background Colour"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "—" : {
+
+    },
+    "... +%lld more" : {
+
+    },
+    "%.0f × %.0f px" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$.0f × %2$.0f px"
           }
         }
       }
     },
-    "Change Badge Background Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Background Colour"
+    "%@ (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
           }
         }
       }
     },
-    "Change Badge Gradient Primary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Primary Colour"
+    "%@ generation mode" : {
+
+    },
+    "%@ Generation Mode" : {
+
+    },
+    "%@ layers visible" : {
+
+    },
+    "%@ visible" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
           }
         }
       }
     },
-    "Change Badge Gradient Secondary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Gradient Secondary Colour"
+    "%lld / %lld families fully calibrated" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld families fully calibrated"
           }
         }
       }
     },
-    "Change Badge Hierarchical Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Hierarchical Colour"
+    "%lld / %lld symbols" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld symbols"
           }
         }
       }
     },
-    "Change Badge Palette Primary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Primary Colour"
+    "%lld calibrated compared" : {
+
+    },
+    "%lld custom override(s)" : {
+
+    },
+    "%lld families" : {
+
+    },
+    "%lld groups" : {
+
+    },
+    "%lld members" : {
+
+    },
+    "%lld selected" : {
+
+    },
+    "%lld shown" : {
+
+    },
+    "%lld symbols" : {
+
+    },
+    "%lld symbols (shared)" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
           }
         }
       }
     },
-    "Change Badge Palette Secondary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Secondary Colour"
+    "%lld/%lld calibrated" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld calibrated"
           }
         }
       }
     },
-    "Change Badge Palette Tertiary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+    "%lld%%" : {
+
+    },
+    "←/→" : {
+
+    },
+    "⇧←/→" : {
+
+    },
+    "⇧↑/↓" : {
+
+    },
+    "⌘↑/↓" : {
+
+    },
+    "2x (Retina)" : {
+
+    },
+    "a custom color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Palette Tertiary Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a custom colour"
           }
         }
       }
     },
-    "Change Badge Symbol Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Badge Symbol Colour"
+    "Accept %lld Predictions" : {
+
+    },
+    "Accept All" : {
+
+    },
+    "Accept Prediction (Space)" : {
+
+    },
+    "Accept Shown Predictions" : {
+
+    },
+    "Actual Size" : {
+
+    },
+    "Advanced Controls" : {
+
+    },
+    "All Icons" : {
+
+    },
+    "Also write the content-centering Y offset hint when accepting predictions" : {
+
+    },
+    "anchorX %.4f (%.1f/208)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "anchorX %1$.4f (%2$.1f/208)"
           }
         }
       }
     },
-    "Change Color Space": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Colour Space"
+    "anchorY %.4f (%.1f/208)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "anchorY %1$.4f (%2$.1f/208)"
           }
         }
       }
     },
-    "Change Icon Background Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Background Colour"
+    "Appearance" : {
+
+    },
+    "Apple family: %@" : {
+
+    },
+    "Apple hand-tuned (container_recipes)" : {
+
+    },
+    "Apple Reference" : {
+
+    },
+    "Apple reference overlay" : {
+
+    },
+    "Apple's IconServices render of the current symbol and colours on this Mac. Follows the system appearance. No badge — badge ground truth needs screenshots." : {
+
+    },
+    "Applies to %lld variants: %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Applies to %1$lld variants: %2$@%3$@"
           }
         }
       }
     },
-    "Change Icon Gradient Primary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+    "Apply" : {
+
+    },
+    "Apply Calibration to %@..." : {
+
+    },
+    "Apply Calibration to %lld Symbol(s)" : {
+
+    },
+    "Apply Calibration to Family" : {
+
+    },
+    "Apply Calibration..." : {
+
+    },
+    "Apply suggested Y offset" : {
+
+    },
+    "Apply This Calibration to Family" : {
+
+    },
+    "Apply to Family" : {
+
+    },
+    "auto" : {
+
+    },
+    "Auto Gradient (.gradient)" : {
+
+    },
+    "Background" : {
+
+    },
+    "Background Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Primary Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Colour"
           }
         }
       }
     },
-    "Change Icon Gradient Secondary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+    "Background Gradient" : {
+
+    },
+    "Background Shadow" : {
+
+    },
+    "Badge" : {
+
+    },
+    "Badge generation failed: %@" : {
+
+    },
+    "Badge Layout" : {
+
+    },
+    "Baseline Y Correction" : {
+
+    },
+    "Bold" : {
+
+    },
+    "Box-fit prediction disagrees with calibration by this much" : {
+
+    },
+    "Browse SF Symbols" : {
+
+    },
+    "Calibrated:" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Canvas" : {
+
+    },
+    "Change Badge Background Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Gradient Secondary Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Background Colour"
           }
         }
       }
     },
-    "Change Icon Hierarchical Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
+    "Change Badge Gradient Primary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Hierarchical Colour"
-          }
-        }
-      }
-    },
-    "Change Icon Palette Primary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Primary Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Primary Colour"
           }
         }
       }
     },
-    "Change Icon Palette Secondary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
+    "Change Badge Gradient Secondary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Secondary Colour"
-          }
-        }
-      }
-    },
-    "Change Icon Palette Tertiary Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Palette Tertiary Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Gradient Secondary Colour"
           }
         }
       }
     },
-    "Change Icon Pre-Rendered Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
+    "Change Badge Hierarchical Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Pre-Rendered Colour"
-          }
-        }
-      }
-    },
-    "Change Icon Symbol Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change Icon Symbol Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Hierarchical Colour"
           }
         }
       }
     },
-    "Change System Colors": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
+    "Change Badge Palette Primary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Change System Colours"
-          }
-        }
-      }
-    },
-    "Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
-          }
-        },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
-          }
-        },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
-          }
-        },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
-          }
-        },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
-          }
-        },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
-          }
-        },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Primary Colour"
           }
         }
       }
     },
-    "Color Space": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+    "Change Badge Palette Secondary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour Space"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Secondary Colour"
           }
         }
       }
     },
-    "Gray": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+    "Change Badge Palette Tertiary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grey"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Palette Tertiary Colour"
           }
         }
       }
     },
-    "Multicolor": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+    "Change Badge Symbol Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multicolour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Badge Symbol Colour"
           }
         }
       }
     },
-    "Standard color space for web and most displays.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+    "Change Color Space" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard colour space for web and most displays."
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Colour Space"
           }
         }
       }
     },
-    "Symbol Color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+    "Change Icon Background Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Symbol Colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Background Colour"
           }
         }
       }
     },
-    "System Gray": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+    "Change Icon Gradient Primary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System Grey"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Primary Colour"
           }
         }
       }
     },
-    "The color profile written into the exported PNG": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+    "Change Icon Gradient Secondary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The colour profile written into the exported PNG"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Gradient Secondary Colour"
           }
         }
       }
     },
-    "Wider color gamut for modern Apple displays.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+    "Change Icon Hierarchical Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wider colour gamut for modern Apple displays."
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Hierarchical Colour"
           }
         }
       }
     },
-    "a custom color": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+    "Change Icon Palette Primary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "a custom colour"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Primary Colour"
           }
         }
       }
     },
-    "in its own colors": {
-      "extractionState": "manual",
-      "localizations": {
-        "en-AU": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+    "Change Icon Palette Secondary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         },
-        "en-CA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         },
-        "en-GB": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         },
-        "en-IE": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         },
-        "en-IN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         },
-        "en-NZ": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         },
-        "en-ZA": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in its own colours"
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Secondary Colour"
           }
         }
       }
+    },
+    "Change Icon Palette Tertiary Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Palette Tertiary Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Pre-Rendered Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Pre-Rendered Colour"
+          }
+        }
+      }
+    },
+    "Change Icon Symbol Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Icon Symbol Colour"
+          }
+        }
+      }
+    },
+    "Change System Colors" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change System Colours"
+          }
+        }
+      }
+    },
+    "Check symbols to keep in \"%@\". Unchecked symbols move to the new family." : {
+
+    },
+    "Choose a calibrated symbol to copy its values from:" : {
+
+    },
+    "Choose File…" : {
+
+    },
+    "Choose which %@ layer to edit" : {
+
+    },
+    "Choose…" : {
+
+    },
+    "clamped" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear Selection" : {
+
+    },
+    "Cmd+Up/Down" : {
+
+    },
+    "Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour"
+          }
+        }
+      }
+    },
+    "Color Space" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colour Space"
+          }
+        }
+      }
+    },
+    "Command Line Tool Guide" : {
+
+    },
+    "Command Line Tool Reference" : {
+
+    },
+    "Comparison" : {
+
+    },
+    "Container" : {
+
+    },
+    "container_recipes.plist unavailable" : {
+
+    },
+    "Containers:" : {
+
+    },
+    "Content center:" : {
+
+    },
+    "Controls" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy Icon" : {
+
+    },
+    "Copy Symbol Name" : {
+
+    },
+    "Copy the current symbol's calibration values to all %lld members of \"%@\"?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy the current symbol's calibration values to all %1$lld members of \"%2$@\"?"
+          }
+        }
+      }
+    },
+    "Copy Values" : {
+
+    },
+    "Corners" : {
+
+    },
+    "Correction:" : {
+
+    },
+    "Create & Move" : {
+
+    },
+    "Current Family" : {
+
+    },
+    "Current Symbol" : {
+
+    },
+    "Custom Gradient" : {
+
+    },
+    "Custom…" : {
+
+    },
+    "Derived ratios" : {
+
+    },
+    "Deselect All" : {
+
+    },
+    "diameter %.4f (%.1f/208)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "diameter %1$.4f (%2$.1f/208)"
+          }
+        }
+      }
+    },
+    "Done" : {
+
+    },
+    "Drag moves" : {
+
+    },
+    "Drop a screenshot here" : {
+
+    },
+    "Drop an image on the comparison area, or…" : {
+
+    },
+    "e.g. star.special" : {
+
+    },
+    "Effective:" : {
+
+    },
+    "Enter a symbol name to generate" : {
+
+    },
+    "Escape" : {
+
+    },
+    "Export" : {
+
+    },
+    "Export as PNG…" : {
+
+    },
+    "Export at twice the point size, for Retina displays" : {
+
+    },
+    "Export Configuration…" : {
+
+    },
+    "Families:" : {
+
+    },
+    "Family Actions" : {
+
+    },
+    "Filter" : {
+
+    },
+    "Filter by symbol name or family..." : {
+
+    },
+    "Filter symbols..." : {
+
+    },
+    "Font size: %@ pt (enclosure: %@ pt)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Font size: %1$@ pt (enclosure: %2$@ pt)"
+          }
+        }
+      }
+    },
+    "Frame:" : {
+
+    },
+    "General" : {
+
+    },
+    "Generate" : {
+
+    },
+    "Generating…" : {
+
+    },
+    "Generation Failed" : {
+
+    },
+    "Gradient" : {
+
+    },
+    "Gradient End" : {
+
+    },
+    "Gray" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grey"
+          }
+        }
+      }
+    },
+    "Grid" : {
+
+    },
+    "Hide Inspector" : {
+
+    },
+    "Hide Sidebar" : {
+
+    },
+    "Hide the %@" : {
+
+    },
+    "Hide the Foreground on Import" : {
+
+    },
+    "How large the imported image is drawn within its layer" : {
+
+    },
+    "Icon" : {
+
+    },
+    "Icon Padding" : {
+
+    },
+    "Image" : {
+
+    },
+    "Image Scale" : {
+
+    },
+    "Import as Badge Background…" : {
+
+    },
+    "Import as Badge Symbol…" : {
+
+    },
+    "Import as Icon Background…" : {
+
+    },
+    "Import as Icon Symbol…" : {
+
+    },
+    "Import Configuration" : {
+
+    },
+    "Import Configuration…" : {
+
+    },
+    "Import…" : {
+
+    },
+    "Imported" : {
+
+    },
+    "Imported Backgrounds" : {
+
+    },
+    "Importing" : {
+
+    },
+    "In Apple's container_recipes.plist — hand-tuned, rule not expected to match" : {
+
+    },
+    "in its own colors" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in its own colours"
+          }
+        }
+      }
+    },
+    "Inspector" : {
+
+    },
+    "Inspector tab" : {
+
+    },
+    "Keep existing macOS icon padding and shadow. Turn off to scale up and fill the frame." : {
+
+    },
+    "Keyboard Shortcuts" : {
+
+    },
+    "Layout" : {
+
+    },
+    "Left/Right" : {
+
+    },
+    "Load macOS 15" : {
+
+    },
+    "Load macOS 26" : {
+
+    },
+    "Loading references: %lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Loading references: %1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "Mark %lld as Needs Review" : {
+
+    },
+    "Mark All" : {
+
+    },
+    "Mark calibrated + advance" : {
+
+    },
+    "Mark calibrated + advance member" : {
+
+    },
+    "Mark Shown as Needs Review" : {
+
+    },
+    "Mark skipped + advance" : {
+
+    },
+    "Mark skipped + advance member" : {
+
+    },
+    "Match Export Size" : {
+
+    },
+    "Matches the gradient macOS applies to appex enclosures by default." : {
+
+    },
+    "Measure all SF Symbols and save their intrinsic dimensions to JSON." : {
+
+    },
+    "Measure All Symbols" : {
+
+    },
+    "Measure tight bounds for all symbols to compute predictions." : {
+
+    },
+    "Measured %lld symbols" : {
+
+    },
+    "Measuring tight bounds… %lld symbols" : {
+
+    },
+    "Medium" : {
+
+    },
+    "Merge all %lld members of \"%@\" into another family" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Merge all %1$lld members of \"%2$@\" into another family"
+          }
+        }
+      }
+    },
+    "Merge Family Into..." : {
+
+    },
+    "Merge..." : {
+
+    },
+    "Metrics Not Available" : {
+
+    },
+    "Mica Help" : {
+
+    },
+    "Mode" : {
+
+    },
+    "Move / Reset / Apply calibration" : {
+
+    },
+    "Move %@ to Family..." : {
+
+    },
+    "Move %lld Symbol(s) to Family" : {
+
+    },
+    "Move Symbol(s) to Family" : {
+
+    },
+    "Move the badge horizontally from its corner. Dragging it on the canvas does the same, as do the arrow keys." : {
+
+    },
+    "Move the badge vertically from its corner. Dragging it on the canvas does the same, as do the arrow keys." : {
+
+    },
+    "Move to Another Family..." : {
+
+    },
+    "Move to Family..." : {
+
+    },
+    "Move: %lld" : {
+
+    },
+    "Moving %lld symbols" : {
+
+    },
+    "Moving: %@" : {
+
+    },
+    "Multicolor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multicolour"
+          }
+        }
+      }
+    },
+    "Multiplier" : {
+
+    },
+    "Needs Review (Esc)" : {
+
+    },
+    "Needs review:" : {
+
+    },
+    "New family name" : {
+
+    },
+    "New family name:" : {
+
+    },
+    "New Icons" : {
+
+    },
+    "New windows start here. Windows already open keep their own settings." : {
+
+    },
+    "No baseline data for %@" : {
+
+    },
+    "No Families" : {
+
+    },
+    "No families match filter" : {
+
+    },
+    "No families match the current filter" : {
+
+    },
+    "No Measurements" : {
+
+    },
+    "No Preview" : {
+
+    },
+    "No Symbol Selected" : {
+
+    },
+    "No Symbols" : {
+
+    },
+    "No symbols match filter" : {
+
+    },
+    "No symbols match the current filter" : {
+
+    },
+    "No tight-bounds cache — open the Auto Sizing Review tool (⇧⌘A) to measure first." : {
+
+    },
+    "Nudge multiplier +/-0.001" : {
+
+    },
+    "Nudge multiplier ±0.001" : {
+
+    },
+    "Nudge X offset +/-0.001" : {
+
+    },
+    "Nudge X offset ±0.001" : {
+
+    },
+    "Nudge Y offset +/-0.001" : {
+
+    },
+    "Nudge Y offset ±0.001" : {
+
+    },
+    "OK" : {
+
+    },
+    "Opacity" : {
+
+    },
+    "Or create new family:" : {
+
+    },
+    "Our Rendering" : {
+
+    },
+    "Ours" : {
+
+    },
+    "Outlier threshold" : {
+
+    },
+    "Parameters" : {
+
+    },
+    "Paste as Badge Background" : {
+
+    },
+    "Paste as Badge Symbol" : {
+
+    },
+    "Paste as Icon Background" : {
+
+    },
+    "Paste as Icon Symbol" : {
+
+    },
+    "Pinch to zoom, drag to pan, double-click to reset" : {
+
+    },
+    "Position" : {
+
+    },
+    "Pre-Rendered" : {
+
+    },
+    "Preview always renders at 512pt @2x." : {
+
+    },
+    "Preview size" : {
+
+    },
+    "Preview Size" : {
+
+    },
+    "Preview zoom" : {
+
+    },
+    "Previous / Next family" : {
+
+    },
+    "Previous / Next member" : {
+
+    },
+    "Previous / Next symbol" : {
+
+    },
+    "Primary" : {
+
+    },
+    "Progress" : {
+
+    },
+    "Reference" : {
+
+    },
+    "Regular" : {
+
+    },
+    "Release Notes" : {
+
+    },
+    "Remaining:" : {
+
+    },
+    "Remeasure" : {
+
+    },
+    "Render" : {
+
+    },
+    "Rendering" : {
+
+    },
+    "Report an Issue…" : {
+
+    },
+    "Reset" : {
+
+    },
+    "Reset Alignment" : {
+
+    },
+    "Reset All" : {
+
+    },
+    "Reset Position" : {
+
+    },
+    "Reset to Algorithmic Families" : {
+
+    },
+    "Reset to Algorithmic Family" : {
+
+    },
+    "Reveal in Finder" : {
+
+    },
+    "Right-click member" : {
+
+    },
+    "Same as previous + advance" : {
+
+    },
+    "Same as previous + advance member" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search calibrated symbols..." : {
+
+    },
+    "Search families..." : {
+
+    },
+    "Search symbols…" : {
+
+    },
+    "Secondary" : {
+
+    },
+    "Select" : {
+
+    },
+    "Semibold" : {
+
+    },
+    "Set Corners to Off on Import" : {
+
+    },
+    "Set status to needs-review on all %lld symbols in the current filter, keeping their existing values. Use the Apple Reference Calibration tool (⇧⌘K) to recapture them." : {
+
+    },
+    "Shadow" : {
+
+    },
+    "Shadows" : {
+
+    },
+    "Shared calibration" : {
+
+    },
+    "Shift+Left/Right" : {
+
+    },
+    "Shift+Up/Down" : {
+
+    },
+    "Show advanced controls" : {
+
+    },
+    "Show Advanced Controls" : {
+
+    },
+    "Show Inspector" : {
+
+    },
+    "Show Sidebar" : {
+
+    },
+    "Show the %@" : {
+
+    },
+    "Show Wiper" : {
+
+    },
+    "Size" : {
+
+    },
+    "Skipped:" : {
+
+    },
+    "Sort" : {
+
+    },
+    "Sort:" : {
+
+    },
+    "Source" : {
+
+    },
+    "Space" : {
+
+    },
+    "Split" : {
+
+    },
+    "Split Family" : {
+
+    },
+    "Split..." : {
+
+    },
+    "Standard color space for web and most displays." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard colour space for web and most displays."
+          }
+        }
+      }
+    },
+    "Stay: %lld" : {
+
+    },
+    "Styling/Export" : {
+
+    },
+    "Suggested Y offset:" : {
+
+    },
+    "Symbol" : {
+
+    },
+    "Symbol Color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol Colour"
+          }
+        }
+      }
+    },
+    "Symbol Scale" : {
+
+    },
+    "Symbol Shadow" : {
+
+    },
+    "symbol_baselines.json not found in bundle" : {
+
+    },
+    "symbol_metrics.json not found. Run Generate Symbol Metrics first." : {
+
+    },
+    "System Gray" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Grey"
+          }
+        }
+      }
+    },
+    "Tab" : {
+
+    },
+    "Tertiary" : {
+
+    },
+    "The badge symbol’s size within the badge. Badge ▸ Layout ▸ Size changes the badge itself." : {
+
+    },
+    "The color profile written into the exported PNG" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The colour profile written into the exported PNG"
+          }
+        }
+      }
+    },
+    "The icon’s size in points. Settings ▸ Export sets what a new window opens at." : {
+
+    },
+    "The symbol’s size within the icon. Mica picks a per-symbol default from its calibration data; this scales that." : {
+
+    },
+    "The whole badge, relative to the size macOS itself draws one. Past about 109% it starts moving inward to stay on the canvas." : {
+
+    },
+    "Tight bounds:" : {
+
+    },
+    "Tint Overlay" : {
+
+    },
+    "Toggle Inspector" : {
+
+    },
+    "Toggle the drop shadow behind the badge image" : {
+
+    },
+    "Toggle the drop shadow behind the imported image" : {
+
+    },
+    "Total symbols:" : {
+
+    },
+    "Total:" : {
+
+    },
+    "Type" : {
+
+    },
+    "uncalibrated" : {
+
+    },
+    "Uncalibrated:" : {
+
+    },
+    "Up/Down" : {
+
+    },
+    "Use" : {
+
+    },
+    "Use Preset" : {
+
+    },
+    "Visible" : {
+
+    },
+    "Weight" : {
+
+    },
+    "Which corner of the icon the badge sits in" : {
+
+    },
+    "Wider color gamut for modern Apple displays." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wider colour gamut for modern Apple displays."
+          }
+        }
+      }
+    },
+    "Write the predicted multiplier to all %lld symbols in the current filter as calibrated entries (source: auto-boxfit). Apple-tuned symbols are skipped." : {
+
+    },
+    "X Offset" : {
+
+    },
+    "Y Offset" : {
+
+    },
+    "Zoom In" : {
+
+    },
+    "Zoom Out" : {
+
+    },
+    "Zoom: %.1fx" : {
+
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
