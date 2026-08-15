@@ -1,12 +1,8 @@
 # Mica
 
-*Add some sparkle to your self-service app*
+*Add some sparkle to your self-service portal*
 
-<!-- SCREENSHOT PLACEHOLDER — hero image
-Replace with a screenshot of the main Mica window: an icon mid-edit with the
-layer sidebar and inspector visible.
 <img src="assets/images/screenshot-app-hero.png" alt="The Mica main window" width="800">
--->
 
 ## Table of Contents
 
@@ -28,22 +24,24 @@ layer sidebar and inspector visible.
 
 ## About
 
-Mica (Mac Icon Creation App) is an app for Mac Admins to create icons for self service catalogues, user facing scripts and workflows, and anywhere else you can find a use for them.
+Mica (Mac-admin Icon Creation App) is an app for Mac Admins to create icons for self service catalogues, user facing scripts and workflows, and anywhere else you can find a use for them.
 
 It pairs customisable SwiftUI elements with SF Symbols or imported graphics to enable you to quickly create visually consistent icons that look native on Apple platforms.
 
-| ![Star icon](assets/images/examples/star.png) | ![Terminal icon](assets/images/examples/terminal.png) | ![Shield icon](assets/images/examples/shield.png) | ![Badge icon](assets/images/examples/badge.png) | ![Gradient icon](assets/images/examples/gradient.png) | ![Liquid Glass icon](assets/images/examples/liquidglass.png) |
-|---|---|---|---|---|---|
+(I know you don't hyphenate Mac Admin but I had to make the acronym work.)
 
-*Every one of these was generated with a single `mica-cli` command.*
+ ![Inventory update icon with checkmark badge](assets/images/examples/gearshape.arrow.trianglehead.2.clockwise.rotate.90-mica.png) | ![Trash icon with uninstall badge](assets/images/examples/trash-mica.png) | ![Multicolor weather symbol with gradient background](assets/images/examples/cloud.sun.rain.fill-mica.png)  | ![This looks familiar...](assets/images/examples/bubble.fill-mica.png) | ![Uh oh](assets/images/examples/questionmark.folder.fill-mica.png) | ![You wouldn't download a car](assets/images/examples/download.a.car.png) | ![Menu bar and dock icon with reset badge](assets/images/examples/menubar.dock.rectangle-mica.png) | 
+|---|---|---|---|---|---|---|
+
+*These were all created with Mica, it would be weird to put them here if they weren't.*
 
 ## Features
 
-- **Icons from SF Symbols** - pick any SF Symbol and pair it with a background, with many styling options to choose from. The size, visual alignment, and built-in padding of SF Symbols are not consistent, so 7000+ SF Symbols have been hand aligned and resized for improved visual consistency.
+- **Icons from SF Symbols** - pick any SF Symbol and put in a squircle, with many SwiftUI styling options to choose from. SF Symbols are not consistent in size, visual alignment, or built-in padding, so I hand aligned and resized 7000+ SF Symbols for improved visual consistency.
 
 - **Icons from your own images** - Don’t like SF Symbols or have a custom one you want to use? No worries, you can swap out the SF Symbol for any custom graphic.
 
-- **Extract app icons** - Need to grab an app icon? Just drag and drop it in. Does it look too big and a bit flat in your app catalogue? You can add the missing icon padding and drop shadow. You can also use the bundled CLI tool to mass extract icons, perfect for when you need to update your catalogue every time Apple changes how they look.
+- **Extract app icons** - Need to grab an app icon? Just drag and drop it in. Did the developer neglect to add padding and shadow to the icon and now you have a big flat abomination marring the beauty of your self service catalogue? Well now you can add them back with two clicks. Also, you can extract icons with the bundled CLI tool, point it at an app to grab its icon or point it at `/Applications` to grab every icon, perfect for when you need to update your catalogue every time Apple redesigns them.
 
 - **Extract file icons** - Extracting icons isn’t limited to apps. Import any file type to extract its icon. Image file types import the image themselves.
 
@@ -51,15 +49,17 @@ It pairs customisable SwiftUI elements with SF Symbols or imported graphics to e
 
 - **Liquid Glass Icons** - System Mode renders through macOS's own icon rendering pipeline. This enables you to create icons with Liquid Glass effects on macOS 26+.
 
-- **Self Service Previews** - Preview your icon at the exact sizes in common MDM portals so you know it looks right in the context of how your users will see it.
+- **Self Service Previews** - Preview your icon at the exact sizes in common MDM portals so you know it looks right in the context of how your users will see it. If yours is missing, let me know the size it displays at and I'll add it.
 
 - **CLI** - A companion command-line tool (`mica-cli`) produces identical output to the app, so you can script icon generation in CI or batch workflows. It can also extract existing icons from apps and files on disk.
+
+- **JSON Import/Export** - Everything else is becoming delcarative and now your icons can too. Save your design as JSON to reuse later in the app or with `mica-cli`.
+
 
 ## Requirements
 
 - **macOS 15 Sequoia or later.**
-- Some features rely on newer system capabilities and require **macOS 26 Tahoe or later**: System generation mode (Liquid Glass icons) and gradient symbol rendering. Everything else works on macOS 15.
-- No other dependencies — `mica-cli` ships inside the app bundle.
+- Some features rely on newer APIs and require **macOS 26 Tahoe or later**: System generation mode (Liquid Glass icons) and gradient SF symbol rendering. Everything else works on macOS 15.
 
 ## Installation
 
@@ -69,7 +69,7 @@ The `.pkg` installs `Mica.app` and symlinks `/Applications/Mica.app/Contents/Mac
 
 If you don't want the symlink, download the `.dmg` instead and copy `Mica.app` to `/Applications`.
 
-If you installed from the `.dmg` and *do* want the CLI on your `PATH`, run:
+If you installed from the `.dmg` and do want the CLI on your `PATH`, run:
 
 ```shell
 sudo ln -s /Applications/Mica.app/Contents/MacOS/mica-cli /usr/local/bin/mica-cli
@@ -80,28 +80,12 @@ Other installation methods coming soon.
 ### Uninstalling
 
 ```shell
-sudo rm /usr/local/bin/mica-cli                          # CLI symlink (pkg installs only)
-rm -rf /Applications/Mica.app                            # the app
-rm -rf ~/Library/Containers/com.lukecharters.Mica        # settings and app data
-```
-
-## Quick Start
-
-### App
-
-Open the app and start experimenting until you've made something that looks good. If you'd rather read first, see [Getting Started](../../wiki/Getting-Started) in the wiki.
-
-### CLI
-
-```shell
-# The minimum required to create an icon is an SF Symbol name
-mica-cli --icon-symbol star.fill
-
-# The minimum required to extract an icon
-mica-cli extract /System/Applications/Calculator.app
-
-# Full usage instructions
-mica-cli --help
+# CLI symlink (pkg installs only)
+sudo rm /usr/local/bin/mica-cli
+# app
+rm -rf /Applications/Mica.app
+# settings and app data
+rm -rf ~/Library/Containers/com.lukecharters.Mica
 ```
 
 ## Usage
@@ -147,7 +131,7 @@ mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical --icon-s
 # Custom two-colour gradient background
 mica-cli --icon-symbol app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
 
-# Classic macOS 15 look, flat colour
+# macOS 15 squircle, flat colour
 mica-cli --icon-symbol star.fill --icon-bg-corner-radius macos15 --icon-bg-gradient off
 
 # Add a badge (--badge-fg, --badge-bg or --badge-visibility on turns it on)
@@ -166,7 +150,7 @@ mica-cli --icon-symbol star.fill --icon-generation-mode system --icon-bg-color b
 mica-cli --icon-symbol app.fill --size 1024 --scale 2x --color-space displayP3
 ```
 
-Colours can be named (`blue`, `grey`, `label`, …), hex (`"#FF6B35"`), `rgb()`/`hsl()` values, or components in a named colour space (`srgb:0.2,0.42,0.9`, `display-p3:1,0.2,0`). Both spellings of colour flags work — every `--…-color` flag has a `--…-colour` alias. See [Colour Formats](../../wiki/Colour-Formats).
+Colours can be named (`blue`, `grey`, `label`, …), hex (`"#FF6B35"`), `rgb()`/`hsl()` values, or components in a named colour space (`srgb:0.2,0.42,0.9`, `display-p3:1,0.2,0`). Every `--…-color` flag has a `--…-colour` alias. See [Colour Formats](../../wiki/Colour-Formats).
 
 For scripting, the saved path goes to stdout and diagnostics go to stderr, so `mica-cli` pipes cleanly:
 
@@ -177,11 +161,10 @@ mica-cli --icon-symbol star.fill --verbose   # per-phase progress on stderr
 ```
 
 #### Extracting existing icons
-
-The `extract` subcommand exports the icon of any app, file, or folder on disk as a PNG:
+The `extract` subcommand exports the icon of any app, file, or folder as a PNG:
 
 ```shell
-# Export one app's icon to the working directory
+# Export an icon to the working directory
 mica-cli extract /Applications/Safari.app
 
 # Export every icon in /Applications at 512 px @2x
@@ -192,7 +175,6 @@ mica-cli extract / -o ~/Desktop/icons --recursive --depth 999
 ```
 
 ## Documentation
-
 Detailed documentation lives in the [wiki](../../wiki):
 
 - [Getting Started](../../wiki/Getting-Started) — install, first icon, first extraction
@@ -203,23 +185,26 @@ Detailed documentation lives in the [wiki](../../wiki):
 - [Colour Formats](../../wiki/Colour-Formats) — every way to specify a colour
 
 ## Getting Help
-
 Found a bug or have a question/feature request? [Open an issue](../../issues).
 
-For bugs, please include your macOS version, app version and, for rendering problems, the settings or the full `mica-cli` command that reproduces it.
+For bugs, please include your macOS version, app version, and what you did to break it.
 
 ## Contributing
-
-Issues and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to build from source and run the tests.
-
-## Changelog
-
-Release notes are published with each release on the [Releases](../../releases) page.
+Contributions are welcome, please open an issue or discussion first though. See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to build from source and run the tests.
 
 ## License
-
 Distributed under the [Apache License, Version 2.0](./LICENSE).
 
-## Acknowledgements
 
-- Apple's [SF Symbols](https://developer.apple.com/sf-symbols/) - the symbol library that powers Mica's icons. SF Symbols are subject to [Apple's licensing terms](https://developer.apple.com/support/terms/).
+## Acknowledgements
+- [Trevor Sysock/BigMacAdmin](https://github.com/bigmacadmin) for putting me onto [Pico Mitchell's](https://github.com/PicoMitchell) icon generation [discoveries](https://bigmacadmin.wordpress.com/2023/06/02/fun-with-app-icons/).
+- [Pico Mitchell](https://github.com/PicoMitchell) for the above.
+- [Trevor Sysock/BigMacAdmin](https://github.com/bigmacadmin) again for starting me down the path of automated icon extraction with [IconGrabber.sh](https://bigmacadmin.wordpress.com/2024/05/30/icongrabber-sh-find-and-convert-icns-to-png-easily-mac-admins-utility/)
+- Apple's [SF Symbols](https://developer.apple.com/sf-symbols/).
+SF Symbols are subject to [Apple's licensing terms](https://developer.apple.com/support/terms/).
+
+## Alternatives
+Mac Admins are awesome and love creating free tools for the community. If Mica doesn't fit your needs them here are some alternative icon tools.
+- SAP's [Icons](https://github.com/SAP/macOS-icon-generator)
+- Kitzy's [Icon Grabber](https://github.com/macadmins/icongrabber)
+- Adam Anklewicz's [SFIcons](https://github.com/aanklewicz/SFIcons)

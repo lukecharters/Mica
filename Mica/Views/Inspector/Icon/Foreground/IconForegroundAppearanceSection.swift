@@ -33,10 +33,14 @@ struct IconForegroundAppearanceSection: View {
         if advancedControlsEnabled {
             Picker("Rendering", systemImage: "paintpalette", selection: $iconSettings.icon.foreground.renderingStyle) {
                 ForEach(SymbolRenderingStyle.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    // The raw value is a display string here, and "Multicolor"
+                    // is one of the two words that differ between English
+                    // variants. `Text(aString)` is the verbatim overload, so the
+                    // catalog has to be consulted explicitly.
+                    Text(verbatim: mode.rawValue.localizedFromCatalog).tag(mode)
                 }
             }
-            .pickerStyle(.inline)
+            .pickerStyle(.menu)
         }
 
         symbolColorControls

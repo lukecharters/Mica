@@ -16,8 +16,20 @@ import SwiftUI
 /// is the transient "show me the list instead" that the **Use Preset** button sets.
 /// It clears the moment the value changes, so it cannot disagree with the model for
 /// longer than one interaction.
+extension ColorToken {
+    /// `displayName` is derived from the token name so that no second list of
+    /// colour names can drift out of step with `ColorTokenTable` — which means
+    /// the string catalog has to be keyed on the derived string. "Gray" → "Grey"
+    /// is the only entry that earns its place today.
+    var localizedDisplayName: String { displayName.localizedFromCatalog }
+}
+
 struct ColorPickerWithDropdown: View {
-    let label: String
+    /// A `LocalizedStringKey` rather than a `String`, because `Text(aString)` is
+    /// the *verbatim* overload and would skip the string catalog outright — which
+    /// is how "Symbol Color" stayed American in every en-GB build while the
+    /// literals one level up looked correctly localizable.
+    let label: LocalizedStringKey
     @Binding var value: MicaColorValue
     /// The swatches offered. Defaults to the presentable tokens; System mode
     /// passes the appex-native subset instead.
@@ -69,8 +81,12 @@ struct ColorPickerWithDropdown: View {
                     Text(label)
                 }
             ) {
-                ForEach(presets) { token in
-                    Text(token.displayName).tag(Optional(token.name))
+                // Sorted here rather than taken in `ColorTokenTable`'s order,
+                // which is alphabetical by the *source* display name: "Gray"
+                // sorts before "Green" and "Grey" after it, so an en-GB build
+                // would show one token a place out of order.
+                ForEach(presets.sorted { $0.localizedDisplayName < $1.localizedDisplayName }) { token in
+                    Text(verbatim: token.localizedDisplayName).tag(Optional(token.name))
                 }
                 Divider()
                 Text("Custom…").tag(Optional(Self.customTag))

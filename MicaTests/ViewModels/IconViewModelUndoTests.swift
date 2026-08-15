@@ -240,7 +240,11 @@ struct IconViewModelUndoTests {
 
         edit(model, undoManager) { $0.icon.foreground.color = .red }
 
-        #expect(undoManager.undoActionName == "Change Icon Symbol Color")
+        // Through the catalog, not against the literal: the action name is
+        // presentation, and this test bundle runs in whatever English variant
+        // the machine is set to — on an en-AU Mac the literal reads "Colour".
+        // `SettingsChange`'s own tests still assert the un-localised model value.
+        #expect(undoManager.undoActionName == "Change Icon Symbol Color".localizedFromCatalog)
     }
 
     @Test("the name survives onto the redo side")
@@ -280,7 +284,7 @@ struct IconViewModelUndoTests {
         undoManager.endUndoGrouping()
 
         #expect(undoManager.canUndo)
-        #expect(undoManager.undoActionName == "Change System Colors")
+        #expect(undoManager.undoActionName == "Change System Colors".localizedFromCatalog)
     }
 
     /// The appex path has its own observer and its own suppression flag, so it has its own

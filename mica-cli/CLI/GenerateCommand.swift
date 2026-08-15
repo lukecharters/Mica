@@ -912,135 +912,60 @@ struct GenerateCommand: AsyncParsableCommand {
             mica-cli --config icon.json [<options>]
             """,
         discussion: """
-            EXAMPLES (the `generate` subcommand name is optional — it is the default):
+            EXAMPLES (`generate` is the default subcommand and may be omitted):
 
-            Basic usage:
-              mica-cli --icon-symbol star.fill
-              mica-cli --icon-symbol folder.fill -o ~/Desktop/folder-icon.png
-
-            Symbol color and rendering:
-              mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
-              mica-cli --icon-symbol gear --icon-symbol-rendering palette --icon-symbol-palette "blue,white:0.5,white:0.26"
-
-            Symbol adjustments:
-              mica-cli --icon-symbol star.fill --icon-symbol-weight bold --icon-fg-scale 1.3
-              mica-cli --icon-symbol star.fill --icon-symbol-gradient on --icon-fg-shadow off
-
-            Backgrounds:
-              mica-cli --icon-symbol star.fill --icon-bg-color red --icon-bg-gradient on
-              mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
-              mica-cli --icon-symbol star.fill --icon-bg prerendered-liquid-glass --icon-bg-color blue
-              mica-cli --icon-symbol star.fill --icon-bg ~/bg.png --icon-bg-scale 0.9
-
-            System (Apple) generation mode:
-              mica-cli --icon-symbol star.fill --icon-generation-mode system \\
-                --icon-bg-color blue --icon-symbol-color white
-
-            Imported artwork (no symbol needed — the foreground hides by default):
-              mica-cli --icon-fg ~/my-icon.png --icon-fg-scale 0.9
-              mica-cli --icon-bg ~/artwork.png
-
-            Badges (supplying --badge-symbol or --badge-fg turns the badge on):
-              mica-cli --icon-symbol star.fill --badge-symbol plus.circle.fill --badge-position bottom-right
-              mica-cli --icon-symbol folder.fill --badge-symbol gearshape.fill \\
-                --badge-bg custom-gradient --badge-bg-gradient-colors "red,orange"
-              mica-cli --icon-symbol star.fill --badge-fg ~/overlay.png --badge-scale 1.2 --badge-offset-x 0.1
-              # attach a negative offset with =, or -0.15 is read as another flag
+              mica-cli --icon-symbol star.fill -o ~/Desktop/icon.png
+              mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical
+              mica-cli --icon-symbol gear --icon-bg-color "#0088FF"
+              mica-cli --icon-symbol star.fill --icon-bg prerendered-liquid-glass
+              mica-cli --icon-symbol star.fill --icon-generation-mode system
+              mica-cli --icon-symbol app.fill -s 1024 --scale 2x --color-space displayP3
+              mica-cli --icon-bg ~/artwork.png       # imported art needs no symbol
+              mica-cli --icon-symbol star.fill --badge-symbol plus.circle.fill
               mica-cli --icon-symbol star.fill --badge-symbol plus --badge-offset-y=-0.15
 
-            High-resolution export:
-              mica-cli --icon-symbol app.fill --size 1024 --scale 2x --color-space displayP3
-
-            Output modes:
-              mica-cli --icon-symbol star.fill --json      # JSON result to stdout
-              mica-cli --icon-symbol star.fill --quiet     # only the path on stdout
-              mica-cli --icon-symbol star.fill --verbose   # per-phase progress on stderr
-
-            Configuration files (what Mica.app's Export Configuration writes):
-              mica-cli --config icon.json
-              mica-cli --config icon.json --size 1024   # the flag wins
+            --badge-symbol, --badge-fg, --badge-bg or --badge-visibility on turns the
+            badge on. Attach a negative value with '=' — given a space, -0.15 is read
+            as another flag.
 
             CONFIG FORMAT — a flat JSON object whose keys are the long flag names
-            above, without the leading '--':
+            without their leading '--'. Any flag given on the command line wins.
 
-              {
-                "icon-fg": "symbol:star.fill",
-                "icon-bg-color": "blue",
-                "icon-symbol-palette": ["blue", "white:0.5", "white:0.26"],
-                "size": 512
-              }
+              mica-cli --config icon.json --size 1024
 
-            An on|off option takes true/false or "on"/"off"; a numeric one takes a
-            number or a numeric string. The four options taking several colors at
-            once also take a JSON array, which is the only way to pass a color
-            containing a comma (the space-prefixed forms below). Image slots are
-            paths, and a relative one resolves against the JSON file's own
-            directory.
+              { "icon-fg": "symbol:star.fill", "icon-bg-color": "blue", "size": 512 }
 
-            The --icon-symbol and --badge-symbol shorthands have no key — write
-            "icon-fg": "symbol:NAME". Nor do --output/-o, --json, --quiet and
-            --verbose: they describe an invocation rather than an icon, so they stay
-            on the command line. An unknown key or an unusable value is a warning and
-            the rest of the file still loads; only malformed JSON stops the run.
+            An on|off key takes true/false or "on"/"off"; the four multi-color keys
+            also take a JSON array. A relative image path resolves against the file.
+            --output, --json, --quiet, --verbose and the --icon-symbol/--badge-symbol
+            shorthands have no key. An unknown key or unusable value warns and the
+            rest still loads; only malformed JSON stops the run.
 
-            Every flag is optional with --config, and an absent one leaves the
-            configuration's value alone. The output file is named after the
-            configuration unless a symbol name, --icon-fg or -o says otherwise.
+            COLOR FORMATS — every option taking a color accepts:
 
-            COLOR FORMATS — every option taking a color accepts all of these:
-              blue, system.blue, label        named and system tokens
-              "#0088FF", "#0088FFCC"         hex, 3/6/8 digits
-              "rgb(0,136,255)"               rgb() takes 0-255, hsl() degrees
-              "hsl(209,100%,50%)"            and percentages; a 4th value in
-                                             either one is the alpha
-              srgb:0,0.53,1                  components in a named space, 0-1,
-              display-p3:0,0.5,1             with the alpha optional
-              extended-srgb:0,0.53333,1,1    a configuration's stored form, so a
-              extended-gray:1,1              colour can be copied from a config
-                                             file onto the command line
+              blue, system.blue, label            named and system tokens
+              "#0088FF", "#0088FFCC"              hex, 3/6/8 digits
+              "rgb(0,136,255)"                    0-255; a 4th value is the alpha
+              "hsl(209,100%,50%)"                 degrees and percentages, likewise
+              srgb:0,0.53,1                       components 0-1, alpha optional
+              display-p3:1,0,0                    same, converted on the way in
+              extended-srgb:1.093,-0.227,-0.15,1  unbounded; the stored form
+              extended-gray:1,1
 
-            All but the space-prefixed forms may carry a ':opacity' suffix —
-            white:0.5, "#0088FF:0.5", "rgb(0,136,255):0.5". The prefixed forms
-            already end in an alpha component, so they take no suffix. The suffix
-            scales the colour's own alpha rather than replacing it, so 'label:0.5'
-            is ~42% (labelColor is only ~85% opaque to begin with), while
-            'white:0.5' is 50%.
+            All but the space-prefixed forms take a ':opacity' suffix — white:0.5,
+            "#0088FF:0.5". It *scales* the color's own alpha rather than replacing
+            it, so label:0.5 renders at ~42% (labelColor is ~85% opaque).
 
-            In system mode a bare token keeps Apple's curated rendering, so 'white'
-            and 'white:0.5' differ: the second is a custom colour. Two limits there,
-            both refused rather than quietly changed — the pipeline cannot show a
-            colour outside sRGB, and it ignores a *background* colour's opacity, so
-            --icon-bg-color and --badge-bg-color take no ':opacity' suffix in system
-            mode. The symbol colours do.
+            The four options taking several colors at once split their value on
+            commas, so only the comma-free forms work there — a name, hex, or either
+            with an opacity suffix. Use a JSON array in a config file for the rest.
 
-            srgb: and display-p3: name bounded spaces, so a component outside 0-1
-            is an error rather than a silent clamp. The extended- forms are
-            unbounded, which is how a wide-gamut colour is carried: Display P3 red
-            is extended-srgb:1.09300,-0.22670,-0.15010,1.00000, and
-            display-p3:1,0,0 is the readable way to write the same colour.
+            In system mode colors must be within sRGB, and --icon-bg-color and
+            --badge-bg-color take no opacity suffix (the pipeline ignores it). Both
+            are errors rather than silent changes.
 
-            Not accepted, deliberately. Each of these was a second way to say
-            something already sayable, and two of them guessed:
-              "0,136,255"        bare components read as 0-1 unless one exceeded
-                                 1 and then as 0-255, so 1,1,1 was white and
-                                 2,2,2 dark gray — write srgb:0,0.53,1
-              crimson, khaki,    18 names in no other part of Mica — use hex
-              orchid, gold, …
-              "rgb(50%,20%,0%)"  percentages in rgb() — use srgb:0.5,0.2,0
-              "0.5" or "128"     a lone number for gray — use srgb:0.5,0.5,0.5
-              systemblue         missing its dot — use system.blue
-              "rgba(…)"/"hsla(…)"  put the alpha in rgb()/hsl() instead
-
-            The options taking several colors at once — --icon-bg-gradient-colors,
-            --badge-bg-gradient-colors, --icon-symbol-palette and
-            --badge-symbol-palette — split their value on commas, so only the
-            comma-free forms above work there: a name, hex, or either with an
-            opacity suffix. Neither srgb: nor the extended- forms can be used
-            inside them. That is why the default palette reads
-            'white,white:0.5,white:0.26'.
-
-            The output file path is written to stdout; diagnostics go to stderr,
-            so `mica-cli star.fill -o icon.png` pipes cleanly.
+            The output path goes to stdout and diagnostics to stderr, so
+            `mica-cli --icon-symbol star.fill -o icon.png` pipes cleanly.
             """
     )
 

@@ -117,7 +117,7 @@ struct IconAccessibilityDescriptionTests {
         settings.icon.background.color = try MicaColorValue(strictlyParsing: "#123456")
 
         let value = IconAccessibilityDescription.value(for: settings)
-        #expect(value.contains("a custom color"))
+        #expect(value.contains("a custom color".localizedFromCatalog))
         #expect(!value.contains("0.0"))
     }
 
