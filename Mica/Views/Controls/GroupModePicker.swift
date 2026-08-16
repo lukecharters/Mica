@@ -16,8 +16,9 @@ extension GenerationMode {
 /// top of a group's inspector (Icon / Badge) so the user can switch that group
 /// between Mica's SwiftUI rendering and Apple's system reference.
 ///
-/// Uses `FillingSegmentedPicker` so it spans the inspector width, matching
-/// `LayerTabPicker` directly beneath it — keep the two visually aligned.
+/// Uses `FillingSegmentedPicker` so it spans the inspector width. It is the only
+/// user of that wrapper since `LayerTabPicker` — which sat directly beneath it —
+/// was deleted on 2026-08-16, the layer selection having gone back to the sidebar.
 ///
 /// It was two `GenerationModeMenu`s in the window toolbar between 2026-08-04 and
 /// 2026-08-16. The toolbar showed both groups at once, which the inspector cannot;

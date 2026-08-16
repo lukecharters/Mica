@@ -11,8 +11,10 @@ struct InspectorPanel: View {
     @Binding var badgeAppexSymbolColor: AppexColor
     @Binding var showExportDialog: Bool
     let group: IconLayerGroup
-    @Binding var iconTab: LayerTab
-    @Binding var badgeTab: LayerTab
+    /// Each group's active layer. Plain values, not bindings: the `LayerSidebar`'s
+    /// child rows and the canvas write them, and this panel only reads.
+    let iconTab: LayerTab
+    let badgeTab: LayerTab
     /// The two groups' generation modes, as plain `Bool`s for `GroupModePicker`.
     /// Owned by `ContentView` rather than derived here, because the badge's half
     /// needs `BadgeModeMemory` — which has to outlive any view that switches the
@@ -30,8 +32,8 @@ struct InspectorPanel: View {
             case .controls:
                 InspectorControls(
                     group: group,
-                    iconTab: $iconTab,
-                    badgeTab: $badgeTab,
+                    iconTab: iconTab,
+                    badgeTab: badgeTab,
                     iconIsSystem: $iconIsSystem,
                     badgeIsSystem: $badgeIsSystem,
                     iconSettings: $iconSettings,

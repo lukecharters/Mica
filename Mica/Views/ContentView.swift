@@ -141,9 +141,15 @@ struct ContentView: View {
     /// simulate how the icon reads in an MDM self service portal. `nil` = export size.
     @State private var previewPointSize: CGFloat? = nil
     @State private var selectedGroup: IconLayerGroup = .icon
-    /// Active inspector tab per group, remembered while the app runs so switching
+    /// The active layer per group, remembered while the app runs so switching
     /// between Icon and Badge returns to where you left off. Not persisted across
     /// launches (matching the sidebar selection, which also resets to Icon).
+    ///
+    /// Three things write these: the sidebar's child rows, a canvas click
+    /// (`select`), and nothing else — the inspector reads them only, since
+    /// `LayerTabPicker` was removed on 2026-08-16. They stay here rather than
+    /// moving into `LayerSidebar` because the sidebar column can be hidden (⌃⌘S)
+    /// while a canvas click is still moving the selection.
     @State private var iconTab: LayerTab = .defaultTab(for: .icon)
     @State private var badgeTab: LayerTab = .defaultTab(for: .badge)
     /// Incremented on every canvas click. The selection outline restarts its fade
@@ -197,7 +203,9 @@ struct ContentView: View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             LayerSidebar(
                 iconSettings: $viewModel.iconSettings,
-                selection: $selectedGroup
+                selection: $selectedGroup,
+                iconTab: $iconTab,
+                badgeTab: $badgeTab
             )
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
@@ -302,8 +310,8 @@ struct ContentView: View {
                 badgeAppexSymbolColor: $viewModel.badgeAppexSymbolColor,
                 showExportDialog: $viewModel.showExportDialog,
                 group: selectedGroup,
-                iconTab: $iconTab,
-                badgeTab: $badgeTab,
+                iconTab: iconTab,
+                badgeTab: badgeTab,
                 iconIsSystem: iconModeBinding,
                 badgeIsSystem: badgeModeBinding,
                 tab: inspectorTab,
