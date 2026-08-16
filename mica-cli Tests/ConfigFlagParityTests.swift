@@ -264,11 +264,6 @@ struct ConfigFlagParityTests {
             "icon-bg-gradient-colors": ["#FF6B35", "#F7931E"],
         ]),
 
-        .init(name: "icon pre-rendered", config: [
-            "icon-bg": "prerendered-liquid-glass",
-            "icon-bg-color": "blue",
-        ]),
-
         .init(name: "badge", config: [
             "badge-fg": "symbol:plus.circle",
             "badge-fg-scale": 1.2,

@@ -32,7 +32,7 @@ The toolbar has two generation-mode menus, each labelled with its current mode a
 |---|---|---|
 | Rendered by | Mica's own SwiftUI pipeline | macOS's icon-rendering pipeline (the same one that draws system icons) |
 | Layers | Foreground + Background, fully stylable | One symbol + one background colour; Apple handles sizing and layout |
-| Liquid Glass | Pre-rendered material backgrounds | Real Liquid Glass on macOS 26+ |
+| Liquid Glass | Not available — use System mode | Real Liquid Glass on macOS 26+ |
 | Sources | SF Symbols or imported images | SF Symbols only |
 | Use when | You want control | You want output indistinguishable from native system icons |
 
@@ -80,11 +80,12 @@ Weights compared (`star`):
 
 ### Source
 
-**Type** picker: **Standard**, **Pre-Rendered**, or **Imported**.
+**Type** picker: **Color** or **Imported**.
 
-- **Standard** — a solid colour or generated gradient chiclet.
-- **Pre-Rendered** — a Liquid Glass material asset in one of 18 colours. This is how you get the Liquid Glass look without System mode.
+- **Color** — a solid colour or generated gradient chiclet.
 - **Imported** — your own image, or an extracted app icon. CLI: [`--icon-bg`](CLI-Reference#icon-background).
+
+A third option, **Pre-Rendered**, drew one of 35 bundled Liquid Glass images. It was removed in 2026-08 — the artwork stopped matching the system's own look under macOS 27, and it accounted for roughly 22 MB of the app. For a Liquid Glass icon, use System mode.
 
 ### Layout (Imported only)
 
@@ -96,14 +97,14 @@ Weights compared (`star`):
 | Control | What it does | CLI |
 |---|---|---|
 | **Corners** *(advanced)* | Chiclet silhouette: **macOS 15** (smaller radius) or **macOS 26** (squircle). | `--icon-bg-corner-radius` |
-| **Color** | The background colour (Standard) or the pre-rendered asset colour (Pre-Rendered). | `--icon-bg-color` |
+| **Color** | The background colour. | `--icon-bg-color` |
 | **Gradient** *(advanced)* | Derive a top-to-bottom gradient from the colour; off gives a flat fill. | `--icon-bg-gradient` |
 | **Custom Gradient** *(advanced)* | Pick your own two gradient stops (Primary/Secondary). | `--icon-bg custom-gradient --icon-bg-gradient-colors` |
 | **Shadow** | Background drop shadow. With advanced controls on you can pick the **Off / macOS 15 / macOS 26** shadow styles. | `--icon-bg-shadow` |
 
-| Corners: macOS 15 | Corners: macOS 26 | Gradient on | Gradient off | Custom gradient | Pre-rendered Liquid Glass |
-|---|---|---|---|---|---|
-| ![macOS 15 corners](images/corners-macos15.png) | ![macOS 26 corners](images/corners-macos26.png) | ![Gradient on](images/bg-gradient-on.png) | ![Gradient off](images/bg-gradient-off.png) | ![Custom gradient](images/custom-gradient.png) | ![Liquid Glass](images/liquid-glass.png) |
+| Corners: macOS 15 | Corners: macOS 26 | Gradient on | Gradient off | Custom gradient |
+|---|---|---|---|---|
+| ![macOS 15 corners](images/corners-macos15.png) | ![macOS 26 corners](images/corners-macos26.png) | ![Gradient on](images/bg-gradient-on.png) | ![Gradient off](images/bg-gradient-off.png) | ![Custom gradient](images/custom-gradient.png) |
 
 ## Badge
 
@@ -125,7 +126,7 @@ The badge is a second, smaller icon overlaid on a corner — great for marking m
 
 The badge's Foreground and Background layers mirror the icon's controls: symbol or imported image, rendering mode, colours, weight, gradient, and shadows — see the sections above. Differences:
 
-- The badge background is a **circle** (Standard colour/gradient, custom gradient, or imported image — no Liquid Glass option).
+- The badge background is a **circle** (colour/gradient, custom gradient, or imported image).
 - The default badge background colour is **Gray**.
 
 ![Styled badge](images/badge-styled.png)

@@ -325,9 +325,9 @@ struct ForegroundSpec: Equatable {
     }
 }
 
-/// The icon's background layer. Separate from the badge's because it has two
-/// things the badge does not: pre-rendered Liquid Glass assets, and a corner
-/// radius (the badge's shape is fixed by `BadgeGeometry.badgeCornerRadiusRatio`).
+/// The icon's background layer. Separate from the badge's because it has a
+/// corner radius and a shadow *style*, where the badge's shape is fixed by
+/// `BadgeGeometry.badgeCornerRadiusRatio` and its shadow is a plain on/off.
 struct IconBackgroundSpec: Equatable {
     var source: IconBackgroundSource = .color
     var color: MicaColorValue = .blue
@@ -335,7 +335,6 @@ struct IconBackgroundSpec: Equatable {
     var usesCustomGradient: Bool = false
     var gradientStartColor: MicaColorValue = .blue
     var gradientEndColor: MicaColorValue = .purple
-    var preRenderedColorName: String = "Blue"
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
     var shadowStyle: BackgroundShadowStyle = .macOS26
     var image: ImportedImage? = nil
@@ -344,10 +343,6 @@ struct IconBackgroundSpec: Equatable {
     var isHidden: Bool = false
 
     var gradientColors: [Color] { [gradientStartColor.resolved, gradientEndColor.resolved] }
-
-    var preRenderedAssetName: String {
-        "background-\(preRenderedColorName.lowercased())-\(usesGradient ? "gradient" : "solid")"
-    }
 
     /// Import an image as this background, with the import-time defaults: "Icon
     /// Padding" compensation on (scaling a native app icon's chiclet up to fill
@@ -409,9 +404,10 @@ struct BadgeBackgroundSpec: Equatable {
     }
 }
 
-/// What the badge's background layer draws. Smaller than `IconBackgroundSource`
-/// — there are no pre-rendered badge assets — so the two are separate types
-/// rather than one with cases the badge ignores.
+/// What the badge's background layer draws. Case-for-case identical to
+/// `IconBackgroundSource` since the pre-rendered assets went (2026-08-16), and
+/// deliberately still a separate type: the two belong to separate specs, and the
+/// icon's is the one that grows if a background kind is ever icon-only again.
 ///
 /// Raw values are not authoritative; see `ForegroundSource`.
 enum BadgeBackgroundSource: String, CaseIterable, Identifiable {
@@ -459,14 +455,16 @@ enum ForegroundSource: String, CaseIterable, Identifiable, Equatable {
     var id: String { rawValue }
 }
 
-/// What the icon's *background* layer draws. The badge's background has its own,
-/// smaller set — it has no pre-rendered assets — so the two are separate types
-/// rather than one with cases the badge ignores.
+/// What the icon's *background* layer draws. See `BadgeBackgroundSource` for why
+/// the badge keeps its own copy of the same cases.
+///
+/// A third case, `preRendered`, drew one of 35 bundled Liquid Glass images and
+/// was removed on 2026-08-16 — the artwork was ~22 MB of the app bundle and had
+/// stopped matching the system's own look under macOS 27.
 ///
 /// Raw values are not authoritative; see `ForegroundSource`.
 enum IconBackgroundSource: String, CaseIterable, Identifiable {
     case color = "Color"
-    case preRendered = "Pre-Rendered"
     case image = "Imported"
     var id: String { rawValue }
 }

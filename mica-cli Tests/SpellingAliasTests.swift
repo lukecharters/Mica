@@ -1,8 +1,7 @@
 // SpellingAliasTests.swift
 // Covers the British/Australian English spelling accommodations: the
 // --…-colour flag aliases on generate and extract, grey→gray value
-// normalisation (prerendered asset names and appex tokens), and the
-// multicolour rendering-mode spelling.
+// normalisation (appex tokens), and the multicolour rendering-mode spelling.
 
 import Testing
 import Foundation
@@ -99,19 +98,6 @@ struct SpellingAliasTests {
             "--badge-symbol-rendering", "multicolour",
         ])
         #expect(command.badge.symbolRendering == "multicolor")
-    }
-
-    // MARK: - Prerendered colour names accept grey spellings
-
-    @Test("prerendered-liquid-glass accepts grey colour names", arguments: ["grey", "darkgrey", "lightgrey"])
-    func preRenderedGreyValidates(_ name: String) throws {
-        let command = try parseCommand([
-            "--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass",
-            "--icon-bg-colour", name,
-        ])
-        try command.performValidationForTesting()
-        let settings = try IconGenerationRunner().buildTestSettings(from: command)
-        #expect(settings.icon.background.preRenderedColorName == normalizeBritishSpelling(name))
     }
 
     // MARK: - Appex tokens accept grey

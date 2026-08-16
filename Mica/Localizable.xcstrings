@@ -886,53 +886,6 @@
         }
       }
     },
-    "Change Icon Pre-Rendered Color" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        },
-        "en-IE" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        },
-        "en-IN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        },
-        "en-NZ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        },
-        "en-ZA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change Icon Pre-Rendered Colour"
-          }
-        }
-      }
-    },
     "Change Icon Symbol Color" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1425,9 +1378,6 @@
 
     },
     "Position" : {
-
-    },
-    "Pre-Rendered" : {
 
     },
     "Preview always renders at 512pt @2x." : {

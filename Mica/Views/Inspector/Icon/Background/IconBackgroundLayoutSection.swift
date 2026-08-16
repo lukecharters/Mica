@@ -9,15 +9,11 @@ struct IconBackgroundLayoutSection: View {
         case .color:
             EmptyView()
 
-            
         case .image:
             ImageImportLayoutControls(
                 paddingCompensation: $iconSettings.icon.background.compensatesForPadding,
                 imageScale: $iconSettings.icon.background.imageScale
             )
-
-        case .preRendered:
-            EmptyView()
         }
     }
 }

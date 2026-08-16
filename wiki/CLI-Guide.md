@@ -39,13 +39,13 @@ mica-cli --icon-symbol shield.lefthalf.filled --icon-symbol-rendering hierarchic
 mica-cli --icon-symbol gear --icon-symbol-rendering palette --icon-symbol-palette "mint,white:0.75,white:0.4"
 mica-cli --icon-symbol star --icon-symbol-weight black
 
-# Pre-rendered Liquid Glass background
-mica-cli --icon-symbol star.fill --icon-bg prerendered-liquid-glass --icon-bg-color blue
+# Two-stop custom gradient
+mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors teal,indigo
 ```
 
-| `terminal.fill` on black | Hierarchical on teal | Custom gradient | Liquid Glass |
-|---|---|---|---|
-| ![Terminal](images/terminal-black.png) | ![Shield](images/hierarchical-teal.png) | ![Gradient](images/custom-gradient.png) | ![Liquid Glass](images/liquid-glass.png) |
+| `terminal.fill` on black | Hierarchical on teal | Custom gradient |
+|---|---|---|
+| ![Terminal](images/terminal-black.png) | ![Shield](images/hierarchical-teal.png) | ![Gradient](images/custom-gradient.png) |
 
 Colour values can be names, hex, `rgb()`/`hsl()`, or components in a named space (`srgb:`, `display-p3:`) — see [Colour Formats](Colour-Formats).
 

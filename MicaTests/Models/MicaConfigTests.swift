@@ -4,7 +4,7 @@
 // - **Round trips**: `decode(encode(s))` reproduces `s` for canonically-shaped
 //   settings (imported images compared by bytes and name — `ImportedImage.==`
 //   is id-based, and a decode always mints fresh ids).
-// - **Coverage**: the 62-leaf reflection count detects a new stored property,
+// - **Coverage**: the 61-leaf reflection count detects a new stored property,
 //   and `everyConfigKeyChangesSomething` proves all 44 keys reach a field.
 // - **Liberality and warnings**: booleans or "on"/"off", numbers or numeric
 //   strings, arrays or comma-joined colours, British aliases; anything
@@ -91,7 +91,7 @@ struct MicaConfigTests {
 
     @Test("the stored-property count is pinned, so a new setting cannot be forgotten")
     func storedPropertyCountIsPinned() {
-        #expect(Self.leafCount(of: IconSettings()) == 62,
+        #expect(Self.leafCount(of: IconSettings()) == 61,
                 "a new stored property needs a config key (and a probe below) or an entry in the documented lossiness list")
     }
 
@@ -99,9 +99,9 @@ struct MicaConfigTests {
     func perSpecLeafCounts() {
         #expect(Self.leafCount(of: ExportSpec()) == 3)
         #expect(Self.leafCount(of: ForegroundSpec.iconDefault) == 15)
-        #expect(Self.leafCount(of: IconBackgroundSpec()) == 13)
+        #expect(Self.leafCount(of: IconBackgroundSpec()) == 12)
         #expect(Self.leafCount(of: BadgeBackgroundSpec()) == 11)
-        #expect(Self.leafCount(of: IconSpec()) == 1 + 15 + 13)
+        #expect(Self.leafCount(of: IconSpec()) == 1 + 15 + 12)
         #expect(Self.leafCount(of: BadgeSpec()) == 4 + 15 + 11)
     }
 
@@ -509,33 +509,42 @@ struct MicaConfigTests {
         #expect(result.settings.badge.background.isHidden == true)
     }
 
-    @Test("a pre-rendered background round-trips")
-    func preRenderedRoundTrips() throws {
-        var settings = IconSettings()
-        settings.icon.background.source = .preRendered
-        settings.icon.background.preRenderedColorName = "teal"
+    // MARK: - The retired pre-rendered background
 
-        let result = try Self.roundTrip(settings)
-        #expect(result.settings.icon.background.source == .preRendered)
-        #expect(result.settings.icon.background.preRenderedColorName == "teal")
+    /// `prerendered-liquid-glass` named one of 35 bundled Liquid Glass images and
+    /// was removed on 2026-08-16. A configuration written before then still has to
+    /// open, so the decoder downgrades it to the standard colour background and
+    /// says so — the alternative is `IconBackgroundValue.init(parsing:)`'s `.image`
+    /// fallback, which reports unreadable artwork at a path the user never wrote.
+    @Test("the retired pre-rendered keyword decodes as a standard background, with a warning")
+    func retiredPreRenderedKeyword_downgradesAndWarns() throws {
+        let result = try Self.decode([
+            "icon-bg": "prerendered-liquid-glass",
+            "icon-bg-color": "teal",
+            "icon-fg": "symbol:star.fill",
+        ])
+
+        #expect(result.settings.icon.background.source == .color)
+        #expect(result.settings.icon.background.image == nil)
+        // `icon-bg-color` carried the asset's colour name, and most of those names
+        // are colour tokens — so the standard background lands on the same colour.
+        #expect(result.settings.icon.background.color == .token("teal"))
+
+        let warning = try #require(result.warnings.first { $0.key == "icon-bg" })
+        #expect(warning.message.contains("prerendered-liquid-glass"))
+        #expect(warning.message.contains("no longer available"))
     }
 
-    /// A pre-rendered asset is drawn as-is by `IconContentView.backgroundLayer`
-    /// — no gradient, no corner radius — so neither key is written for it, and
-    /// neither survives. Verified against the renderer: two renders differing
-    /// only in `--icon-bg-corner-radius` over `prerendered-liquid-glass` are
-    /// byte-identical.
-    @Test("a pre-rendered background drops the keys it does not read")
-    func preRenderedDropsInertKeys() throws {
-        var settings = IconSettings()
-        settings.icon.background.source = .preRendered
-        settings.icon.background.usesGradient = !IconSettings().icon.background.usesGradient
-        settings.icon.background.cornerRadiusStyle = .macOS15
-
-        let json = try MicaConfigCodec.encode(settings: settings)
-        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
-        #expect(object["icon-bg-gradient"] == nil)
-        #expect(object["icon-bg-corner-radius"] == nil)
+    /// The encoder has no case for it, so nothing can put the retired keyword back
+    /// into a file — a configuration that kept re-emitting it would never converge.
+    @Test("no encode ever writes the retired pre-rendered keyword")
+    func retiredPreRenderedKeyword_isNeverWritten() throws {
+        let result = try Self.decode([
+            "icon-bg": "prerendered-liquid-glass", "icon-bg-color": "teal",
+        ])
+        let json = try MicaConfigCodec.encode(settings: result.settings)
+        let text = try #require(String(data: json, encoding: .utf8))
+        #expect(!text.contains("prerendered"))
     }
 
     @Test("the custom-solid gradient state round-trips", arguments: [
@@ -900,6 +909,10 @@ struct MicaConfigTests {
     func generatedIconBackground_leavesTheForegroundAlone(_ kind: String) throws {
         // The rule is conditional on a freshly *imported* background; nothing else may
         // reach the foreground's visibility.
+        //
+        // The retired keyword stays in this list precisely because it is retired: if
+        // it ever fell through to `.image`, this is the assertion that would catch it
+        // — an imported background hides the foreground, a generated one does not.
         let result = try Self.decode(["icon-bg": kind])
         #expect(result.settings.icon.foreground.isHidden == false)
     }

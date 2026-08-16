@@ -587,7 +587,23 @@ private struct ConfigReader {
 
         // Icon background.
         var importedBackground = false
-        let backgroundValue = string(.iconBG).map(IconBackgroundValue.init(parsing:))
+        let rawBackground = string(.iconBG)
+        let backgroundValue: IconBackgroundValue?
+        if let raw = rawBackground, IconBackgroundValue.isRetiredKeyword(raw) {
+            // A configuration written before 2026-08-16. Named here rather than
+            // left to `init(parsing:)`, whose fallback is `.image` — that would
+            // report unreadable artwork at a path the user never wrote.
+            // `icon-bg-color` carried the asset's colour name, and most of those
+            // names are colour tokens, so the standard background usually lands
+            // on the same colour.
+            warn(MicaConfigKey.iconBG.rawValue, """
+                "\(raw)" is no longer available — the pre-rendered Liquid Glass \
+                backgrounds were removed. Using the standard color background instead.
+                """)
+            backgroundValue = .standard
+        } else {
+            backgroundValue = rawBackground.map(IconBackgroundValue.init(parsing:))
+        }
         switch backgroundValue {
         case .standard:
             settings.icon.background.source = .color
@@ -610,17 +626,6 @@ private struct ConfigReader {
                 }
             }
             settings.icon.background.color = settings.icon.background.gradientStartColor
-        case .preRendered:
-            settings.icon.background.source = .preRendered
-            if let name = string(.iconBGColor) {
-                let normalized = normalizeBritishSpelling(name)
-                if validPreRenderedColors.contains(normalized.lowercased()) {
-                    settings.icon.background.preRenderedColorName = normalized
-                } else {
-                    warn(MicaConfigKey.iconBGColor.rawValue,
-                         "\"\(name)\" is not a pre-rendered colour; expected one of: \(validPreRenderedColors.joined(separator: ", "))")
-                }
-            }
         case .image(let path):
             settings.icon.background.source = .image
             settings.icon.background.image = importImage(atPath: path, key: .iconBG)
@@ -1015,9 +1020,7 @@ private struct ConfigWriter {
     //   4. Rendering style    — `*-symbol-color` under palette, or
     //                           `*-symbol-palette` under anything else.
     //   5. Background source  — `.color` reads the colour/gradient keys,
-    //                           `.image` reads scale/padding/corner radius,
-    //                           `.preRendered` reads neither gradient nor
-    //                           corner radius; it is drawn as-is.
+    //                           `.image` reads scale/padding/corner radius.
     //   6. Hidden layer       — a layer that does not draw takes its appearance
     //                           keys with it, `badge-fg` included since gate 2
     //                           went. Visibility keys themselves are never
@@ -1035,8 +1038,8 @@ private struct ConfigWriter {
     // palette is gone. That is the accepted cost of the file meaning exactly
     // what it renders. Before relaxing a gate, check the render code rather than
     // the key's name — `icon-bg-corner-radius` looks inert for an imported
-    // background and is not (`IconContentView`'s `.image` branch clips with it), while
-    // it genuinely is inert for a pre-rendered one.
+    // background and is not (`IconContentView`'s `.image` branch clips with it, and
+    // skips the clip entirely only at `.off`).
 
     func dictionary(assets: inout MicaConfigAssetCatalog) -> [String: Any] {
         var output: [String: Any] = [:]
@@ -1183,10 +1186,6 @@ private struct ConfigWriter {
                 if iconBG.usesGradient != defaults.icon.background.usesGradient {
                     put(.iconBGGradient, iconBG.usesGradient)
                 }
-            case .preRendered:
-                // Drawn as-is: no gradient, no scale, and no corner radius.
-                put(.iconBG, IconBackgroundValue.preRendered.cliValue)
-                put(.iconBGColor, iconBG.preRenderedColorName.lowercased())
             case .image:
                 if let image = iconBG.image {
                     put(.iconBG, assets.relativePath(for: image))
@@ -1198,19 +1197,17 @@ private struct ConfigWriter {
             }
             // The corner radius shapes the chiclet and clips an imported image
             // (`IconContentView`'s `.image` branch, which skips `clipShape` entirely at
-            // `.off`), but a pre-rendered asset is drawn unclipped and ignores it.
+            // `.off`), so both remaining sources read it.
             //
             // Baseline mirrors decode's fresh-import rule, the third of the three: an
             // imported background's corner radius defaults to `.off`, so a user who
             // wants their artwork clipped produces a key and a user who accepts the
             // import default does not.
-            if iconBG.source != .preRendered {
-                let cornerBaseline: IconCornerRadiusStyle = iconBGImportWritten
-                    ? .off
-                    : defaults.icon.background.cornerRadiusStyle
-                if iconBG.cornerRadiusStyle != cornerBaseline {
-                    put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
-                }
+            let cornerBaseline: IconCornerRadiusStyle = iconBGImportWritten
+                ? .off
+                : defaults.icon.background.cornerRadiusStyle
+            if iconBG.cornerRadiusStyle != cornerBaseline {
+                put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
             }
             // Every source draws the background shadow. Baseline mirrors
             // decode's fresh-import rule: an imported background's shadow is off.

@@ -421,9 +421,6 @@ struct IconForegroundOptions: ParsableArguments {
 
 // MARK: - Icon Background Options
 
-// `validPreRenderedColors` lives in Services/SettingsTokens.swift, shared with
-// the configuration codec.
-
 struct IconBackgroundOptions: ParsableArguments {
     // Folds the old --background-mode + --imported-background. Recognised
     // keywords select a generated background; any other value is an image path.
@@ -437,7 +434,7 @@ struct IconBackgroundOptions: ParsableArguments {
             "Icon background; an image path hides the foreground unless an icon foreground argument names one",
             discussion: """
                 standard (color/gradient, default), custom-gradient (two-color gradient), \
-                prerendered-liquid-glass (Liquid Glass asset), or a path to an image file.
+                or a path to an image file.
 
                 An imported background hides this group's foreground by default, because \
                 most such imports are a finished icon — so `--icon-bg art.png` alone is a \
@@ -445,7 +442,7 @@ struct IconBackgroundOptions: ParsableArguments {
                 foreground or symbol namespace brings the foreground back, \
                 --icon-symbol included, and --icon-fg-visibility on forces it.
                 """,
-            valueName: "standard|custom-gradient|prerendered-liquid-glass|path"
+            valueName: "standard|custom-gradient|path"
         )
     )
     var selection: String?
@@ -456,7 +453,7 @@ struct IconBackgroundOptions: ParsableArguments {
         name: [.customLong("icon-bg-color"), .customLong("icon-bg-colour")],
         help: ArgumentHelp(
             "Background color",
-            discussion: "standard: base color (mica) or appex enclosure color (system). prerendered-liquid-glass: one of \(validPreRenderedColors.joined(separator: ", ")). Default: blue.",
+            discussion: "standard: base color (mica) or appex enclosure color (system). Default: blue.",
             valueName: "color"
         )
     )
@@ -473,8 +470,7 @@ struct IconBackgroundOptions: ParsableArguments {
     )
     var gradientColors: String?
 
-    // Was --no-gradient. standard: flat vs derived gradient; prerendered: picks
-    // the -solid vs -gradient asset.
+    // Was --no-gradient. Flat vs derived gradient on a standard background.
     @Option(
         name: .customLong("icon-bg-gradient"),
         help: ArgumentHelp(
@@ -538,7 +534,12 @@ struct IconBackgroundOptions: ParsableArguments {
     /// `.color`, so the generated-background defaults below apply.
     var isImageBackground: Bool {
         guard let selection else { return false }
-        return !IconBackgroundValue.keywords.contains(selection.lowercased())
+        let lowered = selection.lowercased()
+        // A retired keyword is not a path either — `validate()` rejects it by
+        // name, and answering true here would start resolving image defaults
+        // against a filename the user never wrote.
+        return !IconBackgroundValue.keywords.contains(lowered)
+            && !IconBackgroundValue.retiredKeywords.contains(lowered)
     }
 
     /// Resolved background shadow style: an explicit `--icon-bg-shadow` wins;
@@ -917,7 +918,7 @@ struct GenerateCommand: AsyncParsableCommand {
               mica-cli --icon-symbol star.fill -o ~/Desktop/icon.png
               mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical
               mica-cli --icon-symbol gear --icon-bg-color "#0088FF"
-              mica-cli --icon-symbol star.fill --icon-bg prerendered-liquid-glass
+              mica-cli --icon-symbol star.fill --icon-bg custom-gradient
               mica-cli --icon-symbol star.fill --icon-generation-mode system
               mica-cli --icon-symbol app.fill -s 1024 --scale 2x --color-space displayP3
               mica-cli --icon-bg ~/artwork.png       # imported art needs no symbol
@@ -1269,12 +1270,36 @@ struct GenerateCommand: AsyncParsableCommand {
         try iconForeground.validateFlags()
         try badge.validateFlags()
 
+        // Before anything reads the background: a retired keyword parses as an
+        // image path, so leaving it to fall through would excuse a missing
+        // foreground in `validateForeground` and then fail in `validateImagePaths`
+        // as a file not found — for a file the user never named.
+        try validateRetiredBackgroundKeywords()
+
         try validateForeground(in: context)
         try validateColorDependencies(in: context)
         try validateBadgeDependencies(in: context)
         try validateImagePaths()
         try validateOutputPath()
         try validateColorFormats(in: context)
+    }
+
+    /// Refuses `--icon-bg` values that named a background Mica no longer draws.
+    ///
+    /// `prerendered-liquid-glass` selected one of 35 bundled Liquid Glass images
+    /// and was removed on 2026-08-16. A configuration naming it is downgraded to
+    /// the standard background with a warning (`MicaConfigCodec`); on the command
+    /// line it is an error, matching how the two surfaces already differ over a
+    /// malformed colour list.
+    private func validateRetiredBackgroundKeywords() throws {
+        guard let selection = background.selection,
+              IconBackgroundValue.isRetiredKeyword(selection)
+        else { return }
+        throw ValidationError("""
+            --icon-bg \(selection) is no longer available: the pre-rendered Liquid Glass \
+            backgrounds were removed. Use --icon-bg standard with --icon-bg-color, \
+            --icon-bg custom-gradient, or pass a path to your own image.
+            """)
     }
 
     /// True when the icon's background is imported artwork, which is the one case
@@ -1452,10 +1477,6 @@ struct GenerateCommand: AsyncParsableCommand {
         if let bgColor = background.color {
             if isSystemIcon {
                 _ = try resolveAppexColorArg(bgColor, role: "--icon-bg-color", key: .enclosure)
-            } else if case .preRendered = resolvedBackground() {
-                guard validPreRenderedColors.contains(normalizeBritishSpelling(bgColor)) else {
-                    throw ValidationError("--icon-bg-color for prerendered-liquid-glass must be one of: \(validPreRenderedColors.joined(separator: ", ")). You provided '\(bgColor)'.")
-                }
             } else {
                 do {
                     _ = try ColorParser.parseWithOpacity(bgColor)

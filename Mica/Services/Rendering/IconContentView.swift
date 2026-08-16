@@ -130,19 +130,6 @@ struct IconContentView: View {
     private var backgroundLayer: some View {
         ZStack {
             switch settings.icon.background.source {
-            case .preRendered:
-                Image(settings.icon.background.preRenderedAssetName)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .padding(backgroundInset)
-                    .shadow(
-                        color: Color.black.opacity(backgroundShadowOpacity),
-                        radius: backgroundShadowRadius,
-                        y: backgroundShadowOffset
-                    )
-                    .frame(width: iconSize, height: iconSize)
-
             case .color:
                 if settings.icon.background.usesCustomGradient {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

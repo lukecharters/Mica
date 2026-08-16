@@ -155,22 +155,35 @@ struct SettingsTokensTests {
     func iconBackgroundValueParses() {
         #expect(IconBackgroundValue(parsing: "standard") == .standard)
         #expect(IconBackgroundValue(parsing: "custom-gradient") == .customGradient)
-        #expect(IconBackgroundValue(parsing: "prerendered-liquid-glass") == .preRendered)
+        #expect(IconBackgroundValue(parsing: "prerendered-liquid-glass") == .image("prerendered-liquid-glass"),
+                "a retired keyword has no case; callers screen it with isRetiredKeyword first")
         #expect(IconBackgroundValue(parsing: "Standard") == .standard, "keywords are case-insensitive")
         #expect(IconBackgroundValue(parsing: "~/bg.png") == .image("~/bg.png"))
     }
 
-    @Test("BadgeBackgroundValue has no pre-rendered keyword")
+    @Test("BadgeBackgroundValue parses the same two keywords")
     func badgeBackgroundValueParses() {
         #expect(BadgeBackgroundValue(parsing: "standard") == .standard)
         #expect(BadgeBackgroundValue(parsing: "custom-gradient") == .customGradient)
-        #expect(BadgeBackgroundValue(parsing: "prerendered-liquid-glass") == .image("prerendered-liquid-glass"),
-                "the icon-only keyword reads as a path for the badge")
+        #expect(BadgeBackgroundValue(parsing: "~/bg.png") == .image("~/bg.png"))
+    }
+
+    /// The one retired keyword. It is not a case, so `init(parsing:)` reads it as a
+    /// path — which is why every caller checks `isRetiredKeyword` first, and why it
+    /// is listed at all rather than simply deleted.
+    @Test("the retired pre-rendered keyword is known, refused, and absent from the live list")
+    func retiredKeywordIsNotLive() {
+        #expect(IconBackgroundValue.isRetiredKeyword("prerendered-liquid-glass"))
+        #expect(IconBackgroundValue.isRetiredKeyword("PreRendered-Liquid-Glass"),
+                "matched case-insensitively, like every other keyword")
+        #expect(IconBackgroundValue.isRetiredKeyword("standard") == false)
+        #expect(IconBackgroundValue.keywords.contains("prerendered-liquid-glass") == false,
+                "help text and the is-this-a-path check both read `keywords`")
     }
 
     @Test("Background values round-trip through cliValue")
     func backgroundValuesRoundTrip() {
-        for value in [IconBackgroundValue.standard, .customGradient, .preRendered, .image("/tmp/x.png")] {
+        for value in [IconBackgroundValue.standard, .customGradient, .image("/tmp/x.png")] {
             #expect(IconBackgroundValue(parsing: value.cliValue) == value)
         }
         for value in [BadgeBackgroundValue.standard, .customGradient, .image("/tmp/x.png")] {

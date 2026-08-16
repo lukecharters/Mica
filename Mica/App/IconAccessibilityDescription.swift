@@ -101,8 +101,6 @@ enum IconAccessibilityDescription {
             return background.usesGradient
                 ? "A \(name(background.color)) gradient background"
                 : "A \(name(background.color)) background"
-        case .preRendered:
-            return "A pre-rendered \(background.preRenderedColorName.lowercased()) background"
         case .image:
             return "An imported background\(sourceSuffix(background.image))"
         }

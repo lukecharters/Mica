@@ -161,34 +161,23 @@ struct ColorTokenTests {
 
     // MARK: - The consumers cannot drift
 
-    @Test("OptionsCatalog is the presentable subset, and nothing else")
-    func optionsCatalog_derivesFromTheTable() {
-        let presentable = ColorTokenTable.presentable
-        #expect(OptionsCatalog.colorOptions.count == presentable.count)
-        for (option, token) in zip(OptionsCatalog.colorOptions, presentable) {
-            #expect(option.name == token.displayName)
-            #expect(option.color == token.color)
+    /// `ColorPickerWithDropdown.presets` defaults to `.presentable`, so this is the
+    /// GUI's swatch list itself rather than a copy of it. It went through
+    /// `OptionsCatalog.colorOptions` until 2026-08-16, when that type was deleted
+    /// along with the pre-rendered background picker it was written for.
+    @Test("every presentable token gives the picker a display name and a colour")
+    func presentableTokens_areUsableAsPresets() {
+        for token in ColorTokenTable.presentable {
+            #expect(!token.displayName.isEmpty, "\(token.name) has no display name")
         }
     }
 
     @Test("every GUI preset is a name the parser accepts")
-    func optionsCatalog_namesParse() throws {
-        for option in OptionsCatalog.colorOptions {
-            let parsed = try ColorParser.parse(option.name)
-            #expect(parsed == option.color, "the preset '\(option.name)' parses to a different colour")
-        }
-    }
-
-    @Test("every GUI preset has a pre-rendered background asset")
-    func optionsCatalog_hasPreRenderedAssets() {
-        // `BackgroundSpec.preRenderedAssetName` is "background-<lowercased>-solid",
-        // so adding a presentable token without the artwork would silently offer a
-        // background that draws nothing.
-        for option in OptionsCatalog.colorOptions {
-            for variant in ["solid", "gradient"] {
-                let asset = "background-\(option.name.lowercased())-\(variant)"
-                #expect(NSImage(named: asset) != nil, "missing asset \(asset)")
-            }
+    func presentableTokenNamesParse() throws {
+        for token in ColorTokenTable.presentable {
+            let parsed = try ColorParser.parse(token.displayName)
+            #expect(parsed == token.color,
+                    "the preset '\(token.displayName)' parses to a different colour")
         }
     }
 

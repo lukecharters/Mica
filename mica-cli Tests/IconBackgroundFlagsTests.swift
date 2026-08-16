@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import ArgumentParser
 
 @Suite
 @MainActor
@@ -26,11 +27,10 @@ struct IconBackgroundFlagsTests {
 
     // MARK: - Background resolution
 
-    @Test("--icon-bg resolves the four background kinds")
+    @Test("--icon-bg resolves the three background kinds")
     func backgroundResolution() throws {
         if case .standard = try parseCommand(["--icon-symbol", "star.fill"]).resolvedBackground() {} else { Issue.record("expected standard") }
         if case .customGradient = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"]).resolvedBackground() {} else { Issue.record("expected custom-gradient") }
-        if case .preRendered = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass"]).resolvedBackground() {} else { Issue.record("expected preRendered") }
         guard case .image(let path) = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "/tmp/bg.png"]).resolvedBackground() else {
             Issue.record("expected image"); return
         }
@@ -60,20 +60,30 @@ struct IconBackgroundFlagsTests {
         #expect(settings.icon.background.gradientEndColor == (try MicaColorValue(parsing: "blue")))
     }
 
-    // MARK: - Pre-rendered (Liquid Glass)
+    // MARK: - The retired pre-rendered background
 
-    @Test("prerendered-liquid-glass selects the named gradient/solid asset")
-    func preRenderedAsset() throws {
-        let gradient = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray"])
-        )
-        #expect(gradient.icon.background.source == .preRendered)
-        #expect(gradient.icon.background.preRenderedAssetName == "background-darkgray-gradient")
+    /// Removed on 2026-08-16. The flag has to fail by *name*: `IconBackgroundValue`
+    /// no longer has a case for it, so an unscreened value would parse as an image
+    /// path and be reported as a missing file the user never wrote.
+    @Test("prerendered-liquid-glass is refused, and the error names it",
+          arguments: ["prerendered-liquid-glass", "PreRendered-Liquid-Glass"])
+    func preRenderedIsRetired(_ token: String) throws {
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", token])
+        let error = #expect(throws: ValidationError.self) {
+            try command.performValidationForTesting()
+        }
+        let message = try #require(error).description
+        #expect(message.contains(token))
+        #expect(message.contains("no longer available"))
+        #expect(!message.lowercased().contains("file not found"))
+    }
 
-        let solid = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "darkgray", "--icon-bg-gradient", "off"])
-        )
-        #expect(solid.icon.background.preRenderedAssetName == "background-darkgray-solid")
+    /// The retired keyword is not a path, so nothing downstream may treat it as one
+    /// — `validate()` throwing is the only thing that should happen to it.
+    @Test("the retired keyword is not read as an image background")
+    func preRenderedIsNotAnImagePath() throws {
+        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass"])
+        #expect(command.background.isImageBackground == false)
     }
 
     // MARK: - Style toggles
@@ -118,13 +128,6 @@ struct IconBackgroundFlagsTests {
     func customGradientRequiresColors() {
         #expect(throws: (any Error).self) {
             try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "custom-gradient"]).performValidationForTesting()
-        }
-    }
-
-    @Test("prerendered-liquid-glass rejects a non-asset color")
-    func preRenderedColorValidation() {
-        #expect(throws: (any Error).self) {
-            try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass", "--icon-bg-color", "maroon"]).performValidationForTesting()
         }
     }
 

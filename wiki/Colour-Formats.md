@@ -122,15 +122,6 @@ Two things System mode cannot do, and it says so rather than rendering something
 
   Note `label` and its family count as translucent: `labelColor` is only about 85% opaque, so it cannot be a System-mode background either.
 
-## Pre-rendered Liquid Glass backgrounds
-
-`--icon-bg prerendered-liquid-glass` picks a bundled asset rather than mixing a colour, so `--icon-bg-color` there takes an asset name from its own fixed list rather than the colour grammar above:
-
-```
-black  blue  brown  cyan  darkgray/darkgrey  darkmode  gray/grey  green
-indigo  lightgray/lightgrey  mint  orange  pink  purple  red  teal  white  yellow
-```
-
 ## Forms that are not accepted
 
 Each of these once worked and was removed, because it duplicated something above or had to guess what you meant.
@@ -143,5 +134,7 @@ Each of these once worked and was removed, because it duplicated something above
 | `0.5` or `128` | `srgb:0.5,0.5,0.5` |
 | `systemblue` | `system.blue` |
 | `rgba(255,0,0,0.5)`, `hsla(0,100%,50%,0.5)` | `rgb(255,0,0,0.5)`, `hsl(0,100%,50%,0.5)` |
+
+`--icon-bg prerendered-liquid-glass` is refused for the same reason, though it was a background rather than a colour: it named one of 35 bundled Liquid Glass images, removed in 2026-08. Use `--icon-generation-mode system` for a real Liquid Glass icon, or `--icon-bg-color` for a plain one. A configuration file naming it still opens — it warns and falls back to the standard background.
 
 The bare component list is the one worth explaining: it read its numbers as 0–1 unless one of them exceeded 1, and then as 0–255. So `1,1,1` was white while `2,2,2` was dark gray, and there was no way to ask for the dark gray `0.008,0.008,0.008`. `srgb:` and `rgb()` each say one thing.

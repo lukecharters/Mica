@@ -102,7 +102,6 @@ HAPPY_CASES=(
     "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
     "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
     "icon-bg-gradient-colors-opacity|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|red:0.8,orange:0.4"
-    "icon-bg-prerendered-liquid-glass|star.fill|--icon-bg|prerendered-liquid-glass|--icon-bg-color|blue"
     "icon-bg-image|star.fill|--icon-bg|\$BACKGROUND_FIXTURE"
     "icon-bg-image-scale|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-scale|1.3"
     "icon-bg-image-padding-on|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|on"
@@ -220,6 +219,10 @@ NEGATIVE_CASES=(
     "icon-bg-color-rgba-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|rgba(255,0,0,0.5)"
     "icon-bg-color-grayscale-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|0.5"
     "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
+    # Retired 2026-08-16. The point of the case is *which* error: the keyword has no
+    # case left in IconBackgroundValue, so an unscreened value parses as an image path
+    # and would fail as "File not found" for a file nobody named.
+    "icon-bg-prerendered-retired|no longer available|star.fill|--icon-bg|prerendered-liquid-glass"
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"
     "badge-generation-system-image-fg|image foregrounds are only supported in mica mode|star.fill|--badge-fg|\$SYMBOL_FIXTURE|--badge-generation-mode|system"
@@ -379,13 +382,15 @@ build_cli() {
 
     # The embedded copy, deliberately — NOT "${built_products_dir}/mica-cli".
     #
-    # mica-cli reaches its bundled resources through `Bundle.main`: the Liquid Glass
-    # background assets in Assets.car (IconContentView) and symbol-calibration.json
-    # (SymbolSizingService). The target's membershipExceptions list carries only .swift
-    # files and it has no Resources build phase, so the loose build product has neither,
-    # and **both lookups fail silently** — pre-rendered backgrounds render as nothing at
-    # all, and symbol sizing drops to its auto box-fit tier, producing visibly different
-    # glyph sizes from the app.
+    # mica-cli reaches its bundled resources through `Bundle.main`. The target's
+    # membershipExceptions list carries only .swift files and it has no Resources build
+    # phase, so the loose build product cannot see symbol-calibration.json
+    # (SymbolSizingService) and **the lookup fails silently** — symbol sizing drops to
+    # its auto box-fit tier, producing visibly different glyph sizes from the app.
+    #
+    # There were two such lookups until 2026-08-16. Assets.car was the other, holding
+    # the Liquid Glass background artwork, and a miss there rendered no background at
+    # all; that whole feature is gone.
     #
     # The shipped binary does not have this problem: it lives in Contents/MacOS, so
     # CFBundle resolves the enclosing .app and `Bundle.main` is the app itself. That is

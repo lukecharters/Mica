@@ -156,20 +156,20 @@ struct BaseOverrideTests {
     // `--icon-bg standard` and for an absent `--icon-bg`, so the builder has to
     // check the flag itself before asserting a source.
 
-    @Test("--icon-bg-color alone tints a pre-rendered background without flattening it")
+    @Test("--icon-bg-color alone tints an imported background without flattening it")
     func backgroundColorAlone_doesNotFlattenTheSource() throws {
         var base = Self.distinctiveBase()
-        base.icon.background.source = .preRendered
+        base.icon.background.source = .image
 
         let result = try Self.build(["--icon-bg-color", "red"], onto: base)
-        #expect(result.icon.background.source == .preRendered)
+        #expect(result.icon.background.source == .image)
         #expect(result.icon.background.color == .red)
     }
 
     @Test("An explicit --icon-bg standard does flatten it")
     func explicitStandardBackground_doesFlattenTheSource() throws {
         var base = Self.distinctiveBase()
-        base.icon.background.source = .preRendered
+        base.icon.background.source = .image
 
         let result = try Self.build(["--icon-bg", "standard"], onto: base)
         #expect(result.icon.background.source == .color)

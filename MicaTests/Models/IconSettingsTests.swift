@@ -22,7 +22,6 @@ struct IconSettingsTests {
         #expect(s.icon.foreground.renderingStyle == .monochrome)
         #expect(s.icon.foreground.fillStyle == .flat)
         #expect(s.icon.background.source == .color)
-        #expect(s.icon.background.preRenderedColorName == "Blue")
         #expect(s.icon.background.cornerRadiusStyle == .macOS26)
         #expect(s.export.colorSpace == .sRGB)
         #expect(s.icon.background.usesGradient == true)
@@ -59,22 +58,6 @@ struct IconSettingsTests {
 
         s.export.size = 1024
         #expect(s.export.pixelSize == 2048)
-    }
-
-    // MARK: - icon.background.preRenderedAssetName
-
-    @Test("icon.background.preRenderedAssetName composes lowercase color + gradient/solid suffix")
-    func preRenderedAssetName_gradientAndSolid() {
-        var s = IconSettings()
-        s.icon.background.preRenderedColorName = "Blue"
-        s.icon.background.usesGradient = true
-        #expect(s.icon.background.preRenderedAssetName == "background-blue-gradient")
-
-        s.icon.background.usesGradient = false
-        #expect(s.icon.background.preRenderedAssetName == "background-blue-solid")
-
-        s.icon.background.preRenderedColorName = "GraphitE"
-        #expect(s.icon.background.preRenderedAssetName == "background-graphite-solid")
     }
 
     // MARK: - icon.background.gradientColors / badge.background.gradientColors

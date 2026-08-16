@@ -102,10 +102,9 @@ import SwiftUI
 
     /// The 18 CSS-ish names that appeared in no other Mica vocabulary — not in the
     /// GUI presets, not in the JSON writer's tokens, not in the appex grammar.
-    /// Three of them (`darkgray`, `lightgray`) also name pre-rendered background
-    /// *assets*, which is a separate fixed list and is unaffected — see
-    /// `IconBackgroundFlagsTests`, where `--icon-bg-color darkgray` still resolves
-    /// `background-darkgray-gradient`.
+    /// Two of them (`darkgray`, `lightgray`) also named pre-rendered background
+    /// *assets*, a separate fixed list that was unaffected by the drop and has since
+    /// gone with the assets themselves (2026-08-16).
     private static let droppedLegacyNames = [
         "lightgray", "lightgrey", "darkgray", "darkgrey", "magenta", "lime",
         "navy", "maroon", "olive", "silver", "gold", "crimson", "violet",
