@@ -179,19 +179,6 @@ struct ColorTokenTests {
         }
     }
 
-    @Test("every GUI preset has a pre-rendered background asset")
-    func optionsCatalog_hasPreRenderedAssets() {
-        // `BackgroundSpec.preRenderedAssetName` is "background-<lowercased>-solid",
-        // so adding a presentable token without the artwork would silently offer a
-        // background that draws nothing.
-        for option in OptionsCatalog.colorOptions {
-            for variant in ["solid", "gradient"] {
-                let asset = "background-\(option.name.lowercased())-\(variant)"
-                #expect(NSImage(named: asset) != nil, "missing asset \(asset)")
-            }
-        }
-    }
-
     @Test("every token round-trips through the value type as itself")
     func micaColorValue_keepsEveryToken() throws {
         // The writer emits `stringValue`; reading it back must give the same

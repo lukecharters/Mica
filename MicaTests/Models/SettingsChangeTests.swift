@@ -32,7 +32,7 @@ struct SettingsChangeTests {
     @Test("every stored property has a named field")
     func everyStoredPropertyIsNamed() {
         #expect(SettingsChange.fields.count == Self.leafCount(of: IconSettings()))
-        #expect(SettingsChange.fields.count == 62)
+        #expect(SettingsChange.fields.count == 61)
     }
 
     /// A duplicated key would make two different settings coalesce into each other: edit
@@ -72,13 +72,12 @@ struct SettingsChangeTests {
         case "export.colorSpace": settings.export.colorSpace = .displayP3
         case "icon.mode": settings.icon.mode = .system
 
-        case "icon.background.source": settings.icon.background.source = .preRendered
+        case "icon.background.source": settings.icon.background.source = .image
         case "icon.background.color": settings.icon.background.color = .brown
         case "icon.background.usesGradient": settings.icon.background.usesGradient.toggle()
         case "icon.background.usesCustomGradient": settings.icon.background.usesCustomGradient.toggle()
         case "icon.background.gradientStartColor": settings.icon.background.gradientStartColor = .brown
         case "icon.background.gradientEndColor": settings.icon.background.gradientEndColor = .brown
-        case "icon.background.preRenderedColorName": settings.icon.background.preRenderedColorName = "Teal"
         case "icon.background.cornerRadiusStyle": settings.icon.background.cornerRadiusStyle = .macOS15
         case "icon.background.shadowStyle": settings.icon.background.shadowStyle = .off
         case "icon.background.image": settings.icon.background.image = Self.image

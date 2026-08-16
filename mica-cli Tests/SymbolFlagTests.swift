@@ -214,7 +214,7 @@ struct SymbolFlagTests {
     @Test("A generated background still requires a foreground", arguments: [
         ["--icon-bg", "standard"],
         ["--icon-bg-color", "blue"],
-        ["--icon-bg", "prerendered-liquid-glass"],
+        ["--icon-bg", "custom-gradient", "--icon-bg-gradient-colors", "red,blue"],
     ])
     func generatedBackgroundStillRequiresAForeground(args: [String]) throws {
         // The relaxation is for imported artwork only. Widening it would have

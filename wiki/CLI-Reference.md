@@ -53,8 +53,8 @@ Neither shorthand is a configuration key. In a `.json` file, write `"icon-fg": "
 
 | Flag | Values | Default | Description |
 |---|---|---|---|
-| `--icon-bg` | `standard`, `custom-gradient`, `prerendered-liquid-glass`, or an image path | `standard` | Background source. |
-| `--icon-bg-color` | any [colour](Colour-Formats); for `prerendered-liquid-glass` a named asset colour | `blue` | Background colour: base colour (mica), appex enclosure colour (system), or Liquid Glass asset colour. |
+| `--icon-bg` | `standard`, `custom-gradient`, or an image path | `standard` | Background source. |
+| `--icon-bg-color` | any [colour](Colour-Formats) | `blue` | Background colour: base colour (mica) or appex enclosure colour (system). |
 | `--icon-bg-gradient-colors` | `c1,c2` (top,bottom) | — | The two stops for `custom-gradient` backgrounds. Required with `--icon-bg custom-gradient`. |
 | `--icon-bg-gradient` | `on`, `off` | `on` | Gradient derived from the base colour (standard backgrounds). |
 | `--icon-bg-corner-radius` | `off`, `macos15`, `macos26` | `macos26` (`off` for image backgrounds) | Corner-radius silhouette style. |

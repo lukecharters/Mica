@@ -37,18 +37,9 @@ struct IconSettingsSimpleInspectorTests {
         #expect(badgeBackground.usesImportedSources)
     }
 
-    @Test("A pre-rendered background is not an imported source")
-    func usesImportedSources_preRenderedIsNot() {
-        var settings = IconSettings()
-        settings.icon.background.source = .preRendered
-        // It still can't be shown in the simple pane, but it can only be chosen
-        // from the advanced controls, so it never needs to reveal them.
-        #expect(settings.usesImportedSources == false)
-    }
-
     // MARK: - resetToSimpleControls
 
-    @Test("Imported and pre-rendered sources fold back to symbol + colour")
+    @Test("Imported sources fold back to symbol + colour")
     func reset_foldsSources() throws {
         var settings = IconSettings()
         settings.icon.foreground.source = .image
@@ -63,16 +54,6 @@ struct IconSettingsSimpleInspectorTests {
         #expect(settings.badge.foreground.source == .symbol)
         #expect(settings.badge.background.source == .color)
         #expect(settings.usesImportedSources == false)
-    }
-
-    @Test("A pre-rendered background folds back to the plain colour background")
-    func reset_foldsPreRendered() {
-        var settings = IconSettings()
-        settings.icon.background.source = .preRendered
-
-        settings.resetToSimpleControls()
-
-        #expect(settings.icon.background.source == .color)
     }
 
     @Test("Rendering modes and custom gradients fold away, since they add rows")
@@ -98,8 +79,6 @@ struct IconSettingsSimpleInspectorTests {
         let badgeImage = try ImportedImage.testFixture(sourceName: "badge.png")
         settings.icon.foreground.source = .image
         settings.icon.foreground.image = iconImage
-        settings.icon.background.source = .preRendered
-        settings.icon.background.preRenderedColorName = "Orange"
         settings.badge.background.source = .image
         settings.badge.background.image = badgeImage
         settings.icon.background.usesCustomGradient = true
@@ -112,7 +91,6 @@ struct IconSettingsSimpleInspectorTests {
 
         #expect(settings.icon.foreground.image == iconImage)
         #expect(settings.badge.background.image == badgeImage)
-        #expect(settings.icon.background.preRenderedColorName == "Orange")
         #expect(settings.icon.background.gradientStartColor == .red)
         #expect(settings.icon.background.gradientEndColor == .green)
         #expect(settings.icon.foreground.palettePrimaryColor == .pink)

@@ -9,7 +9,6 @@ struct IconBackgroundSourceSection: View {
 
         Picker("Type", systemImage: "app.grid", selection: $iconSettings.icon.background.source) {
             Text("Color").tag(IconBackgroundSource.color)
-            Text("Pre-Rendered").tag(IconBackgroundSource.preRendered)
             Text("Imported").tag(IconBackgroundSource.image)
         }
         .pickerStyle(.segmented)

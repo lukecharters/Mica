@@ -352,12 +352,6 @@ class IconGenerationRunner {
                     settings.icon.background.gradientEndColor = try MicaColorValue(strictlyParsing: parts[1])
                 }
                 settings.icon.background.color = settings.icon.background.gradientStartColor
-            case .preRendered:
-                settings.icon.background.source = .preRendered
-                // preRenderedAssetName lowercases this when building the asset name.
-                if let color = command.background.color {
-                    settings.icon.background.preRenderedColorName = normalizeBritishSpelling(color)
-                }
             case .image(let path):
                 let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                 // Routes through the same seam as an interactive import, so the two

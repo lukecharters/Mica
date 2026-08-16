@@ -190,7 +190,7 @@ extension SettingsChange {
         ]
     }
 
-    /// 13 fields. Two more than the badge's — pre-rendered assets and a corner radius.
+    /// 12 fields. One more than the badge's — the corner radius.
     private static let iconBackgroundFields: [SettingField] = [
         SettingField("icon.background.source", "Change Icon Background Type",
                      \.icon.background.source),
@@ -204,8 +204,6 @@ extension SettingsChange {
                      \.icon.background.gradientStartColor),
         SettingField("icon.background.gradientEndColor", "Change Icon Gradient Secondary Color",
                      \.icon.background.gradientEndColor),
-        SettingField("icon.background.preRenderedColorName", "Change Icon Pre-Rendered Color",
-                     \.icon.background.preRenderedColorName),
         SettingField("icon.background.cornerRadiusStyle", "Change Icon Corner Style",
                      \.icon.background.cornerRadiusStyle),
         SettingField("icon.background.shadowStyle", "Change Icon Background Shadow",

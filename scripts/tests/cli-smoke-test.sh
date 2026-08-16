@@ -102,7 +102,6 @@ HAPPY_CASES=(
     "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
     "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
     "icon-bg-gradient-colors-opacity|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|red:0.8,orange:0.4"
-    "icon-bg-prerendered-liquid-glass|star.fill|--icon-bg|prerendered-liquid-glass|--icon-bg-color|blue"
     "icon-bg-image|star.fill|--icon-bg|\$BACKGROUND_FIXTURE"
     "icon-bg-image-scale|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-scale|1.3"
     "icon-bg-image-padding-on|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|on"
@@ -220,6 +219,10 @@ NEGATIVE_CASES=(
     "icon-bg-color-rgba-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|rgba(255,0,0,0.5)"
     "icon-bg-color-grayscale-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|0.5"
     "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
+    # Retired 2026-08-16. The point of the case is *which* error: the keyword has no
+    # case left in IconBackgroundValue, so an unscreened value parses as an image path
+    # and would fail as "File not found" for a file nobody named.
+    "icon-bg-prerendered-retired|no longer available|star.fill|--icon-bg|prerendered-liquid-glass"
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"
     "badge-generation-system-image-fg|image foregrounds are only supported in mica mode|star.fill|--badge-fg|\$SYMBOL_FIXTURE|--badge-generation-mode|system"

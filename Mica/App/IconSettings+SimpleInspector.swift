@@ -32,9 +32,9 @@ extension IconSettings {
     /// Symbol foreground on a plain colour background, monochrome rendering, and
     /// a single background colour.
     ///
-    /// Non-destructive — imported artwork, palette colours, custom gradient
-    /// colours and `preRenderedColorName` are all left in place, so re-enabling
-    /// the advanced controls and re-picking a source restores the previous look.
+    /// Non-destructive — imported artwork, palette colours and custom gradient
+    /// colours are all left in place, so re-enabling the advanced controls and
+    /// re-picking a source restores the previous look.
     /// Settings that only change *how* a layer renders without adding a row
     /// (gradients, symbol weight, corner style, symbol scale) are left alone;
     /// they stay hidden-but-applied exactly as they always have.

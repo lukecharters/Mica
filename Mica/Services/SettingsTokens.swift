@@ -220,17 +220,33 @@ enum ForegroundValue: Equatable, Sendable {
 enum IconBackgroundValue: Equatable, Sendable {
     case standard
     case customGradient
-    case preRendered
     case image(String)
 
     /// The recognised keywords, for "is this a path?" checks and help text.
-    static let keywords = ["standard", "custom-gradient", "prerendered-liquid-glass"]
+    static let keywords = ["standard", "custom-gradient"]
+
+    /// Keywords that were recognised once and are now refused.
+    ///
+    /// `prerendered-liquid-glass` selected one of 35 bundled Liquid Glass images
+    /// and was removed on 2026-08-16. It is named here rather than simply deleted
+    /// because `init(parsing:)`'s fallback is `.image`, so a stale value would
+    /// otherwise be read as a *file path* and reported as unreadable artwork —
+    /// a file-not-found for a file the user never named. Callers check this first
+    /// and say what actually happened.
+    ///
+    /// Unlike `SettingsTokenConvertible.supersededCLITokens`, a retired keyword
+    /// does not resolve to anything: there is no surviving spelling of it.
+    static let retiredKeywords = ["prerendered-liquid-glass"]
+
+    /// True for a value that names a retired keyword rather than an image path.
+    static func isRetiredKeyword(_ raw: String) -> Bool {
+        retiredKeywords.contains(raw.lowercased())
+    }
 
     init(parsing raw: String) {
         switch raw.lowercased() {
         case "standard": self = .standard
         case "custom-gradient": self = .customGradient
-        case "prerendered-liquid-glass": self = .preRendered
         default: self = .image(raw)
         }
     }
@@ -240,14 +256,14 @@ enum IconBackgroundValue: Equatable, Sendable {
         switch self {
         case .standard: return "standard"
         case .customGradient: return "custom-gradient"
-        case .preRendered: return "prerendered-liquid-glass"
         case .image(let path): return path
         }
     }
 }
 
-/// The value of `--badge-bg` (and the matching config key). Smaller than the
-/// icon's set — there are no pre-rendered badge assets.
+/// The value of `--badge-bg` (and the matching config key). Case-for-case
+/// identical to the icon's since the pre-rendered assets went; see
+/// `BadgeBackgroundSource` for why it stays a separate type.
 enum BadgeBackgroundValue: Equatable, Sendable {
     case standard
     case customGradient
@@ -295,13 +311,3 @@ func splitColorList(_ raw: String, expecting count: Int) -> ColorListSplit {
     guard parts.allSatisfy({ !$0.isEmpty }) else { return .emptyComponent }
     return .ok(parts)
 }
-
-// MARK: - Pre-rendered background colours
-
-/// Named asset colours available for `prerendered-liquid-glass` backgrounds.
-/// Matches the `background-<color>-<gradient|solid>` assets in Assets.xcassets.
-let validPreRenderedColors = [
-    "black", "blue", "brown", "cyan", "darkgray", "darkmode", "gray", "green",
-    "indigo", "lightgray", "mint", "orange", "pink", "purple", "red", "teal",
-    "white", "yellow",
-]

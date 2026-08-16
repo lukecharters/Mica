@@ -11,8 +11,6 @@ struct IconBackgroundAppearanceSection: View {
         switch iconSettings.icon.background.source {
         case .image:
             importedControls
-        case .preRendered:
-            liquidGlassControls
         case .color:
             standardControls
         }
@@ -40,31 +38,6 @@ struct IconBackgroundAppearanceSection: View {
                 set: { iconSettings.icon.background.shadowStyle = $0 ? .macOS26 : .off }
             ))
         }
-    }
-
-    @ViewBuilder
-    private var liquidGlassControls: some View {
-        Picker(
-            selection: $iconSettings.icon.background.preRenderedColorName,
-            label: HStack(spacing: 12) {
-                Circle()
-                    .stroke(.secondary.opacity(0.5), lineWidth: 1.0)
-                    .fill(OptionsCatalog.color(named: iconSettings.icon.background.preRenderedColorName))
-                    .frame(width: 12, height: 12)
-                Text("Color")
-            }
-        ) {
-            ForEach(OptionsCatalog.colorOptions, id: \.name) { option in
-                Text(option.name).tag(option.name)
-            }
-        }
-        .pickerStyle(.menu)
-
-        if advancedControlsEnabled {
-            Toggle("Gradient", systemImage: "app.translucent", isOn: $iconSettings.icon.background.usesGradient)
-        }
-
-        shadowControl
     }
 
     @ViewBuilder
