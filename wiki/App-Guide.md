@@ -26,7 +26,7 @@ The sidebar lists two groups — **Icon** and **Badge** — each containing a **
 
 ## Generation modes: Mica vs System
 
-The toolbar has two generation-mode menus, each labelled with its current mode and distinguished by its icon — a plain app tile for the icon, a badged one for the badge. The two groups are independent — a Mica icon can carry a System badge and vice versa — and both menus are always there, whichever group the sidebar has selected. (They sat at the top of each group's inspector until 2026-08-04.)
+At the top of each group's inspector is the **Generation Mode** picker, under the name of the group you are editing. The Icon and Badge groups have independent modes — a Mica icon can carry a System badge and vice versa — so select the group in the sidebar to switch its mode. (Between 2026-08-04 and 2026-08-16 this was a pair of toolbar menus instead.)
 
 | | **Mica** | **System** |
 |---|---|---|

@@ -4,9 +4,8 @@ import SwiftUI
 /// Left sidebar: the two selectable objects (Icon, Badge), each with a tri-state
 /// visibility toggle. The layers within a group (foreground / background, plus
 /// the badge's layout) are inspector tabs rather than child rows — see
-/// `LayerTabPicker` and `InspectorControls`. The Mica/System generation mode is
-/// switched from the window toolbar (`GenerationModeMenu`), which shows both groups
-/// at once rather than only the selected one.
+/// `LayerTabPicker` and `InspectorControls`. The Mica/System generation-mode
+/// picker lives at the top of the group's inspector (`GroupModePicker`).
 struct LayerSidebar: View {
     @Binding var iconSettings: IconSettings
     @Binding var selection: IconLayerGroup

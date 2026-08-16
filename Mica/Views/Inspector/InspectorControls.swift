@@ -14,6 +14,13 @@ struct InspectorControls: View {
     /// Active tab per group, owned by ContentView so a canvas click can drive it.
     @Binding var iconTab: LayerTab
     @Binding var badgeTab: LayerTab
+    /// Each group's generation mode, driving `GroupModePicker` at the top of the
+    /// pane. Owned by `ContentView`, not derived from `iconSettings` here: the
+    /// badge's mode is *derived* from its foreground source, so switching it away
+    /// destroys the value it must restore, and `BadgeModeMemory` — the thing that
+    /// remembers it — has to be fed by the settings observer and outlive this view.
+    @Binding var iconIsSystem: Bool
+    @Binding var badgeIsSystem: Bool
     @Binding var iconSettings: IconSettings
     @Binding var appexEnclosureColor: AppexColor
     @Binding var appexSymbolColor: AppexColor
@@ -38,16 +45,17 @@ struct InspectorControls: View {
     @AppStorage("sidebar.badgeGroupLayout.expanded") private var badgeGroupLayoutExpanded = true
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    /// No advanced-controls switch down here any more — it moved to Settings ▸
-    /// General on 2026-08-04 (item B2 of the Mac-conventions plan), on the
-    /// grounds that a preference does not belong inside the panel it reconfigures.
-    /// The flag is still read all over this file; only its control left.
+    /// No advanced-controls switch down here — it moved to Settings ▸ General on
+    /// 2026-08-04 (item B2 of the Mac-conventions plan), on the grounds that a
+    /// preference does not belong inside the panel it reconfigures. The flag is
+    /// still read all over this file; only its control left, and it stayed gone.
     ///
-    /// No Mica/System picker either, as of the same day: it is two `GenerationModeMenu`s
-    /// in the window toolbar, which show both groups at once instead of only whichever
-    /// one the sidebar has selected. This file still branches on the mode everywhere;
-    /// again, only the control left. The badge's `BadgeModeMemory` went with it, to
-    /// `ContentView` — also mounted for the window's life, so it cannot go stale there.
+    /// The **Mica/System picker is a different question and came back** on
+    /// 2026-08-16: the generation mode is a property of the icon rather than a
+    /// preference about the inspector, so it belongs beside the controls it
+    /// reshapes. Its state does not come back with it — `iconIsSystem` /
+    /// `badgeIsSystem` are bindings from `ContentView`, which owns
+    /// `BadgeModeMemory`. That is the half of the 2026-08-04 move worth keeping.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Outside the ScrollView on purpose — see `InspectorGroupHeader`.
@@ -123,11 +131,11 @@ struct InspectorControls: View {
 
     // MARK: - Group panes
 
-    /// Icon: either the single System pane or the tabbed Foreground / Background
-    /// panes. The mode itself is switched from the toolbar.
+    /// Icon: mode picker, then either the single System pane or the tabbed
+    /// Foreground / Background panes.
     @ViewBuilder
     private var iconGroupControls: some View {
-        groupPane(tab: $iconTab, isSystem: isIconAppleReference) {
+        groupPane(mode: $iconIsSystem, tab: $iconTab, isSystem: isIconAppleReference) {
             // System mode renders the whole icon as one appex image, so only its
             // source symbol and colours are editable.
             VStack(spacing: Self.sectionSpacing) {
@@ -163,12 +171,13 @@ struct InspectorControls: View {
         }
     }
 
-    /// Badge: either the single System pane (which keeps the group-level layout
-    /// controls, since position and size are applied when the appex badge is
-    /// composited) or the tabbed Layout / Foreground / Background panes.
+    /// Badge: mode picker, then either the single System pane (which keeps the
+    /// group-level layout controls, since position and size are applied when the
+    /// appex badge is composited) or the tabbed Layout / Foreground / Background
+    /// panes.
     @ViewBuilder
     private var badgeGroupControls: some View {
-        groupPane(tab: $badgeTab, isSystem: isBadgeAppleReference) {
+        groupPane(mode: $badgeIsSystem, tab: $badgeTab, isSystem: isBadgeAppleReference) {
             VStack(spacing: Self.sectionSpacing) {
                 sectionForm {
                     Section("Source", isExpanded: $badgeSourceExpanded) {
@@ -204,16 +213,18 @@ struct InspectorControls: View {
         }
     }
 
-    /// Shared frame for both groups: one of the three panes. The layer tab bar
-    /// belongs to Mica mode with advanced controls on — System mode has no
-    /// separately editable layers, and the simple pane deliberately mirrors
-    /// System's un-tabbed shape.
+    /// Shared frame for both groups: the Mica/System picker, then one of the three
+    /// panes. The layer tab bar belongs to Mica mode with advanced controls on —
+    /// System mode has no separately editable layers, and the simple pane
+    /// deliberately mirrors System's un-tabbed shape.
     ///
-    /// The Mica/System picker that used to head this stack is in the toolbar. Nothing
-    /// here carries top padding: `InspectorGroupHeader` sits above all three panes and
-    /// its bottom padding is the only gap they need.
+    /// The picker shows in all three, because the mode is what *chooses* between
+    /// them. Nothing else here carries top padding: `InspectorGroupHeader` sits above
+    /// this whole stack and its bottom padding is the gap the picker needs; the
+    /// picker's own bottom padding is the gap for everything under it.
     @ViewBuilder
     private func groupPane<SystemPane: View, SimplePane: View, TabPane: View>(
+        mode: Binding<Bool>,
         tab: Binding<LayerTab>,
         isSystem: Bool,
         @ViewBuilder systemContent: () -> SystemPane,
@@ -221,6 +232,9 @@ struct InspectorControls: View {
         @ViewBuilder tabContent: (LayerTab) -> TabPane
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
+            GroupModePicker(isSystem: mode)
+                .padding(.horizontal, 20)
+
             if isSystem {
                 systemContent()
             } else if !advancedControlsEnabled {
@@ -518,12 +532,19 @@ private struct InspectorControlsPreview: View {
     @State private var symbol: AppexColor = .white
     @State private var badgeEnclosure: AppexColor = .blue
     @State private var badgeSymbol: AppexColor = .white
+    /// Stand-ins for `ContentView`'s bindings. The badge's is a plain `@State` here
+    /// rather than a `BadgeModeMemory`, so flicking it in a preview forgets the
+    /// previous source — that memory is the window's, not the panel's.
+    @State private var iconIsSystem = false
+    @State private var badgeIsSystem = false
 
     var body: some View {
         InspectorControls(
             group: group,
             iconTab: $iconTab,
             badgeTab: $badgeTab,
+            iconIsSystem: $iconIsSystem,
+            badgeIsSystem: $badgeIsSystem,
             iconSettings: $settings,
             appexEnclosureColor: $enclosure,
             appexSymbolColor: $symbol,
@@ -533,9 +554,16 @@ private struct InspectorControlsPreview: View {
         .frame(width: 380, height: 700)
         .onAppear {
             settings.badge.isVisible = true
+            // Both halves: the pane branches on the settings, the picker on the
+            // binding. In the app those are two views of one value; here they have
+            // to be set in step or the preview shows a Mica picker over a System pane.
             switch group {
-            case .icon:  settings.icon.mode = isSystem ? .system : .mica
-            case .badge: settings.badge.foreground.source = isSystem ? .system : .symbol
+            case .icon:
+                settings.icon.mode = isSystem ? .system : .mica
+                iconIsSystem = isSystem
+            case .badge:
+                settings.badge.foreground.source = isSystem ? .system : .symbol
+                badgeIsSystem = isSystem
             }
         }
     }
