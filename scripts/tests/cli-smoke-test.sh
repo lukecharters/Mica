@@ -382,13 +382,15 @@ build_cli() {
 
     # The embedded copy, deliberately — NOT "${built_products_dir}/mica-cli".
     #
-    # mica-cli reaches its bundled resources through `Bundle.main`: the Liquid Glass
-    # background assets in Assets.car (IconContentView) and symbol-calibration.json
-    # (SymbolSizingService). The target's membershipExceptions list carries only .swift
-    # files and it has no Resources build phase, so the loose build product has neither,
-    # and **both lookups fail silently** — pre-rendered backgrounds render as nothing at
-    # all, and symbol sizing drops to its auto box-fit tier, producing visibly different
-    # glyph sizes from the app.
+    # mica-cli reaches its bundled resources through `Bundle.main`. The target's
+    # membershipExceptions list carries only .swift files and it has no Resources build
+    # phase, so the loose build product cannot see symbol-calibration.json
+    # (SymbolSizingService) and **the lookup fails silently** — symbol sizing drops to
+    # its auto box-fit tier, producing visibly different glyph sizes from the app.
+    #
+    # There were two such lookups until 2026-08-16. Assets.car was the other, holding
+    # the Liquid Glass background artwork, and a miss there rendered no background at
+    # all; that whole feature is gone.
     #
     # The shipped binary does not have this problem: it lives in Contents/MacOS, so
     # CFBundle resolves the enclosing .app and `Bundle.main` is the app itself. That is

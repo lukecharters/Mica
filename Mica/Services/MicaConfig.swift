@@ -1038,8 +1038,8 @@ private struct ConfigWriter {
     // palette is gone. That is the accepted cost of the file meaning exactly
     // what it renders. Before relaxing a gate, check the render code rather than
     // the key's name — `icon-bg-corner-radius` looks inert for an imported
-    // background and is not (`IconContentView`'s `.image` branch clips with it), while
-    // it genuinely is inert for a pre-rendered one.
+    // background and is not (`IconContentView`'s `.image` branch clips with it, and
+    // skips the clip entirely only at `.off`).
 
     func dictionary(assets: inout MicaConfigAssetCatalog) -> [String: Any] {
         var output: [String: Any] = [:]
