@@ -63,8 +63,16 @@ struct IconBackgroundAppearanceSection: View {
         }
 
         if iconSettings.icon.background.usesCustomGradient {
-            ColorPicker("Primary", selection: $iconSettings.icon.background.gradientStartColor.asColor)
-            ColorPicker("Secondary", selection: $iconSettings.icon.background.gradientEndColor.asColor)
+            // The same preset/custom control as the flat colour below, so a
+            // gradient stop can be a token rather than only components.
+            ColorPickerWithDropdown(
+                label: "Primary",
+                value: $iconSettings.icon.background.gradientStartColor
+            )
+            ColorPickerWithDropdown(
+                label: "Secondary",
+                value: $iconSettings.icon.background.gradientEndColor
+            )
         } else {
             // Shared preset/custom flow — self-heals the reset `useCustom` flag
             // and shows the actual color as the fallback swatch.
