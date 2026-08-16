@@ -13,6 +13,12 @@ struct InspectorPanel: View {
     let group: IconLayerGroup
     @Binding var iconTab: LayerTab
     @Binding var badgeTab: LayerTab
+    /// The two groups' generation modes, as plain `Bool`s for `GroupModePicker`.
+    /// Owned by `ContentView` rather than derived here, because the badge's half
+    /// needs `BadgeModeMemory` — which has to outlive any view that switches the
+    /// mode, and is fed by the settings observer.
+    @Binding var iconIsSystem: Bool
+    @Binding var badgeIsSystem: Bool
     let tab: InspectorTab
     let canExport: Bool
 
@@ -26,6 +32,8 @@ struct InspectorPanel: View {
                     group: group,
                     iconTab: $iconTab,
                     badgeTab: $badgeTab,
+                    iconIsSystem: $iconIsSystem,
+                    badgeIsSystem: $badgeIsSystem,
                     iconSettings: $iconSettings,
                     appexEnclosureColor: $appexEnclosureColor,
                     appexSymbolColor: $appexSymbolColor,

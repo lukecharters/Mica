@@ -149,10 +149,16 @@ struct ContentView: View {
     /// Incremented on every canvas click. The selection outline restarts its fade
     /// when this changes, so clicking the already-selected layer still flashes it.
     @State private var selectionPulse: Int = 0
-    /// The badge's way back out of System mode. Owned here, not by the toolbar menu:
-    /// this view is mounted for the window's whole life, so the remembered source
-    /// cannot go stale. (It lived in `InspectorControls` for the same reason until
-    /// the mode picker moved to the toolbar on 2026-08-04.)
+    /// The badge's way back out of System mode. Owned here rather than by whichever
+    /// control switches the mode: this view is mounted for the window's whole life,
+    /// so the remembered source cannot go stale.
+    ///
+    /// It stayed here when the mode picker went back to the inspector on 2026-08-16,
+    /// deliberately. `InspectorControls` is also mounted across group and tab changes
+    /// and held this as inline `@State` before 2026-08-04 — but only out here can the
+    /// settings observer below feed it, which is what catches a source arriving from
+    /// an import, a paste, a configuration or an undo. Being a plain type rather than
+    /// view state is also what makes it testable (`BadgeModeMemoryTests`).
     @State private var badgeModeMemory = BadgeModeMemory()
     @State private var appexService = AppexReferenceService()
     /// NavigationSplitView experiment: drives the sidebar column instead of the old
@@ -298,6 +304,8 @@ struct ContentView: View {
                 group: selectedGroup,
                 iconTab: $iconTab,
                 badgeTab: $badgeTab,
+                iconIsSystem: iconModeBinding,
+                badgeIsSystem: badgeModeBinding,
                 tab: inspectorTab,
                 canExport: viewModel.canExport
             )
@@ -308,14 +316,12 @@ struct ContentView: View {
                 max: PaneWidthPreferences.Pane.inspector.range.upperBound
             )
         }
-        // One `ToolbarContent` type, not an inline block. Adding the two
-        // generation-mode menus inline broke the build with "unable to type-check
-        // this expression in reasonable time" — `body`'s fourth trip over that
-        // ceiling. See `IconWindowToolbar`.
+        // One `ToolbarContent` type, not an inline block. Building it inline broke
+        // the build with "unable to type-check this expression in reasonable time" —
+        // `body`'s fourth trip over that ceiling. The two generation-mode menus that
+        // caused it are gone, but the type stays; see `IconWindowToolbar`.
         .toolbar {
             IconWindowToolbar(
-                iconIsSystem: iconModeBinding,
-                badgeIsSystem: badgeModeBinding,
                 zoomLevel: $zoomLevel,
                 previewPointSize: $previewPointSize,
                 inspectorTab: $inspectorTab,
@@ -360,8 +366,8 @@ struct ContentView: View {
             viewModel.settingsDidChange(from: previous, undoManager: undoManager)
             // Piggy-backing rather than taking a fifth `.onChange`: the badge can
             // reach a new source from anywhere — the inspector, a pasted image, an
-            // imported configuration, an undo — and the toolbar's mode menu has to
-            // remember whichever one, not only the ones it set itself. `observe`
+            // imported configuration, an undo — and the mode picker has to remember
+            // whichever one, not only the ones it set itself. `observe`
             // ignores `.system` and is a no-op on an unchanged value, so running it
             // on every settings change costs nothing. A dedicated `.onChange` here
             // put `body` over the type-checker's ceiling; see the `.toolbar` note.
@@ -493,9 +499,13 @@ struct ContentView: View {
     //
     // Out here for the same reason as the bindings above: `body` already sits at the
     // type-checker's ceiling, and two more inline `Binding(get:set:)` arguments in
-    // the toolbar is exactly the shape that has pushed it over three times.
+    // the inspector call is exactly the shape that has pushed it over four times.
+    //
+    // They are handed to `InspectorPanel` rather than to the toolbar as of
+    // 2026-08-16 — the picker they drive is back at the top of each group's pane —
+    // but they stay owned here, because `badgeModeMemory` does. See below.
 
-    /// Drives the icon's toolbar mode menu. The icon stores its mode outright.
+    /// Drives the icon group's Mica/System picker. The icon stores its mode outright.
     private var iconModeBinding: Binding<Bool> {
         Binding(
             get: { viewModel.iconSettings.icon.mode == .system },
@@ -503,8 +513,8 @@ struct ContentView: View {
         )
     }
 
-    /// Drives the badge's toolbar mode menu. The badge has no stored mode — it is
-    /// derived from its foreground source — so switching overwrites the source and
+    /// Drives the badge group's Mica/System picker. The badge has no stored mode — it
+    /// is derived from its foreground source — so switching overwrites the source and
     /// `badgeModeMemory` is what brings the user's choice back. See `BadgeModeMemory`.
     private var badgeModeBinding: Binding<Bool> {
         Binding(
