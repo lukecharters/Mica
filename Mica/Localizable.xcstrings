@@ -1,35 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
-    "—" : {
-
-    },
-    "... +%lld more" : {
-
-    },
-    "%.0f × %.0f px" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$.0f × %2$.0f px"
-          }
-        }
-      }
-    },
-    "%@ (%lld)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ (%2$lld)"
-          }
-        }
-      }
-    },
     "%@ generation mode" : {
 
     },
@@ -40,101 +11,6 @@
 
     },
     "%@ visible" : {
-
-    },
-    "%lld" : {
-
-    },
-    "%lld / %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld / %2$lld"
-          }
-        }
-      }
-    },
-    "%lld / %lld families fully calibrated" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld / %2$lld families fully calibrated"
-          }
-        }
-      }
-    },
-    "%lld / %lld symbols" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld / %2$lld symbols"
-          }
-        }
-      }
-    },
-    "%lld calibrated compared" : {
-
-    },
-    "%lld custom override(s)" : {
-
-    },
-    "%lld families" : {
-
-    },
-    "%lld groups" : {
-
-    },
-    "%lld members" : {
-
-    },
-    "%lld selected" : {
-
-    },
-    "%lld shown" : {
-
-    },
-    "%lld symbols" : {
-
-    },
-    "%lld symbols (shared)" : {
-
-    },
-    "%lld/%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld"
-          }
-        }
-      }
-    },
-    "%lld/%lld calibrated" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld calibrated"
-          }
-        }
-      }
-    },
-    "%lld%%" : {
-
-    },
-    "←/→" : {
-
-    },
-    "⇧←/→" : {
-
-    },
-    "⇧↑/↓" : {
-
-    },
-    "⌘↑/↓" : {
 
     },
     "2x (Retina)" : {
@@ -187,109 +63,13 @@
         }
       }
     },
-    "Accept %lld Predictions" : {
-
-    },
-    "Accept All" : {
-
-    },
-    "Accept Prediction (Space)" : {
-
-    },
-    "Accept Shown Predictions" : {
-
-    },
     "Actual Size" : {
 
     },
     "Advanced Controls" : {
 
     },
-    "All Icons" : {
-
-    },
-    "Also write the content-centering Y offset hint when accepting predictions" : {
-
-    },
-    "anchorX %.4f (%.1f/208)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "anchorX %1$.4f (%2$.1f/208)"
-          }
-        }
-      }
-    },
-    "anchorY %.4f (%.1f/208)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "anchorY %1$.4f (%2$.1f/208)"
-          }
-        }
-      }
-    },
     "Appearance" : {
-
-    },
-    "Apple family: %@" : {
-
-    },
-    "Apple hand-tuned (container_recipes)" : {
-
-    },
-    "Apple Reference" : {
-
-    },
-    "Apple reference overlay" : {
-
-    },
-    "Apple's IconServices render of the current symbol and colours on this Mac. Follows the system appearance. No badge — badge ground truth needs screenshots." : {
-
-    },
-    "Applies to %lld variants: %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Applies to %1$lld variants: %2$@%3$@"
-          }
-        }
-      }
-    },
-    "Apply" : {
-
-    },
-    "Apply Calibration to %@..." : {
-
-    },
-    "Apply Calibration to %lld Symbol(s)" : {
-
-    },
-    "Apply Calibration to Family" : {
-
-    },
-    "Apply Calibration..." : {
-
-    },
-    "Apply suggested Y offset" : {
-
-    },
-    "Apply This Calibration to Family" : {
-
-    },
-    "Apply to Family" : {
-
-    },
-    "auto" : {
-
-    },
-    "Auto Gradient (.gradient)" : {
-
-    },
-    "Background" : {
 
     },
     "Background Color" : {
@@ -339,13 +119,7 @@
         }
       }
     },
-    "Background Gradient" : {
-
-    },
     "Background Shadow" : {
-
-    },
-    "Badge" : {
 
     },
     "Badge generation failed: %@" : {
@@ -354,25 +128,10 @@
     "Badge Layout" : {
 
     },
-    "Baseline Y Correction" : {
-
-    },
-    "Bold" : {
-
-    },
-    "Box-fit prediction disagrees with calibration by this much" : {
-
-    },
     "Browse SF Symbols" : {
 
     },
-    "Calibrated:" : {
-
-    },
     "Cancel" : {
-
-    },
-    "Canvas" : {
 
     },
     "Change Badge Background Color" : {
@@ -1268,31 +1027,13 @@
         }
       }
     },
-    "Check symbols to keep in \"%@\". Unchecked symbols move to the new family." : {
-
-    },
-    "Choose a calibrated symbol to copy its values from:" : {
-
-    },
     "Choose File…" : {
 
     },
     "Choose which %@ layer to edit" : {
 
     },
-    "Choose…" : {
-
-    },
-    "clamped" : {
-
-    },
     "Clear" : {
-
-    },
-    "Clear Selection" : {
-
-    },
-    "Cmd+Up/Down" : {
 
     },
     "Color" : {
@@ -1395,25 +1136,7 @@
     "Command Line Tool Reference" : {
 
     },
-    "Comparison" : {
-
-    },
-    "Container" : {
-
-    },
-    "container_recipes.plist unavailable" : {
-
-    },
-    "Containers:" : {
-
-    },
-    "Content center:" : {
-
-    },
     "Controls" : {
-
-    },
-    "Copy" : {
 
     },
     "Copy Icon" : {
@@ -1422,32 +1145,7 @@
     "Copy Symbol Name" : {
 
     },
-    "Copy the current symbol's calibration values to all %lld members of \"%@\"?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copy the current symbol's calibration values to all %1$lld members of \"%2$@\"?"
-          }
-        }
-      }
-    },
-    "Copy Values" : {
-
-    },
     "Corners" : {
-
-    },
-    "Correction:" : {
-
-    },
-    "Create & Move" : {
-
-    },
-    "Current Family" : {
-
-    },
-    "Current Symbol" : {
 
     },
     "Custom Gradient" : {
@@ -1456,44 +1154,7 @@
     "Custom…" : {
 
     },
-    "Derived ratios" : {
-
-    },
-    "Deselect All" : {
-
-    },
-    "diameter %.4f (%.1f/208)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "diameter %1$.4f (%2$.1f/208)"
-          }
-        }
-      }
-    },
-    "Done" : {
-
-    },
-    "Drag moves" : {
-
-    },
-    "Drop a screenshot here" : {
-
-    },
-    "Drop an image on the comparison area, or…" : {
-
-    },
-    "e.g. star.special" : {
-
-    },
-    "Effective:" : {
-
-    },
     "Enter a symbol name to generate" : {
-
-    },
-    "Escape" : {
 
     },
     "Export" : {
@@ -1508,38 +1169,7 @@
     "Export Configuration…" : {
 
     },
-    "Families:" : {
-
-    },
-    "Family Actions" : {
-
-    },
-    "Filter" : {
-
-    },
-    "Filter by symbol name or family..." : {
-
-    },
-    "Filter symbols..." : {
-
-    },
-    "Font size: %@ pt (enclosure: %@ pt)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Font size: %1$@ pt (enclosure: %2$@ pt)"
-          }
-        }
-      }
-    },
-    "Frame:" : {
-
-    },
     "General" : {
-
-    },
-    "Generate" : {
 
     },
     "Generating…" : {
@@ -1549,9 +1179,6 @@
 
     },
     "Gradient" : {
-
-    },
-    "Gradient End" : {
 
     },
     "Gray" : {
@@ -1601,9 +1228,6 @@
         }
       }
     },
-    "Grid" : {
-
-    },
     "Hide Inspector" : {
 
     },
@@ -1649,9 +1273,6 @@
     "Import Configuration…" : {
 
     },
-    "Import…" : {
-
-    },
     "Imported" : {
 
     },
@@ -1659,9 +1280,6 @@
 
     },
     "Importing" : {
-
-    },
-    "In Apple's container_recipes.plist — hand-tuned, rule not expected to match" : {
 
     },
     "in its own colors" : {
@@ -1720,132 +1338,19 @@
     "Keep existing macOS icon padding and shadow. Turn off to scale up and fill the frame." : {
 
     },
-    "Keyboard Shortcuts" : {
-
-    },
     "Layout" : {
-
-    },
-    "Left/Right" : {
-
-    },
-    "Load macOS 15" : {
-
-    },
-    "Load macOS 26" : {
-
-    },
-    "Loading references: %lld/%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Loading references: %1$lld/%2$lld"
-          }
-        }
-      }
-    },
-    "Mark %lld as Needs Review" : {
-
-    },
-    "Mark All" : {
-
-    },
-    "Mark calibrated + advance" : {
-
-    },
-    "Mark calibrated + advance member" : {
-
-    },
-    "Mark Shown as Needs Review" : {
-
-    },
-    "Mark skipped + advance" : {
-
-    },
-    "Mark skipped + advance member" : {
 
     },
     "Match Export Size" : {
 
     },
-    "Matches the gradient macOS applies to appex enclosures by default." : {
-
-    },
-    "Measure all SF Symbols and save their intrinsic dimensions to JSON." : {
-
-    },
-    "Measure All Symbols" : {
-
-    },
-    "Measure tight bounds for all symbols to compute predictions." : {
-
-    },
-    "Measured %lld symbols" : {
-
-    },
-    "Measuring tight bounds… %lld symbols" : {
-
-    },
-    "Medium" : {
-
-    },
-    "Merge all %lld members of \"%@\" into another family" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Merge all %1$lld members of \"%2$@\" into another family"
-          }
-        }
-      }
-    },
-    "Merge Family Into..." : {
-
-    },
-    "Merge..." : {
-
-    },
-    "Metrics Not Available" : {
-
-    },
     "Mica Help" : {
-
-    },
-    "Mode" : {
-
-    },
-    "Move / Reset / Apply calibration" : {
-
-    },
-    "Move %@ to Family..." : {
-
-    },
-    "Move %lld Symbol(s) to Family" : {
-
-    },
-    "Move Symbol(s) to Family" : {
 
     },
     "Move the badge horizontally from its corner. Dragging it on the canvas does the same, as do the arrow keys." : {
 
     },
     "Move the badge vertically from its corner. Dragging it on the canvas does the same, as do the arrow keys." : {
-
-    },
-    "Move to Another Family..." : {
-
-    },
-    "Move to Family..." : {
-
-    },
-    "Move: %lld" : {
-
-    },
-    "Moving %lld symbols" : {
-
-    },
-    "Moving: %@" : {
 
     },
     "Multicolor" : {
@@ -1895,97 +1400,16 @@
         }
       }
     },
-    "Multiplier" : {
-
-    },
-    "Needs Review (Esc)" : {
-
-    },
-    "Needs review:" : {
-
-    },
-    "New family name" : {
-
-    },
-    "New family name:" : {
-
-    },
     "New Icons" : {
 
     },
     "New windows start here. Windows already open keep their own settings." : {
 
     },
-    "No baseline data for %@" : {
-
-    },
-    "No Families" : {
-
-    },
-    "No families match filter" : {
-
-    },
-    "No families match the current filter" : {
-
-    },
-    "No Measurements" : {
-
-    },
     "No Preview" : {
 
     },
-    "No Symbol Selected" : {
-
-    },
-    "No Symbols" : {
-
-    },
-    "No symbols match filter" : {
-
-    },
-    "No symbols match the current filter" : {
-
-    },
-    "No tight-bounds cache — open the Auto Sizing Review tool (⇧⌘A) to measure first." : {
-
-    },
-    "Nudge multiplier +/-0.001" : {
-
-    },
-    "Nudge multiplier ±0.001" : {
-
-    },
-    "Nudge X offset +/-0.001" : {
-
-    },
-    "Nudge X offset ±0.001" : {
-
-    },
-    "Nudge Y offset +/-0.001" : {
-
-    },
-    "Nudge Y offset ±0.001" : {
-
-    },
     "OK" : {
-
-    },
-    "Opacity" : {
-
-    },
-    "Or create new family:" : {
-
-    },
-    "Our Rendering" : {
-
-    },
-    "Ours" : {
-
-    },
-    "Outlier threshold" : {
-
-    },
-    "Parameters" : {
 
     },
     "Paste as Badge Background" : {
@@ -1998,9 +1422,6 @@
 
     },
     "Paste as Icon Symbol" : {
-
-    },
-    "Pinch to zoom, drag to pan, double-click to reset" : {
 
     },
     "Position" : {
@@ -2021,37 +1442,10 @@
     "Preview zoom" : {
 
     },
-    "Previous / Next family" : {
-
-    },
-    "Previous / Next member" : {
-
-    },
-    "Previous / Next symbol" : {
-
-    },
     "Primary" : {
 
     },
-    "Progress" : {
-
-    },
-    "Reference" : {
-
-    },
-    "Regular" : {
-
-    },
     "Release Notes" : {
-
-    },
-    "Remaining:" : {
-
-    },
-    "Remeasure" : {
-
-    },
-    "Render" : {
 
     },
     "Rendering" : {
@@ -2060,46 +1454,10 @@
     "Report an Issue…" : {
 
     },
-    "Reset" : {
-
-    },
-    "Reset Alignment" : {
-
-    },
-    "Reset All" : {
-
-    },
     "Reset Position" : {
 
     },
-    "Reset to Algorithmic Families" : {
-
-    },
-    "Reset to Algorithmic Family" : {
-
-    },
-    "Reveal in Finder" : {
-
-    },
-    "Right-click member" : {
-
-    },
-    "Same as previous + advance" : {
-
-    },
-    "Same as previous + advance member" : {
-
-    },
     "Search" : {
-
-    },
-    "Search calibrated symbols..." : {
-
-    },
-    "Search families..." : {
-
-    },
-    "Search symbols…" : {
 
     },
     "Secondary" : {
@@ -2108,28 +1466,10 @@
     "Select" : {
 
     },
-    "Semibold" : {
-
-    },
     "Set Corners to Off on Import" : {
 
     },
-    "Set status to needs-review on all %lld symbols in the current filter, keeping their existing values. Use the Apple Reference Calibration tool (⇧⌘K) to recapture them." : {
-
-    },
     "Shadow" : {
-
-    },
-    "Shadows" : {
-
-    },
-    "Shared calibration" : {
-
-    },
-    "Shift+Left/Right" : {
-
-    },
-    "Shift+Up/Down" : {
 
     },
     "Show advanced controls" : {
@@ -2147,34 +1487,10 @@
     "Show the %@" : {
 
     },
-    "Show Wiper" : {
-
-    },
     "Size" : {
 
     },
-    "Skipped:" : {
-
-    },
-    "Sort" : {
-
-    },
-    "Sort:" : {
-
-    },
     "Source" : {
-
-    },
-    "Space" : {
-
-    },
-    "Split" : {
-
-    },
-    "Split Family" : {
-
-    },
-    "Split..." : {
 
     },
     "Standard color space for web and most displays." : {
@@ -2224,13 +1540,7 @@
         }
       }
     },
-    "Stay: %lld" : {
-
-    },
     "Styling/Export" : {
-
-    },
-    "Suggested Y offset:" : {
 
     },
     "Symbol" : {
@@ -2289,12 +1599,6 @@
     "Symbol Shadow" : {
 
     },
-    "symbol_baselines.json not found in bundle" : {
-
-    },
-    "symbol_metrics.json not found. Run Generate Symbol Metrics first." : {
-
-    },
     "System Gray" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2341,9 +1645,6 @@
           }
         }
       }
-    },
-    "Tab" : {
-
     },
     "Tertiary" : {
 
@@ -2407,12 +1708,6 @@
     "The whole badge, relative to the size macOS itself draws one. Past about 109% it starts moving inward to stay on the canvas." : {
 
     },
-    "Tight bounds:" : {
-
-    },
-    "Tint Overlay" : {
-
-    },
     "Toggle Inspector" : {
 
     },
@@ -2422,25 +1717,7 @@
     "Toggle the drop shadow behind the imported image" : {
 
     },
-    "Total symbols:" : {
-
-    },
-    "Total:" : {
-
-    },
     "Type" : {
-
-    },
-    "uncalibrated" : {
-
-    },
-    "Uncalibrated:" : {
-
-    },
-    "Up/Down" : {
-
-    },
-    "Use" : {
 
     },
     "Use Preset" : {
@@ -2502,9 +1779,6 @@
         }
       }
     },
-    "Write the predicted multiplier to all %lld symbols in the current filter as calibrated entries (source: auto-boxfit). Apple-tuned symbols are skipped." : {
-
-    },
     "X Offset" : {
 
     },
@@ -2515,9 +1789,6 @@
 
     },
     "Zoom Out" : {
-
-    },
-    "Zoom: %.1fx" : {
 
     }
   },
