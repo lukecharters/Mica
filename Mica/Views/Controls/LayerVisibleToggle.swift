@@ -6,9 +6,11 @@ import SwiftUI
 /// control reads positively, matching the sidebar's eye toggles which show
 /// whether a layer is visible.
 ///
-/// Per-layer visibility lives here because the sidebar only has group rows now —
-/// the group eye still hides or shows a whole group at once (`iconHidden` /
-/// `badgeHidden`), and these toggles reach the individual layers.
+/// The sidebar's layer rows carry an eye over the *same* flag, so a layer has two
+/// controls and no single owner. That is deliberate — the sidebar answers "what is
+/// hidden?" for all four layers at once, this answers it for the layer being
+/// edited — and it works only because both write through
+/// `icon.foreground.isHidden` and friends rather than mirroring the state.
 struct LayerVisibleToggle: View {
     /// What this toggle shows and hides — "Icon Foreground", "Badge Background",
     /// or a whole group in the simple and System panes.

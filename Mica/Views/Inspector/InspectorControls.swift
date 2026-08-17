@@ -1,19 +1,25 @@
 // Views/Inspector/InspectorControls.swift
 import SwiftUI
 
-/// Renders the controls for whichever group is selected in the left LayerSidebar:
-/// the group's Mica/System picker, then one of three panes — the tabbed
-/// Source / Layout / Appearance sections for the active `LayerTabPicker` tab
-/// (Mica mode with advanced controls on), a single un-tabbed pane of the handful
-/// of controls that matter (Mica mode with advanced controls off), or System
-/// mode's single pane. See `groupPane(mode:tab:isSystem:…)`.
+/// Renders the controls for whatever the left `LayerSidebar` has selected: the
+/// group's Mica/System picker, then one of three panes — the Source / Layout /
+/// Appearance sections for the layer row the sidebar is on (Mica mode with
+/// advanced controls on), a single un-tabbed pane of the handful of controls that
+/// matter (Mica mode with advanced controls off), or System mode's single pane.
+/// See `groupPane(mode:tab:isSystem:…)`.
 ///
-/// `InspectorPreferences` (in Models) holds the advanced-controls key.
+/// **This panel chooses none of that.** The group and the per-group layer arrive
+/// as plain values from `ContentView`; the sidebar and the canvas are what write
+/// them. There was a `LayerTabPicker` segmented bar here between 2026-07-25 and
+/// 2026-08-16, which is why `iconTab`/`badgeTab` used to be bindings.
+///
+/// `InspectorPreferences` holds the advanced-controls key.
 struct InspectorControls: View {
     let group: IconLayerGroup
-    /// Active tab per group, owned by ContentView so a canvas click can drive it.
-    @Binding var iconTab: LayerTab
-    @Binding var badgeTab: LayerTab
+    /// Active layer per group, owned by ContentView so the sidebar's child rows and
+    /// a canvas click drive one value. Read-only here — see the note above.
+    let iconTab: LayerTab
+    let badgeTab: LayerTab
     /// Each group's generation mode, driving `GroupModePicker` at the top of the
     /// pane. Owned by `ContentView`, not derived from `iconSettings` here: the
     /// badge's mode is *derived* from its foreground source, so switching it away
@@ -115,8 +121,8 @@ struct InspectorControls: View {
         }
     }
 
-    /// The tab currently driving the selected group's pane. Meaningless in System
-    /// mode (no tabs), but still fine to read — it just doesn't change there.
+    /// The layer currently driving the selected group's pane. Meaningless in System
+    /// mode (no layer rows), but still fine to read — it just doesn't change there.
     private var activeTab: LayerTab {
         group == .icon ? iconTab : badgeTab
     }
@@ -135,7 +141,7 @@ struct InspectorControls: View {
     /// Foreground / Background panes.
     @ViewBuilder
     private var iconGroupControls: some View {
-        groupPane(mode: $iconIsSystem, tab: $iconTab, isSystem: isIconAppleReference) {
+        groupPane(mode: $iconIsSystem, tab: iconTab, isSystem: isIconAppleReference) {
             // System mode renders the whole icon as one appex image, so only its
             // source symbol and colours are editable.
             VStack(spacing: Self.sectionSpacing) {
@@ -177,7 +183,7 @@ struct InspectorControls: View {
     /// panes.
     @ViewBuilder
     private var badgeGroupControls: some View {
-        groupPane(mode: $badgeIsSystem, tab: $badgeTab, isSystem: isBadgeAppleReference) {
+        groupPane(mode: $badgeIsSystem, tab: badgeTab, isSystem: isBadgeAppleReference) {
             VStack(spacing: Self.sectionSpacing) {
                 sectionForm {
                     Section("Source", isExpanded: $badgeSourceExpanded) {
@@ -214,18 +220,20 @@ struct InspectorControls: View {
     }
 
     /// Shared frame for both groups: the Mica/System picker, then one of the three
-    /// panes. The layer tab bar belongs to Mica mode with advanced controls on —
-    /// System mode has no separately editable layers, and the simple pane
-    /// deliberately mirrors System's un-tabbed shape.
+    /// panes. `tab` selects the third one's content and is ignored by the other two
+    /// — System mode has no separately editable layers, and the simple pane edits a
+    /// group as one thing.
     ///
     /// The picker shows in all three, because the mode is what *chooses* between
     /// them. Nothing else here carries top padding: `InspectorGroupHeader` sits above
     /// this whole stack and its bottom padding is the gap the picker needs; the
-    /// picker's own bottom padding is the gap for everything under it.
+    /// picker's own bottom padding is the gap for everything under it. That last
+    /// clause is now true of all three panes — the layer tab bar used to sit between
+    /// the picker and `tabContent` and supply its own 16pt.
     @ViewBuilder
     private func groupPane<SystemPane: View, SimplePane: View, TabPane: View>(
         mode: Binding<Bool>,
-        tab: Binding<LayerTab>,
+        tab: LayerTab,
         isSystem: Bool,
         @ViewBuilder systemContent: () -> SystemPane,
         @ViewBuilder simpleContent: () -> SimplePane,
@@ -240,11 +248,7 @@ struct InspectorControls: View {
             } else if !advancedControlsEnabled {
                 simpleContent()
             } else {
-                LayerTabPicker(group: group, selection: tab)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
-
-                tabContent(tab.wrappedValue)
+                tabContent(tab)
             }
         }
     }
@@ -526,8 +530,11 @@ private struct InspectorControlsPreview: View {
     let group: IconLayerGroup
     var isSystem: Bool = false
     @State private var settings = IconSettings()
-    @State private var iconTab: LayerTab = .foreground
-    @State private var badgeTab: LayerTab = .layout
+    /// Plain values here, unlike the bindings above them: the panel only reads the
+    /// active layer now — the sidebar's child rows write it. Change these to see
+    /// another layer's pane.
+    var iconTab: LayerTab = .foreground
+    var badgeTab: LayerTab = .layout
     @State private var enclosure: AppexColor = .blue
     @State private var symbol: AppexColor = .white
     @State private var badgeEnclosure: AppexColor = .blue
@@ -541,8 +548,8 @@ private struct InspectorControlsPreview: View {
     var body: some View {
         InspectorControls(
             group: group,
-            iconTab: $iconTab,
-            badgeTab: $badgeTab,
+            iconTab: iconTab,
+            badgeTab: badgeTab,
             iconIsSystem: $iconIsSystem,
             badgeIsSystem: $badgeIsSystem,
             iconSettings: $settings,
