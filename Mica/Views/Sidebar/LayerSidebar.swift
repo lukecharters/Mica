@@ -69,7 +69,7 @@ struct LayerSidebar: View {
     /// what the indent was worth when layer rows were half the height and used a
     /// 20pt box. Aligning the two glyph *columns* instead would be an indent of
     /// zero, since the boxes are now the same width.
-    private static let childIndent: CGFloat = 28
+    private static let childIndent: CGFloat = 36
 
     /// The group's menu, offered from its layer rows too.
     ///
@@ -324,15 +324,14 @@ private struct LayerRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: tab.systemImage)
-                .font(.system(size: 16))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 18))
                 .frame(width: Self.glyphBox, height: Self.glyphBox)
 
             // `tab.label` is a `String` variable, so this is `Text`'s
             // non-localizing overload — correct here: the three layer names are
             // spelled identically in every English variant Mica ships.
             Text(tab.label)
-                .font(.system(size: 13))
+                .font(.system(size: 13, weight: .medium))
 
             Spacer(minLength: 8)
 
@@ -355,7 +354,7 @@ private struct LayerVisibilityToggle: View {
             isVisible.toggle()
         } label: {
             Image(systemName: isVisible ? "eye" : "eye.slash")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(isVisible ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
