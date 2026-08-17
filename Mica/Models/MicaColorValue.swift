@@ -17,14 +17,14 @@ import AppKit
 /// colours no token can describe (a Display P3 wheel pick is the default case, not
 /// an exotic one).
 ///
-/// The concrete bug it caused: `Color(.labelColor)` at 50% matched no token,
-/// because the opacity broke equality, so a configuration saved in Aqua reopened
-/// wrong in Dark Aqua. Here the token and the alpha are stored separately, so it
-/// stays `label` and re-resolves.
+/// The concrete bug it caused: `Color.primary` at 50% matched no token, because
+/// the opacity broke equality, so a configuration saved in Aqua reopened wrong in
+/// Dark Aqua. Here the token and the alpha are stored separately, so it stays
+/// `primary` and re-resolves.
 ///
 /// ## Three invariants
 ///
-/// - **A token survives an opacity change.** `.token("label")` with `alpha 0.5`
+/// - **A token survives an opacity change.** `.token("primary")` with `alpha 0.5`
 ///   is still a token, so it follows the appearance and the OS.
 /// - **Components are extended sRGB and never clamped**, so a wide-gamut pick
 ///   round-trips through JSON and reaches the Display P3 export path intact.
@@ -46,7 +46,7 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
     /// Where the colour came from. Deliberately closed: a colour is either a name
     /// the OS resolves, or numbers.
     enum Source: Equatable, Hashable, Sendable {
-        /// A name in `ColorTokenTable` — `"blue"`, `"system.blue"`, `"label"`.
+        /// A name in `ColorTokenTable` — `"blue"`, `"gray"`, `"primary"`.
         /// Kept verbatim and resolved live, so it follows the appearance and the
         /// OS. Not validated on construction: a hand-edited configuration can
         /// name anything, and the offending string is worth keeping so an error
@@ -62,8 +62,8 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
     private(set) var source: Source
 
     /// A **multiplier** on whatever `source` resolves to, not a replacement
-    /// (decision D4, 2026-08-02): `label:0.5` renders at ~42%, because
-    /// `labelColor` is ~85% opaque, and that is the behaviour `mica-cli` has
+    /// (decision D4, 2026-08-02): `primary:0.5` renders at ~42%, because
+    /// `Color.primary` is ~85% opaque, and that is the behaviour `mica-cli` has
     /// always had. Always `1` when `source` is `.components`.
     private(set) var alpha: Double
 
@@ -101,8 +101,8 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
     ///
     /// Matching is on **all four components**, deliberately. It would be possible
     /// to also match RGB-only and record the alpha ratio as a token modifier, and
-    /// that is a trap: in Aqua `labelColor` is black at 84.7%, so `black` at 42% is
-    /// *byte-identical* to `label` at 50% and no rule can tell them apart.
+    /// that is a trap: in Aqua `Color.primary` is black at 84.7%, so `black` at 42%
+    /// is *byte-identical* to `primary` at 50% and no rule can tell them apart.
     /// Provenance flows from where a colour is **set** — a CLI token, a JSON token,
     /// the preset dropdown — and this initialiser is only the last resort for a
     /// value that genuinely has none.

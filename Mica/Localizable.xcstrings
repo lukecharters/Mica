@@ -1549,53 +1549,6 @@
     "Symbol Shadow" : {
 
     },
-    "System Gray" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en-AU" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        },
-        "en-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        },
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        },
-        "en-IE" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        },
-        "en-IN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        },
-        "en-NZ" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        },
-        "en-ZA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System Grey"
-          }
-        }
-      }
-    },
     "Tertiary" : {
 
     },

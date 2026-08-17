@@ -54,23 +54,23 @@ struct ColorProvenanceTests {
         var settings = IconSettings()
         settings.icon.background.source = .color
         settings.icon.background.color = .token("blue")
-        settings.icon.foreground.color = .token("label")
+        settings.icon.foreground.color = .token("primary")
         let back = try Self.roundTrip(settings)
         #expect(back.icon.background.color.source == .token("blue"))
-        #expect(back.icon.foreground.color.source == .token("label"))
+        #expect(back.icon.foreground.color.source == .token("primary"))
     }
 
     @Test("a token plus an opacity survives as both halves")
     func fadedTokenSurvivesRoundTrip() throws {
-        // The bug named in §3 item 3 of the plan: `Color(.labelColor).opacity(0.5)`
+        // The bug named in §3 item 3 of the plan: `Color.primary.opacity(0.5)`
         // matched no token, so a configuration saved in Aqua reopened wrong in Dark
         // Aqua. Both halves have to make it through for the colour to stay adaptive.
         var settings = IconSettings()
-        settings.icon.foreground.color = .token("label", alpha: 0.5)
-        #expect(try Self.encodedValue("icon-symbol-color", settings) == "label:0.5")
+        settings.icon.foreground.color = .token("primary", alpha: 0.5)
+        #expect(try Self.encodedValue("icon-symbol-color", settings) == "primary:0.5")
 
         let back = try Self.roundTrip(settings)
-        #expect(back.icon.foreground.color.source == .token("label"))
+        #expect(back.icon.foreground.color.source == .token("primary"))
         #expect(back.icon.foreground.color.alpha == 0.5)
     }
 
@@ -140,7 +140,7 @@ struct ColorProvenanceTests {
         // `ColorPickerWithDropdown` shows the dropdown exactly when the value names
         // an offered preset. These four cases are what it branches on.
         #expect(MicaColorValue.token("blue").isPresentableToken)
-        #expect(!MicaColorValue.token("label").isPresentableToken)
+        #expect(!MicaColorValue.token("primary").isPresentableToken)
         #expect(!MicaColorValue.components(.srgb(r: 0.2, g: 0.6, b: 0.9, a: 1)).isPresentableToken)
 
         // By-value recovery still happens where a string arrives with no provenance
@@ -153,13 +153,13 @@ struct ColorProvenanceTests {
 
     @Test("a token that is not a preset keeps its name while the well is shown")
     func nonPresetTokenIsNotFlattenedByBeingDisplayed() {
-        // `label` shows in the colour well because there is no swatch for it. That
+        // `primary` shows in the colour well because there is no swatch for it. That
         // must not convert it — the binding only writes on a real change, which is
         // what `Binding.asColor`'s equality guard is for.
-        var value = MicaColorValue.token("label")
+        var value = MicaColorValue.token("primary")
         let binding = Binding(get: { value }, set: { value = $0 })
         binding.asColor.wrappedValue = value.resolved   // a no-op re-render write
-        #expect(value.source == .token("label"))
+        #expect(value.source == .token("primary"))
     }
 
     @Test("a colour well pick is never a token, even when it lands on one")
@@ -169,7 +169,7 @@ struct ColorProvenanceTests {
         // to the preset menu mid-drag. The well vanished from the hierarchy with the
         // shared NSColorPanel still open, so the colour froze on that token and no
         // further dragging moved it. A wheel pick is custom by construction.
-        for landed in [Color.blue, .red, .white, .black, Color(.labelColor)] {
+        for landed in [Color.blue, .red, .white, .black, Color.primary] {
             var value = MicaColorValue.components(.srgb(r: 0.2, g: 0.6, b: 0.9, a: 1))
             let binding = Binding(get: { value }, set: { value = $0 })
             binding.asColor.wrappedValue = landed

@@ -54,8 +54,8 @@ struct ColorParser {
     /// `"#0088FF:0.5"`, `"rgb(0,136,255):0.5"`.
     ///
     /// The suffix **scales** the colour's own alpha rather than replacing it
-    /// (decision D4), so `label:0.5` is ~42% because `labelColor` is only ~85%
-    /// opaque. Every colour flag in the CLI goes through here rather than through
+    /// (decision D4), so `primary:0.5` is ~42% because `Color.primary` is only
+    /// ~85% opaque. Every colour flag in the CLI goes through here rather than through
     /// `parse`; `ColorOpacityFlagsTests` pins that.
     static func parseWithOpacity(_ input: String) throws -> Color {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -444,7 +444,7 @@ struct ColorParser {
         // Add format suggestions
         if suggestions.isEmpty {
             suggestions = [
-                "Named colors: blue, red, label, system.blue",
+                "Named colors: blue, red, primary, secondary",
                 "Hex: #FF5733, #F53, #FF5733CC",
                 "Functions: rgb(255,87,51), hsl(9,100%,60%)",
                 "Components: srgb:1,0.34,0.2 or display-p3:1,0.34,0.2",
@@ -721,7 +721,7 @@ enum ColorParseError: LocalizedError {
         case .missingPercentageSign(let source, let message):
             return "Missing percentage sign in '\(source)'. \(message)"
         case .unknownSystemColor(let color):
-            return "Unknown system color: '\(color)'. Try: system.blue, system.red, label, etc."
+            return "Unknown system color: '\(color)'. Try: blue, red, primary, etc."
         case .unsupportedCSSFormat(let format):
             return "Unsupported CSS color format: '\(format)'. Supported: rgb(), rgba(), hsl(), hsla()"
         }

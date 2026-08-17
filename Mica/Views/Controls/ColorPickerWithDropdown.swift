@@ -146,7 +146,7 @@ struct ColorPickerWithDropdown: View {
 }
 
 #Preview("A token with no swatch") {
-    @Previewable @State var value: MicaColorValue = .token("label")
+    @Previewable @State var value: MicaColorValue = .token("primary")
     Form {
         ColorPickerWithDropdown(label: "Color", value: $value)
     }

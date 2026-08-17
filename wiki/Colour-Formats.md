@@ -13,18 +13,17 @@ blue  red  green  orange  yellow  pink  purple  indigo  teal  mint  cyan
 brown  white  black  gray/grey  clear/transparent
 ```
 
-macOS system colours, which follow the system's own colour definitions and adapt to light and dark:
+And two semantic colours, which are the system's text colours rather than a fixed hue — dark in light mode, light in dark mode, and both slightly translucent:
 
 ```
-system.blue  system.red  system.green  system.orange  system.yellow
-system.pink  system.purple  system.teal  system.indigo  system.mint
-system.cyan  system.brown  system.gray/system.grey
-label  secondary.label  tertiary.label  quaternary.label
+primary  secondary
 ```
 
 A name is a name, not a value: `blue` renders as whatever this machine's macOS says blue is today. That is why a saved configuration reopens correctly in the other appearance, and why it will pick up a future OS's colours rather than freezing to the ones current when you saved.
 
-Names are case-insensitive. The dot is not optional — `system.blue`, never `systemblue`.
+Names are case-insensitive.
+
+> **Changed in 2026-08:** the `system.blue`-style names and the `label` family were removed. Every colour now has one name. `system.blue` and the twelve like it were a second spelling of the plain colour above — write `blue`. `label` and `secondary.label` are now `primary` and `secondary`, the same colours under their SwiftUI names; `tertiary.label` and `quaternary.label` have no replacement. Nothing guesses at an old spelling: on the command line it is an error, and in a configuration file that key warns — `Warning: icon-bg-color: "system.blue" is not a recognisable colour` — and falls back to the default while the rest of the file still loads.
 
 ## Hex
 
@@ -79,7 +78,7 @@ Any named colour, hex value or function call takes a `:opacity` suffix:
 --icon-bg-color "rgb(0,136,255):0.5"
 ```
 
-The suffix **scales** the colour's existing alpha rather than replacing it. Most colours are fully opaque, so `white:0.5` is 50% — but `label` is only about 85% opaque to begin with, so `label:0.5` renders at about 42%.
+The suffix **scales** the colour's existing alpha rather than replacing it. Most colours are fully opaque, so `white:0.5` is 50% — but `primary` is only about 85% opaque to begin with, so `primary:0.5` renders at about 42%.
 
 The space-prefixed forms take no suffix: their last component is already the alpha.
 
@@ -111,7 +110,7 @@ In System generation mode (`--icon-generation-mode system` / `--badge-generation
   purple  red  teal  white  yellow
   ```
 
-- **Anything else** — hex, `rgb()`, `srgb:`, a `label`-family token — resolves to exact components and is passed through as a custom colour.
+- **Anything else** — hex, `rgb()`, `srgb:`, `primary`/`secondary` — resolves to exact components and is passed through as a custom colour.
 
 So `white` and `white:0.5` deliberately differ for a *symbol*: the first is Apple's white, the second is a custom translucent white.
 
@@ -120,7 +119,7 @@ Two things System mode cannot do, and it says so rather than rendering something
 - **A colour outside sRGB.** Apple's pipeline rejects out-of-range components, and clamping one would desaturate your colour without telling you. `display-p3:1,0,0` is refused, with the nearest sRGB colour named in the error. A Display P3 colour *inside* sRGB — most of them — converts exactly and is fine.
 - **A translucent background.** The OS honours a symbol's opacity and ignores an enclosure's, so `--icon-bg-color blue:0.5` would render fully opaque. It is refused instead. Put the opacity on the symbol colour, where it works.
 
-  Note `label` and its family count as translucent: `labelColor` is only about 85% opaque, so it cannot be a System-mode background either.
+  Note `primary` and `secondary` count as translucent: `primary` is only about 85% opaque, so neither can be a System-mode background either.
 
 ## Forms that are not accepted
 
@@ -132,7 +131,9 @@ Each of these once worked and was removed, because it duplicated something above
 | `crimson`, `khaki`, `orchid`, `gold`, `lime`, `navy`, `maroon`, `olive`, `silver`, `violet`, `turquoise`, `coral`, `salmon`, `plum`, `magenta`, `lightgray`, `darkgray` | the hex value |
 | `rgb(50%,20%,0%)` | `srgb:0.5,0.2,0` |
 | `0.5` or `128` | `srgb:0.5,0.5,0.5` |
-| `systemblue` | `system.blue` |
+| `systemblue`, `system.blue` and the twelve like it | `blue`, and the plain name of each |
+| `label`, `secondary.label` | `primary`, `secondary` |
+| `tertiary.label`, `quaternary.label` | nothing — pick a colour, or `secondary:0.6` for something fainter |
 | `rgba(255,0,0,0.5)`, `hsla(0,100%,50%,0.5)` | `rgb(255,0,0,0.5)`, `hsl(0,100%,50%,0.5)` |
 
 `--icon-bg prerendered-liquid-glass` is refused for the same reason, though it was a background rather than a colour: it named one of 35 bundled Liquid Glass images, removed in 2026-08. Use `--icon-generation-mode system` for a real Liquid Glass icon, or `--icon-bg-color` for a plain one. A configuration file naming it still opens — it warns and falls back to the standard background.

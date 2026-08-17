@@ -10,6 +10,18 @@ import SwiftUI
 import AppKit
 @testable import Mica
 
+/// The AppKit-backed spellings removed on 2026-08-17, deliberately **without**
+/// aliases: an alias would have kept two names for one colour alive indefinitely,
+/// which is what the table exists to prevent. A configuration naming one now
+/// fails loudly rather than resolving to a second spelling.
+private let retiredAppKitNames = [
+    "system.blue", "system.red", "system.green", "system.orange",
+    "system.yellow", "system.pink", "system.purple", "system.teal",
+    "system.indigo", "system.mint", "system.cyan", "system.brown",
+    "system.gray", "system.grey",
+    "label", "secondary.label", "tertiary.label", "quaternary.label",
+]
+
 @Suite(.tags(.unit))
 @MainActor
 struct ColorTokenTests {
@@ -197,8 +209,11 @@ struct ColorTokenTests {
     @Test("display names are derived, not stored")
     func displayName_isDerivedFromTheName() {
         #expect(ColorTokenTable.token(named: "blue")?.displayName == "Blue")
-        #expect(ColorTokenTable.token(named: "system.blue")?.displayName == "System Blue")
-        #expect(ColorTokenTable.token(named: "quaternary.label")?.displayName == "Quaternary Label")
+        #expect(ColorTokenTable.token(named: "primary")?.displayName == "Primary")
+        // No token carries a dot since the `system.*` spellings went, but the
+        // derivation still has to handle one — a name is the only input a display
+        // string may have, and a hand-written second list is what this prevents.
+        #expect(ColorToken("secondary.label") { .clear }.displayName == "Secondary Label")
     }
 
     @Test("presets are listed alphabetically by display name")
@@ -253,18 +268,63 @@ struct ColorTokenTests {
         }
     }
 
-    @Test("SwiftUI's palette and AppKit's system palette agree on macOS 26")
-    func plainAndSystemTokens_resolveIdentically() {
-        // Not a requirement, but the reason `MicaColor` prefers the short name: if
-        // these ever diverge, `blue` and `system.blue` stop being interchangeable
-        // and the writer's ordering starts changing which colour gets recorded.
-        for plain in ColorTokenTable.appexNative {
-            guard let system = ColorTokenTable.token(named: "system.\(plain.name)") else { continue }
+    // MARK: - The vocabulary is SwiftUI's, and the AppKit spellings are gone
+
+    @Test("the retired AppKit spellings are not tokens", arguments: retiredAppKitNames)
+    func retiredNames_areNotTokens(_ name: String) {
+        #expect(ColorTokenTable.token(named: name) == nil, "\(name) is still a token")
+    }
+
+    @Test("the retired AppKit spellings are not parseable either", arguments: retiredAppKitNames)
+    func retiredNames_doNotParse(_ name: String) {
+        // Removal, not aliasing — so this is a *contract* change and belongs in a
+        // test rather than in a changelog. `ColorGrammarTests` pins the same thing
+        // at the CLI's other two entry points.
+        #expect(throws: (any Error).self) { try ColorParser.parse(name) }
+    }
+
+    @Test("primary and secondary are exactly what the label ladder resolved to")
+    func semanticTokens_keepTheirValues() throws {
+        // The rename is value-preserving: `Color.primary` and `Color.secondary`
+        // measure byte-identical to `labelColor`/`secondaryLabelColor` in both
+        // appearances, which is what lets `primary:0.5` still render at ~42% and
+        // keeps `ColorProvenanceTests`' opacity case meaning what it did.
+        let pairs: [(String, NSColor)] = [
+            ("primary", .labelColor),
+            ("secondary", .secondaryLabelColor),
+        ]
+        for (name, appKit) in pairs {
+            let token = try #require(ColorTokenTable.token(named: name))
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-                let a = inAppearance(appearance) { srgbBytes(plain.color) }
-                let b = inAppearance(appearance) { srgbBytes(system.color) }
-                #expect(a == b, "\(plain.name) and system.\(plain.name) differ in \(appearance.rawValue)")
+                // All four components: both of these are black or white, so an
+                // RGB-only comparison would pass while the *alpha* — the whole
+                // point of a semantic colour, and what `:opacity` multiplies —
+                // moved underneath it.
+                //
+                // At `MicaColorValue.precision`, because the two bridges carry
+                // that alpha at different float widths: 0.84705883 through
+                // SwiftUI against 0.8470588235 through AppKit, a difference three
+                // decimal places past anything a written configuration keeps.
+                func components(_ color: Color) -> ColorParser.ExtendedComponents {
+                    inAppearance(appearance) {
+                        ColorParser.ExtendedComponents.resolving(color)
+                            .rounded(to: MicaColorValue.precision)
+                    }
+                }
+                let a = components(token.color)
+                let b = components(Color(appKit))
+                #expect(a == b, "\(name) diverged from its AppKit original in \(appearance.rawValue)")
             }
+        }
+    }
+
+    @Test("no token resolves through AppKit's palette")
+    func noToken_duplicatesAnAppKitSystemColour() {
+        // The `system.*` group was thirteen byte-identical duplicates of the plain
+        // palette, so a colour had two names and the JSON writer had to prefer
+        // one. Adding another AppKit spelling back would restore that ambiguity.
+        for token in ColorTokenTable.all {
+            #expect(!token.name.hasPrefix("system."), "\(token.name) is an AppKit spelling")
         }
     }
 }

@@ -93,13 +93,12 @@ import AppKit
         #expect(throws: ColorParseError.self) { try ColorParser.parse("rgb(0,0,0,1.5)") }
     }
 
-    // MARK: - System colors
+    // MARK: - Semantic colors
 
     @Test(arguments: [
-        "system.blue", "system.red", "system.gray", "system.grey",
-        "label", "secondary.label", "tertiary.label", "quaternary.label"
+        "primary", "secondary",
     ])
-    func parsesSystemColor(_ name: String) throws {
+    func parsesSemanticColor(_ name: String) throws {
         _ = try ColorParser.parse(name)
     }
 

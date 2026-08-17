@@ -217,6 +217,11 @@ NEGATIVE_CASES=(
     "icon-bg-color-legacy-name-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|crimson"
     "icon-bg-color-no-dot-alias-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|systemblue"
     "icon-bg-color-rgba-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|rgba(255,0,0,0.5)"
+    # The AppKit spellings, retired 2026-08-17. Removed rather than aliased, so
+    # the shipped binary has to *refuse* them — the one thing a unit test on the
+    # parser cannot say about the copy a user actually runs.
+    "icon-bg-color-system-spelling-retired|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|system.blue"
+    "icon-symbol-color-label-retired|Invalid color format for --icon-symbol-color|star.fill|--icon-symbol-color|label"
     "icon-bg-color-grayscale-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|0.5"
     "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
     # Retired 2026-08-16. The point of the case is *which* error: the keyword has no
@@ -287,7 +292,7 @@ CONFIG_CASES=(
 PARITY_CASES=(
     "token|blue"
     "token-alias|grey"
-    "token-dynamic|label"
+    "token-dynamic|primary"
     "token-with-opacity|blue:0.5"
     "hex|#0088FF"
     "hex-alpha|#0088FFCC"
