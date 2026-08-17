@@ -100,11 +100,11 @@ inspector visible (ideally annotated with the step numbers below).
 
 1. **Pick a symbol.** Open the symbol browser and choose an SF Symbol, or switch the icon source to *Imported* and drag in your own artwork.
 
-2. **Style the layers.** The sidebar is organised by layer - select the icon's background or foreground to adjust colours, gradients, rendering mode, symbol weight, scale, and shadows. Backgrounds can be a solid colour, a gradient, or an imported image.
+2. **Style the layers.** The sidebar is organised by layer. Select the icon's background or foreground to adjust colours, gradients, rendering mode, symbol weight, scale, and shadows. Backgrounds can be a solid colour, a gradient, or an imported image.
 
 3. **Add a badge (optional).** Turn on the badge layer to overlay a second symbol or image in any corner. Drag the badge directly on the preview to fine-tune its position, or use the offset sliders.
 
-4. **Preview at real-world sizes.** Use the preview size menu to see your icon exactly as it will appear in Jamf Self Service / Self Service+ catalogue and item views, or at any standard icon size from 16 px to 1024 px. Zoom from 25% to 800% to inspect details.
+4. **Preview at real-world sizes.** Use the preview size menu to see your icon exactly as it will appear in your MDM catalogue and item views, or at any standard icon size from 16 px to 1024 px. Zoom from 25% to 800% to inspect details.
 
 5. **Export.** Press **⌘E**, choose a size (16–1024 px), optionally enable @2x output, pick sRGB or Display P3, and save your PNG.
 
@@ -114,7 +114,7 @@ Every control is documented in the [App Guide](../../wiki/App-Guide).
 
 ### CLI
 
-`mica-cli` shares its rendering engine with the app - same settings, same pixels. The essentials are below; the wiki has a full [CLI Guide](../../wiki/CLI-Guide) and a complete [CLI Reference](../../wiki/CLI-Reference) covering every flag.
+`mica-cli` shares its rendering engine with the app. The wiki has a full [CLI Guide](../../wiki/CLI-Guide) and a complete [CLI Reference](../../wiki/CLI-Reference) covering every flag.
 
 #### Generating icons
 
