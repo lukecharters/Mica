@@ -150,7 +150,7 @@ mica-cli --icon-symbol star.fill --icon-generation-mode system --icon-bg-color b
 mica-cli --icon-symbol app.fill --size 1024 --scale 2x --color-space displayP3
 ```
 
-Colours can be named (`blue`, `grey`, `label`, …), hex (`"#FF6B35"`), `rgb()`/`hsl()` values, or components in a named colour space (`srgb:0.2,0.42,0.9`, `display-p3:1,0.2,0`). Every `--…-color` flag has a `--…-colour` alias. See [Colour Formats](../../wiki/Colour-Formats).
+Colours can be named (`blue`, `grey`, `primary`, …), hex (`"#FF6B35"`), `rgb()`/`hsl()` values, or components in a named colour space (`srgb:0.2,0.42,0.9`, `display-p3:1,0.2,0`). Every `--…-color` flag has a `--…-colour` alias. See [Colour Formats](../../wiki/Colour-Formats).
 
 For scripting, the saved path goes to stdout and diagnostics go to stderr, so `mica-cli` pipes cleanly:
 

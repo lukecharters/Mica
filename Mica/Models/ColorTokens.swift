@@ -1,6 +1,5 @@
 // Models/ColorTokens.swift
 import SwiftUI
-import AppKit
 
 /// One named colour in Mica's vocabulary — the single source every surface reads.
 ///
@@ -31,14 +30,18 @@ struct ColorToken: Identifiable, Sendable {
 
     /// Other spellings that parse to this token. Never written.
     ///
-    /// Only three kinds survive Phase 3: a British spelling (`grey`,
-    /// `system.grey`), a different *word* for the same colour (`transparent`),
-    /// and nothing else. The thirteen `systemblue`-style **no-dot forms were
-    /// dropped on 2026-08-03** — they were the canonical name with its dot
-    /// deleted, which is a second spelling of one token rather than a second name
-    /// for it (§4.3 of the colour-resolution plan). Adding one back gives
-    /// `--icon-bg-color` two ways to say the same thing and the help text two
-    /// things to document.
+    /// Only two kinds survive: a British spelling (`grey`) and a different *word*
+    /// for the same colour (`transparent`). The thirteen `systemblue`-style
+    /// **no-dot forms were dropped on 2026-08-03** — they were the canonical name
+    /// with its dot deleted, which is a second spelling of one token rather than a
+    /// second name for it (§4.3 of the colour-resolution plan). Adding one back
+    /// gives `--icon-bg-color` two ways to say the same thing and the help text
+    /// two things to document.
+    ///
+    /// **A retired token is not an alias either.** The `system.*` spellings were
+    /// removed outright on 2026-08-17 rather than aliased onto the plain palette
+    /// — an alias would have kept two names for one colour alive indefinitely,
+    /// which is the thing this list exists to prevent.
     let aliases: [String]
 
     let capabilities: Capabilities
@@ -64,7 +67,9 @@ struct ColorToken: Identifiable, Sendable {
 
     /// Title case, derived from `name` — there is deliberately no second
     /// hand-written list of display strings to drift out of step.
-    /// `system.blue` → `System Blue`, `secondary.label` → `Secondary Label`.
+    /// `blue` → `Blue`, and a dotted name would give `a.b` → `A B`. No token
+    /// carries a dot since the `system.*` spellings went on 2026-08-17; the split
+    /// stays because the *name* is the only input a display string may have.
     var displayName: String {
         name.split(separator: ".").map { $0.capitalized }.joined(separator: " ")
     }
@@ -81,15 +86,27 @@ struct ColorToken: Identifiable, Sendable {
 /// other. They drifted: the appex pipeline accepts `mint` and `AppexNamedColor`
 /// did not offer it. Everything now reads this table, so that class of gap is a
 /// missing flag rather than a missing case.
+///
+/// **Every token resolves through SwiftUI, and none through AppKit.** The
+/// thirteen `system.*` spellings and the four-tier label ladder went on
+/// 2026-08-17: the first thirteen were `Color(.systemBlue)`-style duplicates of
+/// the plain palette, byte-identical to it in both appearances, so a colour had
+/// two names and the writer had to prefer one; the label ladder's top two tiers
+/// are `primary`/`secondary` below, which measure identical to `labelColor` and
+/// `secondaryLabelColor` — same value, one framework. `tertiary.label` and
+/// `quaternary.label` have no SwiftUI counterpart and were dropped with the rest.
+///
+/// Removed, not aliased: `system.blue`, `label` and `secondary.label` are now
+/// parse errors, so a configuration or script naming one fails loudly. See the
+/// *Forms that are not accepted* table in `wiki/Colour-Formats.md`.
 enum ColorTokenTable {
 
     /// Every token, **in the order the JSON writer prefers them**.
     ///
-    /// Order matters only where two tokens resolve to the same colour — SwiftUI's
-    /// `.blue` and `Color(.systemBlue)` are byte-identical on macOS 26 — and the
-    /// shorter, more portable name is the one worth writing. Achromatic first,
-    /// then the plain palette, then the AppKit `system.*` spellings, then the
-    /// appearance-dependent label ladder.
+    /// Order mattered while two tokens could resolve to the same colour; with the
+    /// `system.*` duplicates gone, no two do, and the order is now only the one
+    /// the table reads best in. Achromatic first, then the adaptive palette, then
+    /// the two appearance-dependent semantic colours.
     static let all: [ColorToken] = [
         // Achromatic — the most common foreground and background choices.
         ColorToken("white", [.presentable, .appexNative]) { .white },
@@ -112,26 +129,14 @@ enum ColorTokenTable {
         ColorToken("cyan", [.presentable, .appexNative]) { .cyan },
         ColorToken("brown", [.presentable, .appexNative]) { .brown },
 
-        // AppKit's system palette, for colours the above does not cover.
-        ColorToken("system.blue") { Color(.systemBlue) },
-        ColorToken("system.red") { Color(.systemRed) },
-        ColorToken("system.green") { Color(.systemGreen) },
-        ColorToken("system.orange") { Color(.systemOrange) },
-        ColorToken("system.yellow") { Color(.systemYellow) },
-        ColorToken("system.pink") { Color(.systemPink) },
-        ColorToken("system.purple") { Color(.systemPurple) },
-        ColorToken("system.teal") { Color(.systemTeal) },
-        ColorToken("system.indigo") { Color(.systemIndigo) },
-        ColorToken("system.mint") { Color(.systemMint) },
-        ColorToken("system.cyan") { Color(.systemCyan) },
-        ColorToken("system.brown") { Color(.systemBrown) },
-        ColorToken("system.gray", aliases: ["system.grey"]) { Color(.systemGray) },
-
-        // Appearance-dependent label colours.
-        ColorToken("label") { Color(.labelColor) },
-        ColorToken("secondary.label") { Color(.secondaryLabelColor) },
-        ColorToken("tertiary.label") { Color(.tertiaryLabelColor) },
-        ColorToken("quaternary.label") { Color(.quaternaryLabelColor) },
+        // The two appearance-dependent semantic colours. Both are translucent —
+        // `primary` is ~85% opaque, `secondary` ~50% — which is why neither is
+        // `.appexNative`: `ISEnclosureColor` ignores an alpha rather than
+        // honouring it, so a translucent token cannot be a System-mode
+        // background. They are not `.presentable` either; a swatch of "85% of
+        // whatever the text colour is" is not a colour anyone picks by eye.
+        ColorToken("primary") { .primary },
+        ColorToken("secondary") { .secondary },
     ]
 
     /// Preset swatches, alphabetically by display name — the order the inspector

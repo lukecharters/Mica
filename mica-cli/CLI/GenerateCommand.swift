@@ -944,7 +944,7 @@ struct GenerateCommand: AsyncParsableCommand {
 
             COLOR FORMATS — every option taking a color accepts:
 
-              blue, system.blue, label            named and system tokens
+              blue, gray, primary                 named tokens
               "#0088FF", "#0088FFCC"              hex, 3/6/8 digits
               "rgb(0,136,255)"                    0-255; a 4th value is the alpha
               "hsl(209,100%,50%)"                 degrees and percentages, likewise
@@ -955,7 +955,7 @@ struct GenerateCommand: AsyncParsableCommand {
 
             All but the space-prefixed forms take a ':opacity' suffix — white:0.5,
             "#0088FF:0.5". It *scales* the color's own alpha rather than replacing
-            it, so label:0.5 renders at ~42% (labelColor is ~85% opaque).
+            it, so primary:0.5 renders at ~42% (primary is ~85% opaque).
 
             The four options taking several colors at once split their value on
             commas, so only the comma-free forms work there — a name, hex, or either

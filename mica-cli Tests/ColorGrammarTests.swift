@@ -51,13 +51,12 @@ import SwiftUI
 
     /// The five surviving families, from §4.3's table.
     private static let accepted: [String] = [
-        // Tokens: canonical names, the `system.*` palette, the label ladder, and
-        // the three aliases that survive (British spellings and one synonym).
+        // Tokens: canonical names, the two semantic colours, and the two aliases
+        // that survive (a British spelling and one synonym).
         "blue", "red", "mint", "white", "black", "clear",
         "gray", "grey", "transparent",
-        "system.blue", "system.gray", "system.grey",
-        "label", "secondary.label", "tertiary.label", "quaternary.label",
-        "BLUE", "System.Blue", "  blue  ",
+        "primary", "secondary",
+        "BLUE", "Primary", "  blue  ",
 
         // Hex, 3/6/8 digits, `#` optional.
         "#FF0000", "FF0000", "#F00", "F00", "#FF0000CC", "FF0000CC",
@@ -78,7 +77,7 @@ import SwiftUI
         "extended-gray:1,1",
 
         // The opacity suffix, on each family that takes one.
-        "blue:0.5", "label:0.5", "system.blue:0.25",
+        "blue:0.5", "primary:0.5", "secondary:0.25",
         "#FF0000:0.5", "rgb(255,0,0):0.5", "hsl(0,100%,50%):0.5",
     ]
 
@@ -132,8 +131,24 @@ import SwiftUI
         "rgba(255,0,0,0.5)", "hsla(0,100%,50%,0.5)",
     ]
 
+    /// The AppKit-backed spellings, dropped on 2026-08-17 so every token resolves
+    /// through SwiftUI. The thirteen `system.*` were byte-identical duplicates of
+    /// the plain palette; the top two tiers of the label ladder are `primary` and
+    /// `secondary`, same values through SwiftUI, and the bottom two had no
+    /// counterpart. Dropped rather than aliased — a name that keeps working is a
+    /// name the help text has to keep documenting.
+    private static let droppedAppKitSpellings = [
+        "system.blue", "system.red", "system.green", "system.orange",
+        "system.yellow", "system.pink", "system.purple", "system.teal",
+        "system.indigo", "system.mint", "system.cyan", "system.brown",
+        "system.gray", "system.grey", "System.Blue",
+        "label", "secondary.label", "tertiary.label", "quaternary.label",
+        "label:0.5", "system.blue:0.25",
+    ]
+
     private static let allDropped =
-        droppedBareComponents + droppedLegacyNames + droppedNoDotAliases + droppedDuplicates
+        droppedBareComponents + droppedLegacyNames + droppedNoDotAliases
+        + droppedAppKitSpellings + droppedDuplicates
 
     @Test("every dropped form is refused at every entry point",
           arguments: allDropped, EntryPoint.allCases)
@@ -157,13 +172,13 @@ import SwiftUI
                 "\(a) vs \(b)")
     }
 
-    /// The whole point of a *token* is that it is not components, so the two
-    /// spellings of Apple's blue must not collapse into each other.
+    /// The whole point of a *token* is that it is not components, so a name must
+    /// survive the strict entry point as a name — opacity suffix and all.
     @Test("a token stays a token through the strict entry point")
     func tokenKeepsItsProvenance() throws {
         #expect(try MicaColorValue(strictlyParsing: "blue").tokenName == "blue")
-        #expect(try MicaColorValue(strictlyParsing: "system.blue").tokenName == "system.blue")
-        #expect(try MicaColorValue(strictlyParsing: "label:0.5").tokenName == "label")
+        #expect(try MicaColorValue(strictlyParsing: "primary").tokenName == "primary")
+        #expect(try MicaColorValue(strictlyParsing: "primary:0.5").tokenName == "primary")
         #expect(try MicaColorValue(strictlyParsing: "srgb:1,0,0").tokenName == nil)
     }
 
@@ -176,8 +191,8 @@ import SwiftUI
         #expect(try AppexColor.plistValue(fromCLIString: "grey") == "gray")
         // A translucent white is no longer Apple's white.
         #expect(try AppexColor.plistValue(fromCLIString: "white:0.5") == "1,1,1,0.5")
-        // `label` has no appex spelling, so it resolves.
-        #expect(try AppexColor.plistValue(fromCLIString: "label").contains(","))
+        // `primary` has no appex spelling, so it resolves.
+        #expect(try AppexColor.plistValue(fromCLIString: "primary").contains(","))
         // And so does anything given in components.
         #expect(try AppexColor.plistValue(fromCLIString: "srgb:1,0,0") == "1,0,0,1")
     }

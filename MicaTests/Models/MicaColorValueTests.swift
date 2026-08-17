@@ -67,7 +67,7 @@ struct MicaColorValueTests {
 
     @Test("a non-extended string is not this form", arguments: [
         "blue", "#0088FF", "rgb(255,128,0)", "white:0.5", "0.5", "255,0,0",
-        "hsl(180,50%,50%)", "system.blue", "srgb:1,1,1,1", "",
+        "hsl(180,50%,50%)", "primary", "srgb:1,1,1,1", "",
     ])
     func returnsNilForOtherSyntaxes(_ input: String) throws {
         #expect(try ColorParser.ExtendedComponents(parsing: input) == nil)
@@ -219,20 +219,20 @@ struct MicaColorValueTests {
 
     @Test("a token with an opacity keeps both, so it still follows the appearance")
     func tokenWithOpacitySurvivesAsAToken() throws {
-        // The bug this type exists to fix: `label` at 50% used to match no token,
+        // The bug this type exists to fix: `primary` at 50% used to match no token,
         // so a configuration saved in Aqua reopened wrong in Dark Aqua.
-        let value = try MicaColorValue(parsing: "label:0.5")
-        #expect(value.source == .token("label"))
+        let value = try MicaColorValue(parsing: "primary:0.5")
+        #expect(value.source == .token("primary"))
         #expect(value.alpha == 0.5)
-        #expect(value.stringValue == "label:0.5")
+        #expect(value.stringValue == "primary:0.5")
     }
 
     @Test("the opacity suffix multiplies rather than replaces (D4)")
     @MainActor
     func opacitySuffixMultiplies() throws {
-        // `labelColor` is ~84.7% opaque, so `label:0.5` renders at ~42% — the
+        // `Color.primary` is ~84.7% opaque, so `primary:0.5` renders at ~42% — the
         // behaviour mica-cli has always had, kept deliberately on 2026-08-02.
-        let value = try MicaColorValue(parsing: "label:0.5")
+        let value = try MicaColorValue(parsing: "primary:0.5")
         let alpha = try srgbComponents(
             inAppearance() { ColorParser.ExtendedComponents.resolving(value.resolved) }
         ).a
@@ -332,18 +332,16 @@ struct MicaColorValueTests {
         #expect(MicaColorValue(resolving: .white) == .token("white"))
         #expect(MicaColorValue(resolving: .black) == .token("black"))
         #expect(MicaColorValue(resolving: .blue).stringValue == "blue")
-        #expect(MicaColorValue(resolving: Color(.labelColor)) == .token("label"))
+        #expect(MicaColorValue(resolving: Color.primary) == .token("primary"))
     }
 
-    @Test("a plain name wins over the system.* spelling of the same colour")
-    func plainNamesWin() {
-        // If .blue and Color(.systemBlue) hold the same value, the short token is
-        // the one worth writing — configurations stay readable and portable.
-        let token = MicaColorValue(resolving: Color(.systemBlue)).tokenName
-        #expect(token == "blue" || token == "system.blue")
-        if Color.blue == Color(.systemBlue) {
-            #expect(token == "blue")
-        }
+    @Test("an AppKit system colour is captured as the plain token")
+    func appKitSystemColoursCaptureAsPlainTokens() {
+        // The `system.*` spellings were removed on 2026-08-17, so there is no
+        // longer a second name to lose to — but a colour arriving *as* an AppKit
+        // system colour (from a well, a paste, a preview) must still land on the
+        // one token that names it, rather than freezing to components.
+        #expect(MicaColorValue(resolving: Color(.systemBlue)).tokenName == "blue")
     }
 
     @Test("a picked colour with no token is written as components")
@@ -363,8 +361,8 @@ struct MicaColorValueTests {
     func opacityBreaksTokenMatch() {
         // `init(resolving:)` matches on all four components, so a faded token is
         // not recovered as token-plus-alpha. That is not a gap: in Aqua
-        // `labelColor` is black at 84.7%, so black at 42% is byte-identical to
-        // `label` at 50% and no by-value rule could tell them apart. Provenance
+        // `Color.primary` is black at 84.7%, so black at 42% is byte-identical to
+        // `primary` at 50% and no by-value rule could tell them apart. Provenance
         // with an alpha comes from where the colour is *set* —
         // `tokenWithOpacitySurvivesAsAToken` below is that path.
         let written = inAppearance() { MicaColorValue(resolving: Color.blue.opacity(0.5)) }

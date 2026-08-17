@@ -81,10 +81,12 @@ struct EnglishVariantLocalizationTests {
     @Test("gray becomes grey in every variant", arguments: variants)
     func grayIsBritishInEveryVariant(_ variant: String) throws {
         // Keyed on `ColorToken.displayName`, which is derived from the token name
-        // rather than written down — so these are the derived strings, not the
-        // `gray`/`system.gray` tokens, which are a CLI contract and never move.
+        // rather than written down — so this is the derived string, not the `gray`
+        // token, which is a CLI contract and never moves. "System Gray" was a key
+        // here too until the `system.*` spellings went on 2026-08-17; a catalog
+        // entry for a display name no token produces is a string that can never be
+        // looked up, which is why it went with them.
         #expect(try Self.lookup("Gray", in: variant) == "Grey")
-        #expect(try Self.lookup("System Gray", in: variant) == "System Grey")
     }
 
     @Test("The source localization keeps the American spelling")

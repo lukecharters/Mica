@@ -65,7 +65,7 @@ enum ColorFormFixtures {
     /// (components outside 0–1), and `extended-gray:` — two components, and the one
     /// form Mica reads but never writes.
     static let forms: [ColorForm] = [
-        // Tokens, including the three surviving aliases and the label ladder.
+        // Tokens, including the two surviving aliases and the two semantic colours.
         ColorForm("blue"),
         ColorForm("mint"),
         ColorForm("white"),
@@ -73,10 +73,8 @@ enum ColorFormFixtures {
         ColorForm("grey"),
         ColorForm("clear"),
         ColorForm("transparent"),
-        ColorForm("system.blue"),
-        ColorForm("system.grey"),
-        ColorForm("label"),
-        ColorForm("quaternary.label"),
+        ColorForm("primary"),
+        ColorForm("secondary"),
         // Case is folded on the way in, and the canonical spelling is what is kept.
         ColorForm("BLUE"),
         // Hex, all three widths, with and without the #.
@@ -99,7 +97,7 @@ enum ColorFormFixtures {
         ColorForm("extended-gray:0.5,1"),
         // The opacity suffix, on each family that takes one.
         ColorForm("blue:0.5"),
-        ColorForm("label:0.5"),
+        ColorForm("primary:0.5"),
         ColorForm("#0088FF:0.5"),
         ColorForm("rgb(0,136,255):0.5"),
     ]

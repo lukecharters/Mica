@@ -131,7 +131,7 @@ import AppKit
     }
 
     @Test("the suffix works on top of every comma-free form", arguments: [
-        "white", "#0088FF", "0088FF", "system.blue", "label",
+        "white", "#0088FF", "0088FF", "primary", "secondary",
         "rgb(0,136,255)", "hsl(180,50%,50%)",
     ])
     func suffixComposesWithOtherForms(_ value: String) throws {
@@ -144,10 +144,10 @@ import AppKit
     func suffixMultipliesRatherThanReplaces() throws {
         // SwiftUI's `.opacity()` scales what is already there, so the rule only
         // becomes visible on a token that is not fully opaque to begin with:
-        // NSColor.labelColor is ~85%, making `label:0.5` ~42.5% and not 50%.
-        let base = try storedAlpha(of: "label")
-        #expect(base < 0.95, "labelColor is now opaque — this test's premise is gone, not its subject")
-        #expect(abs(try storedAlpha(of: "label:0.5") - base * 0.5) < 0.001)
+        // Color.primary is ~85%, making `primary:0.5` ~42.5% and not 50%.
+        let base = try storedAlpha(of: "primary")
+        #expect(base < 0.95, "primary is now opaque — this test's premise is gone, not its subject")
+        #expect(abs(try storedAlpha(of: "primary:0.5") - base * 0.5) < 0.001)
 
         // An opaque base makes the two readings coincide, which is why this went
         // unnoticed: white:0.5 is 50% either way.

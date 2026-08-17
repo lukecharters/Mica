@@ -50,6 +50,9 @@ import AppKit
         // Not one of the 15 names.
         "grey", "magenta", "silver", "lightblue", "systemBlue", "graphite",
         "clear", "labelColor", "default", "accent", "multicolor", "label",
+        // Mica tokens that are not appex-native — the interesting half of the
+        // rejection, since these do parse everywhere else in the app.
+        "primary", "secondary",
         // Case and whitespace.
         "Blue", "BLUE", " blue", "blue ", " blue ",
         // Wrong component count.
@@ -115,15 +118,15 @@ import AppKit
         #expect(asSymbol.stringValue == "1,1,1,0.5")
     }
 
-    /// `label` is ~85% opaque in Aqua, so it is a translucent colour that does not
-    /// look like one. As an enclosure the OS would drop that alpha and render an
-    /// opaque tile, which is why this is refused rather than quietly accepted.
+    /// `primary` is ~85% opaque in Aqua, so it is a translucent colour that does
+    /// not look like one. As an enclosure the OS would drop that alpha and render
+    /// an opaque tile, which is why this is refused rather than quietly accepted.
     @Test("a token that is translucent without looking it is caught too")
-    func labelIsTranslucent() throws {
-        let label = AppexColor.custom(MicaColorValue.token("label"))
-        // Only assert the rejection if the OS really does report label as
+    func primaryIsTranslucent() throws {
+        let label = AppexColor.custom(MicaColorValue.token("primary"))
+        // Only assert the rejection if the OS really does report it as
         // translucent — the point is the rule, not this OS's exact alpha.
-        let alpha = ColorParser.nsColor(from: MicaColorValue.token("label").resolved)
+        let alpha = ColorParser.nsColor(from: MicaColorValue.token("primary").resolved)
             .usingColorSpace(.extendedSRGB)?.alphaComponent ?? 1
         if abs(Double(alpha) - 1) > 0.0001 {
             #expect(throws: (any Error).self) {
