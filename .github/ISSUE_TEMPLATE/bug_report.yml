@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in the app or the CLI does not work the way it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Shortcut:** in the app, **Help ▸ Report an Issue…** opens a new issue with
+        your Mica and macOS versions already filled in.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see?
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-expected
+    attributes:
+      label: What you expected
+      description: What did you think would happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings or command
+      description: >
+        For a rendering problem this is the most useful thing you can give us.
+        Either export your configuration (**File ▸ Export Configuration…**, ⌘S) and
+        paste the JSON, or paste the full `mica-cli` command that reproduces it.
+      render: shell
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Where does it happen?
+      options:
+        - The app
+        - The command line tool (mica-cli)
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: mica-version
+    attributes:
+      label: Mica version
+      description: "**Mica ▸ About Mica** in the app, or `mica-cli --version`."
+      placeholder: "0.1"
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: "Apple menu ▸ About This Mac."
+      placeholder: "26.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else
+      description: Screenshots of the icon or the window are very welcome.

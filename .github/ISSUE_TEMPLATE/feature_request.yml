@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a setting, a control or a CLI flag.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature ideas are very welcome and need no discussion first — file them freely.
+
+        If you want to *build* the feature yourself, please still open this issue first.
+        A fair amount of Mica's design has reasoning behind it that isn't visible in the
+        code yet, and an unsolicited pull request is likely to run into a constraint
+        neither of us can see coming. See
+        [CONTRIBUTING.md](https://github.com/lukecharters/Mica/blob/main/CONTRIBUTING.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: >
+        The icon or the workflow you're trying to produce, rather than the feature
+        itself. Knowing the goal often surfaces a way to do it today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like Mica to do?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Where would it belong?
+      description: >
+        Most features should land in both, since the app and the CLI share one
+        rendering engine — but say so if it only makes sense in one.
+      options:
+        - Both the app and the CLI
+        - The app only
+        - The command line tool (mica-cli) only
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What are you doing instead today?
+      description: Workarounds, other tools, or manual steps.

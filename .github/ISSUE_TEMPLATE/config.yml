@@ -1,0 +1,16 @@
+# Blank issues MUST stay enabled.
+#
+# Mica's Help ▸ Report an Issue… opens `/issues/new?body=<prefilled>` — see
+# `MicaLinks.reportIssue`. GitHub only honours a `body=` parameter on the blank
+# issue form; with blank issues disabled it redirects to the template chooser and
+# the prefilled macOS and app versions are silently dropped. The forms below are
+# for people who start from the Issues tab instead.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Documentation
+    url: https://github.com/lukecharters/Mica/wiki
+    about: Settings reference, CLI reference, colour formats and how-to guides.
+  - name: Getting Started
+    url: https://github.com/lukecharters/Mica/wiki/Getting-Started
+    about: A guided walkthrough of your first icon.
