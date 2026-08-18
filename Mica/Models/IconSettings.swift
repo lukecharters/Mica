@@ -278,7 +278,7 @@ struct ForegroundSpec: Equatable {
     static let symbolScaleRange: ClosedRange<Double> = 0.3...2.0
     static let imageScaleRange: ClosedRange<Double> = 0.3...2.0
 
-    /// The palette's three slots, primary first — and **three distinct hues on
+    /// The palette's three slots, primary first — and **three distinct colours on
     /// purpose**, because the default is the only thing that tells a reader what
     /// palette rendering *is*.
     ///
@@ -290,9 +290,16 @@ struct ForegroundSpec: Equatable {
     /// of 4 and 0.000% of pixels changed on a three-layer symbol. Choosing palette
     /// and seeing no change is the whole of what a reader learned from it.
     ///
-    /// Keep them distinct hues, then, rather than tints of one. The point of the
+    /// Keep the three distinct, then, rather than tints of one. The point of the
     /// mode is that each layer takes its own colour, and the default has to show it.
-    static let defaultPalette: [MicaColorValue] = [.red, .green, .yellow]
+    /// A white *primary* is fine and is deliberate — it keeps the dominant layer
+    /// looking like the other rendering modes, and the distinctness that matters
+    /// comes from the secondary and tertiary. It does cost some of the margin,
+    /// because the primary layer is usually the largest: measured on a three-layer
+    /// symbol, 254 and 4.99% of pixels against hierarchical where an all-hues
+    /// palette gave 14.25%. Still an order of magnitude clear of the old 4 and
+    /// 0.000%, and clear of the wiki generator's 16 / 0.25% visibility floor.
+    static let defaultPalette: [MicaColorValue] = [.white, .green, .yellow]
 
     /// `defaultPalette` as the `--icon-symbol-palette` / `--badge-symbol-palette`
     /// value that reproduces it, for help text. Derived, so a help string can

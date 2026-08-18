@@ -98,9 +98,11 @@ struct BaseOverrideTests {
 
     @Test("An absent --icon-symbol-palette keeps the base's palette")
     func absentPalette_keepsTheBasePalette() throws {
-        // The sharpest case: the CLI's palette default (three tints of white) is
-        // genuinely different from ForegroundSpec's white/mint/yellow, so this site
-        // could not be fixed by matching a literal to a spec default.
+        // This was the sharpest case while the CLI seeded a palette of its own that
+        // differed from the model's, because the site could not be fixed by matching
+        // a literal to a spec default. That seed is gone (there is one default now),
+        // so what this defends is the ordinary contract: the base's palette differs
+        // from `ForegroundSpec.defaultPalette`, so an eager write would show here.
         let result = try Self.build([], onto: Self.distinctiveBase())
         #expect(result.icon.foreground.palettePrimaryColor == .red)
         #expect(result.icon.foreground.paletteSecondaryColor == .green)
@@ -339,6 +341,6 @@ struct BaseOverrideTests {
         let palette = ForegroundSpec.defaultPalette
         #expect(palette.count == 3)
         #expect(Set(palette.map(\.stringValue)).count == 3, "the default palette must not be three tints of one colour")
-        #expect(ForegroundSpec.defaultPaletteCLIValue == "red,green,yellow")
+        #expect(ForegroundSpec.defaultPaletteCLIValue == "white,green,yellow")
     }
 }
