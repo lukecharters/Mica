@@ -11,6 +11,5 @@ import Testing
 extension Tag {
     @Tag static var unit: Self
     @Tag static var rendering: Self
-    @Tag static var golden: Self
     @Tag static var slow: Self
 }

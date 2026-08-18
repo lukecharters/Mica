@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		8C2136062F920062001C769A /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C2136052F920062001C769A /* ArgumentParser */; };
 		8C2137A12F921790001C769A /* mica-cli in Embed mica-cli */ = {isa = PBXBuildFile; fileRef = 8C3148C92E61E39F00C7A0A9 /* mica-cli */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		8C27BE2C2F95085F00C00DCA /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 8C27BE2B2F95085F00C00DCA /* SnapshotTesting */; };
 		8C3148D02E61E3B900C7A0A9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B42E61E06C00C7A0A9 /* SwiftUI.framework */; };
 		8C3148D12E61E3BF00C7A0A9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8C3148B62E61E07300C7A0A9 /* AppKit.framework */; };
 		8C3148D32E61E3F400C7A0A9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 8C3148D22E61E3F400C7A0A9 /* ArgumentParser */; };
@@ -243,7 +242,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C27BE2C2F95085F00C00DCA /* SnapshotTesting in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -369,7 +367,6 @@
 			);
 			name = MicaTests;
 			packageProductDependencies = (
-				8C27BE2B2F95085F00C00DCA /* SnapshotTesting */,
 			);
 			productName = MicaTests;
 			productReference = 8C71CCAA2DBDDDD3006FB320 /* MicaTests.xctest */;
@@ -472,7 +469,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
-				8C27BE2A2F95085F00C00DCA /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8C71CC9A2DBDDDD2006FB320 /* Products */;
@@ -1019,14 +1015,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		8C27BE2A2F95085F00C00DCA /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.17.0;
-			};
-		};
 		8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
@@ -1042,11 +1030,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 8C3148B82E61E0C000C7A0A9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
-		};
-		8C27BE2B2F95085F00C00DCA /* SnapshotTesting */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 8C27BE2A2F95085F00C00DCA /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
-			productName = SnapshotTesting;
 		};
 		8C3148D22E61E3F400C7A0A9 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
