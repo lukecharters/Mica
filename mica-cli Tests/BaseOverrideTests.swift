@@ -310,14 +310,35 @@ struct BaseOverrideTests {
 
     // MARK: - `generate` is unaffected
     //
-    // The same builder with no base must still produce the CLI's own defaults,
-    // including the palette that differs from the model's.
+    // The same builder with no base must still produce the model's defaults.
 
-    @Test("generate still seeds the CLI's white palette")
-    func generateStillSeedsTheCLIPalette() throws {
+    // Asserts against `ForegroundSpec.defaultPalette` rather than three literals,
+    // deliberately: the claim is that the CLI and the model agree on the palette,
+    // and a literal here would let them drift apart while the test still passed.
+    // There were two palette defaults until 2026-08-18 — the CLI seeded
+    // white/white:0.5/white:0.26 over the model's white/mint/yellow — and this is
+    // the test that would have caught a re-divergence.
+    @Test("a flags-only generate leaves the model's palette default in place")
+    func generateUsesTheModelPaletteDefault() throws {
         let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"]))
-        #expect(settings.icon.foreground.palettePrimaryColor == (try MicaColorValue(parsing: "white")))
-        #expect(settings.icon.foreground.paletteSecondaryColor == (try MicaColorValue(parsing: "white:0.5")))
-        #expect(settings.icon.foreground.paletteTertiaryColor == (try MicaColorValue(parsing: "white:0.26")))
+        #expect(settings.icon.foreground.palettePrimaryColor == ForegroundSpec.defaultPalette[0])
+        #expect(settings.icon.foreground.paletteSecondaryColor == ForegroundSpec.defaultPalette[1])
+        #expect(settings.icon.foreground.paletteTertiaryColor == ForegroundSpec.defaultPalette[2])
+        #expect(settings.badge.foreground.palettePrimaryColor == ForegroundSpec.defaultPalette[0])
+        #expect(settings.badge.foreground.paletteSecondaryColor == ForegroundSpec.defaultPalette[1])
+        #expect(settings.badge.foreground.paletteTertiaryColor == ForegroundSpec.defaultPalette[2])
+    }
+
+    // The reason the default is three hues and not three tints of one. Palette at
+    // its default used to render *identically* to hierarchical, because
+    // white/white:0.5/white:0.26 is exactly what hierarchical draws — so choosing
+    // palette and seeing no change was all a reader learned. This pins the fix at
+    // the level that matters: the three slots must be three different colours.
+    @Test("the default palette is three distinct colours, so palette differs from hierarchical")
+    func defaultPaletteIsThreeDistinctColours() throws {
+        let palette = ForegroundSpec.defaultPalette
+        #expect(palette.count == 3)
+        #expect(Set(palette.map(\.stringValue)).count == 3, "the default palette must not be three tints of one colour")
+        #expect(ForegroundSpec.defaultPaletteCLIValue == "red,green,yellow")
     }
 }

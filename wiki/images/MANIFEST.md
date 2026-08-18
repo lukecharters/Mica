@@ -22,11 +22,11 @@ one, so the page and the picture cannot disagree.
 | `icon-symbol-rendering-monochrome.png` | `icon-symbol-rendering` | `monochrome` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering monochrome` |
 | `icon-symbol-rendering-hierarchical.png` | `icon-symbol-rendering` | `hierarchical` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering hierarchical` |
 | `icon-symbol-rendering-multicolor.png` | `icon-symbol-rendering` | `multicolor` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering multicolor` |
-| `icon-symbol-rendering-palette.png` | `icon-symbol-rendering` | `palette` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette --icon-symbol-palette yellow,white,cyan` |
+| `icon-symbol-rendering-palette.png` | `icon-symbol-rendering` | `palette` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette` |
 | `icon-symbol-color-white.png` | `icon-symbol-color` | `white` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-color white` |
 | `icon-symbol-color-black.png` | `icon-symbol-color` | `black` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-color black` |
 | `icon-symbol-color-yellow.png` | `icon-symbol-color` | `yellow` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-color yellow` |
-| `icon-symbol-palette-default.png` | `icon-symbol-palette` | `default` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette --icon-symbol-palette white,white:0.5,white:0.26` |
+| `icon-symbol-palette-default.png` | `icon-symbol-palette` | `default` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette` |
 | `icon-symbol-palette-custom.png` | `icon-symbol-palette` | `custom` | `mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette --icon-symbol-palette yellow,white,cyan` |
 | `icon-symbol-weight-ultralight.png` | `icon-symbol-weight` | `ultralight` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-weight ultralight` |
 | `icon-symbol-weight-regular.png` | `icon-symbol-weight` | `regular` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-weight regular` |
@@ -82,11 +82,11 @@ one, so the page and the picture cannot disagree.
 | `badge-symbol-rendering-monochrome.png` | `badge-symbol-rendering` | `monochrome` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering monochrome` |
 | `badge-symbol-rendering-hierarchical.png` | `badge-symbol-rendering` | `hierarchical` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering hierarchical` |
 | `badge-symbol-rendering-multicolor.png` | `badge-symbol-rendering` | `multicolor` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering multicolor` |
-| `badge-symbol-rendering-palette.png` | `badge-symbol-rendering` | `palette` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering palette --badge-symbol-palette yellow,white,cyan` |
+| `badge-symbol-rendering-palette.png` | `badge-symbol-rendering` | `palette` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering palette` |
 | `badge-symbol-color-white.png` | `badge-symbol-color` | `white` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-symbol-color white` |
 | `badge-symbol-color-black.png` | `badge-symbol-color` | `black` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-symbol-color black` |
 | `badge-symbol-color-yellow.png` | `badge-symbol-color` | `yellow` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-symbol-color yellow` |
-| `badge-symbol-palette-default.png` | `badge-symbol-palette` | `default` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering palette --badge-symbol-palette white,white:0.5,white:0.26` |
+| `badge-symbol-palette-default.png` | `badge-symbol-palette` | `default` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering palette` |
 | `badge-symbol-palette-custom.png` | `badge-symbol-palette` | `custom` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol cloud.sun.rain.fill --badge-scale 2.0 --badge-symbol-rendering palette --badge-symbol-palette yellow,white,cyan` |
 | `badge-symbol-weight-ultralight.png` | `badge-symbol-weight` | `ultralight` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-symbol-weight ultralight` |
 | `badge-symbol-weight-regular.png` | `badge-symbol-weight` | `regular` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-symbol-weight regular` |

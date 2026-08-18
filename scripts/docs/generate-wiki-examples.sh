@@ -56,10 +56,10 @@
 # than assumed:
 #
 #   * icon/badge-symbol-rendering uses cloud.sun.rain.fill. On star.fill,
-#     monochrome, hierarchical and palette render the SAME PICTURE — it has one
-#     layer, so there is no hierarchy to shade. Only multicolor differs. A
-#     four-image strip built on star.fill would show two distinct images and
-#     claim four.
+#     hierarchical renders BYTE-IDENTICALLY to monochrome — one layer, so there is
+#     no hierarchy to shade — and a four-mode strip would show three pictures and
+#     claim four. Measured 2026-08-18: 0 and 0.000% between those two on
+#     star.fill, and all six pairs distinct on the layered symbol.
 #   * icon/badge-symbol-palette uses cloud.sun.rain.fill for the same reason: the
 #     three slots only mean something over three layers. On star.fill the strip
 #     would demonstrate "the primary colour", which is what symbol-color is for.
@@ -303,22 +303,23 @@ generate_icon_foreground() {
     emit icon-symbol-rendering monochrome   "${L[@]}" --icon-symbol-rendering monochrome
     emit icon-symbol-rendering hierarchical "${L[@]}" --icon-symbol-rendering hierarchical
     emit icon-symbol-rendering multicolor   "${L[@]}" --icon-symbol-rendering multicolor
-    # Palette carries its colours here, and it has to. The default palette is
-    # white, white:0.5, white:0.26 — one hue at three opacities, which is exactly
-    # what hierarchical draws. Measured: palette at its default is IDENTICAL to
-    # hierarchical (maxdiff 4, 0.000% of pixels). So a four-mode strip built on
-    # the defaults shows three pictures and claims four. Worth saying on the page:
-    # palette only differs from hierarchical once you give it different colours.
-    emit icon-symbol-rendering palette      "${L[@]}" --icon-symbol-rendering palette \
-        --icon-symbol-palette 'yellow,white,cyan'
+    # Palette needs no colours of its own here, and that is new. The default
+    # palette was white, white:0.5, white:0.26 until 2026-08-18 — one hue at three
+    # opacities, which is exactly what hierarchical draws — so palette at its own
+    # default rendered IDENTICALLY to hierarchical (maxdiff 4, 0.000% of pixels)
+    # and this strip had to pass explicit colours to show four modes. The default
+    # is red,green,yellow now, so the strip shows what choosing palette actually
+    # gives you.
+    emit icon-symbol-rendering palette      "${L[@]}" --icon-symbol-rendering palette
 
     emit icon-symbol-color white  "${B[@]}" --icon-symbol-color white
     emit icon-symbol-color black  "${B[@]}" --icon-symbol-color black
     emit icon-symbol-color yellow "${B[@]}" --icon-symbol-color yellow
 
     # Palette needs the rendering mode as well; the colours alone do nothing.
-    emit icon-symbol-palette default "${L[@]}" \
-        --icon-symbol-rendering palette --icon-symbol-palette 'white,white:0.5,white:0.26'
+    # `default` passes no palette on purpose — it is what the setting looks like
+    # untouched, which is the thing a reference entry has to show first.
+    emit icon-symbol-palette default "${L[@]}" --icon-symbol-rendering palette
     emit icon-symbol-palette custom "${L[@]}" \
         --icon-symbol-rendering palette --icon-symbol-palette 'yellow,white,cyan'
 
@@ -445,17 +446,14 @@ generate_badge_foreground() {
     emit badge-symbol-rendering monochrome   "${L[@]}" --badge-symbol-rendering monochrome
     emit badge-symbol-rendering hierarchical "${L[@]}" --badge-symbol-rendering hierarchical
     emit badge-symbol-rendering multicolor   "${L[@]}" --badge-symbol-rendering multicolor
-    # Carries its colours, same reason as the icon's: the default palette is
-    # identical to hierarchical.
-    emit badge-symbol-rendering palette      "${L[@]}" --badge-symbol-rendering palette \
-        --badge-symbol-palette 'yellow,white,cyan'
+    # No colours of its own, same reason as the icon's.
+    emit badge-symbol-rendering palette      "${L[@]}" --badge-symbol-rendering palette
 
     emit badge-symbol-color white  "${B[@]}" --badge-symbol-color white
     emit badge-symbol-color black  "${B[@]}" --badge-symbol-color black
     emit badge-symbol-color yellow "${B[@]}" --badge-symbol-color yellow
 
-    emit badge-symbol-palette default "${L[@]}" \
-        --badge-symbol-rendering palette --badge-symbol-palette 'white,white:0.5,white:0.26'
+    emit badge-symbol-palette default "${L[@]}" --badge-symbol-rendering palette
     emit badge-symbol-palette custom "${L[@]}" \
         --badge-symbol-rendering palette --badge-symbol-palette 'yellow,white,cyan'
 

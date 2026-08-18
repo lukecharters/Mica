@@ -343,7 +343,7 @@ struct IconForegroundOptions: ParsableArguments {
         name: .customLong("icon-symbol-palette"),
         help: ArgumentHelp(
             "Palette colors for palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma (e.g. 'blue,white:0.5,white:0.26'). Default: white,white:0.5,white:0.26.",
+            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma (e.g. 'blue,white:0.5,white:0.26'). \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
             valueName: "c1,c2,c3"
         )
     )
@@ -668,7 +668,7 @@ struct BadgeOptions: ParsableArguments {
         name: .customLong("badge-symbol-palette"),
         help: ArgumentHelp(
             "Palette colors for badge palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma. Default: white,white:0.5,white:0.26.",
+            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma. \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
             valueName: "c1,c2,c3"
         )
     )

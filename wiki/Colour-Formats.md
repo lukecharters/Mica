@@ -91,7 +91,7 @@ Four options take several colours at once and split their value on commas:
 --icon-symbol-palette       --badge-symbol-palette
 ```
 
-Only the comma-free forms work inside them — a name, hex, or either with an opacity suffix. `srgb:`, `display-p3:` and the extended forms cannot be used there. That is why the default palette reads `white,white:0.5,white:0.26`.
+Only the comma-free forms work inside them — a name, hex, or either with an opacity suffix. `srgb:`, `display-p3:` and the extended forms cannot be used there.
 
 In a JSON configuration these four keys also accept a JSON array, which *is* able to carry a comma-containing colour:
 

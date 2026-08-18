@@ -34,11 +34,12 @@
 //   defaults, the inverted padding keys, mode-polymorphic colour keys. The
 //   equivalence test in `ConfigFlagParityTests` is the drift alarm; change one
 //   side only with that test in view.
-// - **The palette is NOT seeded.** A flags-only `generate` seeds the CLI's
-//   white-tints palette; a configuration is a *base*, so an absent
-//   `icon-symbol-palette` means the model default (white/mint/yellow), exactly
-//   as `--config`'s override machinery expects. This is the one deliberate
+// - **An absent `icon-symbol-palette` means `ForegroundSpec.defaultPalette`**,
+//   and it means that on both surfaces. Until 2026-08-18 it did not: a flags-only
+//   `generate` seeded a CLI-only white-tints palette while a configuration fell
+//   back to the model's white/mint/yellow, which was the one deliberate
 //   divergence between "decode a config" and "parse the same values as flags".
+//   One default now, so there is nothing here to keep in step.
 //
 // Imported images are file paths (like the flags): relative paths resolve
 // against the JSON file's directory, and the GUI export allocates sidecar PNGs
@@ -677,8 +678,8 @@ private struct ConfigReader {
         } else if let symbol = appexColor(.iconSymbolColor) {
             appexColors.iconSymbol = symbol
         }
-        // The palette is deliberately NOT seeded with the CLI default — a
-        // configuration is a base, and an absent key means the model default.
+        // An absent key means `ForegroundSpec.defaultPalette`, which is what the
+        // flags do too — a configuration is a base, and there is one default.
         if let parts = colorList(.iconSymbolPalette, expecting: 3) {
             if let primary = parseColor(parts[0], key: .iconSymbolPalette) {
                 settings.icon.foreground.palettePrimaryColor = primary
