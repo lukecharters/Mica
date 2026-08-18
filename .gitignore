@@ -75,7 +75,12 @@ fastlane/test_output
 # Local tooling and the internal engineering record. These stay on the working machine.
 # docs/ holds the plans, research and review notes behind the decisions in this codebase;
 # they will be published once there is someone to read them. See CONTRIBUTING.md.
-docs/
+#
+# Anchored with a leading slash, and it has to be: an unanchored `docs/` matches a
+# directory of that name at ANY depth, so it also swallowed scripts/docs/ — the
+# wiki-image generator — and `git add` reported it as ignored rather than committing
+# it. Only the repository root's docs/ is the engineering record.
+/docs/
 CLAUDE.md
 AGENTS.md
 .claude/
