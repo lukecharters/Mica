@@ -77,6 +77,33 @@
 # Badge images render at 512 and icon images at 256. The badge is about 38% of
 # the enclosure, so its glyph at size 256 is mush; the size is not the setting
 # under test in any badge entry, and an illegible image serves nobody.
+#
+# ---- artwork cases name no foreground, and must not ---------------------------
+#
+# The six images that import ARTWORK as a background — `icon-bg image`,
+# `icon-bg-padding` on/off, and the badge's three — deliberately drop the base's
+# `--icon-symbol` / `--badge-symbol`. **Adding it back silently ruins them.**
+#
+# Importing a background hides that group's foreground, but only as a default:
+# naming or styling a foreground in the same group overrides it (rule 2 of the
+# three the CLI applies). `--icon-symbol` is exactly such an argument, so the base
+# was switching the symbol back on over the artwork. The images shipped that way
+# until 2026-08-18, and they were unreadable rather than merely wrong: the base's
+# white `star.fill` drew on top of the white glyph in the artwork and the two
+# merged into one shape you cannot separate.
+#
+# Two things it got wrong at once, which is why the fix is to drop the flag rather
+# than to hide the foreground with `--icon-fg-visibility off`:
+#
+#   * **The picture.** A glyph on top sits over the artwork's edges, which is the
+#     only place `icon-bg-padding` shows anything at all.
+#   * **The command.** `mica-cli --icon-bg artwork.png` is a complete invocation
+#     that needs no symbol, and it hides the foreground. Quoting a command with
+#     `--icon-symbol` in it would document the opposite default, on the one entry
+#     the plan calls the most surprising rule in the tool.
+#
+# The rule is per group, so the badge's artwork cases keep the *icon's* star: only
+# the badge imported anything. `--badge-bg <path>` activates the badge by itself.
 
 set -u
 set -o pipefail
@@ -342,10 +369,14 @@ generate_icon_background() {
     echo "==> Icon background"
     local -a B; read -r -a B <<< "$(icon_base)"
 
+    # No --icon-symbol, and that is the whole point — see "artwork cases name no
+    # foreground" in the header.
+    local -a AI=(--size "${ICON_SIZE}")
+
     emit icon-bg standard        "${B[@]}" --icon-bg standard
     emit icon-bg custom-gradient "${B[@]}" --icon-bg custom-gradient \
         --icon-bg-gradient-colors '#FF6B35,#F7931E'
-    emit icon-bg image           "${B[@]}" --icon-bg "${ARTWORK}"
+    emit icon-bg image           "${AI[@]}" --icon-bg "${ARTWORK}"
 
     emit icon-bg-color blue "${B[@]}" --icon-bg-color blue
     emit icon-bg-color red  "${B[@]}" --icon-bg-color red
@@ -369,9 +400,10 @@ generate_icon_background() {
     emit icon-bg-shadow macos15 "${B[@]}" --icon-bg-shadow macos15
     emit icon-bg-shadow macos26 "${B[@]}" --icon-bg-shadow macos26
 
-    # Padding only means anything over an imported image.
-    emit icon-bg-padding on  "${B[@]}" --icon-bg "${ARTWORK}" --icon-bg-padding on
-    emit icon-bg-padding off "${B[@]}" --icon-bg "${ARTWORK}" --icon-bg-padding off
+    # Padding only means anything over an imported image, and the padding is at
+    # the artwork's edges — exactly what a glyph drawn on top would sit over.
+    emit icon-bg-padding on  "${AI[@]}" --icon-bg "${ARTWORK}" --icon-bg-padding on
+    emit icon-bg-padding off "${AI[@]}" --icon-bg "${ARTWORK}" --icon-bg-padding off
 }
 
 # The six visibility settings cannot be photographed one at a time usefully, so
@@ -480,10 +512,16 @@ generate_badge_background() {
     echo "==> Badge background"
     local -a B; read -r -a B <<< "$(badge_base)"
 
+    # No --badge-symbol, for the same reason the icon's artwork cases drop
+    # --icon-symbol. The icon keeps its own star: the hide rule is per group, and
+    # only the badge imported anything. `--badge-bg <path>` activates the badge on
+    # its own, so nothing else is needed to make it appear.
+    local -a AB=(--icon-symbol "${BASE_SYMBOL}" --size "${BADGE_SIZE}")
+
     emit badge-bg standard        "${B[@]}" --badge-bg standard
     emit badge-bg custom-gradient "${B[@]}" --badge-bg custom-gradient \
         --badge-bg-gradient-colors '#FF6B35,#F7931E'
-    emit badge-bg image           "${B[@]}" --badge-bg "${ARTWORK}"
+    emit badge-bg image           "${AB[@]}" --badge-bg "${ARTWORK}"
 
     # gray is the Mica-mode default; blue is what System mode uses.
     emit badge-bg-color gray "${B[@]}" --badge-bg-color gray
@@ -502,8 +540,8 @@ generate_badge_background() {
     emit badge-bg-shadow on  "${B[@]}" --badge-bg-shadow on
     emit badge-bg-shadow off "${B[@]}" --badge-bg-shadow off
 
-    emit badge-bg-padding on  "${B[@]}" --badge-bg "${ARTWORK}" --badge-bg-padding on
-    emit badge-bg-padding off "${B[@]}" --badge-bg "${ARTWORK}" --badge-bg-padding off
+    emit badge-bg-padding on  "${AB[@]}" --badge-bg "${ARTWORK}" --badge-bg-padding on
+    emit badge-bg-padding off "${AB[@]}" --badge-bg "${ARTWORK}" --badge-bg-padding off
 }
 
 generate_generation_modes() {
