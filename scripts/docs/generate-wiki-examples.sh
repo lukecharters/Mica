@@ -45,6 +45,13 @@
 # "left is on, right is off" and the page then documents a difference the
 # software does not produce.
 #
+# Most groups are named for a config key, but four are not, because what they
+# document is a rule or a source rather than one setting's values: `artwork` (the
+# two generated source images), `icon-visibility` and `badge-visibility` (one
+# strip covering that group's three visibility keys at once), and
+# `icon-bg-image-foreground` (the hide-the-foreground default and its undo). They
+# are still verified the same way, which is the reason to make them groups at all.
+#
 # Slugs for numbers keep the decimal (`icon-fg-scale-0.5.png`) and spell a
 # negative out (`badge-offset-x-minus0.15.png`), because a bare minus would give
 # a double dash.
@@ -404,6 +411,27 @@ generate_icon_background() {
     # the artwork's edges — exactly what a glyph drawn on top would sit over.
     emit icon-bg-padding on  "${AI[@]}" --icon-bg "${ARTWORK}" --icon-bg-padding on
     emit icon-bg-padding off "${AI[@]}" --icon-bg "${ARTWORK}" --icon-bg-padding off
+
+    # The hide-the-foreground default, and its undo. Not a config key — a pair
+    # documenting one rule, for the `icon-bg` entry, which the plan calls the most
+    # surprising behaviour in the tool. Stating it as a default you can reverse
+    # needs both halves shown, or "hides the symbol" reads as a restriction.
+    #
+    # The symbol is BLACK here, and that is not decoration. The artwork's own glyph
+    # is white, so a white symbol on top merges with it into one shape — which is
+    # precisely the defect these six artwork images shipped with until 2026-08-18.
+    # A reveal image that reproduces it would document nothing.
+    #
+    # Which of the three rules fired cannot be shown in a legible image, and it is
+    # worth knowing why before "simplifying" this command. Rule 1 is an explicit
+    # --icon-fg-visibility; rule 2 is any other foreground argument. But any colour
+    # that contrasts with the artwork is itself a rule-2 trigger, so a legible
+    # reveal always satisfies rule 2 as well. The explicit flag leads the command
+    # anyway, because it is the rule the entry states first and the one the GUI's
+    # sidebar eye uses. The rules themselves are text, not picture.
+    emit icon-bg-image-foreground hidden "${AI[@]}" --icon-bg "${ARTWORK}"
+    emit icon-bg-image-foreground shown  "${AI[@]}" --icon-bg "${ARTWORK}" \
+        --icon-fg-visibility on --icon-symbol "${BASE_SYMBOL}" --icon-symbol-color black
 }
 
 # The six visibility settings cannot be photographed one at a time usefully, so

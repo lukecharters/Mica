@@ -53,6 +53,8 @@ one, so the page and the picture cannot disagree.
 | `icon-bg-shadow-macos26.png` | `icon-bg-shadow` | `macos26` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos26` |
 | `icon-bg-padding-on.png` | `icon-bg-padding` | `on` | `mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding on` |
 | `icon-bg-padding-off.png` | `icon-bg-padding` | `off` | `mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding off` |
+| `icon-bg-image-foreground-hidden.png` | `icon-bg-image-foreground` | `hidden` | `mica-cli --size 256 --icon-bg artwork.png` |
+| `icon-bg-image-foreground-shown.png` | `icon-bg-image-foreground` | `shown` | `mica-cli --size 256 --icon-bg artwork.png --icon-fg-visibility on --icon-symbol star.fill --icon-symbol-color black` |
 | `icon-visibility-all-on.png` | `icon-visibility` | `all-on` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 256 --icon-symbol-color black` |
 | `icon-visibility-fg-off.png` | `icon-visibility` | `fg-off` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 256 --icon-symbol-color black --icon-fg-visibility off` |
 | `icon-visibility-bg-off.png` | `icon-visibility` | `bg-off` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 256 --icon-symbol-color black --icon-bg-visibility off` |
