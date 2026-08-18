@@ -1,59 +1,69 @@
 # Getting Started
 
-## Install
+This tutorial installs Mica and creates three useful PNG files.
 
-Download the latest `.pkg` or `.dmg` from the [Releases page](https://github.com/lukecharters/Mica/releases).
+## 1. Install Mica
 
-- The **`.pkg`** installs `Mica.app` into `/Applications` and symlinks the bundled CLI to `/usr/local/bin/mica-cli`, so `mica-cli` works in your terminal straight away.
-- The **`.dmg`** is just the app — drag `Mica.app` to `/Applications`. If you want the CLI on your `PATH` too:
+Download the latest `.pkg` from the [Releases page](https://github.com/lukecharters/Mica/releases).
+Open the package and complete the installer.
 
-```shell
-sudo ln -s /Applications/Mica.app/Contents/MacOS/mica-cli /usr/local/bin/mica-cli
-```
+The package installs Mica in `/Applications`.
+It also adds `mica-cli` to your command path.
 
-Mica requires **macOS 15 Sequoia or later**. System generation mode (Liquid Glass icons) and gradient symbol rendering require **macOS 26 Tahoe or later**.
-
-## Your first icon (app)
-
-<!-- SCREENSHOT PLACEHOLDER — the default window on first launch
-<img src="images/screenshot-first-launch.png" alt="Mica on first launch" width="700">
--->
-
-1. Launch Mica. You'll see a three-pane window: the **layer sidebar** on the left, the **preview** in the middle, and the **inspector** on the right.
-2. With **Icon** selected in the sidebar, click the grid button next to the Symbol field in the inspector to open the **SF Symbols browser**, search for a symbol (say `star.fill`), and click it.
-3. Pick a colour from the **Background Color** dropdown.
-4. Press **⌘E**, choose where to save, and you have a PNG.
-
-That's the whole loop. From here, explore:
-
-- Flick on **Show Advanced Controls** (the sliders button in the toolbar, the **View** menu, or **Mica ▸ Settings…**, ⌘,) to split each group into Foreground and Background layers and reveal imported images, rendering modes, symbol weights, corner styles, and more.
-- Use the **preview size menu** in the toolbar to see your icon at the exact size it will appear in Jamf Self Service.
-- Turn on the **Badge** layer to overlay a second symbol — see the [App Guide](App-Guide#badge).
-
-## Your first icon (CLI)
+Open Terminal and check the command.
 
 ```shell
-# A star on the default blue gradient, saved as star.fill.png in the working directory
-mica-cli --icon-symbol star.fill
-
-# Somewhere specific, bigger, red
-mica-cli --icon-symbol star.fill -o ~/Desktop/star.png --size 1024 --icon-bg-color red
+mica-cli --version
 ```
 
-The CLI and the app share the same rendering engine — identical settings produce identical pixels. See the [CLI Guide](CLI-Guide) for more.
+**Result:** Terminal prints the installed Mica version.
 
-## Your first extraction
+## 2. Make your first icon in the app
 
-Need an existing app's icon as a PNG?
+Open Mica from the Applications folder.
+Select **Icon** in the left sidebar.
+Click the grid button beside **Symbol**.
+Search for `star.fill`.
+Select the symbol and press **Select**.
+
+<!-- Phase 5 adds window-anatomy.png and symbol-browser.png here. -->
+
+**Result:** The preview shows a white star on a blue background.
+
+## 3. Export the icon
+
+Press **⇧⌘E**.
+Choose the Desktop.
+Set the name to `mica-star.png`.
+Press **Export**.
+
+<!-- Phase 5 adds window-anatomy.png here. -->
+
+**Result:** Your Desktop contains a 512 by 512 PNG.
+
+## 4. Make the same icon from Terminal
+
+Run this command.
 
 ```shell
-mica-cli extract /Applications/Safari.app
+mica-cli --icon-symbol star.fill --output ~/Desktop/mica-star-cli.png
 ```
 
-Or drag the app into the Mica window to import its icon and add padding and a drop shadow before exporting. See [Extracting Icons](Extracting-Icons).
+**Result:** Your Desktop contains `mica-star-cli.png`.
+It matches the icon you made in the app.
 
-## Where next
+## 5. Extract an existing app icon
 
-- [App Guide](App-Guide) — every control explained
-- [CLI Guide](CLI-Guide) — scripted and batch generation
-- [CLI Reference](CLI-Reference) — every flag
+Run this command.
+
+```shell
+mica-cli extract /Applications/Safari.app --output ~/Desktop
+```
+
+**Result:** Your Desktop contains `Safari.png`.
+
+## Next
+
+- [Make Icons For Self Service](Make-Icons-For-Self-Service)
+- [Reuse Settings With Config Files](Reuse-Settings-With-Config-Files)
+- [Settings Index](Settings-Index)

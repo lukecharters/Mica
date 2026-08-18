@@ -1,160 +1,192 @@
 # CLI Reference
 
-Complete reference for `mica-cli`. For a task-oriented introduction, see the [CLI Guide](CLI-Guide).
+`mica-cli` generates icons and extracts existing app icons.
 
-```
-mica-cli [generate] --icon-symbol <name> [<options>]   # generate an icon (default subcommand)
-mica-cli extract <path> [<options>]                    # extract icons from apps/files
-mica-cli --version
+```text
+mica-cli [generate] [options]
+mica-cli extract <path> [options]
 mica-cli --help
+mica-cli --version
 ```
 
-`generate` is the default subcommand — `mica-cli --icon-symbol star.fill` and `mica-cli generate --icon-symbol star.fill` are identical.
+`generate` is the default subcommand.
+You can omit its name.
+It takes no positional symbol name.
 
-`generate` takes no positional argument. It accepted a bare symbol name until 2026-08-08; because `generate` is the default subcommand, that first word was read as a subcommand name first, so every future subcommand would have silently shadowed a symbol of the same name — and `square`, `circle`, `list`, `tag`, `link`, `app`, `book` and `bell` are all real SF Symbols.
+```shell
+mica-cli --icon-symbol star.fill --output icon.png
+```
 
-**Spelling:** every `--…-color` flag also accepts a `--…-colour` alias, `grey` is accepted wherever `gray` is, and `multicolour` works for `multicolor`. The US spellings are canonical in `--help`.
-
----
-
-## `generate`
-
-### Naming a symbol
-
-`--icon-symbol` and `--badge-symbol` take a bare SF Symbol name and are shorthand for `--icon-fg symbol:<name>` / `--badge-fg symbol:<name>`. Use the `--…-fg` form for an image file, which is the only thing it can say that the shorthand cannot.
-
-The shorthand is exact — same foreground, same effect on every rule below. Three things it refuses rather than guessing at: a `symbol:` prefix (it takes a bare name; the prefix exists only to tell a symbol from a path on the overloaded flag), an empty name, and being passed alongside the flag it abbreviates.
-
-Neither shorthand is a configuration key. In a `.json` file, write `"icon-fg": "symbol:star.fill"`.
+## Generate
 
 ### Generation
 
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `--icon-generation-mode` | `mica`, `system` | `mica` | How the icon is rendered: `mica` (SwiftUI pipeline) or `system` (Apple's own appex rendering — Liquid Glass on macOS 26+). |
-| `--badge-generation-mode` | `mica`, `system` | `mica` | Same choice for the badge, independent of the icon. `system` badges require an SF Symbol foreground. |
+| Flag | Details |
+|---|---|
+| `--icon-generation-mode` | [Icon generation mode](Icon-Settings#generation-mode) |
+| `--badge-generation-mode` | [Badge generation mode](Badge-Settings#generation-mode) |
 
 ### Icon foreground
 
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `--icon-symbol` | an SF Symbol name | — | The symbol to render, with no `symbol:` prefix. Shorthand for `--icon-fg symbol:<name>`. |
-| `--icon-fg` | `symbol:NAME` or an image path | — | Foreground source. `symbol:star.fill` selects an SF Symbol; anything else is treated as an image file path. |
-| `--icon-fg-scale` | 0.3–2.0 | 1.0 | Foreground scale multiplier (drives whichever source is active). |
-| `--icon-symbol-rendering` | `monochrome`, `hierarchical`, `multicolor`, `palette` | `monochrome` | SF Symbol rendering mode. |
-| `--icon-symbol-color` | any [colour](Colour-Formats) | `white` | Symbol colour (monochrome, hierarchical, and multicolor modes). In system mode: an appex colour. |
-| `--icon-symbol-palette` | `c1,c2,c3` | `white,green,yellow` | Palette-mode colours; every slot accepts an `:opacity` suffix. |
-| `--icon-symbol-weight` | `auto`, `ultralight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` | `auto` | Symbol weight. `auto` uses Mica's per-symbol calibration. |
-| `--icon-symbol-gradient` | `on`, `off` | `off` | Gradient fill on the symbol colour (requires macOS 26+). |
-| `--icon-fg-shadow` | `on`, `off` | `on` for SF Symbols, `off` for images | Drop shadow behind the foreground. |
-| `--icon-fg-visibility` | `on`, `off` | `on` | Hide the foreground entirely with `off`. |
+| Flag | Details |
+|---|---|
+| `--icon-fg` | [Foreground source](Icon-Settings#foreground-source) |
+| `--icon-symbol` | [Foreground source shorthand](Icon-Settings#foreground-source) |
+| `--icon-fg-scale` | [Foreground scale](Icon-Settings#foreground-scale) |
+| `--icon-symbol-rendering` | [Symbol rendering](Icon-Settings#symbol-rendering) |
+| `--icon-symbol-color` | [Symbol colour](Icon-Settings#symbol-colour) |
+| `--icon-symbol-palette` | [Symbol palette](Icon-Settings#symbol-palette) |
+| `--icon-symbol-weight` | [Symbol weight](Icon-Settings#symbol-weight) |
+| `--icon-symbol-gradient` | [Symbol gradient](Icon-Settings#symbol-gradient) |
+| `--icon-fg-shadow` | [Foreground shadow](Icon-Settings#foreground-shadow) |
+| `--icon-fg-visibility` | [Foreground visibility](Icon-Settings#foreground-visibility) |
 
 ### Icon background
 
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `--icon-bg` | `standard`, `custom-gradient`, or an image path | `standard` | Background source. |
-| `--icon-bg-color` | any [colour](Colour-Formats) | `blue` | Background colour: base colour (mica) or appex enclosure colour (system). |
-| `--icon-bg-gradient-colors` | `c1,c2` (top,bottom) | — | The two stops for `custom-gradient` backgrounds. Required with `--icon-bg custom-gradient`. |
-| `--icon-bg-gradient` | `on`, `off` | `on` | Gradient derived from the base colour (standard backgrounds). |
-| `--icon-bg-corner-radius` | `off`, `macos15`, `macos26` | `macos26` (`off` for image backgrounds) | Corner-radius silhouette style. |
-| `--icon-bg-scale` | 0.3–2.0 | 1.0 | Scale for an imported background image. |
-| `--icon-bg-shadow` | `off`, `macos15`, `macos26` | `macos26` (`off` for image backgrounds) | Background drop-shadow style. |
-| `--icon-bg-padding` | `on`, `off` | `off` | Keep an imported background's native macOS icon padding (`on`), or fill the frame (`off`). |
-| `--icon-bg-visibility` | `on`, `off` | `on` | Hide the background entirely with `off`. |
+| Flag | Details |
+|---|---|
+| `--icon-bg` | [Background type](Icon-Settings#background-type) |
+| `--icon-bg-color` | [Background colour](Icon-Settings#background-colour) |
+| `--icon-bg-gradient-colors` | [Background gradient colours](Icon-Settings#background-gradient-colours) |
+| `--icon-bg-gradient` | [Background gradient](Icon-Settings#background-gradient) |
+| `--icon-bg-corner-radius` | [Background corners](Icon-Settings#background-corners) |
+| `--icon-bg-scale` | [Background scale](Icon-Settings#background-scale) |
+| `--icon-bg-shadow` | [Background shadow](Icon-Settings#background-shadow) |
+| `--icon-bg-padding` | [Background padding](Icon-Settings#background-padding) |
+| `--icon-bg-visibility` | [Background visibility](Icon-Settings#background-visibility) |
 
-`macos15` names the icon design Apple shipped from macOS 11 through macOS 15. It was
-spelled `macos11` in earlier versions of Mica; that spelling is still accepted by both
-style flags and in configuration files, so older scripts keep working. Exporting a
-configuration writes `macos15`.
+### Badge foreground
 
-### Badge
+| Flag | Details |
+|---|---|
+| `--badge-fg` | [Foreground source](Badge-Settings#foreground-source) |
+| `--badge-symbol` | [Foreground source shorthand](Badge-Settings#foreground-source) |
+| `--badge-fg-scale` | [Foreground scale](Badge-Settings#foreground-scale) |
+| `--badge-symbol-rendering` | [Symbol rendering](Badge-Settings#symbol-rendering) |
+| `--badge-symbol-color` | [Symbol colour](Badge-Settings#symbol-colour) |
+| `--badge-symbol-palette` | [Symbol palette](Badge-Settings#symbol-palette) |
+| `--badge-symbol-weight` | [Symbol weight](Badge-Settings#symbol-weight) |
+| `--badge-symbol-gradient` | [Symbol gradient](Badge-Settings#symbol-gradient) |
+| `--badge-fg-shadow` | [Foreground shadow](Badge-Settings#foreground-shadow) |
+| `--badge-fg-visibility` | [Foreground visibility](Badge-Settings#foreground-visibility) |
 
-Any of `--badge-symbol`, `--badge-fg`, `--badge-bg` or `--badge-visibility on` activates the badge.
-Every other flag in the namespace describes a badge rather than asking for one, and does nothing on
-its own.
+### Badge background
 
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `--badge-symbol` | an SF Symbol name | — | The badge symbol, with no `symbol:` prefix; activates the badge. Shorthand for `--badge-fg symbol:<name>`. |
-| `--badge-fg` | `symbol:NAME` or an image path | — | Badge foreground source; activates the badge. |
-| `--badge-fg-scale` | 0.3–2.0 | 1.0 | Badge foreground scale multiplier. |
-| `--badge-symbol-rendering` | `monochrome`, `hierarchical`, `multicolor`, `palette` | `monochrome` | Badge symbol rendering mode. |
-| `--badge-symbol-color` | any [colour](Colour-Formats) | `white` | Badge symbol colour. |
-| `--badge-symbol-palette` | `c1,c2,c3` | `white,green,yellow` | Badge palette-mode colours. |
-| `--badge-symbol-weight` | as icon weights | `auto` | Badge symbol weight. |
-| `--badge-symbol-gradient` | `on`, `off` | `off` | Gradient fill on the badge symbol colour (macOS 26+). |
-| `--badge-fg-shadow` | `on`, `off` | `on` for SF Symbols, `off` for images | Badge foreground drop shadow. |
-| `--badge-fg-visibility` | `on`, `off` | `on` | Hide the badge foreground. |
-| `--badge-bg` | `standard`, `custom-gradient`, or an image path | `standard` | Badge background; activates the badge. An image on its own gives artwork with no symbol over it. |
-| `--badge-bg-color` | any [colour](Colour-Formats) | `gray` (mica) / `blue` (system) | Badge background colour. |
-| `--badge-bg-gradient-colors` | `c1,c2` | — | Stops for `custom-gradient` badge backgrounds. Required with `--badge-bg custom-gradient`. |
-| `--badge-bg-gradient` | `on`, `off` | `on` | Gradient on the badge background colour. |
-| `--badge-bg-scale` | 0.3–2.0 | 1.0 | Scale for an imported badge background image. |
-| `--badge-bg-shadow` | `on`, `off` | `on` (`off` for image backgrounds) | Badge background drop shadow. |
-| `--badge-bg-padding` | `on`, `off` | `off` | Keep an imported badge background's padding, or fill the frame. |
-| `--badge-bg-visibility` | `on`, `off` | `on` | Hide the badge background. |
-| `--badge-position` | `top-left`, `top-right`, `bottom-left`, `bottom-right` | `bottom-right` | Corner the badge anchors to. |
-| `--badge-scale` | 0.3–2.0 | 1.0 | Overall badge size. |
-| `--badge-offset-x` | −1.0–1.0 | 0.0 | Horizontal fine offset from the anchor (fraction of icon size). |
-| `--badge-offset-y` | −1.0–1.0 | 0.0 | Vertical fine offset from the anchor. |
+| Flag | Details |
+|---|---|
+| `--badge-bg` | [Background type](Badge-Settings#background-type) |
+| `--badge-bg-color` | [Background colour](Badge-Settings#background-colour) |
+| `--badge-bg-gradient-colors` | [Background gradient colours](Badge-Settings#background-gradient-colours) |
+| `--badge-bg-gradient` | [Background gradient](Badge-Settings#background-gradient) |
+| `--badge-bg-scale` | [Background scale](Badge-Settings#background-scale) |
+| `--badge-bg-shadow` | [Background shadow](Badge-Settings#background-shadow) |
+| `--badge-bg-padding` | [Background padding](Badge-Settings#background-padding) |
+| `--badge-bg-visibility` | [Background visibility](Badge-Settings#background-visibility) |
 
-Write negative offsets as `--badge-offset-y=-0.05`. Given a space, `-0.05` is read as another flag and the command fails with `Missing value for '--badge-offset-y <offset>'`.
+### Badge layout
+
+| Flag | Details |
+|---|---|
+| `--badge-position` | [Position](Badge-Settings#position) |
+| `--badge-scale` | [Badge size](Badge-Settings#badge-size) |
+| `--badge-offset-x` | [X offset](Badge-Settings#x-offset) |
+| `--badge-offset-y` | [Y offset](Badge-Settings#y-offset) |
 
 ### Group visibility
 
-One flag per group, writing **both** of its layers — the CLI equivalent of the sidebar's eye.
-The group flag applies first and a per-layer flag overrides it, so
-`--icon-visibility off --icon-fg-visibility on` is a visible foreground on a hidden background.
-Because it writes both layers, one flag reliably brings a whole group back.
-
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `--icon-visibility` | `on`, `off` | `on` | Show or hide both icon layers. |
-| `--badge-visibility` | `on`, `off` | `off` | Show or hide both badge layers. `on` activates the badge; `off` is the only way to turn off a badge a `--config` file supplied. |
+| Flag | Details |
+|---|---|
+| `--icon-visibility` | [Icon visibility](Icon-Settings#icon-visibility) |
+| `--badge-visibility` | [Badge visibility](Badge-Settings#badge-visibility) |
 
 ### Export
 
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `-o, --output` | file path | `./<symbol-name>.png` | Output PNG path. |
-| `-s, --size` | 16–1024 | 512 | Export size in pixels. |
-| `--scale` | `1x`, `2x` | `1x` | Output resolution; `2x` doubles the pixel dimensions. |
-| `--color-space` | `sRGB`, `displayP3` | `sRGB` | Colour space to render in. |
+| Flag | Short form | Details |
+|---|---|---|
+| `--size` | `-s` | [Export size](Export-Settings#export-size) |
+| `--scale` | None | [Export scale](Export-Settings#export-scale) |
+| `--color-space` | None | [Colour space](Export-Settings#colour-space) |
 
-### Output modes
+Every `color` flag also accepts a `colour` alias.
+The help output uses the American spelling.
 
-| Flag | Description |
-|---|---|
-| `--json` | Emit a single JSON object describing the result to stdout. |
-| `-q, --quiet` | Suppress diagnostics; only the saved path prints to stdout. |
-| `-v, --verbose` | Per-phase progress on stderr. |
+See [Colour Formats](Colour-Formats) for accepted colour values.
 
-`--quiet` and `--verbose` cannot be combined. The saved path always goes to **stdout** and diagnostics to **stderr**, so `mica-cli` pipes cleanly in scripts.
+## Invocation options
 
----
+These options control the command.
+They are not icon settings.
 
-## `extract`
+| Flag | Short form | Effect |
+|---|---|---|
+| `--output PATH` | `-o` | Saves the PNG at `PATH`. |
+| `--config PATH` | None | Loads a JSON configuration before other flags. |
+| `--json` | None | Writes one result object to standard output. |
+| `--quiet` | `-q` | Hides diagnostics and keeps errors. |
+| `--verbose` | `-v` | Writes progress details to standard error. |
 
+Command-line settings override values from `--config`.
+You cannot combine `--quiet` and `--verbose`.
+
+Without `--output`, Mica saves into the working directory.
+It names the file from the symbol or imported image.
+
+See [Configuration File Reference](Configuration-File-Reference) for the JSON format.
+
+## Common options
+
+| Flag | Short form | Effect |
+|---|---|---|
+| `--help` | `-h` | Shows help for the current command. |
+| `--version` | None | Shows the installed Mica version. |
+
+## Output and exit status
+
+Saved paths go to standard output.
+Diagnostics go to standard error.
+This split keeps pipelines clean.
+
+| Status | Meaning |
+|---:|---|
+| `0` | The command completed successfully. |
+| Non-zero | Validation, reading, rendering, or writing failed. |
+
+`--json` writes one JSON result object.
+Failures still return a non-zero status.
+
+## Extract
+
+`extract` exports the icon assigned by macOS.
+
+```text
+mica-cli extract <path> [options]
 ```
-mica-cli extract <path> [<options>]
+
+| Item | Short form | Values or effect |
+|---|---|---|
+| `<path>` | None | A file or directory to inspect. |
+| `--output PATH` | `-o` | Destination directory. |
+| `--size PIXELS` | `-s` | Icon size. Default: `512`. |
+| `--scale SCALE` | None | `1x` or `2x`. Default: `1x`. |
+| `--recursive` | `-r` | Processes directory contents. |
+| `--depth NUMBER` | None | Limits nested depth. Requires `--recursive`. |
+| `--color-space SPACE` | None | `sRGB` or `displayP3`. |
+| `--json` | None | Writes one result object. |
+| `--quiet` | `-q` | Hides diagnostics and keeps errors. |
+| `--verbose` | `-v` | Writes progress details. |
+
+Depth `0` includes direct children only.
+Depth must be zero or greater.
+
+```shell
+mica-cli extract /Applications/Notes.app --output extracted-icons
 ```
 
-| Flag | Values | Default | Description |
-|---|---|---|---|
-| `<path>` | file or directory | required | The item whose icon to export; a directory with `--recursive` exports everything inside it. |
-| `-o, --output` | directory | working directory | Destination directory for exported PNGs. |
-| `-s, --size` | pixels | 512 | Icon size. |
-| `--scale` | `1x`, `2x` | `1x` | Output resolution. |
-| `-r, --recursive` | — | off | Process directory contents. |
-| `--depth` | ≥ 0 | — | Maximum nested depth when the input is a directory (`0` = direct children only). Requires `--recursive`. |
-| `--color-space` | `sRGB`, `displayP3` | `sRGB` | Colour space to render in. |
-| `--json`, `-q`, `-v` | — | — | Output modes, as for `generate`. |
+## Negative values
 
-See [Extracting Icons](Extracting-Icons) for worked examples.
+Attach negative badge offsets with `=`.
+A space makes the number look like another flag.
 
----
-
-## JSON output
-
-With `--json`, both subcommands print a single JSON object to stdout describing the command and its output files (path and dimensions), or an error object (`command`, `kind`, `message`) on failure. Exit codes are non-zero on failure, so scripts can rely on either.
+```shell
+mica-cli --icon-symbol star.fill --badge-symbol plus --badge-offset-y=-0.15
+```

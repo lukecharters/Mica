@@ -1,8 +1,23 @@
 **[Home](Home)**
 
+**Start here**
 - [Getting Started](Getting-Started)
-- [App Guide](App-Guide)
-- [CLI Guide](CLI-Guide)
+- [The Mica Window](The-Mica-Window)
+- [Generation Modes](Generation-Modes)
+
+**How to**
+- [Make Icons For Self Service](Make-Icons-For-Self-Service)
+- [Badge An Icon](Badge-An-Icon)
+- [Use Your Own Artwork](Use-Your-Own-Artwork)
+- [Bulk Generate Icons](Bulk-Generate-Icons)
+- [Extract App Icons](Extract-App-Icons)
+- [Reuse Settings With Config Files](Reuse-Settings-With-Config-Files)
+
+**Reference**
+- [Settings Index](Settings-Index)
+- [Icon Settings](Icon-Settings)
+- [Badge Settings](Badge-Settings)
+- [Export Settings](Export-Settings)
 - [CLI Reference](CLI-Reference)
-- [Extracting Icons](Extracting-Icons)
 - [Colour Formats](Colour-Formats)
+- [Configuration File Reference](Configuration-File-Reference)
