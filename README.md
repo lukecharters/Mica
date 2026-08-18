@@ -11,16 +11,15 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [Uninstalling](#uninstalling)
-- [Quick Start](#quick-start)
 - [Usage](#usage)
   - [App](#app)
   - [CLI](#cli)
 - [Documentation](#documentation)
 - [Getting Help](#getting-help)
 - [Contributing](#contributing)
-- [Changelog](#changelog)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
+- [Alternatives](#alternatives)
 
 ## About
 

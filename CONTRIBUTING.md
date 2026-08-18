@@ -92,7 +92,7 @@ Note: if you add a new source file under `mica-cli/CLI/`, it must also be added 
 The GitHub wiki's source pages live in `wiki/` in this repository (a GitHub wiki is its own git repository, so the pages are versioned here and pushed across). To publish changes:
 
 ```shell
-git clone https://github.com/OWNER/REPO.wiki.git /tmp/mica-wiki
+git clone https://github.com/lukecharters/Mica.wiki.git /tmp/mica-wiki
 cp wiki/*.md /tmp/mica-wiki/
 cp -R wiki/images /tmp/mica-wiki/
 cd /tmp/mica-wiki && git add -A && git commit -m "Sync wiki from main repo" && git push
