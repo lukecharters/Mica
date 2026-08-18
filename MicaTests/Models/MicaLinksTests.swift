@@ -24,7 +24,7 @@ struct MicaLinksTests {
     /// Every URL the Help menu offers, with the item that shows it.
     static let allLinks: [(item: String, url: URL)] = [
         ("Mica Help", MicaLinks.help),
-        ("Command Line Tool Guide", MicaLinks.cliGuide),
+        ("Settings Index", MicaLinks.settingsIndex),
         ("Command Line Tool Reference", MicaLinks.cliReference),
         ("Release Notes", MicaLinks.releaseNotes),
         ("Report an Issue…", MicaLinks.reportIssue),

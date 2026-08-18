@@ -400,11 +400,7 @@ struct MicaApp: App {
 
                 Divider()
 
-                // The review's actual point about this menu: for a free
-                // GitHub-distributed app, Help is where a user finds the CLI. Named
-                // "Command Line Tool" rather than "mica-cli" because someone who has
-                // not found the CLI yet does not know it is called that.
-                Link("Command Line Tool Guide", destination: MicaLinks.cliGuide)
+                Link("Settings Index", destination: MicaLinks.settingsIndex)
                 Link("Command Line Tool Reference", destination: MicaLinks.cliReference)
 
                 Divider()

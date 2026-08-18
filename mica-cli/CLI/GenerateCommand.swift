@@ -96,8 +96,8 @@ struct ExportOptions: ParsableArguments {
     @Option(
         name: [.customLong("output"), .customShort("o")],
         help: ArgumentHelp(
-            "Output file path",
-            discussion: "If not specified, saves to the current directory, named after the symbol or the imported image",
+            "Output PNG path",
+            discussion: "Defaults to the current directory. The path goes to stdout; diagnostics go to stderr.",
             valueName: "path"
         )
     )
@@ -106,8 +106,7 @@ struct ExportOptions: ParsableArguments {
     @Option(
         name: [.customLong("size"), .customShort("s")],
         help: ArgumentHelp(
-            "Export size in pixels (16-1024) \(defaultNote(Int(ExportSpec.defaultSize)))",
-            discussion: "Common sizes: 128, 256, 512, 1024.",
+            "Pixel size, 16-1024 \(defaultNote(Int(ExportSpec.defaultSize)))",
             valueName: "pixels"
         ),
         transform: { size in
@@ -127,7 +126,7 @@ struct ExportOptions: ParsableArguments {
     @Option(
         name: .long,
         help: ArgumentHelp(
-            "Output resolution: 1x or 2x (retina) \(defaultNote(ExportScale.settingsDefault.rawValue))",
+            "Resolution: 1x or 2x \(defaultNote(ExportScale.settingsDefault.rawValue))",
             valueName: "scale"
         )
     )
@@ -152,7 +151,7 @@ struct GenerationOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-generation-mode"),
         help: ArgumentHelp(
-            "How the icon is rendered: mica (SwiftUI, default) or system (Apple appex rendering)",
+            "Icon mode: mica or system \(defaultNote(IconSpec().mode.cliToken))",
             valueName: "mica|system"
         ),
         transform: { try parseGenerationMode($0, role: "Icon") }
@@ -162,7 +161,7 @@ struct GenerationOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-generation-mode"),
         help: ArgumentHelp(
-            "How the badge is rendered: mica (SwiftUI, default) or system (Apple appex rendering)",
+            "Badge mode: mica or system \(defaultNote(BadgeSpec().mode.cliToken))",
             valueName: "mica|system"
         ),
         transform: { try parseGenerationMode($0, role: "Badge") }
@@ -206,7 +205,7 @@ struct GroupVisibilityOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-visibility"),
         help: ArgumentHelp(
-            "Icon visibility: on, or off to hide both icon layers. A per-layer flag overrides it.",
+            "Show both icon layers: on or off",
             valueName: "on|off"
         )
     )
@@ -218,7 +217,7 @@ struct GroupVisibilityOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-visibility"),
         help: ArgumentHelp(
-            "Badge visibility: on, or off to hide both badge layers. A per-layer flag overrides it.",
+            "Show both badge layers: on or off",
             valueName: "on|off"
         )
     )
@@ -236,8 +235,7 @@ struct IconForegroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-fg"),
         help: ArgumentHelp(
-            "Icon foreground source",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:star.fill) or a path to an image file. For a symbol, --icon-symbol says the same thing without the prefix.",
+            "Icon foreground: symbol:NAME or image path",
             valueName: "symbol:NAME|path"
         )
     )
@@ -249,8 +247,7 @@ struct IconForegroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-symbol"),
         help: ArgumentHelp(
-            "Icon SF Symbol name, with no 'symbol:' prefix",
-            discussion: "Shorthand for --icon-fg symbol:<name>, e.g. --icon-symbol star.fill. Use --icon-fg for an image file; giving both is an error.",
+            "Icon SF Symbol name; no 'symbol:' prefix",
             valueName: "name"
         )
     )
@@ -301,7 +298,7 @@ struct IconForegroundOptions: ParsableArguments {
     // whichever source (symbol or image) is active.
     @Option(
         name: .customLong("icon-fg-scale"),
-        help: ArgumentHelp("Foreground scale multiplier (0.3-2.0)", valueName: "scale"),
+        help: ArgumentHelp("Icon foreground scale, 0.3-2.0", valueName: "scale"),
         transform: { try validateScale($0, name: "Icon foreground scale") }
     )
     var scale: Double?
@@ -309,8 +306,7 @@ struct IconForegroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-symbol-rendering"),
         help: ArgumentHelp(
-            "Symbol rendering mode",
-            discussion: "monochrome (default), hierarchical, multicolor, or palette",
+            "Rendering: monochrome, hierarchical, multicolor, palette",
             valueName: "mode"
         ),
         transform: { mode in
@@ -330,8 +326,7 @@ struct IconForegroundOptions: ParsableArguments {
     @Option(
         name: [.customLong("icon-symbol-color"), .customLong("icon-symbol-colour")],
         help: ArgumentHelp(
-            "Symbol color (monochrome, hierarchical, and multicolor modes)",
-            discussion: "See COLOR FORMATS in `mica-cli generate --help`. For system mode, a named appex token keeps Apple's curated rendering; anything else resolves to custom components. Default: white.",
+            "Icon symbol color",
             valueName: "color"
         )
     )
@@ -342,8 +337,7 @@ struct IconForegroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-symbol-palette"),
         help: ArgumentHelp(
-            "Palette colors for palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma (e.g. 'blue,white:0.5,white:0.26'). \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
+            "Three palette colors \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
             valueName: "c1,c2,c3"
         )
     )
@@ -351,7 +345,7 @@ struct IconForegroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-symbol-weight"),
-        help: ArgumentHelp("Symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
+        help: ArgumentHelp("Icon symbol weight", valueName: "weight"),
         transform: { weight in
             guard SymbolWeight.from(cliToken: weight) != nil else {
                 throw ValidationError("Symbol weight must be one of: \(SymbolWeight.allCLITokens.joined(separator: ", "))")
@@ -365,7 +359,7 @@ struct IconForegroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-symbol-gradient"),
         help: ArgumentHelp(
-            "Symbol gradient fill: on or off; gradient requires macOS 26+ \(defaultNote(toggle: ForegroundSpec.iconDefault.fillStyle == .gradient))",
+            "Symbol gradient: on or off; macOS 26+ \(defaultNote(toggle: ForegroundSpec.iconDefault.fillStyle == .gradient))",
             valueName: "on|off"
         )
     )
@@ -375,14 +369,14 @@ struct IconForegroundOptions: ParsableArguments {
     // (off for imported images, on for SF Symbols).
     @Option(
         name: .customLong("icon-fg-shadow"),
-        help: ArgumentHelp("Foreground shadow: on or off (default: off for images, on for SF Symbols)", valueName: "on|off")
+        help: ArgumentHelp("Icon foreground shadow: on or off", valueName: "on|off")
     )
     var shadow: ToggleState?
 
     @Option(
         name: .customLong("icon-fg-visibility"),
         help: ArgumentHelp(
-            "Foreground visibility: on, or off to hide the foreground \(defaultNote(toggle: !ForegroundSpec.iconDefault.isHidden))",
+            "Show icon foreground: on or off \(defaultNote(toggle: !ForegroundSpec.iconDefault.isHidden))",
             valueName: "on|off"
         )
     )
@@ -431,17 +425,7 @@ struct IconBackgroundOptions: ParsableArguments {
             // one surprising consequence of the foreground rule, and the abstract is
             // what a reader sees first. It surprises most over --config, where the
             // symbol being hidden was named in the file rather than on this line.
-            "Icon background; an image path hides the foreground unless an icon foreground argument names one",
-            discussion: """
-                standard (color/gradient, default), custom-gradient (two-color gradient), \
-                or a path to an image file.
-
-                An imported background hides this group's foreground by default, because \
-                most such imports are a finished icon — so `--icon-bg art.png` alone is a \
-                complete invocation and needs no symbol. Any argument in the icon \
-                foreground or symbol namespace brings the foreground back, \
-                --icon-symbol included, and --icon-fg-visibility on forces it.
-                """,
+            "Icon background; an image path hides the foreground",
             valueName: "standard|custom-gradient|path"
         )
     )
@@ -452,8 +436,7 @@ struct IconBackgroundOptions: ParsableArguments {
     @Option(
         name: [.customLong("icon-bg-color"), .customLong("icon-bg-colour")],
         help: ArgumentHelp(
-            "Background color",
-            discussion: "standard: base color (mica) or appex enclosure color (system). Default: blue.",
+            "Icon background color",
             valueName: "color"
         )
     )
@@ -463,8 +446,7 @@ struct IconBackgroundOptions: ParsableArguments {
     @Option(
         name: [.customLong("icon-bg-gradient-colors"), .customLong("icon-bg-gradient-colours")],
         help: ArgumentHelp(
-            "Two gradient colors for custom-gradient backgrounds",
-            discussion: "Comma-separated 'c1,c2' (top,bottom).",
+            "Two background gradient colors, top then bottom",
             valueName: "c1,c2"
         )
     )
@@ -474,7 +456,7 @@ struct IconBackgroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-bg-gradient"),
         help: ArgumentHelp(
-            "Background gradient: on or off \(defaultNote(toggle: IconBackgroundSpec().usesGradient))",
+            "Icon background gradient: on or off \(defaultNote(toggle: IconBackgroundSpec().usesGradient))",
             valueName: "on|off"
         )
     )
@@ -482,7 +464,10 @@ struct IconBackgroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-bg-corner-radius"),
-        help: ArgumentHelp("Corner radius: off, macos15, or macos26 (default)", valueName: "style"),
+        help: ArgumentHelp(
+            "Corner radius: off, macos15, macos26 \(defaultNote(IconBackgroundSpec().cornerRadiusStyle.cliToken))",
+            valueName: "style"
+        ),
         transform: { style in
             guard IconCornerRadiusStyle.from(cliToken: style) != nil else {
                 throw ValidationError("Corner radius must be 'off', 'macos15', or 'macos26'")
@@ -494,7 +479,7 @@ struct IconBackgroundOptions: ParsableArguments {
 
     @Option(
         name: .customLong("icon-bg-scale"),
-        help: ArgumentHelp("Scale for an imported background image (0.3-2.0)", valueName: "scale"),
+        help: ArgumentHelp("Imported icon background scale, 0.3-2.0", valueName: "scale"),
         transform: { try validateScale($0, name: "Icon background scale") }
     )
     var scale: Double?
@@ -503,7 +488,7 @@ struct IconBackgroundOptions: ParsableArguments {
     // backgrounds to macOS 26.
     @Option(
         name: .customLong("icon-bg-shadow"),
-        help: ArgumentHelp("Background shadow: off, macos15, or macos26 (default: off for image backgrounds, macos26 otherwise)", valueName: "style"),
+        help: ArgumentHelp("Icon background shadow: off, macos15, macos26", valueName: "style"),
         transform: { style in
             guard BackgroundShadowStyle.from(cliToken: style) != nil else {
                 throw ValidationError("Background shadow must be 'off', 'macos15', or 'macos26'")
@@ -516,14 +501,14 @@ struct IconBackgroundOptions: ParsableArguments {
     // nil = unspecified → fill the frame (padding off).
     @Option(
         name: .customLong("icon-bg-padding"),
-        help: ArgumentHelp("Keep an imported background's padding: on, or off to fill the frame (default)", valueName: "on|off")
+        help: ArgumentHelp("Keep imported icon padding: on or off", valueName: "on|off")
     )
     var padding: ToggleState?
 
     @Option(
         name: .customLong("icon-bg-visibility"),
         help: ArgumentHelp(
-            "Background visibility: on, or off to hide the background \(defaultNote(toggle: !IconBackgroundSpec().isHidden))",
+            "Show icon background: on or off \(defaultNote(toggle: !IconBackgroundSpec().isHidden))",
             valueName: "on|off"
         )
     )
@@ -575,8 +560,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-fg"),
         help: ArgumentHelp(
-            "Badge foreground source (supplying this activates the badge)",
-            discussion: "Either 'symbol:<name>' for an SF Symbol (e.g. symbol:plus.circle) or a path to an image file. For a symbol, --badge-symbol says the same thing without the prefix.",
+            "Badge foreground: symbol:NAME or image path; activates badge",
             valueName: "symbol:NAME|path"
         )
     )
@@ -586,8 +570,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-symbol"),
         help: ArgumentHelp(
-            "Badge SF Symbol name, with no 'symbol:' prefix (supplying this activates the badge)",
-            discussion: "Shorthand for --badge-fg symbol:<name>, e.g. --badge-symbol plus.circle. Use --badge-fg for an image file; giving both is an error.",
+            "Badge SF Symbol name; no 'symbol:' prefix; activates badge",
             valueName: "name"
         )
     )
@@ -627,7 +610,7 @@ struct BadgeOptions: ParsableArguments {
     // flag that drives whichever source (symbol or image) is active.
     @Option(
         name: .customLong("badge-fg-scale"),
-        help: ArgumentHelp("Badge foreground scale multiplier (0.3-2.0)", valueName: "scale"),
+        help: ArgumentHelp("Badge foreground scale, 0.3-2.0", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge foreground scale") }
     )
     var foregroundScale: Double?
@@ -635,8 +618,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-symbol-rendering"),
         help: ArgumentHelp(
-            "Badge symbol rendering mode",
-            discussion: "monochrome (default), hierarchical, multicolor, or palette",
+            "Rendering: monochrome, hierarchical, multicolor, palette",
             valueName: "mode"
         ),
         transform: { mode in
@@ -655,8 +637,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: [.customLong("badge-symbol-color"), .customLong("badge-symbol-colour")],
         help: ArgumentHelp(
-            "Badge symbol color (monochrome, hierarchical, and multicolor modes)",
-            discussion: "See COLOR FORMATS in `mica-cli generate --help`. For system mode, a named appex token keeps Apple's curated rendering; anything else resolves to custom components. Default: white.",
+            "Badge symbol color",
             valueName: "color"
         )
     )
@@ -667,8 +648,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-symbol-palette"),
         help: ArgumentHelp(
-            "Palette colors for badge palette rendering",
-            discussion: "Three comma-separated colors 'c1,c2,c3', each taking any single-colour form that contains no comma. \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
+            "Three badge palette colors \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
             valueName: "c1,c2,c3"
         )
     )
@@ -676,7 +656,7 @@ struct BadgeOptions: ParsableArguments {
 
     @Option(
         name: .customLong("badge-symbol-weight"),
-        help: ArgumentHelp("Badge symbol weight: auto, ultralight, thin, light, regular, medium, semibold, bold, heavy, black", valueName: "weight"),
+        help: ArgumentHelp("Badge symbol weight", valueName: "weight"),
         transform: { weight in
             guard SymbolWeight.from(cliToken: weight) != nil else {
                 throw ValidationError("Badge symbol weight must be one of: \(SymbolWeight.allCLITokens.joined(separator: ", "))")
@@ -690,7 +670,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-symbol-gradient"),
         help: ArgumentHelp(
-            "Badge symbol gradient fill: on or off; gradient requires macOS 26+ \(defaultNote(toggle: ForegroundSpec.badgeDefault.fillStyle == .gradient))",
+            "Badge symbol gradient: on or off; macOS 26+ \(defaultNote(toggle: ForegroundSpec.badgeDefault.fillStyle == .gradient))",
             valueName: "on|off"
         )
     )
@@ -700,7 +680,7 @@ struct BadgeOptions: ParsableArguments {
     // (off for imported images, on for SF Symbols).
     @Option(
         name: .customLong("badge-fg-shadow"),
-        help: ArgumentHelp("Badge foreground shadow: on or off (default: off for images, on for SF Symbols)", valueName: "on|off")
+        help: ArgumentHelp("Badge foreground shadow: on or off", valueName: "on|off")
     )
     var foregroundShadow: ToggleState?
 
@@ -711,7 +691,7 @@ struct BadgeOptions: ParsableArguments {
     // "(default: on)" could. `buildIconSettings` resolves it with `?? true`.
     @Option(
         name: .customLong("badge-fg-visibility"),
-        help: ArgumentHelp("Badge foreground visibility: on (default when the badge is active) or off", valueName: "on|off")
+        help: ArgumentHelp("Show badge foreground: on or off", valueName: "on|off")
     )
     var foregroundVisibility: ToggleState?
 
@@ -723,16 +703,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-bg"),
         help: ArgumentHelp(
-            "Badge background; activates the badge, and an image path hides the badge symbol",
-            discussion: """
-                standard (color/gradient, default), custom-gradient (two-color gradient), \
-                or a path to an image file.
-
-                This flag activates the badge on its own, so badge artwork needs no \
-                --badge-fg. An imported background hides the badge symbol by default; \
-                any other argument in the badge foreground or symbol namespace brings it \
-                back, and --badge-fg-visibility on forces it.
-                """,
+            "Badge background; image paths hide the symbol; activates badge",
             valueName: "standard|custom-gradient|path"
         )
     )
@@ -744,7 +715,6 @@ struct BadgeOptions: ParsableArguments {
         name: [.customLong("badge-bg-color"), .customLong("badge-bg-colour")],
         help: ArgumentHelp(
             "Badge background color",
-            discussion: "standard: base color (mica) or appex enclosure color (system). Default: gray (mica) / blue (system).",
             valueName: "color"
         )
     )
@@ -754,8 +724,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: [.customLong("badge-bg-gradient-colors"), .customLong("badge-bg-gradient-colours")],
         help: ArgumentHelp(
-            "Two gradient colors for custom-gradient badge backgrounds",
-            discussion: "Comma-separated 'c1,c2' (top,bottom).",
+            "Two badge gradient colors, top then bottom",
             valueName: "c1,c2"
         )
     )
@@ -773,7 +742,7 @@ struct BadgeOptions: ParsableArguments {
 
     @Option(
         name: .customLong("badge-bg-scale"),
-        help: ArgumentHelp("Scale for an imported badge background image (0.3-2.0)", valueName: "scale"),
+        help: ArgumentHelp("Imported badge background scale, 0.3-2.0", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge background scale") }
     )
     var backgroundScale: Double?
@@ -782,20 +751,20 @@ struct BadgeOptions: ParsableArguments {
     // background, badge background shadow is a plain on|off (no era styles).
     @Option(
         name: .customLong("badge-bg-shadow"),
-        help: ArgumentHelp("Badge background shadow: on or off (default: off for image backgrounds, on otherwise)", valueName: "on|off")
+        help: ArgumentHelp("Badge background shadow: on or off", valueName: "on|off")
     )
     var backgroundShadow: ToggleState?
 
     // nil = unspecified → fill the frame (padding off).
     @Option(
         name: .customLong("badge-bg-padding"),
-        help: ArgumentHelp("Keep an imported badge background's padding: on, or off to fill the frame (default)", valueName: "on|off")
+        help: ArgumentHelp("Keep imported badge padding: on or off", valueName: "on|off")
     )
     var backgroundPadding: ToggleState?
 
     @Option(
         name: .customLong("badge-bg-visibility"),
-        help: ArgumentHelp("Badge background visibility: on (default when the badge is active) or off", valueName: "on|off")
+        help: ArgumentHelp("Show badge background: on or off", valueName: "on|off")
     )
     var backgroundVisibility: ToggleState?
 
@@ -803,7 +772,7 @@ struct BadgeOptions: ParsableArguments {
 
     @Option(
         name: .customLong("badge-position"),
-        help: ArgumentHelp("Badge position: top-left, top-right, bottom-left, bottom-right", valueName: "position"),
+        help: ArgumentHelp("Badge corner position", valueName: "position"),
         transform: { pos in
             guard BadgePosition.from(cliToken: pos) != nil else {
                 throw ValidationError("Badge position must be one of: \(BadgePosition.allCLITokens.joined(separator: ", "))")
@@ -815,7 +784,7 @@ struct BadgeOptions: ParsableArguments {
 
     @Option(
         name: .customLong("badge-scale"),
-        help: ArgumentHelp("Overall badge scale (0.3-2.0)", valueName: "scale"),
+        help: ArgumentHelp("Badge scale, 0.3-2.0", valueName: "scale"),
         transform: { try validateScale($0, name: "Badge scale") }
     )
     var scale: Double?
@@ -825,16 +794,14 @@ struct BadgeOptions: ParsableArguments {
     // leading dash and treats `-0.2` as another flag, so parsing fails before
     // the transform below ever runs — the hint cannot live in a ValidationError.
     //
-    // It goes in the *abstract*, not the discussion: the resulting "Missing
+    // It goes in the *abstract*: the resulting "Missing
     // value for '--badge-offset-x <offset>'" error prints the abstract only
     // (ArgumentParser's `missingValueForOptionHelpMessage`), and that error is
-    // the exact moment the hint is needed. The discussion carries the reason,
-    // which only `--help` readers need.
+    // the exact moment the hint is needed.
     @Option(
         name: .customLong("badge-offset-x"),
         help: ArgumentHelp(
-            "Badge horizontal offset (-1.0 to 1.0). Write negative values as --badge-offset-x=-0.2",
-            discussion: "Written with a space, -0.2 is read as another flag rather than a value.",
+            "Horizontal offset, -1.0 to 1.0; use --badge-offset-x=-0.2",
             valueName: "offset"
         ),
         transform: { try validateOffset($0, name: "Badge offset X") }
@@ -844,8 +811,7 @@ struct BadgeOptions: ParsableArguments {
     @Option(
         name: .customLong("badge-offset-y"),
         help: ArgumentHelp(
-            "Badge vertical offset (-1.0 to 1.0). Write negative values as --badge-offset-y=-0.2",
-            discussion: "Written with a space, -0.2 is read as another flag rather than a value.",
+            "Vertical offset, -1.0 to 1.0; use --badge-offset-y=-0.2",
             valueName: "offset"
         ),
         transform: { try validateOffset($0, name: "Badge offset Y") }
@@ -913,60 +879,29 @@ struct GenerateCommand: AsyncParsableCommand {
             mica-cli --config icon.json [<options>]
             """,
         discussion: """
-            EXAMPLES (`generate` is the default subcommand and may be omitted):
-
+            EXAMPLES (you may omit `generate`):
               mica-cli --icon-symbol star.fill -o ~/Desktop/icon.png
-              mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical
               mica-cli --icon-symbol gear --icon-bg-color "#0088FF"
-              mica-cli --icon-symbol star.fill --icon-bg custom-gradient
               mica-cli --icon-symbol star.fill --icon-generation-mode system
-              mica-cli --icon-symbol app.fill -s 1024 --scale 2x --color-space displayP3
-              mica-cli --icon-bg ~/artwork.png       # imported art needs no symbol
+              mica-cli --icon-bg ~/artwork.png
               mica-cli --icon-symbol star.fill --badge-symbol plus.circle.fill
               mica-cli --icon-symbol star.fill --badge-symbol plus --badge-offset-y=-0.15
 
-            --badge-symbol, --badge-fg, --badge-bg or --badge-visibility on turns the
-            badge on. Attach a negative value with '=' — given a space, -0.15 is read
-            as another flag.
+            Badge source or visibility options activate the badge.
 
-            CONFIG FORMAT — a flat JSON object whose keys are the long flag names
-            without their leading '--'. Any flag given on the command line wins.
+            CONFIG FORMAT
+              Flags override values from a JSON configuration file.
+              https://github.com/lukecharters/Mica/wiki/Configuration-File-Reference
 
-              mica-cli --config icon.json --size 1024
-
-              { "icon-fg": "symbol:star.fill", "icon-bg-color": "blue", "size": 512 }
-
-            An on|off key takes true/false or "on"/"off"; the four multi-color keys
-            also take a JSON array. A relative image path resolves against the file.
-            --output, --json, --quiet, --verbose and the --icon-symbol/--badge-symbol
-            shorthands have no key. An unknown key or unusable value warns and the
-            rest still loads; only malformed JSON stops the run.
-
-            COLOR FORMATS — every option taking a color accepts:
-
-              blue, gray, primary                 named tokens
-              "#0088FF", "#0088FFCC"              hex, 3/6/8 digits
-              "rgb(0,136,255)"                    0-255; a 4th value is the alpha
-              "hsl(209,100%,50%)"                 degrees and percentages, likewise
-              srgb:0,0.53,1                       components 0-1, alpha optional
-              display-p3:1,0,0                    same, converted on the way in
-              extended-srgb:1.093,-0.227,-0.15,1  unbounded; the stored form
-              extended-gray:1,1
-
-            All but the space-prefixed forms take a ':opacity' suffix — white:0.5,
-            "#0088FF:0.5". It *scales* the color's own alpha rather than replacing
-            it, so primary:0.5 renders at ~42% (primary is ~85% opaque).
-
-            The four options taking several colors at once split their value on
-            commas, so only the comma-free forms work there — a name, hex, or either
-            with an opacity suffix. Use a JSON array in a config file for the rest.
-
-            In system mode colors must be within sRGB, and --icon-bg-color and
-            --badge-bg-color take no opacity suffix (the pipeline ignores it). Both
-            are errors rather than silent changes.
-
-            The output path goes to stdout and diagnostics to stderr, so
-            `mica-cli --icon-symbol star.fill -o icon.png` pipes cleanly.
+            COLOR FORMATS
+              blue                         token
+              "#0088FF"                    hex
+              "rgb(0,136,255)"             RGB
+              "hsl(209,100%,50%)"          HSL
+              srgb:0,0.53,1                sRGB components
+              display-p3:1,0,0             Display P3 components
+              extended-srgb:1.093,-0.227,-0.15,1 or extended-gray:1,1
+              https://github.com/lukecharters/Mica/wiki/Colour-Formats
             """
     )
 
@@ -985,8 +920,7 @@ struct GenerateCommand: AsyncParsableCommand {
     @Option(
         name: .customLong("config"),
         help: ArgumentHelp(
-            "Start from a JSON configuration file; any flag given overrides it",
-            discussion: "Keys are the long flag names without their leading '--'. See CONFIG FORMAT in `mica-cli generate --help`. With --config an icon foreground argument is optional — the file already carries one.",
+            "Load a JSON configuration; flags override it",
             valueName: "path"
         )
     )

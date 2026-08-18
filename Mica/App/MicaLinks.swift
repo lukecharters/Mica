@@ -29,8 +29,8 @@ enum MicaLinks {
     /// one shape and the slug test can check this one too.
     static var help: URL { wikiPage("Home") }
 
-    /// Help ▸ Command Line Tool Guide — the task-oriented `mica-cli` walkthrough.
-    static var cliGuide: URL { wikiPage("CLI-Guide") }
+    /// Help ▸ Settings Index — every setting, grouped by icon area.
+    static var settingsIndex: URL { wikiPage("Settings-Index") }
 
     /// Help ▸ Command Line Tool Reference — every command and flag.
     static var cliReference: URL { wikiPage("CLI-Reference") }
@@ -39,7 +39,7 @@ enum MicaLinks {
     static var releaseNotes: URL { repository.appending(path: "releases") }
 
     /// The wiki pages linked from the Help menu, as `wiki/<slug>.md` filenames.
-    static let wikiPageSlugs = ["Home", "CLI-Guide", "CLI-Reference"]
+    static let wikiPageSlugs = ["Home", "CLI-Reference", "Settings-Index"]
 
     /// A wiki page by slug.
     static func wikiPage(_ slug: String) -> URL {

@@ -12,24 +12,11 @@ struct ExtractCommand: ParsableCommand {
             """,
         discussion: """
             EXAMPLES:
-
-            Extract a single app's icon to the working directory:
               mica-cli extract /Applications/Notes.app
-
-            Extract to a chosen directory at 2x resolution:
               mica-cli extract /System/Applications/Calculator.app \\
                 -o ~/Desktop/icons --scale 2x
-
-            Extract every item in a directory (one level deep):
-              mica-cli extract /Applications -o ~/Desktop/icons --recursive
-
-            Recurse into nested folders up to two levels:
               mica-cli extract ~/Projects -o ~/icons --recursive --depth 2 \\
                 --size 256 --color-space sRGB
-
-            Output modes (saved paths go to stdout, diagnostics to stderr):
-              mica-cli extract /Applications -o ~/icons --recursive --json
-              mica-cli extract /Applications/Notes.app -o ~/icons --quiet
             """
     )
 
