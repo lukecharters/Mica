@@ -60,7 +60,7 @@ There is no SwiftPM package; the CLI is an Xcode target whose sources live in `m
 | `Mica/Views/` | All SwiftUI views (sidebar, preview, symbol picker, controls) |
 | `mica-cli/CLI/` | CLI argument parsing and command implementations |
 | `MicaTests/`, `MicaUITests/`, `mica-cli Tests/` | Test targets |
-| `scripts/` | Packaging (`build-pkg`) and the end-to-end CLI smoke test |
+| `scripts/` | Packaging (`build-pkg/`), the end-to-end CLI smoke test and the documentation checks (`tests/`), and the wiki generator and sync (`docs/`) |
 
 Both interfaces share the same models and services — a new feature should land in **both** the app and the CLI wherever it applies, with tests.
 
@@ -89,16 +89,31 @@ Note: if you add a new source file under `mica-cli/CLI/`, it must also be added 
 
 ## Documentation and the wiki
 
-The GitHub wiki's source pages live in `wiki/` in this repository (a GitHub wiki is its own git repository, so the pages are versioned here and pushed across). To publish changes:
+The GitHub wiki's source pages live in `wiki/` in this repository. A GitHub wiki is its own git repository and is not included when you clone this one, so `wiki/` is the source of truth — versioned alongside the code, reviewable in a pull request, and covered by the checks below. The published wiki is only ever a copy of it.
+
+To publish:
 
 ```shell
-git clone https://github.com/lukecharters/Mica.wiki.git /tmp/mica-wiki
-cp wiki/*.md /tmp/mica-wiki/
-cp -R wiki/images /tmp/mica-wiki/
-cd /tmp/mica-wiki && git add -A && git commit -m "Sync wiki from main repo" && git push
+scripts/docs/sync-wiki.sh
+
+DRY_RUN=1 scripts/docs/sync-wiki.sh   # show what would change, push nothing
 ```
 
-If a change alters CLI flags or app controls, update the matching wiki page (and the README if it touches the essentials shown there).
+It clones the wiki repository, syncs `wiki/` across, pushes, and then checks that the pages the app's Help menu opens actually resolve. Read its header before changing it — it records four things that will otherwise cost you an hour.
+
+Two of those matter even if you ever sync by hand:
+
+- **The first sync has to be preceded by creating a page in the browser.** Enabling Wikis in Settings does not create the repository, and there is no API for creating a page. Until one exists the clone fails with "repository not found", which reads exactly like an auth failure.
+- **The sync must delete.** Copying with `cp` only ever adds and overwrites, so a renamed or deleted page stays on the published wiki forever, still linked from search, with nothing to tell you. (The wiki's branch may also be `master` rather than `main`; pushing a hardcoded `main` creates a second branch that renders nothing.)
+
+If a change alters CLI flags or app controls, update the matching wiki page (and the README if it touches the essentials shown there). Two checks run against `wiki/`, and both are worth running before you push:
+
+```shell
+scripts/tests/check-wiki-coverage.sh   # every configuration key has a reference entry
+scripts/tests/check-help-links.sh      # every page the Help menu links to exists
+```
+
+Example images are generated rather than hand-made — `scripts/docs/generate-wiki-examples.sh`, with the exact command behind each one recorded in `wiki/images/MANIFEST.md`. Changing a default means re-running the generator, or the page shows a picture of the old one.
 
 ## Commit style
 
