@@ -90,99 +90,61 @@ rm -rf ~/Library/Containers/com.lukecharters.Mica
 
 ## Usage
 
+Mica provides a Mac app and a command line tool. Both use the same settings and produce the same PNG output.
+
 ### App
 
-<!-- SCREENSHOT PLACEHOLDER — annotated window
-Replace with a screenshot of the window with the sidebar, preview, and
-inspector visible (ideally annotated with the step numbers below).
-<img src="assets/images/screenshot-app-annotated.png" alt="The Mica window: layer sidebar, preview, and inspector" width="800">
--->
+Use the app to design and preview one icon.
 
-1. **Pick a symbol.** Open the symbol browser and choose an SF Symbol, or switch the icon source to *Imported* and drag in your own artwork.
+1. Select **Icon** in the sidebar.
+2. Choose Mica mode or System mode in the inspector.
+3. Click the grid button beside **Symbol**, then choose an SF Symbol.
+4. Set the colours and other styles in the inspector.
+5. Use the sliders button in the toolbar to show advanced controls.
+6. Select **Badge** and turn on **Visible** to add an optional badge.
+7. Open **Export** in the inspector and choose the output settings.
+8. Press **⇧⌘E**, choose a file name, and save the PNG.
 
-2. **Style the layers.** The sidebar is organised by layer. Select the icon's background or foreground to adjust colours, gradients, rendering mode, symbol weight, scale, and shadows. Backgrounds can be a solid colour, a gradient, or an imported image.
+You can also drop artwork onto the icon or badge. Drag the badge on the canvas to change its position.
 
-3. **Add a badge (optional).** Turn on the badge layer to overlay a second symbol or image in any corner. Drag the badge directly on the preview to fine-tune its position, or use the offset sliders.
-
-4. **Preview at real-world sizes.** Use the preview size menu to see your icon exactly as it will appear in your MDM catalogue and item views, or at any standard icon size from 16 px to 1024 px. Zoom from 25% to 800% to inspect details.
-
-5. **Export.** Press **⌘E**, choose a size (16–1024 px), optionally enable @2x output, pick sRGB or Display P3, and save your PNG.
-
-**System mode:** switch the generation mode from *Mica* to *System* to have macOS itself render the icon, using Apple's own symbol sizing and layout. Pick the symbol and background colours from Apple's named palette, or supply any custom colour. Use this when you want output indistinguishable from native system icons, including Liquid Glass effects on macOS 26+.
-
-Every control is documented in the [App Guide](../../wiki/App-Guide).
+Follow [Getting Started](../../wiki/Getting-Started) for a guided first icon. See [The Mica Window](../../wiki/The-Mica-Window) for every pane and shortcut.
 
 ### CLI
 
-`mica-cli` shares its rendering engine with the app. The wiki has a full [CLI Guide](../../wiki/CLI-Guide) and a complete [CLI Reference](../../wiki/CLI-Reference) covering every flag.
-
-#### Generating icons
+Use `mica-cli` for scripts, CI, and batch work.
 
 ```shell
-# A symbol on the default blue gradient, saved as star.fill.png
-mica-cli --icon-symbol star.fill
+mkdir -p ~/Desktop/mica-icons
 
-# Choose output path, size, and background colour
-mica-cli --icon-symbol folder.fill -o ~/Desktop/folder-icon.png --size 512 --icon-bg-color red
+mica-cli --icon-symbol star.fill \
+  --output ~/Desktop/mica-icons/star.png
 
-# Symbol styling
-mica-cli --icon-symbol shield.fill --icon-symbol-rendering hierarchical --icon-symbol-color white
+mica-cli --icon-symbol app.fill \
+  --badge-symbol plus.circle.fill \
+  --output ~/Desktop/mica-icons/install.png
 
-# Custom two-colour gradient background
-mica-cli --icon-symbol app.fill --icon-bg custom-gradient --icon-bg-gradient-colors "#FF6B35,#F7931E"
-
-# macOS 15 squircle, flat colour
-mica-cli --icon-symbol star.fill --icon-bg-corner-radius macos15 --icon-bg-gradient off
-
-# Add a badge (--badge-fg, --badge-bg or --badge-visibility on turns it on)
-mica-cli --icon-symbol star.fill --badge-symbol plus.circle --badge-position bottom-right
-
-# Badge artwork with no symbol over it
-mica-cli --icon-symbol star.fill --badge-bg ~/badge-art.png
-
-# Use your own image instead of an SF Symbol
-mica-cli --icon-fg ~/logo.png
-
-# System mode: macOS renders the icon (Liquid Glass on macOS 26+)
-mica-cli --icon-symbol star.fill --icon-generation-mode system --icon-bg-color blue --icon-symbol-color white
-
-# High-resolution export
-mica-cli --icon-symbol app.fill --size 1024 --scale 2x --color-space displayP3
+mica-cli extract /Applications/Safari.app \
+  --output ~/Desktop/mica-icons
 ```
 
-Colours can be named (`blue`, `grey`, `primary`, …), hex (`"#FF6B35"`), `rgb()`/`hsl()` values, or components in a named colour space (`srgb:0.2,0.42,0.9`, `display-p3:1,0.2,0`). Every `--…-color` flag has a `--…-colour` alias. See [Colour Formats](../../wiki/Colour-Formats).
+**Result:** `~/Desktop/mica-icons` contains two generated icons and Safari's assigned icon.
 
-For scripting, the saved path goes to stdout and diagnostics go to stderr, so `mica-cli` pipes cleanly:
-
-```shell
-mica-cli --icon-symbol star.fill --json      # machine-readable result on stdout
-mica-cli --icon-symbol star.fill --quiet     # only the saved path on stdout
-mica-cli --icon-symbol star.fill --verbose   # per-phase progress on stderr
-```
-
-#### Extracting existing icons
-The `extract` subcommand exports the icon of any app, file, or folder as a PNG:
-
-```shell
-# Export an icon to the working directory
-mica-cli extract /Applications/Safari.app
-
-# Export every icon in /Applications at 512 px @2x
-mica-cli extract /Applications -o ~/Desktop/icons --recursive --size 512 --scale 2x
-
-# Chaos option. Don't actually run this.
-mica-cli extract / -o ~/Desktop/icons --recursive --depth 999
-```
+See [Bulk Generate Icons](../../wiki/Bulk-Generate-Icons) for shell and CSV examples. See [CLI Reference](../../wiki/CLI-Reference) for every command and flag.
 
 ## Documentation
-Detailed documentation lives in the [wiki](../../wiki):
 
-- [Getting Started](../../wiki/Getting-Started) — install, first icon, first extraction
-- [App Guide](../../wiki/App-Guide) — every control in the app, explained
-- [CLI Guide](../../wiki/CLI-Guide) — task-oriented CLI usage with examples
-- [CLI Reference](../../wiki/CLI-Reference) — every command and flag
-- [Extracting Icons](../../wiki/Extracting-Icons) — single and bulk extraction
-- [Colour Formats](../../wiki/Colour-Formats) — every way to specify a colour
+Detailed documentation lives in the [Mica wiki](../../wiki).
+
+| Need | Page |
+|---|---|
+| Install Mica and create your first icons | [Getting Started](../../wiki/Getting-Started) |
+| Identify each part of the app | [The Mica Window](../../wiki/The-Mica-Window) |
+| Create artwork for fleet tools | [Make Icons For Self Service](../../wiki/Make-Icons-For-Self-Service) |
+| Choose Mica mode or System mode | [Generation Modes](../../wiki/Generation-Modes) |
+| Find an app or command line setting | [Settings Index](../../wiki/Settings-Index) |
+| Check every command and flag | [CLI Reference](../../wiki/CLI-Reference) |
+| Check accepted colour values | [Colour Formats](../../wiki/Colour-Formats) |
+| Reuse settings in JSON files | [Configuration File Reference](../../wiki/Configuration-File-Reference) |
 
 ## Getting Help
 Found a bug or have a question/feature request? [Open an issue](../../issues).
