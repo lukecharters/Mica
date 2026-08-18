@@ -25,6 +25,17 @@ The simple pane shows six controls while your other settings still apply.
 Turning advanced controls off folds away imported images, palettes, and custom gradients.
 Mica keeps the artwork and colours under those settings.
 
+<img src="images/advanced-off.png" width="300" alt="A group pane with advanced controls off, showing six controls"> <img src="images/advanced-on.png" width="300" alt="A Foreground layer with advanced controls on, showing every control">
+
+Left: advanced controls off. Right: advanced controls on, editing the Foreground layer.
+The badge pane works the same way, and adds a Layout row.
+
+Each eye in the sidebar shows or hides one layer.
+
+<img src="images/sidebar-eyes.png" width="280" alt="Sidebar rows with both badge layers visible and the Icon group eye mixed">
+
+Both badge layers are visible here, so the Badge eye is on.
+
 ## Visibility examples
 
 <img src="images/badge-visibility-all-on.png" width="128" alt="Both badge layers visible"> <img src="images/badge-visibility-fg-off.png" width="128" alt="Badge foreground hidden"> <img src="images/badge-visibility-bg-off.png" width="128" alt="Badge background hidden"> <img src="images/badge-visibility-group-off.png" width="128" alt="Whole badge hidden">

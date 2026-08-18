@@ -21,6 +21,16 @@ Importing an image turns advanced controls back on.
 | **Custom Gradient** | Off | On shows two gradient colour controls. |
 | **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26. |
 
+<img src="images/advanced-off.png" width="300" alt="The Icon pane with advanced controls off, showing six controls"> <img src="images/advanced-on.png" width="300" alt="The Icon Foreground layer with advanced controls on, showing every control">
+
+Left: advanced controls off. Right: advanced controls on, editing the Foreground layer.
+
+Each eye in the sidebar shows or hides one layer.
+
+<img src="images/sidebar-eyes.png" width="280" alt="Sidebar rows with the icon background hidden and the Icon group eye mixed">
+
+The icon background is hidden here, so the Icon eye is mixed.
+
 ## Visibility examples
 
 <img src="images/icon-visibility-all-on.png" width="128" alt="Both icon layers visible"> <img src="images/icon-visibility-fg-off.png" width="128" alt="Icon foreground hidden"> <img src="images/icon-visibility-bg-off.png" width="128" alt="Icon background hidden"> <img src="images/icon-visibility-group-off.png" width="128" alt="Whole icon hidden">
@@ -297,6 +307,10 @@ Settings ▸ Importing can turn off this default.
 Left: default hidden foreground. Right: foreground shown.
 
 `mica-cli --icon-bg artwork.png` is a complete command.
+
+<img src="images/settings-importing.png" width="470" alt="Settings ▸ Importing with both import toggles on">
+
+Settings ▸ Importing turns off both import defaults.
 
 > **System mode ignores imported backgrounds and custom gradients.**
 

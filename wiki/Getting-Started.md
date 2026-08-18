@@ -23,10 +23,10 @@ mica-cli --version
 Open Mica from the Applications folder.
 Select **Icon** in the left sidebar.
 Click the grid button beside **Symbol**.
-Search for `star.fill`.
-Select the symbol and press **Select**.
+Search for `star`.
+Select **star.fill** and press **Select**.
 
-<!-- Phase 5 adds window-anatomy.png and symbol-browser.png here. -->
+<img src="images/symbol-browser.png" width="700" alt="The symbol browser filtered by a search for star">
 
 **Result:** The preview shows a white star on a blue background.
 
@@ -37,7 +37,9 @@ Choose the Desktop.
 Set the name to `mica-star.png`.
 Press **Export**.
 
-<!-- Phase 5 adds window-anatomy.png here. -->
+<img src="images/window-anatomy.png" width="900" alt="The Mica window with the sidebar, canvas, and inspector labelled">
+
+Your icon is on the canvas in the middle pane.
 
 **Result:** Your Desktop contains a 512 by 512 PNG.
 

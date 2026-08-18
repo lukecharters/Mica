@@ -1,6 +1,8 @@
 # The Mica Window
 The Mica window has three panes for selecting, viewing, and changing an icon.
-<!-- Phase 5 adds window-anatomy.png here. -->
+
+<img src="images/window-anatomy.png" width="900" alt="The Mica window with the sidebar, canvas, and inspector labelled">
+
 ## Panes
 | Pane | Purpose |
 |---|---|
@@ -21,6 +23,10 @@ Each eye shows or hides that layer.
 A mixed group eye means one layer is hidden.
 The Layout row has no eye because it is not a layer.
 
+<img src="images/sidebar-eyes.png" width="280" alt="Sidebar rows with the icon background hidden and the Icon group eye mixed">
+
+The icon background is hidden here, so the Icon eye is mixed.
+
 ## Toolbar
 | Control | Purpose |
 |---|---|
@@ -39,7 +45,8 @@ Use the arrow keys to move the highlight.
 Press Return to select the highlighted symbol.
 Press Escape with an empty search to close the browser.
 
-<!-- Phase 5 adds symbol-browser.png here. -->
+<img src="images/symbol-browser.png" width="700" alt="The symbol browser filtered by a search for star">
+
 ## Canvas actions
 | Action | Result |
 |---|---|
