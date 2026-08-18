@@ -331,7 +331,7 @@ private struct LayerRow: View {
             // non-localizing overload — correct here: the three layer names are
             // spelled identically in every English variant Mica ships.
             Text(tab.label)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 13))
 
             Spacer(minLength: 8)
 
@@ -354,7 +354,7 @@ private struct LayerVisibilityToggle: View {
             isVisible.toggle()
         } label: {
             Image(systemName: isVisible ? "eye" : "eye.slash")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 14))
                 .foregroundStyle(isVisible ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
