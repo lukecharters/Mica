@@ -278,6 +278,36 @@ struct ForegroundSpec: Equatable {
     static let symbolScaleRange: ClosedRange<Double> = 0.3...2.0
     static let imageScaleRange: ClosedRange<Double> = 0.3...2.0
 
+    /// The palette's three slots, primary first — and **three distinct colours on
+    /// purpose**, because the default is the only thing that tells a reader what
+    /// palette rendering *is*.
+    ///
+    /// It was `white, white:0.5, white:0.26` on the CLI and `white, mint, yellow`
+    /// in the model until 2026-08-18. The white tints were the worse half of that,
+    /// and not by a little: one hue at three opacities is *precisely* what
+    /// hierarchical rendering draws, so palette at its own default rendered
+    /// **identically** to hierarchical — measured at a maximum channel difference
+    /// of 4 and 0.000% of pixels changed on a three-layer symbol. Choosing palette
+    /// and seeing no change is the whole of what a reader learned from it.
+    ///
+    /// Keep the three distinct, then, rather than tints of one. The point of the
+    /// mode is that each layer takes its own colour, and the default has to show it.
+    /// A white *primary* is fine and is deliberate — it keeps the dominant layer
+    /// looking like the other rendering modes, and the distinctness that matters
+    /// comes from the secondary and tertiary. It does cost some of the margin,
+    /// because the primary layer is usually the largest: measured on a three-layer
+    /// symbol, 254 and 4.99% of pixels against hierarchical where an all-hues
+    /// palette gave 14.25%. Still an order of magnitude clear of the old 4 and
+    /// 0.000%, and clear of the wiki generator's 16 / 0.25% visibility floor.
+    static let defaultPalette: [MicaColorValue] = [.white, .green, .yellow]
+
+    /// `defaultPalette` as the `--icon-symbol-palette` / `--badge-symbol-palette`
+    /// value that reproduces it, for help text. Derived, so a help string can
+    /// never drift from the constant the way the two hardcoded ones did.
+    static var defaultPaletteCLIValue: String {
+        defaultPalette.map(\.stringValue).joined(separator: ",")
+    }
+
     var source: ForegroundSource = .symbol
     var symbolName: String
     var symbolWeight: SymbolWeight = .auto
@@ -288,9 +318,9 @@ struct ForegroundSpec: Equatable {
     var renderingStyle: SymbolRenderingStyle = .monochrome
     var fillStyle: SymbolFillStyle = .flat
     var hierarchicalColor: MicaColorValue = .white
-    var palettePrimaryColor: MicaColorValue = .white
-    var paletteSecondaryColor: MicaColorValue = .mint
-    var paletteTertiaryColor: MicaColorValue = .yellow
+    var palettePrimaryColor: MicaColorValue = ForegroundSpec.defaultPalette[0]
+    var paletteSecondaryColor: MicaColorValue = ForegroundSpec.defaultPalette[1]
+    var paletteTertiaryColor: MicaColorValue = ForegroundSpec.defaultPalette[2]
     var drawsShadow: Bool = true
     var isHidden: Bool
 

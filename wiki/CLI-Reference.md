@@ -43,7 +43,7 @@ Neither shorthand is a configuration key. In a `.json` file, write `"icon-fg": "
 | `--icon-fg-scale` | 0.3–2.0 | 1.0 | Foreground scale multiplier (drives whichever source is active). |
 | `--icon-symbol-rendering` | `monochrome`, `hierarchical`, `multicolor`, `palette` | `monochrome` | SF Symbol rendering mode. |
 | `--icon-symbol-color` | any [colour](Colour-Formats) | `white` | Symbol colour (monochrome, hierarchical, and multicolor modes). In system mode: an appex colour. |
-| `--icon-symbol-palette` | `c1,c2,c3` | `white,white:0.5,white:0.26` | Palette-mode colours; the 2nd and 3rd accept an `:opacity` suffix. |
+| `--icon-symbol-palette` | `c1,c2,c3` | `white,green,yellow` | Palette-mode colours; every slot accepts an `:opacity` suffix. |
 | `--icon-symbol-weight` | `auto`, `ultralight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` | `auto` | Symbol weight. `auto` uses Mica's per-symbol calibration. |
 | `--icon-symbol-gradient` | `on`, `off` | `off` | Gradient fill on the symbol colour (requires macOS 26+). |
 | `--icon-fg-shadow` | `on`, `off` | `on` for SF Symbols, `off` for images | Drop shadow behind the foreground. |
@@ -81,7 +81,7 @@ its own.
 | `--badge-fg-scale` | 0.3–2.0 | 1.0 | Badge foreground scale multiplier. |
 | `--badge-symbol-rendering` | `monochrome`, `hierarchical`, `multicolor`, `palette` | `monochrome` | Badge symbol rendering mode. |
 | `--badge-symbol-color` | any [colour](Colour-Formats) | `white` | Badge symbol colour. |
-| `--badge-symbol-palette` | `c1,c2,c3` | `white,white:0.5,white:0.26` | Badge palette-mode colours. |
+| `--badge-symbol-palette` | `c1,c2,c3` | `white,green,yellow` | Badge palette-mode colours. |
 | `--badge-symbol-weight` | as icon weights | `auto` | Badge symbol weight. |
 | `--badge-symbol-gradient` | `on`, `off` | `off` | Gradient fill on the badge symbol colour (macOS 26+). |
 | `--badge-fg-shadow` | `on`, `off` | `on` for SF Symbols, `off` for images | Badge foreground drop shadow. |

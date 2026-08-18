@@ -8,14 +8,21 @@ import UniformTypeIdentifiers
 /// It parses nothing and owns no command-line surface — `GenerateCommand` does that.
 class IconGenerationRunner {
 
-    /// The palette `generate` falls back to when `--icon-symbol-palette` /
-    /// `--badge-symbol-palette` is absent: three tints of white.
-    ///
-    /// This is the one CLI default that genuinely differs from the model —
-    /// `ForegroundSpec` defaults to white/mint/yellow, which is the GUI's pick. It
-    /// is kept as a seed rather than an inline `??` so that `--config` can decline
-    /// it and let a configuration's own palette stand.
-    static let cliPaletteDefault = "white,white:0.5,white:0.26"
+    // There is no CLI palette default here any more, and that is the point.
+    //
+    // `cliPaletteDefault` used to hold "white,white:0.5,white:0.26" — the one CLI
+    // default that genuinely differed from the model's, which defaulted to
+    // white/mint/yellow. It existed as a *seed* rather than an inline `??` purely
+    // so `--config` could decline it and let a configuration's own palette stand,
+    // and it is the only reason `buildIconSettings` ever needed a
+    // `seedsCLIDefaults` flag.
+    //
+    // Both are gone as of 2026-08-18: `ForegroundSpec.defaultPalette` is now the
+    // single default for both surfaces, so seeding it and leaving it alone produce
+    // the same settings, and the palette reads like every other flag — assigned
+    // only when passed. Don't reintroduce a CLI-side palette default; a second
+    // default is what made a flags-only `generate` and a `--config` run disagree
+    // about a colour nobody had set.
 
     // MARK: - Main Generation Method
 
@@ -246,18 +253,13 @@ class IconGenerationRunner {
     /// **every** assignment here must be conditional on its flag being present — an
     /// unconditional write would silently discard what the user saved.
     ///
-    /// That is why almost nothing below assigns eagerly. The two deliberate
-    /// exceptions are the palette (see `cliPaletteDefault`) and the badge
-    /// activation rule, both commented where they happen.
+    /// That is why almost nothing below assigns eagerly. The one deliberate
+    /// exception left is the badge activation rule, commented where it happens.
+    /// The palette used to be the other; it no longer needs to be, because the
+    /// CLI and the model share one default now. See the note at the top of the
+    /// class.
     private func buildIconSettings(from command: GenerateCommand, onto base: IconSettings? = nil) throws -> IconSettings {
         var settings = base ?? IconSettings()
-
-        // The CLI's default palette is three tints of white, which deliberately
-        // differs from `ForegroundSpec`'s white/mint/yellow (the GUI's pick). It
-        // is a real CLI default, so a flags-only `generate` seeds it; `--config`
-        // must not, or a configuration's palette would be overwritten whenever
-        // the flag is absent.
-        let seedsCLIDefaults = (base == nil)
 
         do {
             // Export properties. Each flag is Optional and assigned only when
@@ -408,11 +410,10 @@ class IconGenerationRunner {
                 settings.icon.foreground.hierarchicalColor = parsed
             }
 
-            // Palette colours. A flags-only `generate` seeds the CLI default;
-            // `--config` leaves the configuration's palette alone unless
-            // --icon-symbol-palette says otherwise.
-            if let palette = command.iconForeground.symbolPalette
-                ?? (seedsCLIDefaults ? Self.cliPaletteDefault : nil) {
+            // Palette colours, assigned only when passed — like every other flag.
+            // An absent flag leaves `ForegroundSpec.defaultPalette` on a flags-only
+            // run, or a configuration's own palette under `--config`.
+            if let palette = command.iconForeground.symbolPalette {
                 let parts = try splitPalette(palette, role: "--icon-symbol-palette")
                 settings.icon.foreground.palettePrimaryColor = try MicaColorValue(strictlyParsing: parts[0])
                 settings.icon.foreground.paletteSecondaryColor = try MicaColorValue(strictlyParsing: parts[1])
@@ -572,9 +573,8 @@ class IconGenerationRunner {
                     settings.badge.foreground.hierarchicalColor = parsed
                 }
 
-                // Badge palette — seeded for `generate` only, as with the icon's.
-                if let badgePalette = command.badge.symbolPalette
-                    ?? (seedsCLIDefaults ? Self.cliPaletteDefault : nil) {
+                // Badge palette — assigned only when passed, as with the icon's.
+                if let badgePalette = command.badge.symbolPalette {
                     let parts = try splitPalette(badgePalette, role: "--badge-symbol-palette")
                     settings.badge.foreground.palettePrimaryColor = try MicaColorValue(strictlyParsing: parts[0])
                     settings.badge.foreground.paletteSecondaryColor = try MicaColorValue(strictlyParsing: parts[1])
