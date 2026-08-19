@@ -141,6 +141,7 @@
 				CLI/GenerateCommand.swift,
 				CLI/IconGenerationRunner.swift,
 				CLI/Support/CLIOutput.swift,
+				CLI/Support/CLIVersion.swift,
 				"CLI/Support/ExportColorSpace+CLI.swift",
 				CLI/Support/GenerationContext.swift,
 				CLI/Support/IconExtractor.swift,

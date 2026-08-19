@@ -6,7 +6,7 @@ struct MicaCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "mica-cli",
         abstract: "Generate customized macOS app icons and extract icons from app bundles.",
-        version: "0.1.0",
+        version: CLIVersion.current,
         subcommands: [GenerateCommand.self, ExtractCommand.self],
         defaultSubcommand: GenerateCommand.self
     )
