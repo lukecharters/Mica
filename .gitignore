@@ -90,6 +90,7 @@ skills-lock.json
 
 # Editor settings
 .vscode/
+Mica.code-workspace
 
 
 # CLI smoke-test runs
