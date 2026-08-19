@@ -46,6 +46,8 @@ APP_PATH="${EXPORT_PATH}/Mica.app"
 PKG_PATH="${BUILD_DIR}/Mica.pkg"
 DMG_PATH="${BUILD_DIR}/Mica.dmg"
 DMG_STAGING="${BUILD_DIR}/dmg-staging"
+PKG_STAGING="${BUILD_DIR}/pkg-staging"
+COMPONENT_PLIST="${BUILD_DIR}/component.plist"
 EXPORT_OPTIONS="${PROJECT_DIR}/scripts/build-pkg/ExportOptions.plist"
 PKG_SCRIPTS_DIR="${PROJECT_DIR}/scripts/build-pkg/pkg-scripts"
 NOTARY_PROFILE="${NOTARY_PROFILE:-mica-notary}"
@@ -128,14 +130,76 @@ codesign --display --verbose=2 "$APP_PATH/Contents/MacOS/mica-cli" 2>&1 \
   || { echo "error: mica-cli is not signed with Developer ID Application" >&2; exit 1; }
 
 echo "==> Building installer pkg"
+
+# --root + --component-plist, NOT --component, and the reason is relocation.
+#
+# pkgbuild marks a bundle relocatable by default: on install, the Installer looks
+# up the bundle identifier through Spotlight and, if a copy already exists
+# ANYWHERE on disk, writes the update over that copy instead of the install
+# location. So a developer with an old build in a DerivedData or export folder
+# gets Mica installed into their build directory and /Applications stays empty --
+# measured, not theoretical. It is silent: the install succeeds and reports
+# success. BundleIsRelocatable = false pins it to --install-location.
+#
+# --component-plist requires --root (pkgbuild(1)), which is why the app is staged
+# rather than passed directly. ditto, not cp -R: same rule as the dmg below, the
+# code signature lives in extended attributes.
+rm -rf "$PKG_STAGING"
+mkdir -p "$PKG_STAGING"
+ditto "$APP_PATH" "$PKG_STAGING/Mica.app"
+
+cat > "$COMPONENT_PLIST" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>BundleHasStrictIdentifier</key>
+		<true/>
+		<key>BundleIsRelocatable</key>
+		<false/>
+		<key>BundleIsVersionChecked</key>
+		<true/>
+		<key>BundleOverwriteAction</key>
+		<string>upgrade</string>
+		<key>RootRelativeBundlePath</key>
+		<string>Mica.app</string>
+	</dict>
+</array>
+</plist>
+PLIST
+
 pkgbuild \
-  --component "$APP_PATH" \
+  --root "$PKG_STAGING" \
+  --component-plist "$COMPONENT_PLIST" \
   --install-location "/Applications" \
   --scripts "$PKG_SCRIPTS_DIR" \
   --identifier "$BUNDLE_ID_PKG" \
   --version "$VERSION" \
   --sign "$INSTALLER_IDENTITY" \
   "$PKG_PATH"
+
+# Nothing else in the pipeline would notice a future edit bringing relocation
+# back -- the install would simply succeed in the wrong place again -- so assert
+# it here.
+#
+# ASSERT ON <relocate>'s CONTENTS, NOT ON relocatable="false". Both spellings
+# carry relocatable="false" in the pkg-info attributes; measured against a
+# relocatable build of this very package, that attribute is identical either way
+# and says nothing. What differs is the <relocate> element: relocatable pkgs list
+# the bundle inside it, non-relocatable ones leave it empty. A check on the
+# attribute passes on the broken package, which is the worst kind of green.
+PKG_EXPANDED="${BUILD_DIR}/pkg-expanded"
+rm -rf "$PKG_EXPANDED"
+pkgutil --expand "$PKG_PATH" "$PKG_EXPANDED"
+RELOCATE_COUNT="$(xmllint --xpath 'count(//relocate/bundle)' "$PKG_EXPANDED/PackageInfo" 2>/dev/null || echo "?")"
+if [[ "$RELOCATE_COUNT" != "0" ]]; then
+  echo "error: pkg is still relocatable -- <relocate> names $RELOCATE_COUNT bundle(s)" >&2
+  echo "       the Installer would write over any existing copy of the app it finds" >&2
+  exit 1
+fi
+rm -rf "$PKG_EXPANDED"
+echo "==> Verified pkg is non-relocatable"
 
 echo "==> Verifying pkg signature"
 pkgutil --check-signature "$PKG_PATH"
