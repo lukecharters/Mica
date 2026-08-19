@@ -1,5 +1,5 @@
 // App/IconViewModel.swift
-// MVVM: Holds UI state and simple actions for the Icon Generator
+// MVVM: Holds UI state and simple actions for the icon preview and inspector. See `IconViewModel+Undo.swift` for the undo logic.
 import SwiftUI
 
 @MainActor
