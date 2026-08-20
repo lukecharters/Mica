@@ -1395,6 +1395,53 @@
     "Primary" : {
 
     },
+    "Recenter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en-AU" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        },
+        "en-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        },
+        "en-GB" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        },
+        "en-IE" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        },
+        "en-IN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        },
+        "en-NZ" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        },
+        "en-ZA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recentre"
+          }
+        }
+      }
+    },
     "Release Notes" : {
 
     },
