@@ -62,30 +62,45 @@ It pairs customisable SwiftUI elements with SF Symbols or imported graphics to e
 
 ## Installation
 
+### Download
+
 Download the latest `.pkg` or `.dmg` from [Releases](../../releases).
 
 The `.pkg` installs `Mica.app` and symlinks `/Applications/Mica.app/Contents/MacOS/mica-cli` to `/usr/local/bin/mica-cli` so the CLI is on your `PATH`.
 
-If you don't want the symlink, download the `.dmg` instead and copy `Mica.app` to `/Applications`.
+If you don't want the symlink, download the `.dmg` and copy `Mica.app` to `/Applications`.
 
 If you installed from the `.dmg` and do want the CLI on your `PATH`, run:
 
 ```shell
 sudo ln -s /Applications/Mica.app/Contents/MacOS/mica-cli /usr/local/bin/mica-cli
 ```
-
-Other installation methods coming soon.
-
-### Uninstalling
+#### Uninstalling
 
 ```shell
-# CLI symlink (pkg installs only)
+# CLI symlink
 sudo rm /usr/local/bin/mica-cli
 # app
 rm -rf /Applications/Mica.app
 # settings and app data
 rm -rf ~/Library/Containers/com.lukecharters.Mica
 ```
+
+### Homebrew
+
+```sh
+brew tap lukecharters/mica
+brew trust lukecharters/mica
+brew install --cask mica
+```
+This also adds `mica-cli` to `PATH`.
+
+#### Uninstalling
+
+```sh
+brew uninstall --cask mica
+```
+Add `--zap` to remove Mica's preferences and support files as well.
 
 ## Usage
 
