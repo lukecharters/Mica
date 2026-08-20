@@ -11,6 +11,12 @@ struct SymbolPickerView: View {
     /// through to the icon behind the sheet.
     @State private var cursor: String?
 
+    /// How the grid draws every symbol. A *display* preference of this sheet, not a
+    /// setting — see `SymbolPickerPreview` for why it reaches nothing. Persisted
+    /// because it is a way of reading the list rather than a per-visit choice.
+    @AppStorage(SymbolPickerPreview.renderingStyleKey)
+    private var renderingStyle: SymbolRenderingStyle = .monochrome
+
     /// Every SF Symbol shipped in `sf-symbols.txt`, loaded once and cached.
     private static let allSymbols: [String] = {
         guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
@@ -81,6 +87,7 @@ struct SymbolPickerView: View {
 
     private var footer: some View {
         HStack(spacing: 12) {
+            renderingPicker
             Spacer()
             Button("Cancel") { dismiss() }
                 .keyboardShortcut(.cancelAction)
@@ -93,6 +100,23 @@ struct SymbolPickerView: View {
         .background(.bar)
     }
 
+    /// Leading, away from Cancel and Select: it changes what the grid shows rather
+    /// than what the sheet returns. `.menu` rather than segmented so the four long
+    /// names fit, and so it opens no keyboard competition with `WindowKeyMonitor`.
+    private var renderingPicker: some View {
+        Picker("Rendering", systemImage: "paintpalette", selection: $renderingStyle) {
+            ForEach(SymbolRenderingStyle.allCases) { style in
+                // The raw value is a display string, and "Multicolor" is one of the
+                // two words that differ between English variants. `Text(aString)` is
+                // the verbatim overload, so the catalog has to be consulted here.
+                Text(verbatim: style.rawValue.localizedFromCatalog).tag(style)
+            }
+        }
+        .pickerStyle(.menu)
+        .fixedSize()
+        .help("Change how symbols are drawn in this list. Preview only — it does not change the icon.")
+    }
+
     @ViewBuilder
     private func symbolCell(_ symbol: String) -> some View {
         // Two states, because there are two: the symbol the icon is using, and the one
@@ -100,7 +124,7 @@ struct SymbolPickerView: View {
         let isSelected = symbol == selectedSymbol
         let isCursor = symbol == cursor
         VStack(spacing: 8) {
-            Image(systemName: symbol)
+            renderedSymbol(symbol)
                 .font(.system(size: 36))
                 .frame(width: 76, height: 76)
                 .background(
@@ -136,6 +160,21 @@ struct SymbolPickerView: View {
             Button("Copy Symbol Name") {
                 IconPasteboard.write(symbolName: symbol)
             }
+        }
+    }
+
+    /// One symbol drawn in the chosen rendering mode. The colours are fixed and the
+    /// count of them is what selects the overload — three styles for palette, one for
+    /// the other three modes, which ignore any beyond the first.
+    @ViewBuilder
+    private func renderedSymbol(_ symbol: String) -> some View {
+        let image = Image(systemName: symbol)
+            .symbolRenderingMode(renderingStyle.symbolRenderingMode)
+        let colors = SymbolPickerPreview.colors(for: renderingStyle)
+        if colors.count >= 3 {
+            image.foregroundStyle(colors[0], colors[1], colors[2])
+        } else {
+            image.foregroundStyle(colors[0])
         }
     }
 

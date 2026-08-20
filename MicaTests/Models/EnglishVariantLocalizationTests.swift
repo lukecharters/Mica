@@ -1,7 +1,8 @@
 // MicaTests/Models/EnglishVariantLocalizationTests.swift
 //
 // `Localizable.xcstrings` carries `en` plus seven English variants, and the only
-// two words that differ across them are *color/colour* and *gray/grey*.
+// three words that differ across them are *color/colour*, *gray/grey* and
+// *recenter/recentre*.
 //
 // **The failure this suite exists for is a silently missing resource.** Every
 // lookup falls back to its own key, and every key *is* the US spelling — so a
@@ -64,7 +65,7 @@ struct EnglishVariantLocalizationTests {
         #expect(advertised.contains("en"), "the source localization is missing")
     }
 
-    // MARK: - The two words that actually differ
+    // MARK: - The three words that actually differ
 
     @Test("color becomes colour in every variant", arguments: variants)
     func colorIsBritishInEveryVariant(_ variant: String) throws {
@@ -89,10 +90,19 @@ struct EnglishVariantLocalizationTests {
         #expect(try Self.lookup("Gray", in: variant) == "Grey")
     }
 
+    @Test("recenter becomes recentre in every variant", arguments: variants)
+    func centerIsBritishInEveryVariant(_ variant: String) throws {
+        // The `-re` ending, which Canadian English takes with the British group —
+        // unlike `-ize`/`-ise`, the one axis that would split it. So all seven
+        // variants stay identical, and the note on `variants` still holds.
+        #expect(try Self.lookup("Recenter", in: variant) == "Recentre")
+    }
+
     @Test("The source localization keeps the American spelling")
     func sourceIsAmerican() throws {
         #expect(try Self.lookup("Color", in: "en") == "Color")
         #expect(try Self.lookup("Gray", in: "en") == "Gray")
+        #expect(try Self.lookup("Recenter", in: "en") == "Recenter")
     }
 
     // MARK: - Nothing in the catalog is dead weight
