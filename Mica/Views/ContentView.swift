@@ -111,6 +111,40 @@ private struct WindowFocusValues: ViewModifier {
     }
 }
 
+/// Runs the PNG export panel when the window's export flag goes up, and lowers the
+/// flag again.
+///
+/// A `ViewModifier` for the same mechanical reason `WindowFocusValues` is one: a
+/// fifth `.onChange` in `ContentView.body` puts it past the type-checker's time
+/// limit. Anything else that has to observe window state should join one of them
+/// rather than extend the chain in `body`.
+///
+/// The panel runs on the *next* turn of the run loop rather than inside the change
+/// handler. `runModal()` spins its own loop, and doing that in the middle of a
+/// SwiftUI update is how a modal panel ends up presented over a half-applied view
+/// tree — the same "dismiss, then present" rule a sheet followed by an exporter
+/// needs.
+private struct ExportPanelPresenter: ViewModifier {
+    @Binding var isPresented: Bool
+    let seed: ExportSpec
+    let defaultBaseName: String
+    let perform: (ExportPanel.Outcome) -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: isPresented) { _, presenting in
+            guard presenting else { return }
+            isPresented = false
+            let seed = seed
+            let baseName = defaultBaseName
+            let perform = perform
+            DispatchQueue.main.async {
+                guard let outcome = ExportPanel.run(seed: seed, defaultBaseName: baseName) else { return }
+                perform(outcome)
+            }
+        }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var viewModel = IconViewModel()
 
@@ -386,20 +420,21 @@ struct ContentView: View {
         }
         // Lets a slider or the badge drag group its frames into one undo action.
         .environment(\.continuousEdit, viewModel.continuousEditScope)
-        .fileExporter(
+        // PNG export. **Not a `.fileExporter`** — the export settings ride in the
+        // panel's accessory view, which `.fileExporter` has no hook for, so this is
+        // an `NSSavePanel` run by `ExportPanel`. The flag it watches is unchanged,
+        // so ⇧⌘E, the inspector's Export button and the canvas menu all still reach
+        // it through `canExport`.
+        //
+        // The presentation is a `ViewModifier` because the `.onChange` driving it
+        // would be a fifth in this `body`, and the fourth was already at the
+        // type-checker's limit.
+        .modifier(ExportPanelPresenter(
             isPresented: $viewModel.showExportDialog,
-            document: pngExportDocument,
-            contentType: .png,
-            defaultFilename: viewModel.iconSettings.exportBaseName
-        ) { result in
-            // **This was the review's worst case**: both branches were a `print()`,
-            // so a PNG export that failed told the user nothing whatever. Success
-            // stays silent on purpose — the file is where they asked for it, and an
-            // alert saying so is a dialog to dismiss for no reason.
-            if case .failure(let error) = result {
-                viewModel.report(.exportFailed(error))
-            }
-        }
+            seed: viewModel.iconSettings.export,
+            defaultBaseName: viewModel.iconSettings.exportBaseName,
+            perform: writeExportedPNG
+        ))
         // The configuration export, deliberately hosted on its own view.
         //
         // **A view gets one `fileExporter`.** Stacking a second directly on this one
@@ -676,24 +711,53 @@ struct ContentView: View {
     /// argument initializers inside a modifier argument is expensive to infer. Keep new
     /// presentation payloads out of `body` for the same reason.
     private var pngExportDocument: PNGExportDocument {
-        guard viewModel.iconSettings.icon.mode == .system else {
+        pngExportDocument(export: viewModel.iconSettings.export)
+    }
+
+    /// The same payload rendered at a given export spec, which is how a per-export
+    /// override reaches the render.
+    ///
+    /// Swapping the spec into a *copy* of the window's settings is the whole
+    /// mechanism: `viewModel.iconSettings` is untouched, so an override changes one
+    /// file and nothing else — not the inspector, not undo, not the next drag-out.
+    /// Both the Mica and the System branch read the copy, or a System-mode export
+    /// would quietly ignore the panel while a Mica one honoured it.
+    private func pngExportDocument(export: ExportSpec) -> PNGExportDocument {
+        var settings = viewModel.iconSettings
+        settings.export = export
+
+        guard settings.icon.mode == .system else {
             return PNGExportDocument(
-                settings: viewModel.iconSettings,
+                settings: settings,
                 badgeAppexImage: viewModel.badgeAppexRenderedImage
             )
         }
         return PNGExportDocument(
             appexExport: .init(
-                symbolName: viewModel.iconSettings.icon.foreground.symbolName,
+                symbolName: settings.icon.foreground.symbolName,
                 enclosureColor: viewModel.appexEnclosureColor,
                 symbolColor: viewModel.appexSymbolColor,
-                pointSize: viewModel.iconSettings.export.size,
-                scaleFactor: viewModel.iconSettings.export.isRetina ? 2 : 1,
-                colorSpace: viewModel.iconSettings.export.colorSpace
+                pointSize: settings.export.size,
+                scaleFactor: settings.export.isRetina ? 2 : 1,
+                colorSpace: settings.export.colorSpace
             ),
-            settings: viewModel.iconSettings,
+            settings: settings,
             badgeAppexImage: viewModel.badgeAppexRenderedImage
         )
+    }
+
+    /// Render the icon at what the panel asked for and write it where it said.
+    ///
+    /// The failure alert is the one `.fileExporter`'s result closure used to raise.
+    /// Success stays silent on purpose — the file is where they asked for it, and an
+    /// alert saying so is a dialog to dismiss for no reason.
+    private func writeExportedPNG(_ outcome: ExportPanel.Outcome) {
+        do {
+            let data = try pngExportDocument(export: outcome.export).pngData()
+            try data.write(to: outcome.url)
+        } catch {
+            viewModel.report(.exportFailed(error))
+        }
     }
 
     // MARK: - Canvas selection
