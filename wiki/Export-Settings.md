@@ -4,6 +4,11 @@ Export settings control the PNG dimensions and colour space.
 The app offers seven common sizes.
 The command line accepts any whole number from 16 through 1024.
 
+The Save panel shows the same three settings.
+A change you make there applies to that one file.
+Your window keeps the settings shown in the Export tab.
+Click **Reset** in the panel to go back to them.
+
 | App size | Common use |
 |---:|---|
 | 16, 32, 64 | Small interface icons |
@@ -24,7 +29,7 @@ Sets the width and height before the Retina multiplier.
 
 | | |
 |---|---|
-| **In the app** | Export ▸ **Size** |
+| **In the app** | Export ▸ **Size**, or the Save panel |
 | **Command line** | `--size 16...1024` |
 | **Config key** | `"size"` |
 | **Default** | `512` |
@@ -43,7 +48,7 @@ Chooses a standard or Retina pixel multiplier.
 
 | | |
 |---|---|
-| **In the app** | Export ▸ **2x (Retina)** |
+| **In the app** | Export ▸ **2x (Retina)**, or the Save panel |
 | **Command line** | `--scale 1x\|2x` |
 | **Config key** | `"scale"` |
 | **Default** | `1x` |
@@ -62,7 +67,7 @@ Chooses the colour space stored in the exported PNG.
 
 | | |
 |---|---|
-| **In the app** | Export ▸ **Color Space** |
+| **In the app** | Export ▸ **Color Space**, or the Save panel |
 | **Command line** | `--color-space sRGB\|displayP3` |
 | **Config key** | `"color-space"` |
 | **Default** | `sRGB` |

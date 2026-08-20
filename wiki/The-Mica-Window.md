@@ -63,6 +63,12 @@ Press Escape with an empty search to close the browser.
 
 System mode does not accept image drops for that group.
 
+## Exporting a PNG
+Press ⇧⌘E, or click **Export** in the Export tab.
+The Save panel opens with the size, scale, and colour space at the bottom.
+Change them there to export one file at different settings.
+The window's own settings do not change.
+
 ## Keyboard shortcuts
 | Shortcut | Action |
 |---|---|
