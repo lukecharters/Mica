@@ -41,6 +41,9 @@ Preview size and zoom do not change the exported PNG.
 ## Symbol browser
 Click the grid button beside a Symbol field to open the symbol browser.
 Type in Search to filter the grid.
+Use the Rendering menu to change how the grid draws each symbol.
+This changes the grid only.
+It does not change your icon.
 Use the arrow keys to move the highlight.
 Press Return to select the highlighted symbol.
 Press Escape with an empty search to close the browser.
