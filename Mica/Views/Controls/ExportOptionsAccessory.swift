@@ -27,7 +27,7 @@ struct ExportOptionsAccessory: View {
             }
 
             Toggle("2x (Retina)", isOn: $model.options.spec.isRetina)
-
+            Spacer()
             Picker("Color Space", selection: $model.options.spec.colorSpace) {
                 ForEach(ExportColorSpace.allCases) { colorSpace in
                     Text(colorSpace.displayName).tag(colorSpace)
