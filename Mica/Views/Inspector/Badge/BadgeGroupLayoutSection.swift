@@ -36,25 +36,22 @@ struct BadgeGroupLayoutSection: View {
                in: BadgeSpec.offsetRange,
                step: 0.01) {
             Text("Y Offset")
-            Spacer()
             Text(verbatim: "\(percent(iconSettings.badge.offsetY))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         } onEditingChanged: { continuousEdit.sliderEditing($0) }
         .help("Move the badge vertically from its corner. Dragging it on the canvas does the same, as do the arrow keys.")
 
-        if iconSettings.badge.offsetX != 0 || iconSettings.badge.offsetY != 0 {
             Button("Reset Position") {
                 iconSettings.badge.offsetX = 0
                 iconSettings.badge.offsetY = 0
             }
-        }
+
 
         Slider(value: $iconSettings.badge.scale,
                in: ForegroundSpec.symbolScaleRange,
                step: 0.05) {
             Text("Size")
-            Spacer()
             Text(verbatim: "\(percent(iconSettings.badge.scale))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()

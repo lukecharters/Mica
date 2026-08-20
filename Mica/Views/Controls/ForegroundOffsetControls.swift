@@ -38,19 +38,16 @@ struct ForegroundOffsetControls: View {
                in: ForegroundSpec.offsetRange,
                step: 0.01) {
             Text("Y Offset")
-            Spacer()
             Text(verbatim: "\(percent(offsetY))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         } onEditingChanged: { continuousEdit.sliderEditing($0) }
         .help(verticalHelp)
 
-        if offsetX != 0 || offsetY != 0 {
             Button("Recenter") {
                 offsetX = 0
                 offsetY = 0
             }
-        }
     }
 
     private var horizontalHelp: LocalizedStringKey {
