@@ -52,12 +52,24 @@ private func validateScale(_ scale: String, name: String) throws -> Double {
     return value
 }
 
-private func validateOffset(_ offset: String, name: String) throws -> Double {
+/// Validates an offset against the range it belongs to. The range is a parameter
+/// because the two families differ: a badge is nudged from a corner and may cross
+/// the icon (`BadgeSpec.offsetRange`), while a foreground starts centred in its own
+/// frame and reaches its edge at half that (`ForegroundSpec.offsetRange`). The
+/// message names the bounds it actually checked, so a wrong guess reads as a wrong
+/// number rather than as a broken flag.
+private func validateOffset(
+    _ offset: String,
+    name: String,
+    in range: ClosedRange<Double> = BadgeSpec.offsetRange
+) throws -> Double {
     guard let value = Double(offset) else {
         throw ValidationError("\(name) must be a number.")
     }
-    guard BadgeSpec.offsetRange.contains(value) else {
-        throw ValidationError("\(name) must be between -1.0 and 1.0. You provided: \(offset)")
+    guard range.contains(value) else {
+        throw ValidationError(
+            "\(name) must be between \(range.lowerBound) and \(range.upperBound). You provided: \(offset)"
+        )
     }
     return value
 }
@@ -303,6 +315,35 @@ struct IconForegroundOptions: ParsableArguments {
     )
     var scale: Double?
 
+    // Negative values must be attached with `=`, and the hint lives in the
+    // *abstract* for the reason `--badge-offset-x` documents: ArgumentParser's
+    // missing-value error prints the abstract only, and that error is the moment
+    // someone who used a space needs to read it. These four and the two badge-offset
+    // flags are the only ones that take a negative value at all.
+    @Option(
+        name: .customLong("icon-fg-offset-x"),
+        help: ArgumentHelp(
+            "Icon foreground X offset, -0.5 to 0.5; use --icon-fg-offset-x=-0.2",
+            valueName: "offset"
+        ),
+        transform: {
+            try validateOffset($0, name: "Icon foreground offset X", in: ForegroundSpec.offsetRange)
+        }
+    )
+    var offsetX: Double?
+
+    @Option(
+        name: .customLong("icon-fg-offset-y"),
+        help: ArgumentHelp(
+            "Icon foreground Y offset, -0.5 to 0.5; use --icon-fg-offset-y=-0.2",
+            valueName: "offset"
+        ),
+        transform: {
+            try validateOffset($0, name: "Icon foreground offset Y", in: ForegroundSpec.offsetRange)
+        }
+    )
+    var offsetY: Double?
+
     @Option(
         name: .customLong("icon-symbol-rendering"),
         help: ArgumentHelp(
@@ -404,6 +445,8 @@ struct IconForegroundOptions: ParsableArguments {
     var foregroundArgumentGiven: Bool {
         foreground != nil
             || scale != nil
+            || offsetX != nil
+            || offsetY != nil
             || symbolRendering != nil
             || symbolColor != nil
             || symbolPalette != nil
@@ -614,6 +657,33 @@ struct BadgeOptions: ParsableArguments {
         transform: { try validateScale($0, name: "Badge foreground scale") }
     )
     var foregroundScale: Double?
+
+    // The badge's counterpart to `--icon-fg-offset-x`, and a different thing from
+    // `--badge-offset-x`: this moves the badge's glyph *inside* the badge, that moves
+    // the whole badge on the icon. Same `=` rule for a negative value.
+    @Option(
+        name: .customLong("badge-fg-offset-x"),
+        help: ArgumentHelp(
+            "Badge foreground X offset, -0.5 to 0.5; use --badge-fg-offset-x=-0.2",
+            valueName: "offset"
+        ),
+        transform: {
+            try validateOffset($0, name: "Badge foreground offset X", in: ForegroundSpec.offsetRange)
+        }
+    )
+    var foregroundOffsetX: Double?
+
+    @Option(
+        name: .customLong("badge-fg-offset-y"),
+        help: ArgumentHelp(
+            "Badge foreground Y offset, -0.5 to 0.5; use --badge-fg-offset-y=-0.2",
+            valueName: "offset"
+        ),
+        transform: {
+            try validateOffset($0, name: "Badge foreground offset Y", in: ForegroundSpec.offsetRange)
+        }
+    )
+    var foregroundOffsetY: Double?
 
     @Option(
         name: .customLong("badge-symbol-rendering"),
@@ -852,6 +922,8 @@ struct BadgeOptions: ParsableArguments {
     var foregroundArgumentGiven: Bool {
         foreground != nil
             || foregroundScale != nil
+            || foregroundOffsetX != nil
+            || foregroundOffsetY != nil
             || symbolRendering != nil
             || symbolColor != nil
             || symbolPalette != nil

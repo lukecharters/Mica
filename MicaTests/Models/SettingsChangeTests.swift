@@ -32,7 +32,7 @@ struct SettingsChangeTests {
     @Test("every stored property has a named field")
     func everyStoredPropertyIsNamed() {
         #expect(SettingsChange.fields.count == Self.leafCount(of: IconSettings()))
-        #expect(SettingsChange.fields.count == 61)
+        #expect(SettingsChange.fields.count == 65)
     }
 
     /// A duplicated key would make two different settings coalesce into each other: edit
@@ -122,6 +122,8 @@ struct SettingsChangeTests {
         case "symbolScale": spec.symbolScale = 1.7
         case "image": spec.image = Self.image
         case "imageScale": spec.imageScale = 1.7
+        case "offsetX": spec.offsetX = 0.2
+        case "offsetY": spec.offsetY = -0.2
         case "color": spec.color = .brown
         case "renderingStyle": spec.renderingStyle = .palette
         case "fillStyle": spec.fillStyle = .gradient

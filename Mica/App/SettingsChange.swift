@@ -152,7 +152,7 @@ extension SettingsChange {
         SettingField("badge.offsetY", "Change Badge Y Offset", \.badge.offsetY),
     ]
 
-    /// 15 fields, one per `ForegroundSpec` stored property.
+    /// 17 fields, one per `ForegroundSpec` stored property.
     private static func foregroundFields(
         _ prefix: String, _ subject: String, _ base: KeyPath<IconSettings, ForegroundSpec>
     ) -> [SettingField] {
@@ -169,6 +169,10 @@ extension SettingsChange {
                          base.appending(path: \.image)),
             SettingField("\(prefix).imageScale", "Change \(subject) Foreground Image Scale",
                          base.appending(path: \.imageScale)),
+            SettingField("\(prefix).offsetX", "Change \(subject) Foreground X Offset",
+                         base.appending(path: \.offsetX)),
+            SettingField("\(prefix).offsetY", "Change \(subject) Foreground Y Offset",
+                         base.appending(path: \.offsetY)),
             SettingField("\(prefix).color", "Change \(subject) Symbol Color",
                          base.appending(path: \.color)),
             SettingField("\(prefix).renderingStyle", "Change \(subject) Symbol Rendering",

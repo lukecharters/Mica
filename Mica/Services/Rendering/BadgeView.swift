@@ -31,6 +31,20 @@ struct BadgeView: View {
         settings.badge.foreground.symbolWeight.fontWeight ?? resolvedBadgeSizing.weight
     }
 
+    /// The user's manual nudge of the badge's foreground layer, in points.
+    ///
+    /// Measured against the badge diameter, the unit everything inside the badge
+    /// is measured against — so the glyph keeps its place when the badge is
+    /// resized. It moves the glyph *inside* the badge and nothing else:
+    /// `BadgeGeometry` does not see it, so the badge's own placement and its
+    /// footprint clamp are untouched.
+    private var foregroundOffset: CGSize {
+        CGSize(
+            width: badgeSize * settings.badge.foreground.offsetX,
+            height: badgeSize * settings.badge.foreground.offsetY
+        )
+    }
+
     /// Whether an imported badge background will actually draw. Shared with
     /// `BadgeGeometry.extents(for:enclosureSize:)`, which sizes the badge's
     /// footprint off the same answer.
@@ -115,6 +129,11 @@ struct BadgeView: View {
                             radius: settings.badge.foreground.drawsShadow ? badgeSize * resolvedShadow.badgeSymbol.radiusMultiplier : 0,
                             y: settings.badge.foreground.drawsShadow ? badgeSize * resolvedShadow.badgeSymbol.offsetYMultiplier : 0
                         )
+                        // Outside the shadow, so it travels with the glyph. Inside
+                        // the ZStack, whose frame stays the badge diameter — the
+                        // nudge is not a layout change, and the badge must not move
+                        // because its glyph did.
+                        .offset(foregroundOffset)
                 }
             }
             .frame(width: badgeSize, height: badgeSize)

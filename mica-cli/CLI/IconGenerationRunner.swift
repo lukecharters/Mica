@@ -326,6 +326,15 @@ class IconGenerationRunner {
                 }
             }
 
+            // The nudge applies to whichever source is in effect, so unlike the scale
+            // it needs no branch: one pair of stored values serves both.
+            if let offsetX = command.iconForeground.offsetX {
+                settings.icon.foreground.offsetX = offsetX
+            }
+            if let offsetY = command.iconForeground.offsetY {
+                settings.icon.foreground.offsetY = offsetY
+            }
+
             // Icon background (folds --icon-bg + --icon-bg-color + gradient-colors + scale + padding).
             //
             // `resolvedBackground()` reports `.standard` both when the user asked
@@ -497,6 +506,15 @@ class IconGenerationRunner {
                     } else {
                         settings.badge.foreground.symbolScale = foregroundScale
                     }
+                }
+
+                // Inside the badge, not the badge itself — `--badge-offset-x` and its
+                // sibling are handled with the rest of the badge layout below.
+                if let offsetX = command.badge.foregroundOffsetX {
+                    settings.badge.foreground.offsetX = offsetX
+                }
+                if let offsetY = command.badge.foregroundOffsetY {
+                    settings.badge.foreground.offsetY = offsetY
                 }
 
                 // Badge background (folds --badge-bg + color + gradient-colors + scale + padding).

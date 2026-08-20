@@ -2,8 +2,11 @@
 import SwiftUI
 
 /// Layout controls specific to the **badge foreground layer** (symbol scale or
-/// imported-image scale). Badge-wide layout (position, offset, overall size) lives
-/// in `BadgeGroupLayoutSection`, shown when the Badge group header is selected.
+/// imported-image scale, plus the layer's own nudge within the badge). Badge-wide
+/// layout — the corner, the badge's own offset from it, overall size — lives in
+/// `BadgeGroupLayoutSection`, shown when the Badge group header is selected. The two
+/// offset pairs are different things: that one moves the badge on the icon and is
+/// clamped to the canvas, this one moves the glyph inside the badge and is not.
 struct BadgeForegroundLayoutSection: View {
     @Binding var iconSettings: IconSettings
     /// So a drag is one undo step rather than one per frame.
@@ -31,6 +34,14 @@ struct BadgeForegroundLayoutSection: View {
 
         case .system:
             EmptyView()
+        }
+
+        // A System-mode badge is one baked raster — symbol and enclosure together —
+        // so there is no foreground layer to move within it.
+        if iconSettings.badge.foreground.source != .system {
+            ForegroundOffsetControls(offsetX: $iconSettings.badge.foreground.offsetX,
+                                     offsetY: $iconSettings.badge.foreground.offsetY,
+                                     group: .badge)
         }
     }
 }

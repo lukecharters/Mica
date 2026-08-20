@@ -7,6 +7,9 @@ struct IconForegroundLayoutSection: View {
     @Environment(\.continuousEdit) private var continuousEdit
 
     var body: some View {
+        // The scale control is per source; the offsets are not — they move whichever
+        // of the two is drawn, so they sit outside the switch rather than being
+        // written twice.
         switch iconSettings.icon.foreground.source {
         case .symbol:
             HStack {
@@ -33,6 +36,14 @@ struct IconForegroundLayoutSection: View {
 
         case .system:
             EmptyView() // Layout hidden in Apple Ref mode by SidebarView
+        }
+
+        // Nothing to nudge in System mode: the appex raster is the whole icon, and
+        // `IconContentView` draws no foreground of its own.
+        if iconSettings.icon.foreground.source != .system {
+            ForegroundOffsetControls(offsetX: $iconSettings.icon.foreground.offsetX,
+                                     offsetY: $iconSettings.icon.foreground.offsetY,
+                                     group: .icon)
         }
     }
 }

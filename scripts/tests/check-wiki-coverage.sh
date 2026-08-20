@@ -43,10 +43,10 @@ KEYS="$(
 )"
 
 KEY_COUNT="$(printf '%s\n' "$KEYS" | grep -c .)"
-if [[ "$KEY_COUNT" -eq 46 ]]; then
-    pass "parsed 46 configuration keys"
+if [[ "$KEY_COUNT" -eq 50 ]]; then
+    pass "parsed 50 configuration keys"
 else
-    fail "parsed $KEY_COUNT configuration keys, expected 46"
+    fail "parsed $KEY_COUNT configuration keys, expected 50"
 fi
 
 while IFS= read -r key; do

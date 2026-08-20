@@ -71,6 +71,8 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     // Icon foreground
     case iconFG = "icon-fg"
     case iconFGScale = "icon-fg-scale"
+    case iconFGOffsetX = "icon-fg-offset-x"
+    case iconFGOffsetY = "icon-fg-offset-y"
     case iconSymbolRendering = "icon-symbol-rendering"
     case iconSymbolColor = "icon-symbol-color"
     case iconSymbolPalette = "icon-symbol-palette"
@@ -93,6 +95,8 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     // Badge foreground
     case badgeFG = "badge-fg"
     case badgeFGScale = "badge-fg-scale"
+    case badgeFGOffsetX = "badge-fg-offset-x"
+    case badgeFGOffsetY = "badge-fg-offset-y"
     case badgeSymbolRendering = "badge-symbol-rendering"
     case badgeSymbolColor = "badge-symbol-color"
     case badgeSymbolPalette = "badge-symbol-palette"
@@ -213,14 +217,16 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
     /// exactly, and counting it would make an `off` imply a wanted foreground while
     /// asking to hide one.
     static let iconForegroundKeys: [MicaConfigKey] = [
-        .iconFG, .iconFGScale, .iconSymbolRendering, .iconSymbolColor,
-        .iconSymbolPalette, .iconSymbolWeight, .iconSymbolGradient, .iconFGShadow,
+        .iconFG, .iconFGScale, .iconFGOffsetX, .iconFGOffsetY, .iconSymbolRendering,
+        .iconSymbolColor, .iconSymbolPalette, .iconSymbolWeight, .iconSymbolGradient,
+        .iconFGShadow,
     ]
 
     /// The badge's counterpart to `iconForegroundKeys`.
     static let badgeForegroundKeys: [MicaConfigKey] = [
-        .badgeFG, .badgeFGScale, .badgeSymbolRendering, .badgeSymbolColor,
-        .badgeSymbolPalette, .badgeSymbolWeight, .badgeSymbolGradient, .badgeFGShadow,
+        .badgeFG, .badgeFGScale, .badgeFGOffsetX, .badgeFGOffsetY, .badgeSymbolRendering,
+        .badgeSymbolColor, .badgeSymbolPalette, .badgeSymbolWeight, .badgeSymbolGradient,
+        .badgeFGShadow,
     ]
 }
 
@@ -585,6 +591,13 @@ private struct ConfigReader {
                 settings.icon.foreground.symbolScale = scale
             }
         }
+        // The nudge needs no such branch: one stored pair moves either source.
+        if let offsetX = number(.iconFGOffsetX, in: ForegroundSpec.offsetRange) {
+            settings.icon.foreground.offsetX = offsetX
+        }
+        if let offsetY = number(.iconFGOffsetY, in: ForegroundSpec.offsetRange) {
+            settings.icon.foreground.offsetY = offsetY
+        }
 
         // Icon background.
         var importedBackground = false
@@ -797,6 +810,13 @@ private struct ConfigReader {
             } else {
                 settings.badge.foreground.symbolScale = scale
             }
+        }
+        // Inside the badge; `badge-offset-x`/`-y` under Layout move the badge itself.
+        if let offsetX = number(.badgeFGOffsetX, in: ForegroundSpec.offsetRange) {
+            settings.badge.foreground.offsetX = offsetX
+        }
+        if let offsetY = number(.badgeFGOffsetY, in: ForegroundSpec.offsetRange) {
+            settings.badge.foreground.offsetY = offsetY
         }
 
         // Badge background.
@@ -1110,6 +1130,10 @@ private struct ConfigWriter {
         if iconFGDraws {
             let scale = iconFGIsImage ? iconFG.imageScale : iconFG.symbolScale
             if scale != 1.0 { put(.iconFGScale, scale) }
+            // Gated with the scale and on the same terms: a hidden or System-mode
+            // foreground has nowhere to be nudged. Omitted at 0, which is centred.
+            if iconFG.offsetX != 0 { put(.iconFGOffsetX, iconFG.offsetX) }
+            if iconFG.offsetY != 0 { put(.iconFGOffsetY, iconFG.offsetY) }
         }
         if iconSymbolStyling, iconFG.renderingStyle != defaults.icon.foreground.renderingStyle {
             put(.iconSymbolRendering, iconFG.renderingStyle.cliToken)
@@ -1299,6 +1323,8 @@ private struct ConfigWriter {
         if badgeFGDraws {
             let scale = badgeFGIsImage ? badgeFG.imageScale : badgeFG.symbolScale
             if scale != 1.0 { put(.badgeFGScale, scale) }
+            if badgeFG.offsetX != 0 { put(.badgeFGOffsetX, badgeFG.offsetX) }
+            if badgeFG.offsetY != 0 { put(.badgeFGOffsetY, badgeFG.offsetY) }
         }
         if badgeSymbolStyling, badgeFG.renderingStyle != SymbolRenderingStyle.monochrome {
             put(.badgeSymbolRendering, badgeFG.renderingStyle.cliToken)

@@ -172,6 +172,12 @@ HAPPY_CASES=(
     "badge-offset-x|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|0.2"
     "badge-offset-y|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-y=-0.1"
 
+    # ---- Foreground nudges: the layer inside its own frame, not the badge ----
+    "icon-fg-offset-x|star.fill|--icon-fg-offset-x|0.2"
+    "icon-fg-offset-y|star.fill|--icon-fg-offset-y=-0.15"
+    "badge-fg-offset-x|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-offset-x|0.2"
+    "badge-fg-offset-y|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-offset-y=-0.15"
+
     # ---- Output modes (path still written via -o; stdout suppressed by the harness) ----
     "output-json|star.fill|--json"
     "output-quiet|star.fill|--quiet"
@@ -229,6 +235,11 @@ NEGATIVE_CASES=(
     # and would fail as "File not found" for a file nobody named.
     "icon-bg-prerendered-retired|no longer available|star.fill|--icon-bg|prerendered-liquid-glass"
     "badge-offset-out-of-range|must be between -1.0 and 1.0|star.fill|--badge-fg|symbol:plus.circle|--badge-offset-x|9.0"
+    # A foreground nudge is bounded at half the badge's range, and the two ranges go
+    # through one validator — so the *message* is what says the right bounds were
+    # checked. A value of 0.6 is legal for the badge and not for its glyph.
+    "icon-fg-offset-out-of-range|must be between -0.5 and 0.5|star.fill|--icon-fg-offset-x|0.6"
+    "badge-fg-offset-out-of-range|must be between -0.5 and 0.5|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-offset-y|0.6"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"
     "badge-generation-system-image-fg|image foregrounds are only supported in mica mode|star.fill|--badge-fg|\$SYMBOL_FIXTURE|--badge-generation-mode|system"
     # Phase 4 / decision D2: System mode refuses what it cannot show rather than

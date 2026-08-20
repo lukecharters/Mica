@@ -57,6 +57,16 @@ struct MicaConfigTests {
         })
     }
 
+    /// The encoded configuration as a dictionary, for tests that assert on which
+    /// keys were written rather than on a round trip.
+    private static func encoded(
+        _ settings: IconSettings,
+        appexColors: MicaAppexColors = MicaAppexColors()
+    ) throws -> [String: Any] {
+        let json = try MicaConfigCodec.encode(settings: settings, appexColors: appexColors)
+        return try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+    }
+
     /// Settings equality that treats imported images by content, not identity.
     private static func expectEquivalent(
         _ result: IconSettings,
@@ -91,18 +101,18 @@ struct MicaConfigTests {
 
     @Test("the stored-property count is pinned, so a new setting cannot be forgotten")
     func storedPropertyCountIsPinned() {
-        #expect(Self.leafCount(of: IconSettings()) == 61,
+        #expect(Self.leafCount(of: IconSettings()) == 65,
                 "a new stored property needs a config key (and a probe below) or an entry in the documented lossiness list")
     }
 
     @Test("each spec contributes the leaf count the codec was built against")
     func perSpecLeafCounts() {
         #expect(Self.leafCount(of: ExportSpec()) == 3)
-        #expect(Self.leafCount(of: ForegroundSpec.iconDefault) == 15)
+        #expect(Self.leafCount(of: ForegroundSpec.iconDefault) == 17)
         #expect(Self.leafCount(of: IconBackgroundSpec()) == 12)
         #expect(Self.leafCount(of: BadgeBackgroundSpec()) == 11)
-        #expect(Self.leafCount(of: IconSpec()) == 1 + 15 + 12)
-        #expect(Self.leafCount(of: BadgeSpec()) == 4 + 15 + 11)
+        #expect(Self.leafCount(of: IconSpec()) == 1 + 17 + 12)
+        #expect(Self.leafCount(of: BadgeSpec()) == 4 + 17 + 11)
     }
 
     // MARK: - Key coverage
@@ -122,6 +132,8 @@ struct MicaConfigTests {
         ("badge-visibility", false, ["badge-fg": "symbol:plus"]),
         ("icon-fg", "symbol:bolt.fill", [:]),
         ("icon-fg-scale", 1.4, [:]),
+        ("icon-fg-offset-x", 0.2, [:]),
+        ("icon-fg-offset-y", -0.1, [:]),
         ("icon-symbol-rendering", "hierarchical", [:]),
         ("icon-symbol-color", "red", [:]),
         ("icon-symbol-palette", ["red", "green", "blue"], [:]),
@@ -140,6 +152,8 @@ struct MicaConfigTests {
         ("icon-bg-visibility", false, [:]),
         ("badge-fg", "symbol:plus", [:]),
         ("badge-fg-scale", 1.4, ["badge-fg": "symbol:plus"]),
+        ("badge-fg-offset-x", 0.2, ["badge-fg": "symbol:plus"]),
+        ("badge-fg-offset-y", -0.1, ["badge-fg": "symbol:plus"]),
         ("badge-symbol-rendering", "hierarchical", ["badge-fg": "symbol:plus"]),
         ("badge-symbol-color", "red", ["badge-fg": "symbol:plus"]),
         ("badge-symbol-palette", ["red", "green", "blue"], ["badge-fg": "symbol:plus"]),
@@ -455,6 +469,8 @@ struct MicaConfigTests {
 
         settings.icon.foreground.symbolName = "bolt.fill"
         settings.icon.foreground.symbolScale = 1.4
+        settings.icon.foreground.offsetX = 0.15
+        settings.icon.foreground.offsetY = -0.05
         settings.icon.foreground.color = .orange
         settings.icon.foreground.hierarchicalColor = .orange
         settings.icon.foreground.renderingStyle = .hierarchical
@@ -481,6 +497,8 @@ struct MicaConfigTests {
         settings.badge.offsetY = -0.1
         settings.badge.foreground.symbolName = "bell.fill"
         settings.badge.foreground.symbolScale = 0.8
+        settings.badge.foreground.offsetX = -0.2
+        settings.badge.foreground.offsetY = 0.3
         settings.badge.foreground.color = .yellow
         settings.badge.foreground.hierarchicalColor = .yellow
         settings.badge.foreground.drawsShadow = false
@@ -496,6 +514,40 @@ struct MicaConfigTests {
         let result = try Self.roundTrip(settings)
         #expect(result.settings == settings)
         #expect(result.warnings.isEmpty)
+    }
+
+    /// The nudge is gated with the scale it sits beside: a layer that is not drawn
+    /// takes its appearance keys with it, and a nudge of something invisible is
+    /// exactly the kind of key that would describe a render that never happened.
+    @Test("a foreground offset is written when set, omitted at zero, and dropped when the layer is hidden")
+    func foregroundOffsetsAreGated() throws {
+        var settings = IconSettings()
+        let atDefault = try Self.encoded(settings)
+        #expect(atDefault["icon-fg-offset-x"] == nil)
+        #expect(atDefault["icon-fg-offset-y"] == nil)
+
+        settings.icon.foreground.offsetX = 0.25
+        settings.icon.foreground.offsetY = -0.1
+        let nudged = try Self.encoded(settings)
+        #expect(nudged["icon-fg-offset-x"] as? Double == 0.25)
+        #expect(nudged["icon-fg-offset-y"] as? Double == -0.1)
+
+        settings.icon.foreground.isHidden = true
+        let hidden = try Self.encoded(settings)
+        #expect(hidden["icon-fg-offset-x"] == nil)
+        #expect(hidden["icon-fg-offset-y"] == nil)
+
+        // Same for the badge, whose foreground has the extra hurdle of the badge
+        // having to be visible at all.
+        var badged = IconSettings()
+        badged.badge.isVisible = true
+        badged.badge.foreground.offsetX = 0.3
+        let badgeNudged = try Self.encoded(badged)
+        #expect(badgeNudged["badge-fg-offset-x"] as? Double == 0.3)
+
+        badged.badge.foreground.isHidden = true
+        let badgeHidden = try Self.encoded(badged)
+        #expect(badgeHidden["badge-fg-offset-x"] == nil)
     }
 
     @Test("a hidden badge layer round-trips")

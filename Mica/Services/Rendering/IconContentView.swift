@@ -72,6 +72,20 @@ struct IconContentView: View {
         enclosureSize * resolvedSizing.yOffset
     }
 
+    /// The user's manual nudge of the whole foreground layer, in points.
+    ///
+    /// Separate from `symbolXOffset`/`symbolYOffset`, which are the *calibration*
+    /// offsets that centre a particular symbol's ink: those describe the symbol,
+    /// this describes the user's choice, and only the second one applies to an
+    /// imported-image foreground as well. Applied to `iconContent` as a whole so
+    /// both source branches move the same way.
+    private var foregroundOffset: CGSize {
+        CGSize(
+            width: enclosureSize * settings.icon.foreground.offsetX,
+            height: enclosureSize * settings.icon.foreground.offsetY
+        )
+    }
+
     private var resolvedShadow: ResolvedShadow {
         shadowOverride ?? .preset(for: settings.icon.background.shadowStyle)
     }
@@ -109,6 +123,12 @@ struct IconContentView: View {
                         radius: settings.icon.foreground.drawsShadow ? symbolShadowRadius : 0,
                         y: settings.icon.foreground.drawsShadow ? symbolShadowOffset : 0
                     )
+                    // Outside the shadow, so the shadow travels with the layer
+                    // rather than staying behind where it used to be. Deliberately
+                    // unclamped: a nudged foreground may bleed off the chiclet, and
+                    // past the canvas the render crops it. `PreviewHitTester`
+                    // mirrors this.
+                    .offset(foregroundOffset)
             }
 
             if settings.badge.isVisible {

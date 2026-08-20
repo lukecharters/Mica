@@ -278,6 +278,15 @@ struct ForegroundSpec: Equatable {
     static let symbolScaleRange: ClosedRange<Double> = 0.3...2.0
     static let imageScaleRange: ClosedRange<Double> = 0.3...2.0
 
+    /// Bounds for `offsetX` / `offsetY`, in fractions of the layer's own frame.
+    /// Also the accepted range for `--icon-fg-offset-x` and its three siblings.
+    ///
+    /// **Half of `BadgeSpec.offsetRange`, deliberately.** A foreground starts
+    /// centred in its frame, so ±0.5 already puts its centre on the frame's
+    /// edge and the whole range is usable travel. The badge's ±1.0 is wide
+    /// because a badge starts in a *corner* and may need to cross the icon.
+    static let offsetRange: ClosedRange<Double> = -0.5...0.5
+
     /// The palette's three slots, primary first — and **three distinct colours on
     /// purpose**, because the default is the only thing that tells a reader what
     /// palette rendering *is*.
@@ -314,6 +323,22 @@ struct ForegroundSpec: Equatable {
     var symbolScale: Double = 1.0
     var image: ImportedImage? = nil
     var imageScale: Double = 1.0
+    /// Manual nudge within the layer's own frame, as a fraction of that frame so
+    /// it scales to any export size. The frame is the *icon enclosure* for an icon
+    /// foreground and the *badge diameter* for a badge one — the same units
+    /// `symbolScale` is relative to, which is what lets one spec serve both.
+    ///
+    /// Two `Double`s rather than a `CGSize`, matching `BadgeSpec.offsetX`/`offsetY`:
+    /// in that call chain a `CGSize` means the resolved offset in points.
+    ///
+    /// **Unclamped, and drawn unclipped.** Unlike the badge's, whose
+    /// `BadgeGeometry` clamp keeps the whole badge on a fixed canvas, this one may
+    /// push a glyph off the chiclet or past the canvas edge, where the render crops
+    /// it. That is what a nudge control is for: the layer is allowed to bleed.
+    /// Nothing else moves with it — a badge foreground offset shifts the glyph
+    /// inside the badge, never the badge.
+    var offsetX: Double = 0.0
+    var offsetY: Double = 0.0
     var color: MicaColorValue = .white
     var renderingStyle: SymbolRenderingStyle = .monochrome
     var fillStyle: SymbolFillStyle = .flat

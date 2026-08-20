@@ -284,7 +284,8 @@ enum PreviewHitTester {
         let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
         let side = diameter * sizing.multiplier * settings.badge.foreground.symbolScale
         guard side > 0 else { return nil }
-        return centeredSquare(center: badgeCenter, side: side)
+        return centeredSquare(center: nudged(badgeCenter, by: settings.badge.foreground, unit: diameter),
+                              side: side)
     }
 
     /// Visible side of a squircle badge, or nil when the circular colour badge
@@ -328,9 +329,13 @@ enum PreviewHitTester {
             let side = enclosureSize * sizing.multiplier * settings.icon.foreground.symbolScale
             guard side > 0 else { return nil }
             return centeredSquare(
-                center: CGPoint(
-                    x: center.x + enclosureSize * sizing.xOffset,
-                    y: center.y + enclosureSize * sizing.yOffset
+                center: nudged(
+                    CGPoint(
+                        x: center.x + enclosureSize * sizing.xOffset,
+                        y: center.y + enclosureSize * sizing.yOffset
+                    ),
+                    by: settings.icon.foreground,
+                    unit: enclosureSize
                 ),
                 side: side
             )
@@ -339,7 +344,10 @@ enum PreviewHitTester {
             guard settings.icon.foreground.image?.nsImage != nil else { return nil }
             let side = enclosureSize * customImageEnclosureRatio * settings.icon.foreground.imageScale
             guard side > 0 else { return nil }
-            return centeredSquare(center: center, side: side)
+            return centeredSquare(
+                center: nudged(center, by: settings.icon.foreground, unit: enclosureSize),
+                side: side
+            )
 
         case .system:
             return nil
@@ -358,6 +366,20 @@ enum PreviewHitTester {
 
     private static func centeredSquare(center: CGPoint, side: CGFloat) -> CGRect {
         CGRect(x: center.x - side / 2, y: center.y - side / 2, width: side, height: side)
+    }
+
+    /// A foreground layer's centre after its manual nudge, mirroring the `.offset`
+    /// `IconContentView` and `BadgeView` apply to the whole layer.
+    ///
+    /// `unit` is the frame the offset is a fraction of — the icon enclosure for an
+    /// icon foreground, the badge diameter for a badge one. One helper for all four
+    /// sites (two boxes, two hit tests), so a nudged glyph cannot be outlined in one
+    /// place and picked in another.
+    private static func nudged(_ center: CGPoint, by foreground: ForegroundSpec, unit: CGFloat) -> CGPoint {
+        CGPoint(
+            x: center.x + unit * foreground.offsetX,
+            y: center.y + unit * foreground.offsetY
+        )
     }
 
     // MARK: - Geometry (mirrors IconContentView)
@@ -450,9 +472,13 @@ enum PreviewHitTester {
             // smaller than this box — close enough for picking, and generous in
             // the direction that matters (it's the topmost icon layer).
             let side = enclosureSize * sizing.multiplier * settings.icon.foreground.symbolScale
-            let glyphCenter = CGPoint(
-                x: center.x + enclosureSize * sizing.xOffset,
-                y: center.y + enclosureSize * sizing.yOffset
+            let glyphCenter = nudged(
+                CGPoint(
+                    x: center.x + enclosureSize * sizing.xOffset,
+                    y: center.y + enclosureSize * sizing.yOffset
+                ),
+                by: settings.icon.foreground,
+                unit: enclosureSize
             )
             return squareContains(point, center: glyphCenter, side: side)
 
@@ -460,7 +486,11 @@ enum PreviewHitTester {
             // Renderer draws nothing until the data decodes, so neither do we.
             guard settings.icon.foreground.image?.nsImage != nil else { return false }
             let side = enclosureSize * customImageEnclosureRatio * settings.icon.foreground.imageScale
-            return squareContains(point, center: center, side: side)
+            return squareContains(
+                point,
+                center: nudged(center, by: settings.icon.foreground, unit: enclosureSize),
+                side: side
+            )
 
         case .system:
             // Appex image replaces the whole icon; nothing drawn here.

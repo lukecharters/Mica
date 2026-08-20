@@ -46,6 +46,8 @@ struct ConfigFlagParityTests {
         case .badgeVisibility: return "off"
         case .iconFG: return "symbol:star.fill"
         case .iconFGScale: return "1.2"
+        case .iconFGOffsetX: return "0.2"
+        case .iconFGOffsetY: return "-0.2"
         case .iconSymbolRendering: return "hierarchical"
         case .iconSymbolColor: return "red"
         case .iconSymbolPalette: return "red,green,blue"
@@ -64,6 +66,8 @@ struct ConfigFlagParityTests {
         case .iconBGVisibility: return "off"
         case .badgeFG: return "symbol:plus.circle"
         case .badgeFGScale: return "1.2"
+        case .badgeFGOffsetX: return "0.2"
+        case .badgeFGOffsetY: return "-0.2"
         case .badgeSymbolRendering: return "hierarchical"
         case .badgeSymbolColor: return "red"
         case .badgeSymbolPalette: return "red,green,blue"
@@ -96,7 +100,7 @@ struct ConfigFlagParityTests {
                 throws: Never.self,
                 "'\(key.rawValue)' is a configuration key but not a --\(key.rawValue) flag"
             ) {
-                // The `=` form throughout: two of these flags take negatives, and a
+                // The `=` form throughout: six of these flags take negatives, and a
                 // space would have ArgumentParser read the value as another flag.
                 try parseCommand(["--icon-symbol", "star.fill", "--\(key.rawValue)=\(value)"])
             }
@@ -237,6 +241,8 @@ struct ConfigFlagParityTests {
         .init(name: "icon foreground", config: [
             "icon-fg": "symbol:bolt.fill",
             "icon-fg-scale": 1.4,
+            "icon-fg-offset-x": 0.12,
+            "icon-fg-offset-y": 0.08,
             "icon-symbol-rendering": "hierarchical",
             "icon-symbol-color": "orange",
             "icon-symbol-weight": "bold",
@@ -267,6 +273,8 @@ struct ConfigFlagParityTests {
         .init(name: "badge", config: [
             "badge-fg": "symbol:plus.circle",
             "badge-fg-scale": 1.2,
+            "badge-fg-offset-x": 0.1,
+            "badge-fg-offset-y": 0.2,
             "badge-symbol-rendering": "hierarchical",
             "badge-symbol-color": "cyan",
             "badge-symbol-weight": "semibold",
@@ -283,6 +291,17 @@ struct ConfigFlagParityTests {
             "badge-fg": "symbol:bell.fill",
             "badge-offset-x": -0.25,
             "badge-offset-y": -0.15,
+        ]),
+
+        // The foreground nudge is a different pair of keys from the badge's above,
+        // in a narrower range, and negative on both surfaces — the case where a
+        // `=`-less flag would have failed to parse at all.
+        .init(name: "negative foreground offsets", config: [
+            "icon-fg-offset-x": -0.4,
+            "icon-fg-offset-y": -0.05,
+            "badge-fg": "symbol:bell.fill",
+            "badge-fg-offset-x": -0.5,
+            "badge-fg-offset-y": -0.33,
         ]),
 
         .init(name: "badge layer visibility", config: [

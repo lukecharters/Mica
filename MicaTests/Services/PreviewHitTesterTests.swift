@@ -252,6 +252,72 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(justOutside, s) == .iconForeground)
     }
 
+    @Test("The foreground's manual offset shifts its hit box")
+    func foregroundOffset_shiftsHitBox() {
+        var s = IconSettings()
+        let centre = Self.canvasCentre(s)
+        let half = Self.enclosure() * Self.sizing.multiplier * s.icon.foreground.symbolScale / 2
+        // Beyond the centred box's right edge, so only the nudge can bring it inside.
+        let point = CGPoint(x: centre.x + half + 4, y: centre.y)
+        #expect(Self.hit(point, s) == .iconBackground)
+
+        s.icon.foreground.offsetX = 0.1     // 0.1 x 206 = 20.6pt right
+        #expect(Self.hit(point, s) == .iconForeground)
+        // And it *leaves* where it was: the box moved rather than grew.
+        #expect(Self.hit(CGPoint(x: centre.x - half + 1, y: centre.y), s) == .iconBackground)
+    }
+
+    @Test("A nudged foreground is outlined where it is drawn, not where it was")
+    func foregroundOffset_movesTheOutline() throws {
+        var s = IconSettings()
+        s.icon.foreground.offsetX = 0.1
+        s.icon.foreground.offsetY = -0.05
+        let centre = Self.canvasCentre(s)
+        let enclosure = Self.enclosure()
+
+        guard case .roundedRect(let rect, _)? = Self.shape(.iconForeground, s) else {
+            Issue.record("Expected a rounded rect for the icon foreground")
+            return
+        }
+        #expect(abs(rect.midX - (centre.x + enclosure * 0.1)) < 0.001)
+        #expect(abs(rect.midY - (centre.y - enclosure * 0.05)) < 0.001)
+        // The nudge moves the layer; it does not resize it.
+        let expectedSide = enclosure * Self.sizing.multiplier * s.icon.foreground.symbolScale
+        #expect(abs(rect.width - expectedSide) < 0.001)
+    }
+
+    @Test("The badge glyph's nudge moves its hit box and leaves the badge alone")
+    func badgeForegroundOffset_movesGlyphNotBadge() throws {
+        var s = Self.settingsWithBadge()
+        s.badge.applyBackgroundImage(
+            try ImportedImage.testFixture(width: 32, height: 32, fill: .systemBrown))
+        s.badge.foreground.isHidden = false      // the import's hide default, reversed
+
+        let unnudgedBadge = Self.badgeCircle(s)
+        let diameter = unnudgedBadge.radius * 2
+        // The badge glyph's own calibration, not `Self.sizing`: `hit(_:_:)` passes
+        // no `badgeSymbolSizing`, so the badge box is sized by the real resolver.
+        let badgeSizing = SymbolSizingService.resolve(for: s.badge.foreground.symbolName)
+        let half = diameter * badgeSizing.multiplier * s.badge.foreground.symbolScale / 2
+        // Inside the badge's imported footprint but outside the centred glyph box,
+        // so the answer can only change if the glyph moved.
+        let point = CGPoint(x: unnudgedBadge.centre.x + half + 3, y: unnudgedBadge.centre.y)
+        #expect(Self.hit(point, s) == .badgeBackground)
+
+        s.badge.foreground.offsetX = 0.2         // 0.2 badge diameters right
+        #expect(Self.hit(point, s) == .badgeForeground)
+
+        // The badge itself has not moved, and its footprint has not changed —
+        // BadgeGeometry never sees the foreground's nudge.
+        let nudgedBadge = Self.badgeCircle(s)
+        #expect(nudgedBadge.centre == unnudgedBadge.centre)
+        #expect(nudgedBadge.radius == unnudgedBadge.radius)
+        var unnudged = s
+        unnudged.badge.foreground.offsetX = 0
+        #expect(BadgeGeometry.extents(for: s, enclosureSize: Self.enclosure())
+                == BadgeGeometry.extents(for: unnudged, enclosureSize: Self.enclosure()))
+    }
+
     @Test("Symbol offsets shift the foreground hit box")
     func symbolOffsets_shiftHitBox() {
         let s = IconSettings()
