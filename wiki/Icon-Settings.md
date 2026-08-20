@@ -138,6 +138,60 @@ mica-cli --icon-symbol star.fill --size 256 --icon-fg-scale 1.5
 
 > **System mode ignores this.**
 
+### Foreground X Offset
+
+Moves the symbol or image left or right inside the icon.
+
+| | |
+|---|---|
+| **In the app** | Icon ▸ Foreground ▸ Layout ▸ **X Offset** |
+| **Command line** | `--icon-fg-offset-x=-0.5...0.5` |
+| **Config key** | `"icon-fg-offset-x"` |
+| **Default** | `0` |
+| **Shown when** | Advanced controls are on and Mica mode is active. |
+
+<img src="images/icon-fg-offset-x-minus0.15.png" width="128" alt="Foreground moved left"> <img src="images/icon-fg-offset-x-0.png" width="128" alt="Foreground centred"> <img src="images/icon-fg-offset-x-0.15.png" width="128" alt="Foreground moved right">
+
+From left: `-0.15`, `0`, `0.15`.
+The value is a share of the icon's rounded square, so it holds at any export size.
+A large value can push the layer over the edge of that square.
+
+```shell
+mica-cli --icon-symbol star.fill --size 256 --icon-fg-offset-x=0.15
+```
+
+Attach a negative value with `=`.
+A space causes a missing-value error.
+
+> **System mode ignores this.**
+
+### Foreground Y Offset
+
+Moves the symbol or image up or down inside the icon.
+
+| | |
+|---|---|
+| **In the app** | Icon ▸ Foreground ▸ Layout ▸ **Y Offset** |
+| **Command line** | `--icon-fg-offset-y=-0.5...0.5` |
+| **Config key** | `"icon-fg-offset-y"` |
+| **Default** | `0` |
+| **Shown when** | Advanced controls are on and Mica mode is active. |
+
+<img src="images/icon-fg-offset-y-minus0.15.png" width="128" alt="Foreground moved up"> <img src="images/icon-fg-offset-y-0.png" width="128" alt="Foreground centred"> <img src="images/icon-fg-offset-y-0.15.png" width="128" alt="Foreground moved down">
+
+From left: `-0.15`, `0`, `0.15`.
+Negative values move the layer up.
+Positive values move it down.
+
+```shell
+mica-cli --icon-symbol star.fill --size 256 --icon-fg-offset-y=0.15
+```
+
+Attach a negative value with `=`.
+A space causes a missing-value error.
+
+> **System mode ignores this.**
+
 ### Symbol Rendering
 
 Chooses how an SF Symbol uses colour across its layers.

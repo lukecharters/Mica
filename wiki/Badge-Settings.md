@@ -85,6 +85,8 @@ The badge background has no corner setting because Mica sets its shape.
 |---|---|
 | Badge Size | The whole badge against the standard macOS badge size. |
 | Foreground Scale | The symbol or image inside the badge. |
+| X Offset, Y Offset | The whole badge, away from its corner. |
+| Foreground X Offset, Foreground Y Offset | The symbol or image inside the badge. |
 
 ### Position
 
@@ -237,6 +239,62 @@ From left: `0.5`, `1.0`, `1.5`.
 ```shell
 mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-fg-scale 1.5
 ```
+
+> **System mode ignores this.**
+
+### Foreground X Offset
+
+Moves the symbol or image left or right inside the badge.
+The badge itself stays in its corner.
+
+| | |
+|---|---|
+| **In the app** | Badge ▸ Foreground ▸ Layout ▸ **X Offset** |
+| **Command line** | `--badge-fg-offset-x=-0.5...0.5` |
+| **Config key** | `"badge-fg-offset-x"` |
+| **Default** | `0` |
+| **Shown when** | Advanced controls are on and Mica mode is active. |
+
+<img src="images/badge-fg-offset-x-minus0.3.png" width="128" alt="Badge symbol moved left"> <img src="images/badge-fg-offset-x-0.png" width="128" alt="Badge symbol centred"> <img src="images/badge-fg-offset-x-0.3.png" width="128" alt="Badge symbol moved right">
+
+From left: `-0.3`, `0`, `0.3`.
+The value is a share of the badge width, so it holds at any badge size.
+Use [X Offset](Badge-Settings#x-offset) to move the whole badge instead.
+
+```shell
+mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-fg-offset-x=0.3
+```
+
+Attach a negative value with `=`.
+A space causes a missing-value error.
+
+> **System mode ignores this.**
+
+### Foreground Y Offset
+
+Moves the symbol or image up or down inside the badge.
+The badge itself stays in its corner.
+
+| | |
+|---|---|
+| **In the app** | Badge ▸ Foreground ▸ Layout ▸ **Y Offset** |
+| **Command line** | `--badge-fg-offset-y=-0.5...0.5` |
+| **Config key** | `"badge-fg-offset-y"` |
+| **Default** | `0` |
+| **Shown when** | Advanced controls are on and Mica mode is active. |
+
+<img src="images/badge-fg-offset-y-minus0.3.png" width="128" alt="Badge symbol moved up"> <img src="images/badge-fg-offset-y-0.png" width="128" alt="Badge symbol centred"> <img src="images/badge-fg-offset-y-0.3.png" width="128" alt="Badge symbol moved down">
+
+From left: `-0.3`, `0`, `0.3`.
+Negative values move the layer up.
+Positive values move it down.
+
+```shell
+mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-fg-offset-y=0.3
+```
+
+Attach a negative value with `=`.
+A space causes a missing-value error.
 
 > **System mode ignores this.**
 

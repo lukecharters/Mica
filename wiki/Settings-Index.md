@@ -11,6 +11,8 @@ See [Colour Formats](Colour-Formats) for the shared colour syntax.
 | Foreground Source | `--icon-fg` or `--icon-symbol` | Icon ▸ Foreground ▸ Source | [Icon Settings](Icon-Settings#foreground-source) |
 | Foreground Visibility | `--icon-fg-visibility` | Icon ▸ Foreground ▸ Source | [Icon Settings](Icon-Settings#foreground-visibility) |
 | Foreground Scale | `--icon-fg-scale` | Icon ▸ Foreground ▸ Layout | [Icon Settings](Icon-Settings#foreground-scale) |
+| Foreground X Offset | `--icon-fg-offset-x` | Icon ▸ Foreground ▸ Layout | [Icon Settings](Icon-Settings#foreground-x-offset) |
+| Foreground Y Offset | `--icon-fg-offset-y` | Icon ▸ Foreground ▸ Layout | [Icon Settings](Icon-Settings#foreground-y-offset) |
 | Symbol Rendering | `--icon-symbol-rendering` | Icon ▸ Foreground ▸ Appearance | [Icon Settings](Icon-Settings#symbol-rendering) |
 | Symbol Colour | `--icon-symbol-color` | Icon ▸ Foreground ▸ Appearance | [Icon Settings](Icon-Settings#symbol-colour) |
 | Symbol Palette | `--icon-symbol-palette` | Icon ▸ Foreground ▸ Appearance | [Icon Settings](Icon-Settings#symbol-palette) |
@@ -35,6 +37,8 @@ See [Colour Formats](Colour-Formats) for the shared colour syntax.
 | Foreground Source | `--badge-fg` or `--badge-symbol` | Badge ▸ Foreground ▸ Source | [Badge Settings](Badge-Settings#foreground-source) |
 | Foreground Visibility | `--badge-fg-visibility` | Badge ▸ Foreground ▸ Source | [Badge Settings](Badge-Settings#foreground-visibility) |
 | Foreground Scale | `--badge-fg-scale` | Badge ▸ Foreground ▸ Layout | [Badge Settings](Badge-Settings#foreground-scale) |
+| Foreground X Offset | `--badge-fg-offset-x` | Badge ▸ Foreground ▸ Layout | [Badge Settings](Badge-Settings#foreground-x-offset) |
+| Foreground Y Offset | `--badge-fg-offset-y` | Badge ▸ Foreground ▸ Layout | [Badge Settings](Badge-Settings#foreground-y-offset) |
 | Symbol Rendering | `--badge-symbol-rendering` | Badge ▸ Foreground ▸ Appearance | [Badge Settings](Badge-Settings#symbol-rendering) |
 | Symbol Colour | `--badge-symbol-color` | Badge ▸ Foreground ▸ Appearance | [Badge Settings](Badge-Settings#symbol-colour) |
 | Symbol Palette | `--badge-symbol-palette` | Badge ▸ Foreground ▸ Appearance | [Badge Settings](Badge-Settings#symbol-palette) |

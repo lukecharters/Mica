@@ -3,7 +3,7 @@
 # Generate every example image the wiki shows, into wiki/images/.
 #
 # Phase 1 of docs/plans/user-documentation-rewrite-2026-08-17.md. The wiki's
-# settings reference puts a rendered result beside each of the 46 settings, and
+# settings reference puts a rendered result beside each of the 50 settings, and
 # those images are produced here rather than by hand: a hand-made image cannot be
 # regenerated when a default changes, and a stale example is worse than none.
 #
@@ -332,6 +332,17 @@ generate_icon_foreground() {
     emit icon-fg-scale 1.0 "${B[@]}" --icon-fg-scale 1.0
     emit icon-fg-scale 1.5 "${B[@]}" --icon-fg-scale 1.5
 
+    # The foreground nudge. A negative value must be attached with '=', as the
+    # badge-offset-x group below explains. The range is +/-0.5, half the badge's,
+    # so 0.15 is a larger share of the travel here than the same number is there.
+    emit icon-fg-offset-x minus0.15 "${B[@]}" --icon-fg-offset-x=-0.15
+    emit icon-fg-offset-x 0         "${B[@]}" --icon-fg-offset-x=0
+    emit icon-fg-offset-x 0.15      "${B[@]}" --icon-fg-offset-x=0.15
+
+    emit icon-fg-offset-y minus0.15 "${B[@]}" --icon-fg-offset-y=-0.15
+    emit icon-fg-offset-y 0         "${B[@]}" --icon-fg-offset-y=0
+    emit icon-fg-offset-y 0.15      "${B[@]}" --icon-fg-offset-y=0.15
+
     # Layered symbol: see the override note in the header.
     local -a L=(--icon-symbol "${LAYERED_SYMBOL}" --size "${ICON_SIZE}")
     emit icon-symbol-rendering monochrome   "${L[@]}" --icon-symbol-rendering monochrome
@@ -498,6 +509,17 @@ generate_badge_foreground() {
     emit badge-fg-scale 0.5 "${B[@]}" --badge-fg-scale 0.5
     emit badge-fg-scale 1.0 "${B[@]}" --badge-fg-scale 1.0
     emit badge-fg-scale 1.5 "${B[@]}" --badge-fg-scale 1.5
+
+    # 0.3 rather than the icon strip's 0.15: this offset is a share of the badge
+    # diameter, and a badge is about a third of the icon across, so the same
+    # fraction moves the glyph a third as far on screen.
+    emit badge-fg-offset-x minus0.3 "${B[@]}" --badge-fg-offset-x=-0.3
+    emit badge-fg-offset-x 0        "${B[@]}" --badge-fg-offset-x=0
+    emit badge-fg-offset-x 0.3      "${B[@]}" --badge-fg-offset-x=0.3
+
+    emit badge-fg-offset-y minus0.3 "${B[@]}" --badge-fg-offset-y=-0.3
+    emit badge-fg-offset-y 0        "${B[@]}" --badge-fg-offset-y=0
+    emit badge-fg-offset-y 0.3      "${B[@]}" --badge-fg-offset-y=0.3
 
     # The layered symbol goes in the badge here, and the badge is scaled up so
     # its layers are legible at all.

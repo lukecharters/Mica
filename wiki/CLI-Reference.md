@@ -33,6 +33,8 @@ mica-cli --icon-symbol star.fill --output icon.png
 | `--icon-fg` | [Foreground source](Icon-Settings#foreground-source) |
 | `--icon-symbol` | [Foreground source shorthand](Icon-Settings#foreground-source) |
 | `--icon-fg-scale` | [Foreground scale](Icon-Settings#foreground-scale) |
+| `--icon-fg-offset-x` | [Foreground X offset](Icon-Settings#foreground-x-offset) |
+| `--icon-fg-offset-y` | [Foreground Y offset](Icon-Settings#foreground-y-offset) |
 | `--icon-symbol-rendering` | [Symbol rendering](Icon-Settings#symbol-rendering) |
 | `--icon-symbol-color` | [Symbol colour](Icon-Settings#symbol-colour) |
 | `--icon-symbol-palette` | [Symbol palette](Icon-Settings#symbol-palette) |
@@ -62,6 +64,8 @@ mica-cli --icon-symbol star.fill --output icon.png
 | `--badge-fg` | [Foreground source](Badge-Settings#foreground-source) |
 | `--badge-symbol` | [Foreground source shorthand](Badge-Settings#foreground-source) |
 | `--badge-fg-scale` | [Foreground scale](Badge-Settings#foreground-scale) |
+| `--badge-fg-offset-x` | [Foreground X offset](Badge-Settings#foreground-x-offset) |
+| `--badge-fg-offset-y` | [Foreground Y offset](Badge-Settings#foreground-y-offset) |
 | `--badge-symbol-rendering` | [Symbol rendering](Badge-Settings#symbol-rendering) |
 | `--badge-symbol-color` | [Symbol colour](Badge-Settings#symbol-colour) |
 | `--badge-symbol-palette` | [Symbol palette](Badge-Settings#symbol-palette) |
