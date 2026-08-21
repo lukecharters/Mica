@@ -69,6 +69,25 @@ The Save panel opens with the size, scale, and colour space at the bottom.
 Change them there to export one file at different settings.
 The window's own settings do not change.
 
+## Developer menu
+Mica includes the tools used to build it. They are hidden by default.
+
+Turn them on in **Settings ▸ Developer**. A **Developer** menu appears in the menu bar.
+You do not need these tools to make icons. They are not supported.
+
+| Menu item | What it does |
+|---|---|
+| Symbol Calibration | Reviews and changes how each SF Symbol is sized. |
+| Reference Comparison | Compares a Mica icon against a reference image. |
+| Generate Symbol Metrics | Measures every SF Symbol again. |
+| Export Shadow Variations… | Saves a set of icons with different shadows. |
+
+Symbol Calibration changes how Mica sizes symbols in every icon you make.
+Click **Restore Bundled Calibration** in that window to undo the change.
+Mica reads symbol sizing once when it starts. Quit and reopen Mica to apply it.
+
+None of these items has a keyboard shortcut.
+
 ## Keyboard shortcuts
 | Shortcut | Action |
 |---|---|
