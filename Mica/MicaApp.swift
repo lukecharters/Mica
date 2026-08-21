@@ -329,11 +329,6 @@ struct MicaApp: App {
             #if DEBUG
             CommandGroup(after: .newItem) {
                 Divider()
-                Button("Apple Reference Calibration") {
-                    openWindow(id: "apple-reference-calibration")
-                }
-                .keyboardShortcut("K", modifiers: [.command, .shift])
-
                 Button("Generate Symbol Metrics") {
                     openWindow(id: "metrics-generator")
                 }
@@ -439,11 +434,6 @@ struct MicaApp: App {
         // Every tool goes through DeferredWindowContent — a tool's `init` would
         // otherwise run on every App-body evaluation, i.e. on every settings edit.
         // See that file's header for the measurements.
-        Window("Apple Reference Calibration", id: "apple-reference-calibration") {
-            DeferredWindowContent { AppleReferenceCalibrationTool() }
-        }
-        .defaultSize(width: 1200, height: 800)
-
         Window("Symbol Metrics Generator", id: "metrics-generator") {
             DeferredWindowContent { SymbolMetricsGeneratorView() }
         }

@@ -9,8 +9,8 @@
 // on every app activation and first-responder change.
 //
 // Several tools do real work in `init` (`SymbolCalibrationTool` decodes the
-// ~7k-symbol metrics file plus the calibration store; `AppleReferenceCalibrationTool`
-// loads the symbol list). Measured with Time Profiler on 2026-07-31: ~200 ms of
+// ~7k-symbol metrics file plus the calibration store; the tools that browse every
+// symbol load `sf-symbols.txt`). Measured with Time Profiler on 2026-07-31: ~200 ms of
 // main-thread JSON decoding per toggle click in the *document* window, and
 // 330–500 ms hangs on activation — the "every control is laggy" bug, present in
 // Debug builds only because Release excludes DevTools.

@@ -368,7 +368,7 @@ struct AutoSizingReviewTool: View {
             Button("Mark All") { batchMarkNeedsReviewFiltered() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Set status to needs-review on all \(filteredItems.count) symbols in the current filter, keeping their existing values. Use the Apple Reference Calibration tool (⇧⌘K) to recapture them.")
+            Text("Set status to needs-review on all \(filteredItems.count) symbols in the current filter, keeping their existing values. Use the Symbol Calibration tool to recapture them.")
         }
     }
 
