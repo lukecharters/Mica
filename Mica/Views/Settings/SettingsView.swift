@@ -63,9 +63,14 @@ struct SettingsView: View {
 /// 2026-08-04 — a preference wearing a control's clothes, inside the very panel it
 /// reconfigures.
 ///
-/// **The label is a fixed string.** "Show Advanced Controls" is named that way in
-/// `wiki/App-Guide.md` and `wiki/Getting-Started.md`; renaming it on the way into
-/// Settings would strand both.
+/// **The label is a fixed string.** "Show Advanced Controls" is the name the gate
+/// tables at the top of `wiki/Icon-Settings.md` and `wiki/Badge-Settings.md` use, and
+/// the toolbar toggle and View menu spell it the same way; renaming it here would
+/// strand all four.
+///
+/// The two captions follow the `write-mica-user-docs` prose rules — one idea per
+/// sentence, active voice, answer before reason — because user-facing text in the app
+/// and user-facing text in the wiki are the same body of writing.
 struct GeneralSettingsTab: View {
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
@@ -76,16 +81,16 @@ struct GeneralSettingsTab: View {
                     Text("Show Advanced Controls")
                     // A caption inside the Toggle's label rather than a sibling
                     // `Text`, so VoiceOver reads it as part of the switch.
-                    Text("Splits each group into Foreground and Background layers, "
-                         + "with every per-layer control. Off keeps one pane per group.")
+                    Text("Shows a Foreground and a Background layer for each group. "
+                         + "Each layer gets its own controls. Off shows one pane per group.")
                 }
             } header: {
                 Text("Inspector")
             } footer: {
                 // `revealAdvancedControlsIfNeeded()` flips this out from under the
                 // user. Unexplained, that reads as a bug in this window.
-                Text("Importing an image switches this on, because the simple pane "
-                     + "has no controls for imported artwork.")
+                Text("Importing an image switches this on. The simple pane has no "
+                     + "controls for imported artwork.")
                     .settingsFooter()
             }
         }
@@ -144,7 +149,13 @@ struct ExportDefaultsSettingsTab: View {
 
     /// Word for word what the inspector's Color Space section says, so the same
     /// choice is not explained two ways in one app.
-    private var colorSpaceDescription: String {
+    ///
+    /// **`LocalizedStringKey`, not `String`.** Both strings are in
+    /// `Localizable.xcstrings` with all seven variants, and both say *color* — so
+    /// returning a `String` here hands `Text` its verbatim overload and the en-GB
+    /// spelling never resolves. The catalog entry looks correct while the app shows the
+    /// American word, which is the failure the type is the only guard against.
+    private var colorSpaceDescription: LocalizedStringKey {
         switch defaultColorSpace {
         case .sRGB: return "Standard color space for web and most displays."
         case .displayP3: return "Wider color gamut for modern Apple displays."
@@ -172,33 +183,34 @@ struct ImportSettingsTab: View {
             Section {
                 Toggle(isOn: $hidesForeground) {
                     Text("Hide the Foreground on Import")
-                    Text("A background image is usually a finished icon, so the symbol "
-                         + "over it is hidden. Turn this off if you import artwork to "
-                         + "put a symbol on top.")
+                    Text("Hides the symbol when you import a background image. A "
+                         + "background image is usually a finished icon. Turn this off "
+                         + "to put a symbol on your own artwork.")
                 }
 
                 // Names the control it moves — the Corners picker, its Off case — so
                 // the user can go and undo it.
                 Toggle(isOn: $turnsOffCornerRadius) {
                     Text("Set Corners to Off on Import")
-                    Text("Artwork that fills its own bounds loses its corners to any "
-                         + "rounding. Turn this off for a texture or photo that should "
-                         + "be clipped to the icon's shape.")
+                    Text("Turns corner rounding off for imported artwork. Rounding cuts "
+                         + "the corners from artwork that fills its own bounds. Turn "
+                         + "this off to clip a photo or texture to the icon's shape.")
                 }
             } header: {
                 Text("Imported Backgrounds")
             } footer: {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Both are starting points, not decisions: the eye brings a "
-                         + "hidden foreground back, and Corners is in the icon's "
+                    Text("You can change both on the icon itself. The sidebar eye shows "
+                         + "a hidden foreground again. Corners sits in the icon's "
                          + "Background tab.")
 
                     // The honest version of `ImportDefaults` being split across
                     // targets. Without it, someone who turns both off and then runs
                     // the CLI gets a different icon with no way to know why.
-                    Text("These apply to Mica only. mica-cli and imported "
-                         + "configurations always hide the foreground and set Corners "
-                         + "to Off, so one configuration renders the same everywhere.")
+                    Text("These settings apply to Mica only. mica-cli always hides the "
+                         + "foreground and sets Corners to Off. Imported configurations "
+                         + "do the same. One configuration then renders the same way "
+                         + "everywhere.")
                 }
                 .settingsFooter()
             }
@@ -230,23 +242,23 @@ struct DeveloperSettingsTab: View {
             Section {
                 Toggle(isOn: $developerToolsEnabled) {
                     Text("Show the Developer Menu")
-                    Text("Adds the symbol calibration, reference comparison and "
-                         + "metrics tools Mica is built with. They carry no keyboard "
-                         + "shortcuts.")
+                    Text("Adds a Developer menu to the menu bar. It holds the symbol "
+                         + "calibration, reference comparison and metrics tools. None "
+                         + "of its items has a keyboard shortcut.")
                 }
             } header: {
                 Text("Developer Tools")
             } footer: {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Unsupported, and not needed to make icons. The calibration "
-                         + "tool writes the symbol sizing the renderer reads, and only "
-                         + "reads it back while this is on — so leaving it off keeps "
-                         + "Mica on the calibration it shipped with.")
+                    Text("You do not need these tools to make icons. They are not "
+                         + "supported. Symbol Calibration changes how Mica sizes "
+                         + "symbols in every icon you make. Mica only reads that "
+                         + "change while this setting is on.")
 
-                    Text("Symbol sizing is read once per launch, so switching this off "
-                         + "does not undo a calibration already written until Mica is "
-                         + "relaunched. The tool's Restore Bundled Calibration button "
-                         + "is the way back.")
+                    Text("Mica reads symbol sizing once when it starts. Quit and "
+                         + "reopen Mica to apply a change to this setting. Click "
+                         + "Restore Bundled Calibration in that window to undo a "
+                         + "calibration.")
                 }
                 .settingsFooter()
             }
