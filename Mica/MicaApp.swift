@@ -27,6 +27,12 @@ struct MicaApp: App {
     /// what a preference should do. Settings ▸ General reads the same key.
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
+    /// Whether the Developer menu exists at all. Off by default, and the same key
+    /// `SymbolSizingService` gates its calibration override on — one switch, so a
+    /// user who has not opted in can neither reach the tools nor be affected by
+    /// the file they write. Settings ▸ Developer is the control.
+    @AppStorage(DeveloperToolsPreference.enabledKey) private var developerToolsEnabled = false
+
     /// The rung View ▸ Zoom In would move to, or nil if there is no window or the
     /// preview is already at the top of the ladder. Computed once and used for both
     /// the item's action guard and its enabled state, so the menu cannot offer a
@@ -326,35 +332,6 @@ struct MicaApp: App {
                 Divider()
             }
 
-            #if DEBUG
-            CommandGroup(after: .newItem) {
-                Divider()
-                Button("Apple Reference Calibration") {
-                    openWindow(id: "apple-reference-calibration")
-                }
-                .keyboardShortcut("K", modifiers: [.command, .shift])
-
-                Button("Generate Symbol Metrics") {
-                    openWindow(id: "metrics-generator")
-                }
-                .keyboardShortcut("M", modifiers: [.command, .shift])
-
-                Button("Symbol Calibration") {
-                    openWindow(id: "symbol-calibration")
-                }
-                .keyboardShortcut("L", modifiers: [.command, .shift])
-
-                Button("Auto Sizing Review") {
-                    openWindow(id: "auto-sizing-review")
-                }
-                .keyboardShortcut("A", modifiers: [.command, .shift])
-
-                Button("Reference Comparison") {
-                    openWindow(id: "reference-comparison")
-                }
-                .keyboardShortcut("S", modifiers: [.command, .shift])
-            }
-            #endif
             // The Help menu. Item B5 of the Mac-conventions plan.
             //
             // Until 2026-08-04 it held one item — "Mica Help", which AppKit supplies
@@ -413,20 +390,56 @@ struct MicaApp: App {
                 Link("Report an Issue…", destination: MicaLinks.reportIssue)
             }
 
-            #if DEBUG
-            CommandGroup(after: .help) {
-                Divider()
-                Button("Export Shadow Variations…") {
-                    Task {
-                        do {
-                            try await ShadowVariationHarness.runShadowTestsWithSavePanel()
-                        } catch {
-                            print("Shadow test failed: \(error)")
-                        }
+            // The Developer menu, 2026-08-21. Three things about it:
+            //
+            // - **Its own top-level menu, not File.** The tools lived in
+            //   `CommandGroup(after: .newItem)` while they were Debug-only, which
+            //   is also why they disappeared under an Xcode debug run along with
+            //   everything else in that group. A maintainer's window is not a
+            //   document command.
+            // - **No key equivalents, deliberately.** They were ⇧⌘K/L/M/A/S; all
+            //   five are back in the free pool. A shortcut that exists only while
+            //   a preference is on is a shortcut nobody can rely on, and the user's
+            //   verdict on the old ones was that they were unmemorable anyway.
+            // - **Conditional on the preference**, because a `Menu` cannot be
+            //   hidden and `.disabled()` on one inside a `CommandGroup` is
+            //   silently ignored (measured 2026-08-04, View ▸ Preview Size). The
+            //   whole menu is declared or it is not.
+            //
+            // The tool *windows* are gated on the same flag, for a reason found by
+            // measuring: a declared `Window` scene puts its title in the **Window
+            // menu**, so leaving them unconditional left all three openable with
+            // the preference off, which defeats the whole switch. Turning the
+            // preference off therefore closes an open tool window — correct, and
+            // the price of the menu not lying.
+            if developerToolsEnabled {
+                CommandMenu("Developer") {
+                    Button("Symbol Calibration") {
+                        openWindow(id: "symbol-calibration")
+                    }
+                    Button("Reference Comparison") {
+                        openWindow(id: "reference-comparison")
+                    }
+                    Button("Generate Symbol Metrics") {
+                        openWindow(id: "metrics-generator")
+                    }
+
+                    Divider()
+
+                    // The one tool with no window of its own: it renders a sweep
+                    // of shadow variations straight to a folder. Kept — Apple
+                    // appears to have moved the icon shadows again in macOS 27,
+                    // which is exactly what it exists to measure.
+                    //
+                    // Calls the extension declared in `ShadowVariationHarness`
+                    // rather than inlining the do/catch, so the `print()` in its
+                    // failure path stays inside `DevTools/` where prints are
+                    // allowed.
+                    Button("Export Shadow Variations…") {
+                        runShadowVariationTests()
                     }
                 }
             }
-            #endif
         }
 
         // ⌘, and the Mica ▸ Settings… item come with the scene; there is deliberately
@@ -435,35 +448,42 @@ struct MicaApp: App {
             SettingsView()
         }
 
-        #if DEBUG
         // Every tool goes through DeferredWindowContent — a tool's `init` would
         // otherwise run on every App-body evaluation, i.e. on every settings edit.
         // See that file's header for the measurements.
-        Window("Apple Reference Calibration", id: "apple-reference-calibration") {
-            DeferredWindowContent { AppleReferenceCalibrationTool() }
-        }
-        .defaultSize(width: 1200, height: 800)
-
+        //
+        // Gated, like the menu: a `Window` scene is listed in the Window menu
+        // whether or not it has ever been opened.
+        // **`.commandsRemoved()` on all three, and it is the gate — not tidiness.**
+        //
+        // A declared `Window` scene contributes an item to the **Window menu**,
+        // whether or not it has ever been opened, which left all three tools
+        // openable with the preference off. The obvious fix does not exist:
+        // `SceneBuilder` takes no conditionals at all, and both an `if` around the
+        // group and one per scene fail with "generic parameter 'S' could not be
+        // inferred" — a message naming nothing involved. So the scenes stay
+        // unconditional and give up their menu items instead, leaving the
+        // Developer menu as the only route to them.
+        //
+        // No loss even when the tools are on: `openWindow(id:)` brings an existing
+        // window forward, which is all the Window-menu item did.
         Window("Symbol Metrics Generator", id: "metrics-generator") {
             DeferredWindowContent { SymbolMetricsGeneratorView() }
         }
         .defaultSize(width: 420, height: 220)
+        .commandsRemoved()
 
         Window("Symbol Calibration", id: "symbol-calibration") {
             DeferredWindowContent { SymbolCalibrationTool() }
         }
         .defaultSize(width: 1200, height: 800)
-
-        Window("Auto Sizing Review", id: "auto-sizing-review") {
-            DeferredWindowContent { AutoSizingReviewTool() }
-        }
-        .defaultSize(width: 1250, height: 850)
+        .commandsRemoved()
 
         Window("Reference Comparison", id: "reference-comparison") {
             DeferredWindowContent { ReferenceComparisonTool() }
         }
         .defaultSize(width: 1400, height: 900)
-        #endif
+        .commandsRemoved()
     }
 }
 

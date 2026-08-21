@@ -8,12 +8,15 @@ import SwiftUI
 /// and ⌘, is not in the project-structure notes's shortcut table for the same
 /// reason: it is not ours to bind.
 ///
-/// The three tabs split by **when a preference takes effect**, not by how advanced
-/// it is:
+/// The first three tabs split by **when a preference takes effect**, not by how
+/// advanced it is:
 ///
 /// - **General** changes the inspector you are looking at right now.
 /// - **Export** seeds the next window you open, and leaves open ones alone.
 /// - **Importing** changes what importing a background does to the layer over it.
+///
+/// **Developer** is a fourth answer rather than one of those three: it takes
+/// effect on the menu bar, and on which calibration the renderer reads.
 ///
 /// That third tab is called Importing rather than the plan's "Advanced": *Advanced*
 /// next to a General tab whose only control is Show Advanced **Controls** reads as
@@ -24,7 +27,7 @@ import SwiftUI
 /// domain by hand — see §2.2 of the Mac-conventions plan, which is the debt
 /// this window pays off.
 struct SettingsView: View {
-    private enum Tab: Hashable { case general, export, importing }
+    private enum Tab: Hashable { case general, export, importing, developer }
 
     @State private var selection: Tab = .general
 
@@ -42,6 +45,10 @@ struct SettingsView: View {
             ImportSettingsTab()
                 .tabItem { Label("Importing", systemImage: "square.and.arrow.down") }
                 .tag(Tab.importing)
+
+            DeveloperSettingsTab()
+                .tabItem { Label("Developer", systemImage: "hammer") }
+                .tag(Tab.developer)
         }
         // Width fixed, height intrinsic: a settings window that resizes between tabs
         // is the platform norm, one that changes width is not.
@@ -200,10 +207,58 @@ struct ImportSettingsTab: View {
     }
 }
 
+// MARK: - Developer
+
+/// The switch that puts the Developer menu in the menu bar — the calibration and
+/// comparison tools Mica is built with, which were excluded from Release builds
+/// entirely until 2026-08-21.
+///
+/// **The honest framing is a maintainer's switch, not a feature.** These tools
+/// have no user-facing job: they exist to measure Apple's own icon rendering and
+/// to calibrate how Mica sizes SF Symbols against it. Two things the footer has
+/// to say, because neither is guessable:
+///
+/// - The calibration tool **writes the file the renderer reads**. That is gated on
+///   this same preference, so it cannot affect anyone who leaves it off.
+/// - Symbol sizing is read **once per launch**, so turning this off does not
+///   un-apply an override that has already been written until Mica is relaunched.
+struct DeveloperSettingsTab: View {
+    @AppStorage(DeveloperToolsPreference.enabledKey) private var developerToolsEnabled = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $developerToolsEnabled) {
+                    Text("Show the Developer Menu")
+                    Text("Adds the symbol calibration, reference comparison and "
+                         + "metrics tools Mica is built with. They carry no keyboard "
+                         + "shortcuts.")
+                }
+            } header: {
+                Text("Developer Tools")
+            } footer: {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Unsupported, and not needed to make icons. The calibration "
+                         + "tool writes the symbol sizing the renderer reads, and only "
+                         + "reads it back while this is on — so leaving it off keeps "
+                         + "Mica on the calibration it shipped with.")
+
+                    Text("Symbol sizing is read once per launch, so switching this off "
+                         + "does not undo a calibration already written until Mica is "
+                         + "relaunched. The tool's Restore Bundled Calibration button "
+                         + "is the way back.")
+                }
+                .settingsFooter()
+            }
+        }
+        .settingsForm()
+    }
+}
+
 // MARK: - Shared styling
 
 private extension View {
-    /// One place for the form styling, so three tabs cannot drift apart.
+    /// One place for the form styling, so four tabs cannot drift apart.
     func settingsForm() -> some View {
         formStyle(.grouped)
             .scrollDisabled(true)
@@ -228,4 +283,8 @@ private extension View {
 
 #Preview("Importing") {
     ImportSettingsTab().frame(width: 480)
+}
+
+#Preview("Developer") {
+    DeveloperSettingsTab().frame(width: 480)
 }

@@ -119,6 +119,7 @@
 				Services/AppexColorResolver.swift,
 				Services/AppexReferenceService.swift,
 				Services/ColorParser.swift,
+				Services/DeveloperToolsPreference.swift,
 				Services/ImageImportService.swift,
 				Services/MicaConfig.swift,
 				Services/MicaConfigAssetCatalog.swift,
@@ -167,6 +168,7 @@
 				Services/AppexColorResolver.swift,
 				Services/AppexReferenceService.swift,
 				Services/ColorParser.swift,
+				Services/DeveloperToolsPreference.swift,
 				Services/ImageImportService.swift,
 				Services/MicaConfig.swift,
 				Services/MicaConfigAssetCatalog.swift,
@@ -784,7 +786,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.lukecharters.mica;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
@@ -808,11 +810,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
-				EXCLUDED_SOURCE_FILE_NAMES = (
-					"DevTools/*",
-					Resources/symbol_metrics.json,
-					Resources/symbol_baselines.json,
-				);
+				EXCLUDED_SOURCE_FILE_NAMES = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Mica-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Mica;
