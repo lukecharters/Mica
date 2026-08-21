@@ -152,6 +152,37 @@ class SymbolCalibrationStore {
         }
     }
 
+    /// Throws the override away: back it up, delete it, and load the bundled
+    /// calibration into memory **without saving**, so production is genuinely
+    /// back on what Mica ships until the next edit here writes a new one.
+    ///
+    /// The one way out of a calibration the user did not mean to change. Without
+    /// it the only cure is deleting a file inside the sandbox container, which is
+    /// not a thing to ask of anyone — and `SymbolSizingService` reads that file
+    /// whenever the developer tools are on. It keeps the `.backup.json` copy, so
+    /// a Restore is recoverable too.
+    func restoreBundledCalibration() {
+        let backupURL = fileURL.deletingPathExtension().appendingPathExtension("backup.json")
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            try? FileManager.default.removeItem(at: backupURL)
+            try? FileManager.default.copyItem(at: fileURL, to: backupURL)
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+        guard let url = Bundle.main.url(forResource: "symbol-calibration", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
+        else { return }
+        symbolEntries = file.symbols
+        containerEntries = file.containers
+        familyOverrides = file.familyOverrides
+    }
+
+    /// True while an Application Support copy exists — i.e. while
+    /// `SymbolSizingService` would prefer it over the bundled one.
+    var hasOverride: Bool {
+        FileManager.default.fileExists(atPath: fileURL.path)
+    }
+
     /// Seeds the working copy from the bundled symbol-calibration.json
     /// (the same fallback SymbolSizingService uses in production) when no
     /// Application Support copy exists yet.
@@ -324,12 +355,14 @@ private enum CalibrationConfirmation: Identifiable {
     case applyToFamily(name: String, count: Int)
     case acceptShownPredictions(count: Int)
     case markShownNeedsReview(count: Int)
+    case restoreBundledCalibration
 
     var id: String {
         switch self {
         case .applyToFamily: "apply"
         case .acceptShownPredictions: "accept"
         case .markShownNeedsReview: "review"
+        case .restoreBundledCalibration: "restore"
         }
     }
 
@@ -338,6 +371,7 @@ private enum CalibrationConfirmation: Identifiable {
         case .applyToFamily: "Apply Calibration to Family"
         case .acceptShownPredictions(let count): "Accept \(count) Predictions"
         case .markShownNeedsReview(let count): "Mark \(count) as Needs Review"
+        case .restoreBundledCalibration: "Restore Bundled Calibration"
         }
     }
 
@@ -346,6 +380,7 @@ private enum CalibrationConfirmation: Identifiable {
         case .applyToFamily: "Apply"
         case .acceptShownPredictions: "Accept All"
         case .markShownNeedsReview: "Mark All"
+        case .restoreBundledCalibration: "Restore"
         }
     }
 
@@ -358,6 +393,10 @@ private enum CalibrationConfirmation: Identifiable {
                 + "(source: auto-boxfit). Apple hand-tuned symbols and containers are skipped."
         case .markShownNeedsReview(let count):
             "Set status to needs-review on all \(count) symbols shown, keeping their existing values."
+        case .restoreBundledCalibration:
+            "Delete the Application Support calibration and go back to the one Mica ships, "
+                + "so the app renders with the shipped symbol sizing again. A .backup.json "
+                + "copy is kept, and the app must be relaunched to pick this up."
         }
     }
 }
@@ -869,6 +908,9 @@ struct SymbolCalibrationTool: View {
             acceptShownPredictions()
         case .markShownNeedsReview:
             markShownNeedsReview()
+        case .restoreBundledCalibration:
+            store.restoreBundledCalibration()
+            rebuildFamilies()
         }
     }
 
@@ -891,6 +933,8 @@ struct SymbolCalibrationTool: View {
                 progressInfo
                 Divider()
                 boxFitSection
+                Divider()
+                overrideSection
                 Divider()
                 keyboardShortcutsHelp
             }
@@ -1486,6 +1530,47 @@ struct SymbolCalibrationTool: View {
 
     private func round3(_ value: Double) -> Double {
         (value * 1000).rounded() / 1000
+    }
+
+    // MARK: - The Override
+
+    /// What this tool's edits actually do to the running app, and the way back.
+    ///
+    /// Not decoration: `SymbolSizingService` prefers the file this tool writes
+    /// over the bundled one whenever the developer tools are enabled, so every
+    /// slider in this window is changing how the app beside it sizes symbols.
+    /// That was invisible while the tools were Debug-only.
+    private var overrideSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Production Override")
+                .font(.headline)
+
+            if store.hasOverride {
+                Label("Mica is rendering with this file, not the bundled calibration.",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else {
+                Label("Mica is rendering with the bundled calibration.",
+                      systemImage: "checkmark.seal")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+
+            HStack {
+                Button("Restore Bundled Calibration") {
+                    confirmation = .restoreBundledCalibration
+                }
+                .controlSize(.small)
+                .disabled(!store.hasOverride)
+                Spacer()
+            }
+
+            Text("Restoring keeps a .backup.json copy. Symbol sizing is read once "
+                 + "per launch, so either way the app needs restarting to catch up.")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
     }
 
     private var keyboardShortcutsHelp: some View {

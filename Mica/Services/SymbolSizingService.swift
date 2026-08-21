@@ -99,16 +99,33 @@ struct SymbolSizingService {
         return file
     }
 
-    /// 2-tier loading: Application Support (playground edits) → bundled fallback
+    /// 2-tier loading: Application Support (calibration-tool edits) → bundled
+    /// fallback. **The first tier is gated on the developer tools being enabled**,
+    /// which is the whole reason `DeveloperToolsPreference` is in `Services/`.
+    ///
+    /// Before the tools could ship (2026-08-21) this tier was unconditional, and
+    /// that was survivable only because nothing in a Release build could write
+    /// the file. It is a foot-gun the moment one can: `SymbolCalibrationStore`
+    /// autosaves on every slider drag, so one accidental nudge would silently
+    /// re-pin symbol sizing for every icon that user renders afterwards, with the
+    /// file buried in the sandbox container. Off by default, so anyone who never
+    /// opts in renders with exactly what Mica shipped.
+    ///
+    /// **A `static let`, so the gate is read once per process.** Turning the
+    /// preference off therefore does not un-apply an override until relaunch —
+    /// Settings says so, and the alternative is re-reading a 800 KB JSON on a
+    /// path that resolves a symbol's size.
     private static let calibrationData: SymbolCalibration = {
-        // 1. Application Support override (written by calibration playground)
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let overrideURL = appSupport
-            .appendingPathComponent("Mica", isDirectory: true)
-            .appendingPathComponent("symbol-calibration.json")
-        if let data = try? Data(contentsOf: overrideURL),
-           let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data) {
-            return file
+        // 1. Application Support override, developer tools only.
+        if DeveloperToolsPreference.isEnabled() {
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            let overrideURL = appSupport
+                .appendingPathComponent("Mica", isDirectory: true)
+                .appendingPathComponent("symbol-calibration.json")
+            if let data = try? Data(contentsOf: overrideURL),
+               let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data) {
+                return file
+            }
         }
 
         // 2. Bundled fallback
