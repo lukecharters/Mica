@@ -339,11 +339,6 @@ struct MicaApp: App {
                 }
                 .keyboardShortcut("L", modifiers: [.command, .shift])
 
-                Button("Auto Sizing Review") {
-                    openWindow(id: "auto-sizing-review")
-                }
-                .keyboardShortcut("A", modifiers: [.command, .shift])
-
                 Button("Reference Comparison") {
                     openWindow(id: "reference-comparison")
                 }
@@ -443,11 +438,6 @@ struct MicaApp: App {
             DeferredWindowContent { SymbolCalibrationTool() }
         }
         .defaultSize(width: 1200, height: 800)
-
-        Window("Auto Sizing Review", id: "auto-sizing-review") {
-            DeferredWindowContent { AutoSizingReviewTool() }
-        }
-        .defaultSize(width: 1250, height: 850)
 
         Window("Reference Comparison", id: "reference-comparison") {
             DeferredWindowContent { ReferenceComparisonTool() }
