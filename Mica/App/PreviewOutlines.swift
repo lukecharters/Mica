@@ -20,13 +20,23 @@
 
 import CoreGraphics
 import Foundation
+import SwiftUI
 
 /// How strongly an outline is drawn: the selection, or the layer under the pointer.
 ///
-/// Measured off Icon Composer on a ~510pt canvas: the selected stroke is ~6px and
-/// essentially opaque accent blue, the hover stroke ~3px of the same blue at
-/// roughly 0.3. So a hover is *exactly* half the width and about a third of the
-/// opacity — not a different colour.
+/// Measured off Icon Composer on a ~510pt canvas: the selected stroke is ~6px of
+/// essentially opaque accent blue, the hover ~3px of a much lighter blue. So a
+/// hover is exactly half the width **and a different colour** — which is the part
+/// the first reading of the measurement got wrong: `(192, 223, 252)` over white
+/// looks like accent-at-a-third, and is in fact a solid light blue. The user
+/// identified it as `rgb(183, 223, 255)` on 2026-08-22, and that is what this uses.
+///
+/// The difference is not cosmetic. An accent stroke at 0.3 is *transparent*, so it
+/// takes the colour of whatever it is over: measured against Mica's default blue
+/// icon, the half of the band lying on the chiclet moved the pixels by
+/// `(−4, −7, −2)` — nothing at all — while the half on the white canvas moved them
+/// by `(−54, −33, +5)`. A solid stroke has no such failure mode, which is why this
+/// replaced a planned "contrast pass" under a translucent one.
 enum PreviewOutlineEmphasis: Equatable, CaseIterable {
     case selected
     case hovered
@@ -50,14 +60,38 @@ enum PreviewOutlineEmphasis: Equatable, CaseIterable {
         }
     }
 
-    /// Opacity of the accent colour. A hover is a hint about where the pointer is,
-    /// so it reads as a tint rather than as a second selection.
-    var opacity: Double {
+    /// The stroke's colour.
+    ///
+    /// The selection follows the user's accent colour, as Mica's one outline always
+    /// has. The hover is a **fixed** light blue rather than a lighter accent: it is
+    /// what Icon Composer draws, and a tint of the accent would be the same hue as
+    /// the selection, so the two weights would differ only in width — on a
+    /// foreground box inside a saturated chiclet, that is no difference at all.
+    ///
+    /// Fixed also means it does not follow the appearance. That is deliberate for
+    /// now, matching the measurement, and is the one thing here worth re-checking on
+    /// screen in the dark: this is drawn over the *icon*, not over the window, so
+    /// the light backdrop it was designed against is Mica's canvas either way.
+    var strokeColor: Color {
         switch self {
-        case .selected: return 1
-        case .hovered:  return 0.3
+        case .selected: return .accentColor
+        case .hovered:  return Self.hoverColor
         }
     }
+
+    /// `rgb(183, 223, 255)`, Icon Composer's hover blue.
+    static let hoverColor = Color(
+        .sRGB,
+        red: hoverColorComponents.red / 255,
+        green: hoverColorComponents.green / 255,
+        blue: hoverColorComponents.blue / 255,
+        opacity: 1
+    )
+
+    /// Kept apart from the `Color` so a test can assert the conversion rather than
+    /// restate it — the mistake this guards is 0–255 components read as 0–1, which
+    /// yields a stroke so dark it reads as black.
+    static let hoverColorComponents = (red: 183.0, green: 223.0, blue: 255.0)
 
     static let minSelectedWidth: CGFloat = 1.5
     static let maxSelectedWidth: CGFloat = 8

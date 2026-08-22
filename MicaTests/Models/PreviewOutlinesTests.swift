@@ -109,13 +109,30 @@ struct PreviewOutlinesTests {
         }
     }
 
-    /// A hover is a hint about where the pointer is, so it reads as a tint. The
-    /// selected weight is the one that must be unambiguous.
-    @Test("The hover is a tint and the selection is not")
-    func opacities() {
-        #expect(PreviewOutlineEmphasis.selected.opacity == 1)
-        #expect(PreviewOutlineEmphasis.hovered.opacity < PreviewOutlineEmphasis.selected.opacity)
-        #expect(PreviewOutlineEmphasis.hovered.opacity > 0)
+    /// **The colours are the two weights' other difference, and the important one.**
+    /// A translucent tint of the accent would be the same hue as the selection and
+    /// would take the colour of whatever it sat on — measured against Mica's default
+    /// blue icon, an accent stroke at 0.3 moved the chiclet's pixels by (−4, −7, −2),
+    /// i.e. not at all. The hover is a solid light blue instead, Icon Composer's.
+    @Test("The two weights are different colours, and the hover is solid")
+    func strokeColours() throws {
+        #expect(PreviewOutlineEmphasis.selected.strokeColor == .accentColor)
+        #expect(PreviewOutlineEmphasis.hovered.strokeColor != PreviewOutlineEmphasis.selected.strokeColor)
+
+        // Resolved through ColorParser, never `NSColor(someColor)` — SwiftUI's
+        // bridge memoises through an unsynchronised process-global map and
+        // segfaults under concurrent use. See CLAUDE.md.
+        let hover = try #require(
+            ColorParser.nsColor(from: PreviewOutlineEmphasis.hovered.strokeColor)
+                .usingColorSpace(.sRGB)
+        )
+        let expected = PreviewOutlineEmphasis.hoverColorComponents
+        #expect(abs(hover.redComponent * 255 - expected.red) < 1)
+        #expect(abs(hover.greenComponent * 255 - expected.green) < 1)
+        #expect(abs(hover.blueComponent * 255 - expected.blue) < 1)
+        // Solid: the failure this catches is 0-255 components read as 0-1, which
+        // would give a near-black stroke, and an alpha slipped back in.
+        #expect(hover.alphaComponent == 1)
     }
 
     // MARK: - How often the fade restarts

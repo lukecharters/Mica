@@ -130,7 +130,7 @@ private struct PreviewOutlineStroke: View {
 
             context.stroke(
                 path,
-                with: .color(.accentColor.opacity(emphasis.opacity)),
+                with: .color(emphasis.strokeColor),
                 lineWidth: emphasis.lineWidth(displaySize: displaySize)
             )
         }
