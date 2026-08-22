@@ -35,7 +35,7 @@ struct LayerSidebar: View {
     /// reason the canvas is: the owner needs the motion itself, because that is what
     /// restarts the outlines' fade. Resting on a row lets them fade; moving within it
     /// brings them back.
-    var onHoverRow: ((LayerSidebarRow?) -> Void)? = nil
+    var onPointer: ((PreviewPointer) -> Void)? = nil
 
     /// Read directly rather than passed in, the way every other reader of this key
     /// does. Nothing threads through `ContentView.body`, which sits at the
@@ -53,7 +53,7 @@ struct LayerSidebar: View {
                     )
                     .tag(LayerSidebarRow.group(group))
                     .contextMenu { contextMenu(for: group) }
-                    .reportsHover(.group(group), to: onHoverRow)
+                    .reportsHover(.group(group), to: onPointer)
 
                     ForEach(rows(for: group)) { tab in
                         LayerRow(
@@ -68,7 +68,7 @@ struct LayerSidebar: View {
                         // so the indent would vanish the moment a row is selected.
                         .listRowInsets(.init(top: 0, leading: Self.childIndent, bottom: 0, trailing: 0))
                         .contextMenu { contextMenu(for: group) }
-                        .reportsHover(.layer(group, tab), to: onHoverRow)
+                        .reportsHover(.layer(group, tab), to: onPointer)
                     }
                 }
             }
@@ -237,12 +237,12 @@ private extension View {
     /// self-heals within a frame, because the pointer inside the new row keeps
     /// reporting, so this stays the simple version rather than tracking which row
     /// owns the exit.
-    func reportsHover(_ row: LayerSidebarRow, to report: ((LayerSidebarRow?) -> Void)?) -> some View {
+    func reportsHover(_ row: LayerSidebarRow, to report: ((PreviewPointer) -> Void)?) -> some View {
         contentShape(Rectangle())
             .onContinuousHover(coordinateSpace: .local) { phase in
                 switch phase {
-                case .active: report?(row)
-                case .ended:  report?(nil)
+                case .active: report?(.over(row))
+                case .ended:  report?(.away)
                 }
             }
     }

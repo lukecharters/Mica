@@ -120,6 +120,27 @@ enum PreviewOutlineEmphasis: Equatable, CaseIterable {
     static let hoverWidthRatio: CGFloat = 0.5
 }
 
+/// What a pointer sample says: where the pointer is, or that it has left the areas
+/// the outlines answer to — either canvas, or a sidebar *row*.
+///
+/// The distinction exists because the two cases fade differently, and measurement
+/// is what separated them (Icon Composer, 2026-08-22). Both fades are the same
+/// ~0.4s ease-out; what differs is the hold in front of it. Resting inside holds
+/// full strength for ~1.55s and then fades — 100% through t=1.52s, then 49%, 7.5%,
+/// 0. Leaving starts the same fade **immediately** — 42%, 10%, 2% across
+/// back-to-back captures 0.153s apart. That is what reads as "slow when you rest,
+/// quick when you leave", and it is one duration, not two.
+///
+/// The empty space *below* the sidebar's rows counts as away, which matches Icon
+/// Composer: a pointer parked there outlines nothing.
+enum PreviewPointer: Equatable {
+    /// Inside a tracked area, over this layer — or over none of them, which the
+    /// canvas margin and the chiclet's rounded corners both produce.
+    case over(LayerSidebarRow?)
+    /// Gone from the tracked areas.
+    case away
+}
+
 /// One outline to draw: which layer, and how strongly.
 struct PreviewOutline: Equatable {
     let selection: PreviewSelection

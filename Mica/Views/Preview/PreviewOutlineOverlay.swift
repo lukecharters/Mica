@@ -30,6 +30,11 @@ struct PreviewOutlineOverlay: View {
     /// that is already selected draws the selected weight alone — see
     /// `PreviewOutlines.resolve`.
     var hovered: PreviewSelection?
+    /// Whether the pointer is inside an area the outlines answer to — either canvas,
+    /// or a sidebar row. **False skips the hold**: leaving fades immediately, which
+    /// is the difference between "slow when you rest on something" and "quick when
+    /// you move away". See `PreviewPointer` for the measurement.
+    var pointerIsInside: Bool = false
     /// Bumped by the owner whenever the pointer moves over the canvas or the
     /// hovered sidebar row changes. Restarting the hold on it is what makes rule 3
     /// work — moving anywhere over the canvas brings the selected outline back —
@@ -47,20 +52,30 @@ struct PreviewOutlineOverlay: View {
     /// only thing outlined, because a hover that vanishes before you have looked at
     /// it is worse than one that lingers.
     private static let holdDuration: Duration = .milliseconds(1500)
-    /// **Only the fade *out* is animated.** An outline appears the instant the
-    /// pointer asks for it — anything else reads as lag on a control the user is
-    /// steering — and then fades rather than blinking away, which is what
-    /// distinguishes "it timed out" from "it moved". Same asymmetry as a scrollbar.
-    private static let fadeDuration: TimeInterval = 0.2
+    /// **Only the fade *out* is animated**, and there is one duration for both ways
+    /// out. An outline appears the instant the pointer asks for it — anything else
+    /// reads as lag on a control the user is steering — and then fades rather than
+    /// blinking away, which is what distinguishes "it timed out" from "it moved".
+    /// Same asymmetry as a scrollbar.
+    ///
+    /// 0.4s is Icon Composer's, fitted to captures 0.153s apart: 49% remaining at
+    /// +0.12s, 7.5% at +0.27s, 0 by +0.42s, which is `easeOut` over 0.4s to within
+    /// the sampling error. Mica used 0.2s while the hold was the only way out.
+    private static let fadeDuration: TimeInterval = 0.4
 
-    @State private var isVisible = true
+    /// Starts **hidden**, because the pointer starts outside: the outlines are
+    /// pointer-driven chrome, and `true` here would flash them at every launch and
+    /// then fade them for no reason.
+    @State private var isVisible = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Restart key: a different selection, a different hover, or any pointer motion.
+    /// Restart key: a different selection, a different hover, any pointer motion, or
+    /// the pointer arriving or leaving.
     private struct FadeKey: Equatable {
         let selected: PreviewSelection?
         let hovered: PreviewSelection?
         let wake: Int
+        let pointerIsInside: Bool
     }
 
     /// Resolved outlines paired with their shapes, in draw order — hovered first,
@@ -109,18 +124,40 @@ struct PreviewOutlineOverlay: View {
         // No `.animation(_:value:)` here: it would animate the change in *both*
         // directions, and appearing must be instant. The one animated transition is
         // driven explicitly below.
-        .task(id: FadeKey(selected: selected, hovered: hovered, wake: wake)) {
+        .task(
+            id: FadeKey(
+                selected: selected,
+                hovered: hovered,
+                wake: wake,
+                pointerIsInside: pointerIsInside
+            )
+        ) {
             guard autoFade else {
                 show()
+                return
+            }
+            // The pointer has left the canvas and the sidebar's rows, so there is
+            // nothing to keep the outlines up for: fade now rather than serving out
+            // a hold nobody is watching. Leaving one tracked area for another
+            // arrives here for a frame — canvas to sidebar, or row to row — and
+            // snaps back on the next sample, a dip of a few percent that is not
+            // perceptible. Tracking which area owns the exit would cost more than
+            // that is worth.
+            guard pointerIsInside else {
+                hide()
                 return
             }
             show()
             try? await Task.sleep(for: Self.holdDuration)
             guard !Task.isCancelled else { return }
-            // Reduce Motion keeps the behaviour and drops the cross-fade.
-            withAnimation(reduceMotion ? nil : .easeOut(duration: Self.fadeDuration)) {
-                isVisible = false
-            }
+            hide()
+        }
+    }
+
+    /// Reduce Motion keeps the behaviour and drops the cross-fade.
+    private func hide() {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: Self.fadeDuration)) {
+            isVisible = false
         }
     }
 

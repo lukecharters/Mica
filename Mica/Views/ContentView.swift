@@ -201,6 +201,9 @@ struct ContentView: View {
     /// Phase 4) by the sidebar's rows, so it is owned here for the same reason the
     /// selection is: two views write it and a third draws it.
     @State private var hoveredRow: LayerSidebarRow? = nil
+    /// Whether the pointer is over either canvas or a sidebar row. False is what
+    /// makes the outlines fade at once instead of holding for 1.5s first.
+    @State private var pointerIsInside: Bool = false
     /// The badge's way back out of System mode. Owned here rather than by whichever
     /// control switches the mode: this view is mounted for the window's whole life,
     /// so the remembered source cannot go stale.
@@ -252,7 +255,7 @@ struct ContentView: View {
                 selection: $selectedGroup,
                 iconTab: $iconTab,
                 badgeTab: $badgeTab,
-                onHoverRow: hoverRowChanged
+                onPointer: pointerChanged
             )
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
@@ -284,9 +287,10 @@ struct ContentView: View {
                         zoomLevel: $zoomLevel,
                         previewPointSize: $previewPointSize,
                         onSelect: select,
-                        onHoverTarget: hoverChanged,
+                        onPointer: pointerChanged,
                         selection: currentPreviewSelection,
                         hovered: hoveredPreviewSelection,
+                        pointerIsInside: pointerIsInside,
                         outlineWake: outlineWake,
                         makeDragPayload: makeDragPayload,
                         contextActions: previewContextActions
@@ -825,29 +829,31 @@ struct ContentView: View {
         }
     }
 
-    /// A pointer sample over either canvas. A canvas hit always names a layer, so it
-    /// becomes a layer row; the sidebar reports its own rows, which may be group ones.
-    private func hoverChanged(_ target: PreviewHitTarget?) {
-        hoverRowChanged(target.map { LayerSidebarRow.layer($0.group, $0.tab) })
-    }
-
-    /// A pointer sample from either input — the canvas above, or a sidebar row.
+    /// A pointer sample from either input — either canvas, or a sidebar row.
     ///
-    /// **Two separate jobs, and the split is the point.** Every sample is motion, so
-    /// every sample offers a wake — throttled, or a moving pointer would restart the
+    /// **Three jobs, and the split is the point.** Every sample inside is motion, so
+    /// every one offers a wake — throttled, or a moving pointer would restart the
     /// fade `Task` sixty times a second. Only a *change* of row is written to
     /// `hoveredRow`, so the hover outline does not invalidate the body while the
-    /// pointer travels across one layer.
+    /// pointer travels across one layer. And `pointerIsInside` is what tells the
+    /// overlay whether to serve out its hold or fade now.
     ///
     /// One function for both inputs, which is what makes them behave identically:
     /// hovering the sidebar fades on the same timer, revives on the same motion, and
     /// resolves through the same gates as hovering the canvas.
-    private func hoverRowChanged(_ row: LayerSidebarRow?) {
-        if outlineActivity.noteMotion(now: ProcessInfo.processInfo.systemUptime) {
-            outlineWake += 1
-        }
-        if hoveredRow != row {
-            hoveredRow = row
+    private func pointerChanged(_ pointer: PreviewPointer) {
+        switch pointer {
+        case .over(let row):
+            if outlineActivity.noteMotion(now: ProcessInfo.processInfo.systemUptime) {
+                outlineWake += 1
+            }
+            if !pointerIsInside { pointerIsInside = true }
+            if hoveredRow != row { hoveredRow = row }
+        case .away:
+            // No wake: leaving is not motion the outlines should answer to, and
+            // bumping it here would restart the very hold this is meant to skip.
+            if pointerIsInside { pointerIsInside = false }
+            if hoveredRow != nil { hoveredRow = nil }
         }
     }
 
@@ -887,9 +893,10 @@ struct ContentView: View {
                     badgeAppexImage: viewModel.badgeAppexRenderedImage,
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
-                    onHoverTarget: hoverChanged,
+                    onPointer: pointerChanged,
                     selection: currentPreviewSelection,
                     hovered: hoveredPreviewSelection,
+                    pointerIsInside: pointerIsInside,
                     outlineWake: outlineWake,
                     makeDragPayload: makeDragPayload,
                     contextActions: previewContextActions

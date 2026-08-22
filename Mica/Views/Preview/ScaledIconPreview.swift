@@ -19,20 +19,27 @@ struct ScaledIconPreview: View {
     /// Click-to-select: reports which layer the click landed on so the owner can
     /// point the inspector at it. See `PreviewHitTester`.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
-    /// Reports the layer under the pointer, for the hover outline.
+    /// Reports where the pointer is, for the hover outline and the outlines' fade.
     ///
     /// **Called on every pointer sample, not only when the answer changes** — the
     /// owner needs the motion itself, because that is what restarts the outlines'
     /// fade (rule 3: moving anywhere over the canvas brings the selected outline
-    /// back). Deduplicating the target is the owner's job; throttling the motion is
+    /// back). Deduplicating the layer is the owner's job; throttling the motion is
     /// `PreviewOutlineActivity`'s.
-    var onHoverTarget: ((PreviewHitTarget?) -> Void)? = nil
+    ///
+    /// `.away` on exit, which is **not** the same as `.over(nil)`: over-nothing is
+    /// the canvas margin, where the outlines still hold, and away skips the hold
+    /// entirely. See `PreviewPointer`.
+    var onPointer: ((PreviewPointer) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview. nil draws nothing.
     var selection: PreviewSelection? = nil
     /// The layer under the pointer, outlined at the hover weight. Resolved by the
     /// owner rather than derived here, so the sidebar's hover and the canvas's go
     /// through one set of gates.
     var hovered: PreviewSelection? = nil
+    /// Whether the pointer is in a tracked area at all — the owner's answer, since
+    /// the sidebar can be the one holding it.
+    var pointerIsInside: Bool = false
     /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
     /// come back after they have faded — including on a re-click of the layer that
     /// is already selected.
@@ -133,6 +140,7 @@ struct ScaledIconPreview: View {
                 displaySize: displaySize,
                 selected: selection,
                 hovered: hovered,
+                pointerIsInside: pointerIsInside,
                 wake: outlineWake
             )
 
@@ -180,7 +188,7 @@ struct ScaledIconPreview: View {
                 reportHover(at: point)
             case .ended:
                 hoverPoint = nil
-                onHoverTarget?(nil)
+                onPointer?(.away)
             }
         }
         .contextMenu {
@@ -242,14 +250,13 @@ struct ScaledIconPreview: View {
     /// or chase the pointer across the icon; neither says anything the drag does not.
     /// The motion is still reported, so the selected outline stays up throughout.
     private func reportHover(at point: CGPoint) {
-        guard let onHoverTarget else { return }
+        guard let onPointer else { return }
         guard !isDragging else {
-            onHoverTarget(nil)
+            onPointer(.over(nil))
             return
         }
-        onHoverTarget(
-            PreviewHitTester.target(at: point, settings: settings, displaySize: displaySize)
-        )
+        let target = PreviewHitTester.target(at: point, settings: settings, displaySize: displaySize)
+        onPointer(.over(target.map { .layer($0.group, $0.tab) }))
     }
 
     /// Canvas-fixed space the badge drag is measured in.

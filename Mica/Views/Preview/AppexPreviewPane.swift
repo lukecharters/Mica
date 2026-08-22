@@ -15,14 +15,17 @@ struct AppexPreviewPane: View {
     /// here, so clicking it reports the background layer and the owner collapses
     /// that to the Icon group; a Mica-composited badge still resolves its layers.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
-    /// Reports the layer under the pointer, as in `ScaledIconPreview` — on every
-    /// pointer sample, because the owner needs the motion and not only the answer.
-    var onHoverTarget: ((PreviewHitTarget?) -> Void)? = nil
+    /// Reports where the pointer is, as in `ScaledIconPreview` — on every sample,
+    /// because the owner needs the motion and not only the answer, and `.away` on
+    /// exit because leaving skips the outlines' hold.
+    var onPointer: ((PreviewPointer) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview.
     var selection: PreviewSelection? = nil
     /// The layer under the pointer, outlined at the hover weight. In System mode the
     /// icon is one layer, so this is usually the group as a whole.
     var hovered: PreviewSelection? = nil
+    /// Whether the pointer is in a tracked area at all — the owner's answer.
+    var pointerIsInside: Bool = false
     /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
     /// come back after they have faded.
     var outlineWake: Int = 0
@@ -148,6 +151,7 @@ struct AppexPreviewPane: View {
                     displaySize: size,
                     selected: selection,
                     hovered: hovered,
+                    pointerIsInside: pointerIsInside,
                     wake: outlineWake
                 )
             }
@@ -167,16 +171,15 @@ struct AppexPreviewPane: View {
                     // `systemTarget`, not `target`: the appex image is one flat layer,
                     // so there is no icon foreground to hover. There is no badge drag
                     // overlay in this pane either, so nothing to suppress.
-                    onHoverTarget?(
-                        PreviewHitTester.systemTarget(
-                            at: point,
-                            settings: viewModel.iconSettings,
-                            iconSize: size
-                        )
+                    let target = PreviewHitTester.systemTarget(
+                        at: point,
+                        settings: viewModel.iconSettings,
+                        iconSize: size
                     )
+                    onPointer?(.over(target.map { .layer($0.group, $0.tab) }))
                 case .ended:
                     hoverPoint = nil
-                    onHoverTarget?(nil)
+                    onPointer?(.away)
                 }
             }
             // `isSystem: true`, which is what makes the icon here read as one
