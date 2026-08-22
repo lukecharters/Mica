@@ -23,6 +23,19 @@ struct LayerSidebar: View {
     /// moving between Icon and Badge returns to where you left each of them.
     @Binding var iconTab: LayerTab
     @Binding var badgeTab: LayerTab
+    /// Reports the row under the pointer so the canvas can outline that layer at the
+    /// hover weight — the sidebar half of Icon Composer's two-way hover.
+    ///
+    /// **Hover flows sidebar → canvas only** (D9 of the plan): a canvas hover does
+    /// not light a row up here. The canvas already answers "which layer is this", and
+    /// a second highlight competing with the selection highlight in one list is
+    /// noise.
+    ///
+    /// Called on every pointer sample rather than on entry and exit, for the same
+    /// reason the canvas is: the owner needs the motion itself, because that is what
+    /// restarts the outlines' fade. Resting on a row lets them fade; moving within it
+    /// brings them back.
+    var onHoverRow: ((LayerSidebarRow?) -> Void)? = nil
 
     /// Read directly rather than passed in, the way every other reader of this key
     /// does. Nothing threads through `ContentView.body`, which sits at the
@@ -40,6 +53,7 @@ struct LayerSidebar: View {
                     )
                     .tag(LayerSidebarRow.group(group))
                     .contextMenu { contextMenu(for: group) }
+                    .reportsHover(.group(group), to: onHoverRow)
 
                     ForEach(rows(for: group)) { tab in
                         LayerRow(
@@ -54,6 +68,7 @@ struct LayerSidebar: View {
                         // so the indent would vanish the moment a row is selected.
                         .listRowInsets(.init(top: 0, leading: Self.childIndent, bottom: 0, trailing: 0))
                         .contextMenu { contextMenu(for: group) }
+                        .reportsHover(.layer(group, tab), to: onHoverRow)
                     }
                 }
             }
@@ -75,8 +90,9 @@ struct LayerSidebar: View {
     ///
     /// Every row in a section is a way of pointing at that group, and the menu's
     /// rows name the layer they act on ("Remove Background Image"), so which row
-    /// was right-clicked adds nothing. Attached here rather than inside the row
-    /// views so those keep taking only the values they draw — see
+    /// was right-clicked adds nothing. Attached at the call site rather than inside
+    /// the row views — as the hover reporting is, for the same reason — so those
+    /// keep taking only the values they draw. See
     /// `IconContextMenu.sidebarItems`, which is deliberately not a copy of the
     /// canvas menu.
     @ViewBuilder
@@ -203,6 +219,32 @@ struct LayerSidebar: View {
                 set: { iconSettings.badge.background.isHidden = !$0 }
             )
         }
+    }
+}
+
+// MARK: - Hover reporting
+
+private extension View {
+    /// Reports `row` while the pointer is over it, nil when it leaves.
+    ///
+    /// `.contentShape` first, and it is not optional: a row is an `HStack` with a
+    /// `Spacer` in it, so without one the gap between the label and the eye is not
+    /// part of the row for hit-testing purposes and the hover drops out halfway
+    /// across — which reads as a flickering outline rather than as a missing shape.
+    ///
+    /// Leaving one row for another can deliver the new row's first sample before the
+    /// old row's exit, which would clear a hover that has just started. It
+    /// self-heals within a frame, because the pointer inside the new row keeps
+    /// reporting, so this stays the simple version rather than tracking which row
+    /// owns the exit.
+    func reportsHover(_ row: LayerSidebarRow, to report: ((LayerSidebarRow?) -> Void)?) -> some View {
+        contentShape(Rectangle())
+            .onContinuousHover(coordinateSpace: .local) { phase in
+                switch phase {
+                case .active: report?(row)
+                case .ended:  report?(nil)
+                }
+            }
     }
 }
 

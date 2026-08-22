@@ -251,7 +251,8 @@ struct ContentView: View {
                 iconSettings: $viewModel.iconSettings,
                 selection: $selectedGroup,
                 iconTab: $iconTab,
-                badgeTab: $badgeTab
+                badgeTab: $badgeTab,
+                onHoverRow: hoverRowChanged
             )
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
@@ -824,18 +825,27 @@ struct ContentView: View {
         }
     }
 
-    /// A pointer sample over either canvas.
-    ///
-    /// **Two separate jobs, and the order matters for neither but the split does.**
-    /// Every sample is motion, so every sample offers a wake — throttled, or a
-    /// moving pointer would restart the fade `Task` sixty times a second. Only a
-    /// *change* of layer is written to `hoveredRow`, so the hover outline does not
-    /// invalidate the body while the pointer travels across one layer.
+    /// A pointer sample over either canvas. A canvas hit always names a layer, so it
+    /// becomes a layer row; the sidebar reports its own rows, which may be group ones.
     private func hoverChanged(_ target: PreviewHitTarget?) {
+        hoverRowChanged(target.map { LayerSidebarRow.layer($0.group, $0.tab) })
+    }
+
+    /// A pointer sample from either input — the canvas above, or a sidebar row.
+    ///
+    /// **Two separate jobs, and the split is the point.** Every sample is motion, so
+    /// every sample offers a wake — throttled, or a moving pointer would restart the
+    /// fade `Task` sixty times a second. Only a *change* of row is written to
+    /// `hoveredRow`, so the hover outline does not invalidate the body while the
+    /// pointer travels across one layer.
+    ///
+    /// One function for both inputs, which is what makes them behave identically:
+    /// hovering the sidebar fades on the same timer, revives on the same motion, and
+    /// resolves through the same gates as hovering the canvas.
+    private func hoverRowChanged(_ row: LayerSidebarRow?) {
         if outlineActivity.noteMotion(now: ProcessInfo.processInfo.systemUptime) {
             outlineWake += 1
         }
-        let row = target.map { LayerSidebarRow.layer($0.group, $0.tab) }
         if hoveredRow != row {
             hoveredRow = row
         }
