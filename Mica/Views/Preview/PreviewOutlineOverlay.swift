@@ -47,6 +47,10 @@ struct PreviewOutlineOverlay: View {
     /// only thing outlined, because a hover that vanishes before you have looked at
     /// it is worse than one that lingers.
     private static let holdDuration: Duration = .milliseconds(1500)
+    /// **Only the fade *out* is animated.** An outline appears the instant the
+    /// pointer asks for it — anything else reads as lag on a control the user is
+    /// steering — and then fades rather than blinking away, which is what
+    /// distinguishes "it timed out" from "it moved". Same asymmetry as a scrollbar.
     private static let fadeDuration: TimeInterval = 0.2
 
     @State private var isVisible = true
@@ -91,18 +95,29 @@ struct PreviewOutlineOverlay: View {
         .frame(width: displaySize, height: displaySize)
         .allowsHitTesting(false)
         .opacity(isVisible ? 1 : 0)
-        // Reduce Motion keeps the behaviour but drops the cross-fade.
-        .animation(reduceMotion ? nil : .easeOut(duration: Self.fadeDuration), value: isVisible)
+        // No `.animation(_:value:)` here: it would animate the change in *both*
+        // directions, and appearing must be instant. The one animated transition is
+        // driven explicitly below.
         .task(id: FadeKey(selected: selected, hovered: hovered, wake: wake)) {
             guard autoFade else {
-                isVisible = true
+                show()
                 return
             }
-            isVisible = true
+            show()
             try? await Task.sleep(for: Self.holdDuration)
             guard !Task.isCancelled else { return }
-            isVisible = false
+            // Reduce Motion keeps the behaviour and drops the cross-fade.
+            withAnimation(reduceMotion ? nil : .easeOut(duration: Self.fadeDuration)) {
+                isVisible = false
+            }
         }
+    }
+
+    /// Instantly, and explicitly so: `withAnimation(nil)` also protects the appear
+    /// from an ambient transaction further up the hierarchy, which is the way an
+    /// asymmetric fade quietly becomes symmetric again.
+    private func show() {
+        withAnimation(nil) { isVisible = true }
     }
 }
 
