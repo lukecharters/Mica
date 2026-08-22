@@ -186,9 +186,24 @@ struct ContentView: View {
     /// while a canvas click is still moving the selection.
     @State private var iconTab: LayerTab = .defaultTab(for: .icon)
     @State private var badgeTab: LayerTab = .defaultTab(for: .badge)
-    /// Incremented on every canvas click. The selection outline restarts its fade
-    /// when this changes, so clicking the already-selected layer still flashes it.
-    @State private var selectionPulse: Int = 0
+    /// Incremented on every canvas click and (throttled) on pointer motion over the
+    /// canvas. The outlines restart their fade when this changes, which is what makes
+    /// moving anywhere over the canvas bring the selected outline back, and what makes
+    /// clicking the already-selected layer flash it rather than do nothing visible.
+    ///
+    /// It replaced a `selectionPulse` that only a click bumped. One counter, because
+    /// the measurement says both outlines fade together on a single idle timer.
+    @State private var outlineWake: Int = 0
+    /// Bounds how often pointer motion is allowed to bump `outlineWake`.
+    /// `.onContinuousHover` reports every sample, and the fade is a `.task(id:)`.
+    @State private var outlineActivity = PreviewOutlineActivity()
+    /// The layer under the pointer, or nil. Written by the canvas's hover and (from
+    /// Phase 4) by the sidebar's rows, so it is owned here for the same reason the
+    /// selection is: two views write it and a third draws it.
+    @State private var hoveredRow: LayerSidebarRow? = nil
+    /// Whether the pointer is over either canvas or a sidebar row. False is what
+    /// makes the outlines fade at once instead of holding for 1.5s first.
+    @State private var pointerIsInside: Bool = false
     /// The badge's way back out of System mode. Owned here rather than by whichever
     /// control switches the mode: this view is mounted for the window's whole life,
     /// so the remembered source cannot go stale.
@@ -239,7 +254,8 @@ struct ContentView: View {
                 iconSettings: $viewModel.iconSettings,
                 selection: $selectedGroup,
                 iconTab: $iconTab,
-                badgeTab: $badgeTab
+                badgeTab: $badgeTab,
+                onPointer: pointerChanged
             )
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
@@ -271,8 +287,11 @@ struct ContentView: View {
                         zoomLevel: $zoomLevel,
                         previewPointSize: $previewPointSize,
                         onSelect: select,
+                        onPointer: pointerChanged,
                         selection: currentPreviewSelection,
-                        selectionPulse: selectionPulse,
+                        hovered: hoveredPreviewSelection,
+                        pointerIsInside: pointerIsInside,
+                        outlineWake: outlineWake,
                         makeDragPayload: makeDragPayload,
                         contextActions: previewContextActions
                     )
@@ -762,24 +781,80 @@ struct ContentView: View {
 
     // MARK: - Canvas selection
 
-    /// What the preview outlines: whichever layer the inspector is editing, or the
-    /// whole group in System mode, which has no layers to distinguish.
-    /// Only while the Controls tab is showing — on the Export tab there's no layer
-    /// being edited, so the outline would just be in the way — and only with the
-    /// advanced controls on, which is `PreviewSelection.from`'s call.
+    /// What the preview outlines at the selected weight: whichever layer the
+    /// inspector is editing, or the whole group in System mode, which has no layers
+    /// to distinguish.
     private var currentPreviewSelection: PreviewSelection? {
+        previewSelection(for: .layer(selectedGroup, activeTab(for: selectedGroup)))
+    }
+
+    /// What it outlines at the hover weight — nil whenever the pointer is over
+    /// nothing, over the inspector, or outside the window.
+    private var hoveredPreviewSelection: PreviewSelection? {
+        previewSelection(for: hoveredRow)
+    }
+
+    /// The one place a row becomes something to outline, which is why the selection
+    /// and the hover both go through it: **every gate is applied once**, so the
+    /// hover cannot outline something the selection could not.
+    ///
+    /// Only while the Controls tab is showing — on the Export tab there's no layer
+    /// being edited, so an outline would just be in the way — and only with the
+    /// advanced controls on, which is `PreviewSelection.from`'s call.
+    ///
+    /// A *group* row (which is what a sidebar group row hover produces) resolves
+    /// through that group's active layer, so hovering it previews exactly what
+    /// clicking it would select.
+    private func previewSelection(for row: LayerSidebarRow?) -> PreviewSelection? {
+        guard let row else { return nil }
         guard inspectorTab == .controls, showInspector else { return nil }
+        let group = row.group
         let isSystem: Bool
-        switch selectedGroup {
+        switch group {
         case .icon:  isSystem = viewModel.iconSettings.icon.mode == .system
         case .badge: isSystem = viewModel.iconSettings.badge.mode == .system
         }
         return PreviewSelection.from(
-            group: selectedGroup,
-            tab: selectedGroup == .icon ? iconTab : badgeTab,
+            group: group,
+            tab: row.tab ?? activeTab(for: group),
             isSystem: isSystem,
             advancedControlsEnabled: advancedControlsEnabled
         )
+    }
+
+    private func activeTab(for group: IconLayerGroup) -> LayerTab {
+        switch group {
+        case .icon:  return iconTab
+        case .badge: return badgeTab
+        }
+    }
+
+    /// A pointer sample from either input — either canvas, or a sidebar row.
+    ///
+    /// **Three jobs, and the split is the point.** Every sample inside is motion, so
+    /// every one offers a wake — throttled, or a moving pointer would restart the
+    /// fade `Task` sixty times a second. Only a *change* of row is written to
+    /// `hoveredRow`, so the hover outline does not invalidate the body while the
+    /// pointer travels across one layer. And `pointerIsInside` is what tells the
+    /// overlay whether to serve out its hold or fade now.
+    ///
+    /// One function for both inputs, which is what makes them behave identically:
+    /// hovering the sidebar fades on the same timer, revives on the same motion, and
+    /// resolves through the same gates as hovering the canvas.
+    private func pointerChanged(_ pointer: PreviewPointer) {
+        switch pointer {
+        case .over(let row):
+            if outlineActivity.noteMotion(now: ProcessInfo.processInfo.systemUptime) {
+                outlineWake += 1
+            }
+            if !pointerIsInside { pointerIsInside = true }
+            if hoveredRow != row { hoveredRow = row }
+        case .away:
+            // No wake: leaving is not motion the outlines should answer to, and
+            // bumping it here would restart the very hold this is meant to skip.
+            if pointerIsInside { pointerIsInside = false }
+            if hoveredRow != nil { hoveredRow = nil }
+        }
     }
 
     /// Points the inspector at the layer the user clicked in the preview. The tab
@@ -788,7 +863,7 @@ struct ContentView: View {
     /// controls off, where the tab bar is hidden: the tab is simply left pointing
     /// at the clicked layer for when it comes back.
     private func select(_ target: PreviewHitTarget) {
-        selectionPulse += 1
+        outlineWake += 1
         selectedGroup = target.group
         switch target.group {
         case .icon where viewModel.iconSettings.icon.mode == .mica:
@@ -818,8 +893,11 @@ struct ContentView: View {
                     badgeAppexImage: viewModel.badgeAppexRenderedImage,
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
+                    onPointer: pointerChanged,
                     selection: currentPreviewSelection,
-                    selectionPulse: selectionPulse,
+                    hovered: hoveredPreviewSelection,
+                    pointerIsInside: pointerIsInside,
+                    outlineWake: outlineWake,
                     makeDragPayload: makeDragPayload,
                     contextActions: previewContextActions
                 )

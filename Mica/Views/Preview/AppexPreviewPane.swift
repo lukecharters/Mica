@@ -15,11 +15,20 @@ struct AppexPreviewPane: View {
     /// here, so clicking it reports the background layer and the owner collapses
     /// that to the Icon group; a Mica-composited badge still resolves its layers.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
+    /// Reports where the pointer is, as in `ScaledIconPreview` — on every sample,
+    /// because the owner needs the motion and not only the answer, and `.away` on
+    /// exit because leaving skips the outlines' hold.
+    var onPointer: ((PreviewPointer) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview.
     var selection: PreviewSelection? = nil
-    /// Bumped on each canvas click so re-clicking the selected layer re-shows the
-    /// outline after it has faded.
-    var selectionPulse: Int = 0
+    /// The layer under the pointer, outlined at the hover weight. In System mode the
+    /// icon is one layer, so this is usually the group as a whole.
+    var hovered: PreviewSelection? = nil
+    /// Whether the pointer is in a tracked area at all — the owner's answer.
+    var pointerIsInside: Bool = false
+    /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
+    /// come back after they have faded.
+    var outlineWake: Int = 0
     /// Builds the drag-out payload, or nil to disable dragging the icon out. See
     /// `DraggableIcon`; the owner supplies it because the System-mode payload needs
     /// the appex export parameters.
@@ -137,19 +146,14 @@ struct AppexPreviewPane: View {
             .accessibilityLabel(IconAccessibilityDescription.previewLabel)
             .accessibilityValue(IconAccessibilityDescription.value(for: viewModel.iconSettings))
             .overlay {
-                if let selection,
-                   let shape = PreviewHitTester.selectionShape(
-                       for: selection,
-                       settings: viewModel.iconSettings,
-                       displaySize: size
-                   ) {
-                    SelectionOutline(
-                        shape: shape,
-                        displaySize: size,
-                        selection: selection,
-                        pulse: selectionPulse
-                    )
-                }
+                PreviewOutlineOverlay(
+                    settings: viewModel.iconSettings,
+                    displaySize: size,
+                    selected: selection,
+                    hovered: hovered,
+                    pointerIsInside: pointerIsInside,
+                    wake: outlineWake
+                )
             }
             .contentShape(Rectangle())
             .onTapGesture { location in
@@ -162,8 +166,20 @@ struct AppexPreviewPane: View {
             }
             .onContinuousHover(coordinateSpace: .local) { phase in
                 switch phase {
-                case .active(let point): hoverPoint = point
-                case .ended: hoverPoint = nil
+                case .active(let point):
+                    hoverPoint = point
+                    // `systemTarget`, not `target`: the appex image is one flat layer,
+                    // so there is no icon foreground to hover. There is no badge drag
+                    // overlay in this pane either, so nothing to suppress.
+                    let target = PreviewHitTester.systemTarget(
+                        at: point,
+                        settings: viewModel.iconSettings,
+                        iconSize: size
+                    )
+                    onPointer?(.over(target.map { .layer($0.group, $0.tab) }))
+                case .ended:
+                    hoverPoint = nil
+                    onPointer?(.away)
                 }
             }
             // `isSystem: true`, which is what makes the icon here read as one
