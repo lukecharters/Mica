@@ -15,11 +15,17 @@ struct AppexPreviewPane: View {
     /// here, so clicking it reports the background layer and the owner collapses
     /// that to the Icon group; a Mica-composited badge still resolves its layers.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
+    /// Reports the layer under the pointer, as in `ScaledIconPreview` — on every
+    /// pointer sample, because the owner needs the motion and not only the answer.
+    var onHoverTarget: ((PreviewHitTarget?) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview.
     var selection: PreviewSelection? = nil
-    /// Bumped on each canvas click so re-clicking the selected layer re-shows the
-    /// outline after it has faded.
-    var selectionPulse: Int = 0
+    /// The layer under the pointer, outlined at the hover weight. In System mode the
+    /// icon is one layer, so this is usually the group as a whole.
+    var hovered: PreviewSelection? = nil
+    /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
+    /// come back after they have faded.
+    var outlineWake: Int = 0
     /// Builds the drag-out payload, or nil to disable dragging the icon out. See
     /// `DraggableIcon`; the owner supplies it because the System-mode payload needs
     /// the appex export parameters.
@@ -141,7 +147,8 @@ struct AppexPreviewPane: View {
                     settings: viewModel.iconSettings,
                     displaySize: size,
                     selected: selection,
-                    wake: selectionPulse
+                    hovered: hovered,
+                    wake: outlineWake
                 )
             }
             .contentShape(Rectangle())
@@ -155,8 +162,21 @@ struct AppexPreviewPane: View {
             }
             .onContinuousHover(coordinateSpace: .local) { phase in
                 switch phase {
-                case .active(let point): hoverPoint = point
-                case .ended: hoverPoint = nil
+                case .active(let point):
+                    hoverPoint = point
+                    // `systemTarget`, not `target`: the appex image is one flat layer,
+                    // so there is no icon foreground to hover. There is no badge drag
+                    // overlay in this pane either, so nothing to suppress.
+                    onHoverTarget?(
+                        PreviewHitTester.systemTarget(
+                            at: point,
+                            settings: viewModel.iconSettings,
+                            iconSize: size
+                        )
+                    )
+                case .ended:
+                    hoverPoint = nil
+                    onHoverTarget?(nil)
                 }
             }
             // `isSystem: true`, which is what makes the icon here read as one

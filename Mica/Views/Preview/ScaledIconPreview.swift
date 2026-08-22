@@ -19,11 +19,24 @@ struct ScaledIconPreview: View {
     /// Click-to-select: reports which layer the click landed on so the owner can
     /// point the inspector at it. See `PreviewHitTester`.
     var onSelect: ((PreviewHitTarget) -> Void)? = nil
+    /// Reports the layer under the pointer, for the hover outline.
+    ///
+    /// **Called on every pointer sample, not only when the answer changes** — the
+    /// owner needs the motion itself, because that is what restarts the outlines'
+    /// fade (rule 3: moving anywhere over the canvas brings the selected outline
+    /// back). Deduplicating the target is the owner's job; throttling the motion is
+    /// `PreviewOutlineActivity`'s.
+    var onHoverTarget: ((PreviewHitTarget?) -> Void)? = nil
     /// The layer the inspector is editing, outlined in the preview. nil draws nothing.
     var selection: PreviewSelection? = nil
-    /// Bumped on each canvas click so re-clicking the selected layer re-shows the
-    /// outline after it has faded.
-    var selectionPulse: Int = 0
+    /// The layer under the pointer, outlined at the hover weight. Resolved by the
+    /// owner rather than derived here, so the sidebar's hover and the canvas's go
+    /// through one set of gates.
+    var hovered: PreviewSelection? = nil
+    /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
+    /// come back after they have faded — including on a re-click of the layer that
+    /// is already selected.
+    var outlineWake: Int = 0
     /// Builds the drag-out payload, or nil to disable dragging the icon out. The
     /// owner supplies it because the payload needs the export document, which for a
     /// System-mode layer means view-model state this view never sees. See
@@ -119,7 +132,8 @@ struct ScaledIconPreview: View {
                 settings: settings,
                 displaySize: displaySize,
                 selected: selection,
-                wake: selectionPulse
+                hovered: hovered,
+                wake: outlineWake
             )
 
             // Draggable badge overlay
@@ -161,8 +175,12 @@ struct ScaledIconPreview: View {
         // `PreviewHitTester` expects.
         .onContinuousHover(coordinateSpace: .local) { phase in
             switch phase {
-            case .active(let point): hoverPoint = point
-            case .ended: hoverPoint = nil
+            case .active(let point):
+                hoverPoint = point
+                reportHover(at: point)
+            case .ended:
+                hoverPoint = nil
+                onHoverTarget?(nil)
             }
         }
         .contextMenu {
@@ -210,6 +228,27 @@ struct ScaledIconPreview: View {
             settings: settings,
             displaySize: displaySize,
             isSystem: false
+        )
+    }
+
+    /// Answers "what is the pointer over" for the hover outline, from the same
+    /// `PreviewHitTester` the click and the right-click menu use. There is
+    /// deliberately no second hit test in this view — the badge drag overlay is a
+    /// plain circle of the badge diameter, while the hit tester knows about imported
+    /// artwork drawn ~2.5× past it and the System-mode squircle.
+    ///
+    /// **Reports nil while the badge is being dragged.** The badge is the selection
+    /// during its own drag, so the hover stroke would either double the selected one
+    /// or chase the pointer across the icon; neither says anything the drag does not.
+    /// The motion is still reported, so the selected outline stays up throughout.
+    private func reportHover(at point: CGPoint) {
+        guard let onHoverTarget else { return }
+        guard !isDragging else {
+            onHoverTarget(nil)
+            return
+        }
+        onHoverTarget(
+            PreviewHitTester.target(at: point, settings: settings, displaySize: displaySize)
         )
     }
 
