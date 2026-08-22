@@ -1,10 +1,13 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     "—" : {
 
     },
-    "... +%@ more" : {
+    "... +%lld more" : {
 
     },
     "%.0f × %.0f px" : {
@@ -17,109 +20,103 @@
         }
       }
     },
-    "%@" : {
+    "%@ layers visible" : {
 
     },
-    "%@ (%@)" : {
+    "%@ visible" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ (%2$@)"
+            "value" : "%1$lld / %2$lld"
           }
         }
       }
     },
-    "%@ / %@" : {
+    "%lld / %lld families fully calibrated" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ / %2$@"
+            "value" : "%1$lld / %2$lld families fully calibrated"
           }
         }
       }
     },
-    "%@ / %@ families fully calibrated" : {
+    "%lld / %lld symbols" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ / %2$@ families fully calibrated"
+            "value" : "%1$lld / %2$lld symbols"
           }
         }
       }
     },
-    "%@ / %@ symbols" : {
+    "%lld calibrated symbols compared" : {
+
+    },
+    "%lld custom override(s)" : {
+
+    },
+    "%lld families" : {
+
+    },
+    "%lld groups" : {
+
+    },
+    "%lld members" : {
+
+    },
+    "%lld of %lld shown symbols are batch-acceptable" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ / %2$@ symbols"
+            "value" : "%1$lld of %2$lld shown symbols are batch-acceptable"
           }
         }
       }
     },
-    "%@ calibrated compared" : {
+    "%lld selected" : {
 
     },
-    "%@ custom override(s)" : {
+    "%lld symbols" : {
 
     },
-    "%@ families" : {
+    "%lld symbols (shared)" : {
 
     },
-    "%@ groups" : {
-
-    },
-    "%@ members" : {
-
-    },
-    "%@ selected" : {
-
-    },
-    "%@ shown" : {
-
-    },
-    "%@ symbols" : {
-
-    },
-    "%@ symbols (shared)" : {
-
-    },
-    "%@/%@" : {
+    "%lld/%lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@/%2$@"
+            "value" : "%1$lld/%2$lld"
           }
         }
       }
     },
-    "%@/%@ calibrated" : {
+    "%lld/%lld calibrated" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@/%2$@ calibrated"
+            "value" : "%1$lld/%2$lld calibrated"
           }
         }
       }
     },
-    "%@%%" : {
+    "%lld%%" : {
 
     },
-    "←/→" : {
-
-    },
-    "⇧←/→" : {
-
-    },
-    "⇧↑/↓" : {
-
-    },
-    "⌘↑/↓" : {
+    "2x (Retina)" : {
 
     },
     "a custom color" : {
@@ -169,7 +166,25 @@
         }
       }
     },
+    "Accept Shown Predictions" : {
+
+    },
+    "Actual Size" : {
+
+    },
+    "Adopt the predicted multiplier and mark the symbol calibrated from the rule" : {
+
+    },
+    "Advanced Controls" : {
+
+    },
+    "Advisory content-centring hint — not the same estimator as Baseline Y Correction" : {
+
+    },
     "All Icons" : {
+
+    },
+    "Also apply the suggested Y offset" : {
 
     },
     "anchorX %.4f (%.1f/208)" : {
@@ -192,6 +207,9 @@
         }
       }
     },
+    "Appearance" : {
+
+    },
     "Apple family: %@" : {
 
     },
@@ -201,20 +219,25 @@
     "Apple's IconServices render of the current symbol and colours on this Mac. Follows the system appearance. No badge — badge ground truth needs screenshots." : {
 
     },
-    "Applies to %@ variants: %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Applies to %1$@ variants: %2$@%3$@"
-          }
-        }
-      }
-    },
-    "Apply Calibration to %@ Symbol(s)" : {
+    "Apply Calibration to %@..." : {
 
     },
-    "auto" : {
+    "Apply Calibration to %lld Symbol(s)" : {
+
+    },
+    "Apply Calibration..." : {
+
+    },
+    "Apply This Calibration to Family" : {
+
+    },
+    "Apply to Family" : {
+
+    },
+    "Auto Gradient (.gradient)" : {
+
+    },
+    "Background" : {
 
     },
     "Background Color" : {
@@ -264,13 +287,43 @@
         }
       }
     },
+    "Background Gradient" : {
+
+    },
+    "Background Shadow" : {
+
+    },
+    "Badge" : {
+
+    },
+    "Badge generation failed: %@" : {
+
+    },
+    "Badge Layout" : {
+
+    },
     "Baseline Y Correction" : {
 
     },
     "Bold" : {
 
     },
+    "Box-fit prediction disagrees with calibration by this much" : {
+
+    },
+    "Box-Fit Review" : {
+
+    },
+    "Browse SF Symbols" : {
+
+    },
     "Calibrated:" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Canvas" : {
 
     },
     "Change Badge Background Color" : {
@@ -695,6 +748,9 @@
           }
         }
       }
+    },
+    "Change how symbols are drawn in this list. Preview only — it does not change the icon." : {
+
     },
     "Change Icon Background Color" : {
       "extractionState" : "manual",
@@ -1125,7 +1181,19 @@
     "Choose a calibrated symbol to copy its values from:" : {
 
     },
+    "Choose File…" : {
+
+    },
+    "Choose…" : {
+
+    },
     "clamped" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear Selection" : {
 
     },
     "Cmd+Up/Down" : {
@@ -1225,6 +1293,9 @@
         }
       }
     },
+    "Command Line Tool Reference" : {
+
+    },
     "Comparison" : {
 
     },
@@ -1234,32 +1305,55 @@
     "Containers:" : {
 
     },
-    "Content center:" : {
+    "Content centre:" : {
 
     },
-    "Copy the current symbol's calibration values to all %@ members of \"%@\"?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copy the current symbol's calibration values to all %1$@ members of \"%2$@\"?"
-          }
-        }
-      }
+    "Controls" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy Icon" : {
+
+    },
+    "Copy Symbol Name" : {
+
+    },
+    "Copy Values" : {
+
+    },
+    "Corners" : {
+
     },
     "Correction:" : {
+
+    },
+    "Create & Move" : {
 
     },
     "Current Family" : {
 
     },
-    "Current Symbol" : {
+    "Custom Gradient" : {
 
     },
     "Custom…" : {
 
     },
     "Derived ratios" : {
+
+    },
+    "Deselect All" : {
+
+    },
+    "Developer" : {
+
+    },
+    "Developer Tools" : {
+
+    },
+    "Developer Tools Are Off" : {
 
     },
     "diameter %.4f (%.1f/208)" : {
@@ -1272,10 +1366,19 @@
         }
       }
     },
+    "Done" : {
+
+    },
+    "Drag moves" : {
+
+    },
     "Drop a screenshot here" : {
 
     },
     "Drop an image on the comparison area, or…" : {
+
+    },
+    "e.g. star.special" : {
 
     },
     "Effective:" : {
@@ -1287,6 +1390,21 @@
     "Escape" : {
 
     },
+    "Export" : {
+
+    },
+    "Export as PNG…" : {
+
+    },
+    "Export at twice the point size, for Retina displays" : {
+
+    },
+    "Export Configuration…" : {
+
+    },
+    "Export Shadow Variations…" : {
+
+    },
     "Exports at %@" : {
 
     },
@@ -1294,6 +1412,12 @@
 
     },
     "Family Actions" : {
+
+    },
+    "Filter" : {
+
+    },
+    "Filter by symbol name or family..." : {
 
     },
     "Font size: %@ pt (enclosure: %@ pt)" : {
@@ -1309,10 +1433,28 @@
     "Frame:" : {
 
     },
+    "General" : {
+
+    },
+    "Generate" : {
+
+    },
+    "Generate Symbol Metrics" : {
+
+    },
     "Generating…" : {
 
     },
+    "Generation Failed" : {
+
+    },
     "Generation Mode" : {
+
+    },
+    "Gradient" : {
+
+    },
+    "Gradient End" : {
 
     },
     "Gray" : {
@@ -1362,19 +1504,70 @@
         }
       }
     },
+    "Grid" : {
+
+    },
+    "Hidden" : {
+
+    },
+    "Hide Inspector" : {
+
+    },
+    "Hide Sidebar" : {
+
+    },
+    "Hide the %@" : {
+
+    },
     "Hide the Foreground on Import" : {
+
+    },
+    "How large the imported image is drawn within its layer" : {
 
     },
     "Icon" : {
 
     },
+    "Icon Padding" : {
+
+    },
+    "Image" : {
+
+    },
     "Image Scale" : {
+
+    },
+    "Import as Badge Background…" : {
+
+    },
+    "Import as Badge Symbol…" : {
+
+    },
+    "Import as Icon Background…" : {
+
+    },
+    "Import as Icon Symbol…" : {
+
+    },
+    "Import Configuration" : {
+
+    },
+    "Import Configuration…" : {
+
+    },
+    "Import…" : {
 
     },
     "Imported" : {
 
     },
     "Imported Backgrounds" : {
+
+    },
+    "Importing" : {
+
+    },
+    "In Apple's container_recipes.plist — hand-tuned, the rule is not expected to match" : {
 
     },
     "in its own colors" : {
@@ -1427,29 +1620,41 @@
     "Inspector" : {
 
     },
+    "Inspector tab" : {
+
+    },
+    "Keep existing macOS icon padding and shadow. Turn off to scale up and fill the frame." : {
+
+    },
     "Keyboard Shortcuts" : {
+
+    },
+    "Layout" : {
 
     },
     "Left/Right" : {
 
     },
-    "Loading references: %@/%@" : {
+    "Load macOS 15" : {
+
+    },
+    "Load macOS 26" : {
+
+    },
+    "Loading references: %lld/%lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Loading references: %1$@/%2$@"
+            "value" : "Loading references: %1$lld/%2$lld"
           }
         }
       }
     },
-    "Mark calibrated + advance" : {
-
-    },
     "Mark calibrated + advance member" : {
 
     },
-    "Mark skipped + advance" : {
+    "Mark Shown as Needs Review" : {
 
     },
     "Mark skipped + advance member" : {
@@ -1464,24 +1669,24 @@
     "Measure all SF Symbols and save their intrinsic dimensions to JSON." : {
 
     },
-    "Measure tight bounds for all symbols to compute predictions." : {
+    "Measure All Symbols" : {
 
     },
-    "Measured %@ symbols" : {
+    "Measured %lld symbols" : {
 
     },
-    "Measuring tight bounds… %@ symbols" : {
+    "Measuring tight bounds… %lld symbols" : {
 
     },
     "Medium" : {
 
     },
-    "Merge all %@ members of \"%@\" into another family" : {
+    "Merge all %lld members of \"%@\" into another family" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Merge all %1$@ members of \"%2$@\" into another family"
+            "value" : "Merge all %1$lld members of \"%2$@\" into another family"
           }
         }
       }
@@ -1489,19 +1694,64 @@
     "Merge Family Into..." : {
 
     },
+    "Merge..." : {
+
+    },
+    "Metrics Not Available" : {
+
+    },
+    "Mica Help" : {
+
+    },
+    "Mica is rendering with the bundled calibration." : {
+
+    },
+    "Mica is rendering with this file, not the bundled calibration." : {
+
+    },
+    "Mode" : {
+
+    },
     "Move / Reset / Apply calibration" : {
 
     },
-    "Move %@ Symbol(s) to Family" : {
+    "Move %@ to Family..." : {
+
+    },
+    "Move %lld Symbol(s) to Family" : {
 
     },
     "Move Symbol(s) to Family" : {
 
     },
-    "Move: %@" : {
+    "Move the badge horizontally from its corner. Dragging it on the canvas does the same, as do the arrow keys." : {
 
     },
-    "Moving %@ symbols" : {
+    "Move the badge vertically from its corner. Dragging it on the canvas does the same, as do the arrow keys." : {
+
+    },
+    "Move this layer left or right within the badge. The badge itself stays put." : {
+
+    },
+    "Move this layer left or right within the icon. It may overhang the edge." : {
+
+    },
+    "Move this layer up or down within the badge. The badge itself stays put." : {
+
+    },
+    "Move this layer up or down within the icon. It may overhang the edge." : {
+
+    },
+    "Move to Another Family..." : {
+
+    },
+    "Move to Family..." : {
+
+    },
+    "Move: %lld" : {
+
+    },
+    "Moving %lld symbols" : {
 
     },
     "Moving: %@" : {
@@ -1560,6 +1810,9 @@
     "Needs review:" : {
 
     },
+    "New family name" : {
+
+    },
     "New family name:" : {
 
     },
@@ -1572,34 +1825,31 @@
     "No baseline data for %@" : {
 
     },
+    "No Families" : {
+
+    },
     "No families match filter" : {
 
     },
     "No families match the current filter" : {
 
     },
-    "No symbols match filter" : {
+    "No Preview" : {
 
     },
-    "No symbols match the current filter" : {
+    "Nothing measured yet — use Measure All Symbols below." : {
 
     },
     "Nudge multiplier +/-0.001" : {
 
     },
-    "Nudge multiplier ±0.001" : {
-
-    },
     "Nudge X offset +/-0.001" : {
-
-    },
-    "Nudge X offset ±0.001" : {
 
     },
     "Nudge Y offset +/-0.001" : {
 
     },
-    "Nudge Y offset ±0.001" : {
+    "OK" : {
 
     },
     "Opacity" : {
@@ -1620,10 +1870,34 @@
     "Parameters" : {
 
     },
+    "Paste as Badge Background" : {
+
+    },
+    "Paste as Badge Symbol" : {
+
+    },
+    "Paste as Icon Background" : {
+
+    },
+    "Paste as Icon Symbol" : {
+
+    },
     "Pinch to zoom, drag to pan, double-click to reset" : {
 
     },
+    "Position" : {
+
+    },
     "Preview always renders at 512pt @2x." : {
+
+    },
+    "Preview size" : {
+
+    },
+    "Preview Size" : {
+
+    },
+    "Preview zoom" : {
 
     },
     "Previous / Next family" : {
@@ -1632,7 +1906,10 @@
     "Previous / Next member" : {
 
     },
-    "Previous / Next symbol" : {
+    "Primary" : {
+
+    },
+    "Production Override" : {
 
     },
     "Progress" : {
@@ -1688,19 +1965,52 @@
     "Reference" : {
 
     },
+    "Reference Comparison" : {
+
+    },
     "Regular" : {
 
     },
-    "Remaining:" : {
+    "Release Notes" : {
+
+    },
+    "Remeasure" : {
 
     },
     "Render" : {
 
     },
-    "Right-click member" : {
+    "Rendering" : {
 
     },
-    "Same as previous + advance" : {
+    "Report an Issue…" : {
+
+    },
+    "Reset" : {
+
+    },
+    "Reset Alignment" : {
+
+    },
+    "Reset All" : {
+
+    },
+    "Reset Position" : {
+
+    },
+    "Reset to Algorithmic Families" : {
+
+    },
+    "Reset to Algorithmic Family" : {
+
+    },
+    "Restore Bundled Calibration" : {
+
+    },
+    "Reveal in Finder" : {
+
+    },
+    "Right-click member" : {
 
     },
     "Same as previous + advance member" : {
@@ -1709,13 +2019,28 @@
     "Search" : {
 
     },
+    "Search calibrated symbols..." : {
+
+    },
+    "Search families..." : {
+
+    },
+    "Secondary" : {
+
+    },
+    "Select" : {
+
+    },
     "Semibold" : {
 
     },
     "Set Corners to Off on Import" : {
 
     },
-    "Set status to needs-review on all %@ symbols in the current filter, keeping their existing values. Use the Apple Reference Calibration tool (⇧⌘K) to recapture them." : {
+    "Settings Index" : {
+
+    },
+    "Shadow" : {
 
     },
     "Shadows" : {
@@ -1730,7 +2055,25 @@
     "Shift+Up/Down" : {
 
     },
+    "Show advanced controls" : {
+
+    },
     "Show Advanced Controls" : {
+
+    },
+    "Show Inspector" : {
+
+    },
+    "Show Sidebar" : {
+
+    },
+    "Show the %@" : {
+
+    },
+    "Show the Developer Menu" : {
+
+    },
+    "Show Wiper" : {
 
     },
     "Size" : {
@@ -1739,13 +2082,22 @@
     "Skipped:" : {
 
     },
-    "Sort:" : {
+    "Sort" : {
+
+    },
+    "Source" : {
 
     },
     "Space" : {
 
     },
+    "Split" : {
+
+    },
     "Split Family" : {
+
+    },
+    "Split..." : {
 
     },
     "Standard color space for web and most displays." : {
@@ -1795,13 +2147,16 @@
         }
       }
     },
-    "Stay: %@" : {
+    "Stay: %lld" : {
 
     },
-    "Suggested Y offset:" : {
+    "Styling/Export" : {
 
     },
     "Symbol" : {
+
+    },
+    "Symbol Calibration" : {
 
     },
     "Symbol Color" : {
@@ -1851,7 +2206,13 @@
         }
       }
     },
+    "Symbol Metrics Generator" : {
+
+    },
     "Symbol Scale" : {
+
+    },
+    "Symbol Shadow" : {
 
     },
     "symbol_baselines.json not found in bundle" : {
@@ -1861,6 +2222,12 @@
 
     },
     "Tab" : {
+
+    },
+    "Tertiary" : {
+
+    },
+    "The badge symbol’s size within the badge. Badge ▸ Layout ▸ Size changes the badge itself." : {
 
     },
     "The color profile written into the exported PNG" : {
@@ -1910,19 +2277,43 @@
         }
       }
     },
+    "The icon’s size in points. Settings ▸ Export sets what a new window opens at." : {
+
+    },
+    "The rule hit its clamp, so it had less confidence for this shape" : {
+
+    },
+    "The symbol’s size within the icon. Mica picks a per-symbol default from its calibration data; this scales that." : {
+
+    },
+    "The whole badge, relative to the size macOS itself draws one. Past about 109% it starts moving inward to stay on the canvas." : {
+
+    },
     "This export only — the window’s settings are unchanged." : {
 
     },
     "Tight bounds:" : {
 
     },
+    "Tint Overlay" : {
+
+    },
+    "Toggle Inspector" : {
+
+    },
+    "Toggle the drop shadow behind the badge image" : {
+
+    },
+    "Toggle the drop shadow behind the imported image" : {
+
+    },
     "Total symbols:" : {
 
     },
-    "Total:" : {
+    "Turn them on in Settings ▸ Developer to use this window." : {
 
     },
-    "uncalibrated" : {
+    "Type" : {
 
     },
     "Uncalibrated:" : {
@@ -1931,7 +2322,19 @@
     "Up/Down" : {
 
     },
+    "Use" : {
+
+    },
+    "Use Preset" : {
+
+    },
+    "Visible" : {
+
+    },
     "Weight" : {
+
+    },
+    "Which corner of the icon the badge sits in" : {
 
     },
     "Wider color gamut for modern Apple displays." : {
@@ -1981,13 +2384,19 @@
         }
       }
     },
-    "Write the predicted multiplier to all %@ symbols in the current filter as calibrated entries (source: auto-boxfit). Apple-tuned symbols are skipped." : {
+    "Write the content-centring Y hint as well when accepting a prediction" : {
 
     },
     "X Offset" : {
 
     },
     "Y Offset" : {
+
+    },
+    "Zoom In" : {
+
+    },
+    "Zoom Out" : {
 
     },
     "Zoom: %.1fx" : {
