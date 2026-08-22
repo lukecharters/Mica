@@ -93,6 +93,28 @@ enum PreviewOutlineEmphasis: Equatable, CaseIterable {
     /// yields a stroke so dark it reads as black.
     static let hoverColorComponents = (red: 183.0, green: 223.0, blue: 255.0)
 
+    /// How far outside the layer's own bounds the stroke is drawn, measured from the
+    /// bounds to the stroke's **inner** edge.
+    ///
+    /// Icon Composer leaves a gap in both weights — measured at ~4px on its ~510pt
+    /// canvas, so 2 at the 256pt reference — and it does more than look tidy. A
+    /// stroke is centred on the path it is given, so an unexpanded outline puts half
+    /// its width *inside* the layer: it covers the artwork's own edge, which is the
+    /// thing you are trying to see, and on the icon background it lands half on the
+    /// chiclet, where it changes colour. Offsetting outward puts the whole stroke on
+    /// the backdrop and leaves the layer's edge visible beside it.
+    func outset(displaySize: CGFloat) -> CGFloat {
+        Self.gap(displaySize: displaySize) + lineWidth(displaySize: displaySize) / 2
+    }
+
+    /// The visible gap itself, scaled like everything else off the 256pt reference.
+    /// Shared by both weights, which is what makes them read as the same idea at two
+    /// strengths — since `outset` adds each weight's own half-width, the *gap* comes
+    /// out identical while the paths differ.
+    static func gap(displaySize: CGFloat) -> CGFloat {
+        min(max(2 * (displaySize / 256), 1), 6)
+    }
+
     static let minSelectedWidth: CGFloat = 1.5
     static let maxSelectedWidth: CGFloat = 8
     static let hoverWidthRatio: CGFloat = 0.5
@@ -105,6 +127,25 @@ struct PreviewOutline: Equatable {
 }
 
 enum PreviewOutlines {
+
+    /// A shape grown by `outset` on every side, for drawing an outline that clears
+    /// the layer's own bounds.
+    ///
+    /// The corner radius grows with it so the expanded shape stays **concentric**
+    /// with the original — an unchanged radius on a bigger rect is a squarer corner,
+    /// which reads as a different shape rather than an offset one, and is most
+    /// obvious on the chiclet, whose radius is the largest in the app.
+    static func expanded(_ shape: PreviewSelectionShape, by outset: CGFloat) -> PreviewSelectionShape {
+        switch shape {
+        case .roundedRect(let rect, let cornerRadius):
+            return .roundedRect(
+                rect.insetBy(dx: -outset, dy: -outset),
+                cornerRadius: max(cornerRadius + outset, 0)
+            )
+        case .circle(let center, let radius):
+            return .circle(center: center, radius: max(radius + outset, 0))
+        }
+    }
 
     /// The outlines to draw, in draw order — **hovered first, so the selected
     /// stroke wins wherever the two overlap.**

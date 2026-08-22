@@ -135,6 +135,76 @@ struct PreviewOutlinesTests {
         #expect(hover.alphaComponent == 1)
     }
 
+    // MARK: - Clearing the layer's bounds
+
+    /// The gap is what the user sees; the outset is what the path needs, and they
+    /// differ by half the stroke width because a stroke is centred on its path.
+    /// **The two weights must leave the same gap** — that is what makes them read as
+    /// one idea at two strengths rather than two different offsets.
+    @Test(
+        "Both weights leave the same visible gap",
+        arguments: [64, 256, 512, 1024] as [CGFloat]
+    )
+    func gapIsTheSameForBothWeights(displaySize: CGFloat) {
+        let gap = PreviewOutlineEmphasis.gap(displaySize: displaySize)
+        for emphasis in PreviewOutlineEmphasis.allCases {
+            let inner = emphasis.outset(displaySize: displaySize)
+                - emphasis.lineWidth(displaySize: displaySize) / 2
+            #expect(abs(inner - gap) < 0.001)
+        }
+    }
+
+    /// Measured off Icon Composer: ~4px of backdrop between the stroke and the
+    /// artwork on its ~510pt canvas.
+    @Test("The gap matches the measured 2pt at the 256pt reference")
+    func measuredGap() {
+        #expect(PreviewOutlineEmphasis.gap(displaySize: 256) == 2)
+        #expect(PreviewOutlineEmphasis.gap(displaySize: 512) == 4)
+    }
+
+    /// Concentric, not merely bigger: an unchanged radius on a grown rect is a
+    /// squarer corner, which reads as a different shape rather than an offset one.
+    /// Most visible on the chiclet, whose radius is the largest in the app.
+    @Test("A grown rounded rect stays concentric")
+    func expandedRoundedRect() {
+        let shape = PreviewSelectionShape.roundedRect(
+            CGRect(x: 100, y: 100, width: 200, height: 200),
+            cornerRadius: 40
+        )
+        guard case .roundedRect(let rect, let radius) = PreviewOutlines.expanded(shape, by: 5) else {
+            Issue.record("expanding a rounded rect must yield a rounded rect")
+            return
+        }
+        #expect(rect == CGRect(x: 95, y: 95, width: 210, height: 210))
+        #expect(radius == 45)
+    }
+
+    @Test("A grown circle keeps its centre")
+    func expandedCircle() {
+        let shape = PreviewSelectionShape.circle(center: CGPoint(x: 50, y: 60), radius: 20)
+        guard case .circle(let center, let radius) = PreviewOutlines.expanded(shape, by: 3) else {
+            Issue.record("expanding a circle must yield a circle")
+            return
+        }
+        #expect(center == CGPoint(x: 50, y: 60))
+        #expect(radius == 23)
+    }
+
+    /// A tiny shape grown by more than its own radius must not invert into a
+    /// negative-radius path, which draws nothing at all.
+    @Test("Growing never yields a negative radius")
+    func expansionCannotInvert() {
+        let squareish = PreviewSelectionShape.roundedRect(
+            CGRect(x: 0, y: 0, width: 4, height: 4),
+            cornerRadius: 0
+        )
+        guard case .roundedRect(_, let radius) = PreviewOutlines.expanded(squareish, by: -10) else {
+            Issue.record("expanding a rounded rect must yield a rounded rect")
+            return
+        }
+        #expect(radius >= 0)
+    }
+
     // MARK: - How often the fade restarts
 
     /// The case that matters most: the pointer has been still, the outlines have

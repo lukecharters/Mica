@@ -78,7 +78,18 @@ struct PreviewOutlineOverlay: View {
                     settings: settings,
                     displaySize: displaySize
                 ) else { return nil }
-                return (offset, shape, outline.emphasis)
+                // Grown here rather than in `selectionShape`, deliberately: that
+                // function is the answer to "where is this layer", which the
+                // outline's job is to sit just outside. Expanding at the source
+                // would make the geometry disagree with itself.
+                return (
+                    offset,
+                    PreviewOutlines.expanded(
+                        shape,
+                        by: outline.emphasis.outset(displaySize: displaySize)
+                    ),
+                    outline.emphasis
+                )
             }
     }
 
