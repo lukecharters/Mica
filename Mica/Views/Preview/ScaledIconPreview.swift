@@ -111,21 +111,16 @@ struct ScaledIconPreview: View {
                 .allowsHitTesting(false)
             }
 
-            // Selection outline sits above the icon but below the badge overlay so
-            // it never intercepts a drag.
-            if let selection,
-               let shape = PreviewHitTester.selectionShape(
-                   for: selection,
-                   settings: settings,
-                   displaySize: displaySize
-               ) {
-                SelectionOutline(
-                    shape: shape,
-                    displaySize: displaySize,
-                    selection: selection,
-                    pulse: selectionPulse
-                )
-            }
+            // The outlines sit above the icon but below the badge overlay so they
+            // never intercept a drag. Which of them are drawn — and whether a hover
+            // over the selected layer draws one stroke or two — is
+            // `PreviewOutlines.resolve`'s call, inside the overlay.
+            PreviewOutlineOverlay(
+                settings: settings,
+                displaySize: displaySize,
+                selected: selection,
+                wake: selectionPulse
+            )
 
             // Draggable badge overlay
             if settings.badge.isVisible {

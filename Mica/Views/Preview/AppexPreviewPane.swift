@@ -137,19 +137,12 @@ struct AppexPreviewPane: View {
             .accessibilityLabel(IconAccessibilityDescription.previewLabel)
             .accessibilityValue(IconAccessibilityDescription.value(for: viewModel.iconSettings))
             .overlay {
-                if let selection,
-                   let shape = PreviewHitTester.selectionShape(
-                       for: selection,
-                       settings: viewModel.iconSettings,
-                       displaySize: size
-                   ) {
-                    SelectionOutline(
-                        shape: shape,
-                        displaySize: size,
-                        selection: selection,
-                        pulse: selectionPulse
-                    )
-                }
+                PreviewOutlineOverlay(
+                    settings: viewModel.iconSettings,
+                    displaySize: size,
+                    selected: selection,
+                    wake: selectionPulse
+                )
             }
             .contentShape(Rectangle())
             .onTapGesture { location in
