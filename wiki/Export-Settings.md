@@ -22,6 +22,10 @@ Click **Reset** in the panel to go back to them.
 | Jamf Self Service+ item | 88 |
 | Jamf Self Service classic catalogue | 75 |
 | Jamf Self Service classic item | 120 |
+| Managed Software Center updates | 64 |
+| Managed Software Center categories | 75 |
+| Managed Software Center software | 90 |
+| Managed Software Center item | 140 |
 
 ### Export Size
 

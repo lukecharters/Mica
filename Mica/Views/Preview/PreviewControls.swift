@@ -11,11 +11,22 @@ struct MDMPortalSizePreset: Identifiable {
     var id: String { name }
 
     /// Known self service portals and the point size they show icons at.
+    ///
+    /// Managed Software Center draws its lists in a `WKWebView`, so its sizes come
+    /// from munki's own templates and stylesheets rather than from a nib. Three of
+    /// the four are the `<img width height>` on the item template; the item page is
+    /// the exception — its template says 175 and `detail.css` then overrides it to
+    /// 140, which is what the user sees. Read the CSS, not just the template.
+    /// Software and My Items share one row layout, hence one entry for both.
     static let all: [MDMPortalSizePreset] = [
         MDMPortalSizePreset(name: "Jamf Self Service+ - Catalog View", pointSize: 40),
         MDMPortalSizePreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
         MDMPortalSizePreset(name: "Jamf Self Service classic - Catalog View", pointSize: 75),
-        MDMPortalSizePreset(name: "Jamf Self Service classic - Item View", pointSize: 120)
+        MDMPortalSizePreset(name: "Jamf Self Service classic - Item View", pointSize: 120),
+        MDMPortalSizePreset(name: "Managed Software Center - Updates View", pointSize: 64),
+        MDMPortalSizePreset(name: "Managed Software Center - Categories View", pointSize: 75),
+        MDMPortalSizePreset(name: "Managed Software Center - Software View", pointSize: 90),
+        MDMPortalSizePreset(name: "Managed Software Center - Item View", pointSize: 140)
     ]
 }
 
@@ -130,6 +141,13 @@ struct PreviewSizeMenuContent: View {
     /// Selecting a row sets that size; switching a row *off* is meaningless here
     /// (the rows are mutually exclusive and one is always current), so it is
     /// ignored rather than mapped to some other size.
+    ///
+    /// **More than one row can be checked, and that is not a bug.** The state is a
+    /// point size and nothing else, so every row naming that size reads as current —
+    /// 64 is both a standard size and Managed Software Center's updates list, and 75
+    /// is both Jamf Self Service classic's catalogue and MSC's categories. Making
+    /// exactly one check would mean storing *which row* was picked, which no renderer
+    /// would read; the rows are honest as they stand.
     private func sizeBinding(for size: CGFloat?) -> Binding<Bool> {
         Binding(
             get: { previewPointSize == size },
