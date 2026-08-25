@@ -18,7 +18,23 @@ struct MDMPortalSizePreset: Identifiable {
     /// the exception — its template says 175 and `detail.css` then overrides it to
     /// 140, which is what the user sees. Read the CSS, not just the template.
     /// Software and My Items share one row layout, hence one entry for both.
+    ///
+    /// Fleet Desktop is a `WKWebView` shell too — it opens Fleet's own
+    /// `/device/{token}/self-service` page — so its sizes come from the React
+    /// frontend rather than from anything in the Swift app. They are
+    /// `SOFTWARE_ICON_SIZES` in `frontend/styles/var/icon_sizes.ts`, chosen per
+    /// view by a `size` prop on `SoftwareIcon`: the software list's table cell
+    /// takes the default `small` (24, pinned a second time by
+    /// `.software-name-cell .software-icon`), the updates card takes `large`
+    /// (64), and the tile layout takes `medium` (40). **The tiles are Fleet's
+    /// *mobile* layout**, which a Mac window reaches by being dragged under the
+    /// 768px breakpoint — the shell's minimum width is 480, so it is reachable
+    /// rather than theoretical. The shell sets no page zoom, so a CSS pixel is
+    /// a point.
     static let all: [MDMPortalSizePreset] = [
+        MDMPortalSizePreset(name: "Fleet Desktop - Software View", pointSize: 24),
+        MDMPortalSizePreset(name: "Fleet Desktop - Narrow Window View", pointSize: 40),
+        MDMPortalSizePreset(name: "Fleet Desktop - Updates View", pointSize: 64),
         MDMPortalSizePreset(name: "Jamf Self Service+ - Catalog View", pointSize: 40),
         MDMPortalSizePreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
         MDMPortalSizePreset(name: "Jamf Self Service classic - Catalog View", pointSize: 75),
@@ -144,10 +160,11 @@ struct PreviewSizeMenuContent: View {
     ///
     /// **More than one row can be checked, and that is not a bug.** The state is a
     /// point size and nothing else, so every row naming that size reads as current —
-    /// 64 is both a standard size and Managed Software Center's updates list, and 75
-    /// is both Jamf Self Service classic's catalogue and MSC's categories. Making
-    /// exactly one check would mean storing *which row* was picked, which no renderer
-    /// would read; the rows are honest as they stand.
+    /// 64 is a standard size, Managed Software Center's updates list *and* Fleet
+    /// Desktop's; 75 is both Jamf Self Service classic's catalogue and MSC's
+    /// categories; 40 is both Jamf Self Service+'s catalogue and Fleet's narrow
+    /// window. Making exactly one check would mean storing *which row* was picked,
+    /// which no renderer would read; the rows are honest as they stand.
     private func sizeBinding(for size: CGFloat?) -> Binding<Bool> {
         Binding(
             get: { previewPointSize == size },

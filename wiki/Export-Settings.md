@@ -18,6 +18,9 @@ Click **Reset** in the panel to go back to them.
 
 | Destination preview | Size |
 |---|---:|
+| Fleet Desktop software list | 24 |
+| Fleet Desktop narrow window | 40 |
+| Fleet Desktop updates | 64 |
 | Jamf Self Service+ catalogue | 40 |
 | Jamf Self Service+ item | 88 |
 | Jamf Self Service classic catalogue | 75 |

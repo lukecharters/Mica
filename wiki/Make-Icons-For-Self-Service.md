@@ -30,6 +30,7 @@ Self Service classic uses 75 points and 120 points.
 
 | Tool | Where to use the PNG |
 |---|---|
+| Fleet | Fleet Desktop self-service item icon |
 | Microsoft Intune | Company Portal app or script assignment artwork |
 | Mosyle | Self-Service item artwork |
 | Kandji | Self Service Library item artwork |
