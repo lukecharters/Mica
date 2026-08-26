@@ -16,19 +16,21 @@ Click **Reset** in the panel to go back to them.
 | 512 | Standard source artwork |
 | 1024 | High-resolution source artwork |
 
-| Destination preview | Size |
-|---|---:|
-| Fleet Desktop software list | 24 |
-| Fleet Desktop narrow window | 40 |
-| Fleet Desktop updates | 64 |
-| Jamf Self Service+ catalogue | 40 |
-| Jamf Self Service+ item | 88 |
-| Jamf Self Service classic catalogue | 75 |
-| Jamf Self Service classic item | 120 |
-| Managed Software Center updates | 64 |
-| Managed Software Center categories | 75 |
-| Managed Software Center software | 90 |
-| Managed Software Center item | 140 |
+The **Preview Size** menu lists these under the vendor's name.
+
+| Vendor | Destination preview | Size |
+|---|---|---:|
+| Fleet | Desktop - Software View | 24 |
+| Fleet | Desktop - Updates View | 64 |
+| Iru | Self Service - All Views | 164 |
+| Jamf | Self Service+ - Grid View | 40 |
+| Jamf | Self Service+ - Item View | 88 |
+| Jamf | Self Service classic - Grid View | 75 |
+| Jamf | Self Service classic - Item View | 120 |
+| Munki | Managed Software Center - Updates View | 64 |
+| Munki | Managed Software Center - Categories View | 75 |
+| Munki | Managed Software Center - Software View | 90 |
+| Munki | Managed Software Center - Item View | 140 |
 
 ### Export Size
 

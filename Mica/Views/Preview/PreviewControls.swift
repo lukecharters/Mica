@@ -4,11 +4,20 @@ import SwiftUI
 /// A named preview preset for an MDM self service portal, expressed as the point
 /// size the portal displays the icon at. Previewing at this size shows how the
 /// icon reads where users will actually see it; it does not affect export.
+///
+/// `vendor` is the menu section the preset sits under, so `name` carries only the
+/// portal and the view — the vendor's own name is stripped from the front of it
+/// where the section header already says it. Munki is the exception and keeps
+/// "Managed Software Center" in every row, because the vendor and the app are not
+/// the same word and admins know the app by its name.
 struct MDMPortalSizePreset: Identifiable {
+    let vendor: String
     let name: String
     let pointSize: Int
 
-    var id: String { name }
+    /// The vendor is part of the identity: two vendors can name a view the same
+    /// thing, and several already do.
+    var id: String { "\(vendor) \(name)" }
 
     /// Known self service portals and the point size they show icons at.
     ///
@@ -31,21 +40,48 @@ struct MDMPortalSizePreset: Identifiable {
     /// 768px breakpoint — the shell's minimum width is 480, so it is reachable
     /// rather than theoretical. The shell sets no page zoom, so a CSS pixel is
     /// a point.
+    ///
+    /// **Order matters twice.** `grouped` takes the vendors in the order they
+    /// first appear here, and a vendor's rows in the order they appear within it,
+    /// so this list is the only place the menu is arranged.
     static let all: [MDMPortalSizePreset] = [
-        MDMPortalSizePreset(name: "Fleet Desktop - Software View", pointSize: 24),
-        MDMPortalSizePreset(name: "Fleet Desktop - Updates View", pointSize: 64),
-        MDMPortalSizePreset(name: "Iru Self Service - All Views", pointSize: 164),
-        MDMPortalSizePreset(name: "Jamf Self Service+ - Grid View", pointSize: 40),
-        MDMPortalSizePreset(name: "Jamf Self Service+ - Item View", pointSize: 88),
-        MDMPortalSizePreset(name: "Jamf Self Service classic - Grid View", pointSize: 75),
-        MDMPortalSizePreset(name: "Jamf Self Service classic - Item View", pointSize: 120),
-        MDMPortalSizePreset(name: "Managed Software Center - Updates View", pointSize: 64),
-        MDMPortalSizePreset(name: "Managed Software Center - Categories View", pointSize: 75),
-        MDMPortalSizePreset(name: "Managed Software Center - Software View", pointSize: 90),
-        MDMPortalSizePreset(name: "Managed Software Center - Item View", pointSize: 140)
+        MDMPortalSizePreset(vendor: "Fleet", name: "Desktop - Software View", pointSize: 24),
+        MDMPortalSizePreset(vendor: "Fleet", name: "Desktop - Updates View", pointSize: 64),
+        MDMPortalSizePreset(vendor: "Iru", name: "Self Service - All Views", pointSize: 164),
+        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service+ - Grid View", pointSize: 40),
+        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service+ - Item View", pointSize: 88),
+        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service classic - Grid View", pointSize: 75),
+        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service classic - Item View", pointSize: 120),
+        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Updates View", pointSize: 64),
+        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Categories View", pointSize: 75),
+        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Software View", pointSize: 90),
+        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Item View", pointSize: 140)
     ]
+
+    /// `all` split into one group per vendor, which is what the menu's sections are.
+    ///
+    /// Derived rather than stored, so a preset added to `all` cannot be left out of
+    /// a section or land in a section of its own by a mistyped vendor showing up as
+    /// a second heading with the same-looking name — a grouping that is a *view* of
+    /// the list has no second copy to disagree with it.
+    static var grouped: [MDMPortalVendorGroup] {
+        all.reduce(into: [MDMPortalVendorGroup]()) { groups, preset in
+            if let index = groups.firstIndex(where: { $0.vendor == preset.vendor }) {
+                groups[index].presets.append(preset)
+            } else {
+                groups.append(MDMPortalVendorGroup(vendor: preset.vendor, presets: [preset]))
+            }
+        }
+    }
 }
 
+/// One vendor's presets, in the order they appear in `MDMPortalSizePreset.all`.
+struct MDMPortalVendorGroup: Identifiable {
+    let vendor: String
+    var presets: [MDMPortalSizePreset]
+
+    var id: String { vendor }
+}
 /// Zoom-level menu for the SwiftUI preview, shown in the window toolbar.
 ///
 /// The rungs come from `PreviewZoom`, which View ▸ Zoom In / Zoom Out walks too, so
@@ -145,11 +181,19 @@ struct PreviewSizeMenuContent: View {
             }
         }
 
-        Section {
-            ForEach(MDMPortalSizePreset.all) { preset in
-                Toggle(isOn: sizeBinding(for: CGFloat(preset.pointSize))) {
-                    Text(verbatim: "\(preset.name) (\(preset.pointSize)pt)")
+        // One section per vendor, headed by the vendor's name. A menu section
+        // header is a real `NSMenu` header item on macOS, so this is the platform's
+        // own grouping rather than a disabled row pretending to be one.
+        ForEach(MDMPortalSizePreset.grouped) { group in
+            Section {
+                ForEach(group.presets) { preset in
+                    Toggle(isOn: sizeBinding(for: CGFloat(preset.pointSize))) {
+                        Text(verbatim: "\(preset.name) (\(preset.pointSize)pt)")
+                    }
                 }
+            } header: {
+                // `verbatim:` — a vendor is a proper noun, not prose.
+                Text(verbatim: group.vendor)
             }
         }
     }
@@ -158,13 +202,13 @@ struct PreviewSizeMenuContent: View {
     /// (the rows are mutually exclusive and one is always current), so it is
     /// ignored rather than mapped to some other size.
     ///
-    /// **More than one row can be checked, and that is not a bug.** The state is a
-    /// point size and nothing else, so every row naming that size reads as current —
-    /// 64 is a standard size, Managed Software Center's updates list *and* Fleet
-    /// Desktop's; 75 is both Jamf Self Service classic's catalogue and MSC's
-    /// categories; 40 is both Jamf Self Service+'s catalogue and Fleet's narrow
-    /// window. Making exactly one check would mean storing *which row* was picked,
-    /// which no renderer would read; the rows are honest as they stand.
+    /// **More than one row can be checked, across sections as well as within one,
+    /// and that is not a bug.** The state is a point size and nothing else, so every
+    /// row naming that size reads as current — 64 is a standard size, Munki's updates
+    /// list *and* Fleet's; 75 is both Jamf Self Service classic's catalogue and
+    /// Munki's categories; 40 is both Jamf Self Service+'s catalogue and Fleet's
+    /// narrow window. Making exactly one check would mean storing *which row* was
+    /// picked, which no renderer would read; the rows are honest as they stand.
     private func sizeBinding(for size: CGFloat?) -> Binding<Bool> {
         Binding(
             get: { previewPointSize == size },
