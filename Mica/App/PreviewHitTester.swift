@@ -189,8 +189,22 @@ enum PreviewHitTester {
     ///
     /// Returns nil when there's nothing to outline — a badge selection with the
     /// badge switched off, or a foreground with no symbol or image drawn.
-    /// A *hidden* layer still returns its shape: the user has it selected and
-    /// needs to see where it sits.
+    ///
+    /// **A hidden layer outlines nothing**, and that is a per-*layer* gate rather
+    /// than a per-group one. It read the other way until 2026-08-26 — "the user has
+    /// it selected and needs to see where it sits" — and the asymmetry that showed
+    /// it was wrong is worth keeping: the only visibility gate here was
+    /// `badge.isVisible`, so hiding the badge (whose layers start hidden, and whose
+    /// group eye clears both at once) dropped its outline while hiding either icon
+    /// layer left an accent ring around artwork that was no longer on screen. One
+    /// gate per selection is what makes the two groups behave alike, and it covers
+    /// the case the group gate could not: a single hidden layer of a still-visible
+    /// group.
+    ///
+    /// The whole-group selections keep the group gate, because that is what they
+    /// outline: `.icon` is the System-mode appex raster, which `icon.isHidden` also
+    /// gates in the render, and `.badge` is the badge's Layout tab, which is about
+    /// the badge's placement rather than either layer.
     ///
     /// One deliberate divergence from the hit regions: a foreground selection is
     /// outlined as the glyph's own box rather than the click target, because a
@@ -211,12 +225,17 @@ enum PreviewHitTester {
 
         switch selection {
         case .icon, .iconBackground:
+            // `.icon` is the whole group (System mode), so it answers to the group's
+            // flag; `.iconBackground` is one layer and answers to its own.
+            let hidden = selection == .icon ? settings.icon.isHidden : settings.icon.background.isHidden
+            guard !hidden else { return nil }
             return .roundedRect(
                 centeredSquare(center: center, side: backgroundSide(settings: settings, enclosureSize: enclosure) ?? enclosure),
                 cornerRadius: cornerRadius(for: settings, displaySize: displaySize)
             )
 
         case .iconForeground:
+            guard !settings.icon.foreground.isHidden else { return nil }
             guard let box = foregroundBox(center: center, settings: settings,
                                           enclosureSize: enclosure, symbolSizing: symbolSizing) else {
                 return nil
@@ -226,6 +245,11 @@ enum PreviewHitTester {
 
         case .badge, .badgeBackground, .badgeForeground:
             guard settings.badge.isVisible else { return nil }
+            switch selection {
+            case .badgeForeground: guard !settings.badge.foreground.isHidden else { return nil }
+            case .badgeBackground: guard !settings.badge.background.isHidden else { return nil }
+            default: break // `.badge` is the Layout tab: the group gate above is its gate.
+            }
             let offset = BadgeGeometry.offset(for: settings, enclosureSize: enclosure)
             let badgeCenter = CGPoint(x: center.x + offset.width, y: center.y + offset.height)
             let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badge.scale)
@@ -321,8 +345,9 @@ enum PreviewHitTester {
     ) -> CGRect? {
         // No `background.source != .image` gate: an imported background no longer
         // replaces the foreground, so a foreground over imported artwork has a box
-        // to outline. Deliberately no `isHidden` gate either — a hidden-but-selected
-        // layer still outlines.
+        // to outline. No `isHidden` gate either: this answers "where is the
+        // foreground drawn", and its one caller — `selectionShape` — is where the
+        // per-layer visibility gate lives.
         switch settings.icon.foreground.source {
         case .symbol:
             let sizing = symbolSizing ?? SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
