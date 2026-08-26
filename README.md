@@ -23,11 +23,9 @@
 
 ## About
 
-Mica (Mac-admin Icon Creation App) is an app for Mac Admins to create icons for self service catalogues, user facing scripts and workflows, and anywhere else you can find a use for them.
+Mica (Mac admin Icon Creation App) is an app for Mac Admins to create icons for self service catalogues, user facing scripts and workflows, and anywhere else you can find a use for them.
 
 It pairs customisable SwiftUI elements with SF Symbols or imported graphics to enable you to quickly create visually consistent icons that look native on Apple platforms.
-
-(I know you don't hyphenate Mac Admin but I had to make the acronym work.)
 
  ![Inventory update icon with checkmark badge](assets/images/examples/gearshape.arrow.trianglehead.2.clockwise.rotate.90-mica.png) | ![Trash icon with uninstall badge](assets/images/examples/trash-mica.png) | ![Multicolor weather symbol with gradient background](assets/images/examples/cloud.sun.rain.fill-mica.png)  | ![This looks familiar...](assets/images/examples/bubble.fill-mica.png) | ![Uh oh](assets/images/examples/questionmark.folder.fill-mica.png) | ![You wouldn't download a car](assets/images/examples/download.a.car.png) | ![Menu bar and dock icon with reset badge](assets/images/examples/menubar.dock.rectangle-mica.png) | 
 |---|---|---|---|---|---|---|
