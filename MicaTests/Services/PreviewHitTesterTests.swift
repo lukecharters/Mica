@@ -637,7 +637,12 @@ struct PreviewHitTesterTests {
         s.badge.background.source = .image
         s.badge.background.image = try ImportedImage.testFixture()
         s.badge.background.isHidden = true // only the glyph draws, inside the badge circle
-        guard case .circle? = Self.shape(.badgeBackground, s) else {
+
+        // The layer itself outlines nothing while it is hidden, so the squircle
+        // fallback is asserted through the whole-badge selection — which is the one
+        // that still draws, the glyph keeping the group visible.
+        #expect(Self.shape(.badgeBackground, s) == nil)
+        guard case .circle? = Self.shape(.badge, s) else {
             Issue.record("Expected a circle when the imported background is hidden")
             return
         }
@@ -679,20 +684,57 @@ struct PreviewHitTesterTests {
         // foreground unoutlinable, because nothing was drawn to outline.
         var s = IconSettings()
         s.icon.applyBackgroundImage(try ImportedImage.testFixture())
-        // Hidden by the import, and a hidden-but-selected layer still outlines.
-        #expect(Self.shape(.iconForeground, s) != nil)
+        // The import hides the foreground, and a hidden layer outlines nothing —
+        // so switching it back on is what proves there is a box to trace. Before
+        // 2026-08-03 there was none at all: the imported background suppressed the
+        // foreground outright.
+        #expect(Self.shape(.iconForeground, s) == nil)
 
         s.icon.foreground.isHidden = false
         #expect(Self.shape(.iconForeground, s) != nil)
     }
 
-    @Test("A hidden layer still outlines, so the user can see what they're editing")
-    func selectionShape_hiddenLayerStillOutlines() {
+    @Test("A hidden layer outlines nothing, one layer at a time")
+    func selectionShape_hiddenLayerOutlinesNothing() {
+        // Each layer answers to its own flag, so hiding one must leave the other
+        // outlining. This is the half a group-level gate could not express, and the
+        // icon is where its absence showed: until 2026-08-26 the only visibility
+        // gate here was `badge.isVisible`, so a hidden icon layer kept its ring.
         var s = IconSettings()
-        s.icon.background.isHidden = true
         s.icon.foreground.isHidden = true
+        #expect(Self.shape(.iconForeground, s) == nil)
         #expect(Self.shape(.iconBackground, s) != nil)
+
+        s = IconSettings()
+        s.icon.background.isHidden = true
+        #expect(Self.shape(.iconBackground, s) == nil)
         #expect(Self.shape(.iconForeground, s) != nil)
+
+        var badge = Self.settingsWithBadge()
+        badge.badge.foreground.isHidden = true
+        #expect(Self.shape(.badgeForeground, badge) == nil)
+        #expect(Self.shape(.badgeBackground, badge) != nil)
+        #expect(Self.shape(.badge, badge) != nil) // Layout: the badge is still on screen
+
+        badge = Self.settingsWithBadge()
+        badge.badge.background.isHidden = true
+        #expect(Self.shape(.badgeBackground, badge) == nil)
+        #expect(Self.shape(.badgeForeground, badge) != nil)
+    }
+
+    @Test("Hiding a whole group drops its outlines, including System mode's")
+    func selectionShape_hiddenGroupOutlinesNothing() {
+        var s = IconSettings()
+        s.icon.isHidden = true // both layers at once, as the sidebar's group eye does
+        #expect(Self.shape(.icon, s) == nil)
+        #expect(Self.shape(.iconForeground, s) == nil)
+        #expect(Self.shape(.iconBackground, s) == nil)
+
+        // `.icon` is the System-mode appex raster, which `icon.isHidden` gates in the
+        // render too — but one hidden layer must not take it down with it.
+        var oneLayer = IconSettings()
+        oneLayer.icon.foreground.isHidden = true
+        #expect(Self.shape(.icon, oneLayer) != nil)
     }
 
     // MARK: - Target mapping
