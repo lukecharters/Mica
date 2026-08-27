@@ -47,7 +47,7 @@ struct MDMPortalSizePreset: Identifiable {
     static let all: [MDMPortalSizePreset] = [
         MDMPortalSizePreset(vendor: "Fleet", name: "Desktop - Software View", pointSize: 24),
         MDMPortalSizePreset(vendor: "Fleet", name: "Desktop - Updates View", pointSize: 64),
-        MDMPortalSizePreset(vendor: "Iru", name: "Self Service - All Views", pointSize: 164),
+        MDMPortalSizePreset(vendor: "Iru", name: "Self Service - All Views", pointSize: 82),
         MDMPortalSizePreset(vendor: "Jamf", name: "Self Service+ - Grid View", pointSize: 40),
         MDMPortalSizePreset(vendor: "Jamf", name: "Self Service+ - Item View", pointSize: 88),
         MDMPortalSizePreset(vendor: "Jamf", name: "Self Service classic - Grid View", pointSize: 75),
