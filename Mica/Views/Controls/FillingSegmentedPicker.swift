@@ -2,25 +2,53 @@
 import SwiftUI
 import AppKit
 
+/// What the segments *mean*, which on macOS 27 is a thing the control can be told.
+///
+/// `NSSegmentedControl.role` (macOS 27) separates "these are tabs onto different
+/// views" from "these are values of one setting", and draws them differently: the
+/// tabs role gets a neutral raised pill for the selection, the value role keeps the
+/// accent fill. Below 27 the property does not exist and both cases render as the
+/// stock accent-filled control, which is what every version of this wrapper did.
+enum SegmentedRole {
+    /// Two views of the same thing — Mica vs System. Neutral selection on macOS 27.
+    case tabs
+    /// Two values of one setting. Accent-filled selection.
+    case valueSelection
+}
+
 /// Segmented control that fills the width it's given, with equally-sized segments.
 ///
-/// SwiftUI's `Picker(.segmented)` keeps its intrinsic width — neither
-/// `maxWidth: .infinity` nor a definite `.frame(width:)` stretches it, they only
-/// centre it — so the inspector's pickers wrap `NSSegmentedControl` directly to get
-/// `segmentDistribution = .fillEqually`. Everything else is the stock control, so
-/// it still picks up the app accent and the platform's current segmented look
-/// (and needs no availability check to run on macOS 15).
+/// SwiftUI's `Picker` keeps its intrinsic width — neither `maxWidth: .infinity` nor
+/// a definite `.frame(width:)` stretches it, they only centre it — so the
+/// inspector's pickers wrap `NSSegmentedControl` directly to get
+/// `segmentDistribution = .fillEqually`. **That is still true of macOS 27's
+/// `.pickerStyle(.tabs)`**, measured 2026-08-28: the tabs style does not fill
+/// either. So the tabs *look* is reached here, through `role`, rather than by
+/// moving the control to SwiftUI and losing the fill.
 ///
-/// Trade-off worth knowing: AppKit draws a slightly squarer bezel than SwiftUI's
-/// capsule at the same control size. `segmentStyle` and `controlSize` don't change
-/// that, and neither does forcing a taller frame — the control keeps its own bezel
-/// metrics. Full width was the priority here.
+/// **The bezel is a capsule**, via `borderShape` (macOS 26). AppKit used to draw a
+/// squarer bezel here than SwiftUI's capsule and nothing could change it —
+/// `segmentStyle` and `controlSize` both failed — so the shape was a standing cost
+/// of taking the AppKit route. `borderShape` is the knob that was missing.
+///
+/// **`controlSize` is set but does nothing, and that is not a bug to go fix.**
+/// Measured 2026-08-28: an `NSSegmentedControl` on macOS 27 draws at **24pt tall
+/// whatever you do** — `.mini` through `.extraLarge`, `cell.controlSize`,
+/// `segmentStyle`, `borderShape` and a 16pt font all leave it at 24. Reporting a
+/// taller height from `sizeThatFits` grows the *box* and leaves the control drawn
+/// at 24pt inside it. The line stays because it is what the control asks for; do
+/// not read it as load-bearing. Height is the price of the fill: SwiftUI's
+/// `.pickerStyle(.tabs)` does scale (20/24/28/36pt at
+/// `.small`/`.regular`/`.large`/`.extraLarge`) but never fills, topping out at
+/// 176pt in a 330pt pane.
 struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
     /// Segments in display order, paired with the value each one selects.
     let segments: [(label: String, value: Value)]
     @Binding var selection: Value
     /// Spoken/described name for the control as a whole.
     var accessibilityLabel: String
+    /// Tabs or values. Only observable on macOS 27; ignored below it.
+    var role: SegmentedRole = .valueSelection
 
     func makeNSView(context: Context) -> NSSegmentedControl {
         let control = NSSegmentedControl(
@@ -31,6 +59,7 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
         )
         control.segmentDistribution = .fillEqually
         control.controlSize = .large
+        applyAppearance(to: control)
         control.setAccessibilityLabel(accessibilityLabel)
         // Let SwiftUI stretch us instead of pinning to the intrinsic width.
         control.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -40,6 +69,7 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
 
     func updateNSView(_ control: NSSegmentedControl, context: Context) {
         context.coordinator.parent = self
+        applyAppearance(to: control)
 
         // The segment set changes with the selected group — the badge has three
         // tabs, the icon two — so rebuild labels whenever they don't match.
@@ -55,6 +85,21 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
             control.selectedSegment = index
         }
         control.setAccessibilityLabel(accessibilityLabel)
+    }
+
+    /// The two version-gated appearance knobs, set from both `makeNSView` and
+    /// `updateNSView` so a caller that varies the role is honoured rather than stuck
+    /// with whatever it was made with.
+    private func applyAppearance(to control: NSSegmentedControl) {
+        if #available(macOS 26.0, *) {
+            control.borderShape = .capsule
+        }
+        if #available(macOS 27.0, *) {
+            switch role {
+            case .tabs: control.role = .tabs
+            case .valueSelection: control.role = .valueSelection
+            }
+        }
     }
 
     /// Fill the proposed width; keep the control's own height.
