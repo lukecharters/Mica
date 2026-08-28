@@ -24,10 +24,11 @@ enum PreviewZoom {
     /// The next rung above `zoom`, or nil if there is none.
     ///
     /// Deliberately "the smallest level strictly greater than" rather than an index
-    /// lookup, because `zoomLevel` is a plain `Double` that need not be on the
-    /// ladder: `0` is `ContentView`'s Fit sentinel, and a future control could set
-    /// anything. An index lookup would return nil for those and silently disable
-    /// both commands.
+    /// lookup, because `zoomLevel` is a plain `Double` that need not be on the ladder:
+    /// **pinch and ⌘-scroll write arbitrary values between `minimum` and `maximum`.**
+    /// An index lookup would return nil for every one of them and silently disable both
+    /// menu commands. It was written this way in anticipation of that, which is why the
+    /// continuous gestures needed no change here at all.
     static func zoomedIn(from zoom: Double) -> Double? {
         levels.first { $0 > zoom }
     }

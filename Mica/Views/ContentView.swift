@@ -957,14 +957,13 @@ struct ContentView: View {
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
-    /// Calculates the preview display size based on zoom level
+    /// The icon's on-screen edge length.
+    ///
+    /// A selected portal preview size becomes the base that zoom scales; otherwise the
+    /// export size does. `AppexPreviewPane.iconDisplaySize` is the System-mode twin and
+    /// must stay the same expression — the zoom gesture's anchor maths is handed this
+    /// number and would drift against a pane that sized its icon differently.
     private var previewDisplaySize: CGFloat {
-        if zoomLevel == 0 {
-            // "Fit" mode - use a reasonable fixed size
-            return 256
-        }
-        // A selected portal preview size becomes the base that zoom scales;
-        // otherwise fall back to the export size (existing behavior).
         let baseSize = previewPointSize ?? actualExportSize
         return baseSize * zoomLevel
     }

@@ -3,10 +3,15 @@
 // the Mac-conventions plan, which added View ▸ Zoom In / Zoom Out.
 //
 // The load-bearing assertions are the off-ladder ones. `zoomLevel` is a plain
-// `Double`, not an index, and `ContentView` already stores `0` as its Fit sentinel:
-// an implementation that looked the current value up in `levels` would return nil
-// for anything not on the ladder, which the menu reads as "disable both commands".
-// Every on-ladder test below would still pass.
+// `Double`, not an index, and pinch and ⌘-scroll write arbitrary values along it: an
+// implementation that looked the current value up in `levels` would return nil for
+// every one of them, which the menu reads as "disable both commands". Every on-ladder
+// test below would still pass.
+//
+// There used to be a third producer of off-ladder values — a `0` Fit sentinel in
+// `ContentView` — but nothing ever assigned it and the two branches reading it were
+// deleted on 2026-08-28. `0` is kept as a test input below because the step functions
+// still have to be total, not because anything writes it.
 
 import Testing
 import Foundation
@@ -66,11 +71,12 @@ struct PreviewZoomTests {
 
     // MARK: - Values that are not on the ladder
 
-    @Test("The Fit sentinel steps up onto the ladder and has nowhere down")
-    func fitSentinel_stepsOntoTheLadder() {
-        // `ContentView` stores 0 for Fit. It is below every rung, so Zoom In takes
-        // the lowest and Zoom Out is correctly unavailable — the behaviour an
-        // index-based lookup would get wrong in both directions.
+    @Test("Zero steps up onto the ladder and has nowhere down")
+    func zero_stepsOntoTheLadder() {
+        // Zero is below every rung, so Zoom In takes the lowest and Zoom Out is
+        // correctly unavailable — the behaviour an index-based lookup would get wrong
+        // in both directions. Nothing writes zero now that the Fit sentinel is gone;
+        // the point is that the step functions are total.
         #expect(PreviewZoom.zoomedIn(from: 0) == PreviewZoom.levels.first)
         #expect(PreviewZoom.zoomedOut(from: 0) == nil)
     }

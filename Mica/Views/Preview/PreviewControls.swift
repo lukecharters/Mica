@@ -116,11 +116,10 @@ struct ZoomMenu: View {
         )
     }
 
+    /// Off-ladder values are expected here — pinch and ⌘-scroll produce them — so this
+    /// reads the level rather than looking it up in `PreviewZoom.levels`.
     private var zoomLabel: String {
-        if zoomLevel == 0 {
-            return "Fit"
-        }
-        return "\(Int(zoomLevel * 100))%"
+        "\(Int(zoomLevel * 100))%"
     }
 }
 
