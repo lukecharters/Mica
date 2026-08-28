@@ -29,10 +29,6 @@ struct AppexPreviewPane: View {
     /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
     /// come back after they have faded.
     var outlineWake: Int = 0
-    /// Builds the drag-out payload, or nil to disable dragging the icon out. See
-    /// `DraggableIcon`; the owner supplies it because the System-mode payload needs
-    /// the appex export parameters.
-    var makeDragPayload: (() -> DraggableIcon)? = nil
     /// The right-click menu's commands, as in `ScaledIconPreview` — this pane is
     /// the canvas in System mode, so it carries the same menu.
     var contextActions: PreviewContextActions = .unavailable
@@ -79,6 +75,10 @@ struct AppexPreviewPane: View {
                             .stroke(Color.secondary.opacity(0.3))
                     )
             }
+            // Pinch and ⌘-scroll — the same placement, on the `ScrollView`, as this
+            // pane's Mica-mode twin. See the note there and in `PreviewZoomGesture`.
+            .previewZoomGestures(zoom: $zoomLevel, viewport: viewport.size,
+                                 iconSize: iconDisplaySize)
         }
         // `minWidth: 0` is load-bearing — see the long note on
         // `ContentView.previewPane`, which is this pane's Mica-mode twin. Without it
@@ -87,9 +87,15 @@ struct AppexPreviewPane: View {
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
+    /// The icon's on-screen edge length. Read by `iconContent` and by the zoom
+    /// gesture's anchor maths, which needs the same number — see `PreviewZoomGesture`.
+    private var iconDisplaySize: CGFloat {
+        (previewPointSize ?? viewModel.iconSettings.export.size) * zoomLevel
+    }
+
     @ViewBuilder
     private var iconContent: some View {
-        let size = (previewPointSize ?? viewModel.iconSettings.export.size) * zoomLevel
+        let size = iconDisplaySize
         if viewModel.appexIsGenerating {
             VStack(spacing: 12) {
                 ProgressView()
@@ -213,11 +219,6 @@ struct AppexPreviewPane: View {
                     actions: contextActions
                 )
             }
-            // Applied to the whole composite here, unlike `ScaledIconPreview` which
-            // applies it to the icon layer alone. There is no badge drag overlay in
-            // System mode, so nothing competes for the gesture and there is no reason
-            // to exclude the badge from the draggable region.
-            .iconDragOut(makeDragPayload)
         } else if let error = viewModel.appexError {
             ContentUnavailableView(
                 "Generation Failed",

@@ -71,9 +71,11 @@ struct PNGExportDocument: FileDocument {
 
     /// Render this document and encode it as PNG bytes.
     ///
-    /// Split out of `fileWrapper(configuration:)` on 2026-08-03 so the drag-out
-    /// payload (`DraggableIcon`) reaches the same render path ⇧⌘E does, without
-    /// having to synthesize a `WriteConfiguration` it has no way to obtain.
+    /// Split out of `fileWrapper(configuration:)` on 2026-08-03 so callers other than
+    /// the export panel reach the same render path ⇧⌘E does, without having to
+    /// synthesize a `WriteConfiguration` they have no way to obtain. Copy
+    /// (`IconPasteboard`) is the one that remains; the drag-out that motivated the
+    /// split was removed 2026-08-28.
     ///
     func pngData() throws -> Data {
         let resolved = try resolvedImage()
@@ -87,8 +89,8 @@ struct PNGExportDocument: FileDocument {
     /// raster, or an appex raster composited with a badge, plus the hidden-icon-group
     /// case that forces compositing — is the whole of what "export the current icon"
     /// means, and the failure mode of a second copy is one surface producing a subtly
-    /// different icon than the Save panel does for the same settings. Three callers now
-    /// route through it: ⇧⌘E, the drag-out (`DraggableIcon`) and Copy (`IconPasteboard`).
+    /// different icon than the Save panel does for the same settings. Two callers now
+    /// route through it: ⇧⌘E and Copy (`IconPasteboard`).
     ///
     /// Returning the image rather than only its PNG bytes is what Copy needs: the
     /// pasteboard carries TIFF alongside PNG, and deriving TIFF from encoded PNG bytes

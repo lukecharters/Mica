@@ -30,13 +30,20 @@ The icon background is hidden here, so the Icon eye is mixed.
 ## Toolbar
 | Control | Purpose |
 |---|---|
-| Zoom | Changes the canvas zoom. |
+| Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Preview Size | Shows the icon at a chosen point size. |
 | Sliders button | Shows or hides advanced controls. |
 | Controls and Export | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
 
 Preview size and zoom do not change the exported PNG.
+
+A pinch or a ⌘ scroll can set any zoom between 25% and 800%.
+The menu then shows that value with no step ticked.
+⌘+ and ⌘− still move to the next step up or down.
+
+Both gestures zoom into the point under the pointer.
+Put the pointer on the part of the icon you want to inspect.
 
 ## Symbol browser
 Click the grid button beside a Symbol field to open the symbol browser.
@@ -59,9 +66,14 @@ Press Escape with an empty search to close the browser.
 | Drop an image on the icon | Imports the icon background. |
 | Drop an image on the badge | Imports the badge background. |
 | Right-click | Opens copy, export, paste, remove, and reset actions. |
-| Drag the icon out | Exports a PNG to the drop target. |
+| Pinch on a trackpad | Zooms the canvas. |
+| Hold ⌘ and scroll | Zooms the canvas. |
+| Scroll | Moves the canvas when the icon is larger than the pane. |
 
 System mode does not accept image drops for that group.
+
+Both zoom gestures work in Mica mode and System mode.
+The pointer must be over the canvas.
 
 ## Exporting a PNG
 Press ⇧⌘E, or click **Export** in the Export tab.
