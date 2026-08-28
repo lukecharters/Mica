@@ -100,44 +100,38 @@ struct MicaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                // **No `minWidth:` here, deliberately — it was `800` until 2026-08-28
-                // and it was a lie.** The window cannot be 800pt wide with both side
-                // panes open: the sidebar's `min` (220) plus the inspector's (330)
-                // plus the detail column's own minimum plus two dividers puts the
-                // real floor at ~1040. `NavigationSplitView` computes that floor for
-                // itself and enforces it; stating a smaller one here only told AppKit
-                // the window may go somewhere its content cannot follow.
+                // **No `minWidth:` here, deliberately — it was `800` until
+                // 2026-08-28, and a root minimum below what the columns need is one
+                // of two independent ways to kill this window on macOS 27.**
                 //
-                // On macOS 26 that contradiction was absorbed silently. On **macOS 27**
-                // it terminates the app: drag the window wider, then back in past
-                // ~1040, and SwiftUI's `SplitViewChildController` gets a fresh
-                // `didUpdateMinSize` on every constraints pass, re-invalidates layout
-                // from inside `_willUpdateConstraintsForSubtree`, and AppKit throws
-                // *"…more Update Constraints in Window passes than there are views in
-                // the window"*. Reproduced on 27.0 (26A5421a) in **20 lines of stock
-                // SwiftUI** — a `NavigationSplitView`, an `.inspector`, and a root
-                // `minWidth` below their combined floor — so it is a SwiftUI
-                // regression rather than anything of Mica's. Removing any one of the
-                // three ingredients avoids it.
+                // Stating a minimum the content cannot honour tells AppKit the window
+                // may go where its layout cannot follow. macOS 26 absorbed that
+                // silently; macOS 27 (27.0, 26A5421a) terminates the app —
+                // `SplitViewChildController` takes a fresh `didUpdateMinSize` on every
+                // constraints pass, re-invalidates layout from inside
+                // `NSHostingView._willUpdateConstraintsForSubtree`, and AppKit throws
+                // `NSGenericException`, *"…more Update Constraints in Window passes
+                // than there are views in the window"*. Reproduced in **20 lines of
+                // stock SwiftUI** — a `NavigationSplitView`, an `.inspector`, and a
+                // root `minWidth` below their combined floor — with an inert `Color`
+                // as the detail, so the root minimum is dangerous entirely on its own.
                 //
-                // Two things measured alongside, both of which rule out the obvious
-                // alternative fixes. **`minHeight:` is innocent** — height-only
-                // repros survive — so it stays. And a *larger* `minWidth:` (1100)
-                // also survives but is the wrong answer: the sidebar (⌃⌘S) and the
-                // inspector (⌃⌘I) both hide, and with them hidden the split view's
-                // own floor drops, which a fixed number here would nail shut. Letting
-                // the columns state their own minimum is what keeps the window as
-                // narrow as its *current* contents allow — measured at 1031pt with
-                // both panes open and 300pt with both hidden, where the toolbar
-                // collapses into its `»` overflow and the preview scrolls.
+                // **Removing it was necessary and was not sufficient**, which the
+                // first pass at this got wrong: the app still died on a live drag
+                // afterwards, because the *preview's* scroll view was reporting a
+                // minimum that moved with the window. That is the second way, and the
+                // one that was actually biting; the fix is the pinned `minWidth: 0` on
+                // `ContentView.previewPane`, where the mechanism is written up.
                 //
-                // **A `minWidth:` on the detail column instead was tried and is
-                // worse.** It is safe — it raises the floor the split view computes
-                // rather than contradicting it, so nothing loops — but the floor it
-                // produces is not the sum you would predict: `minWidth: 480` on the
-                // detail content put the window's minimum at **1520pt**, not the
-                // ~1030 of 480 + 220 + 330. Whatever `NavigationSplitView` is adding
-                // there, a detail minimum is not a dial you can set to a width.
+                // Two dead ends, both of which look like the answer. A *larger*
+                // `minWidth:` (1100) survives, but both panes hide (⌃⌘S, ⌃⌘I) and the
+                // window's real floor drops with them — 1014pt with both open, 734pt
+                // with the sidebar hidden — so a fixed number here nails that shut. A
+                // `minWidth:` on the **detail column** is safe and is not a dial: 480
+                // there produced a 1520pt window minimum, and 320 produced 1334pt in
+                // *every* configuration.
+                //
+                // `minHeight:` is innocent — height-only repros survive — so it stays.
                 .frame(idealWidth: 1200, minHeight: 500, idealHeight: 800)
         }
         .defaultSize(width: 1200, height: 800)

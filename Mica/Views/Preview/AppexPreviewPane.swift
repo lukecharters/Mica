@@ -74,7 +74,11 @@ struct AppexPreviewPane: View {
                     .stroke(Color.secondary.opacity(0.3))
                 )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // `minWidth: 0` is load-bearing — see the long note on
+        // `ContentView.previewPane`, which is this pane's Mica-mode twin. Without it
+        // a live window drag loops SwiftUI's `SplitViewChildController` against
+        // AppKit's constraints pass and macOS 27 terminates the app.
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
     @ViewBuilder
