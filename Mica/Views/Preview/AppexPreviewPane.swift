@@ -61,18 +61,24 @@ struct AppexPreviewPane: View {
     }
 
     private var previewContent: some View {
-        ScrollView([.horizontal, .vertical]) {
-            VStack {
-//                Spacer(minLength: 0)
+        // The `GeometryReader` centres the icon, and it belongs outside the
+        // `ScrollView` — see the long note on `ContentView.previewPane`, which is this
+        // pane's Mica-mode twin and carries the macOS 27 measurement. The border is
+        // attached after the frame so it keeps hugging the pane rather than the
+        // icon, which is what it did before the stretch stopped working.
+        GeometryReader { viewport in
+            ScrollView([.horizontal, .vertical]) {
                 iconContent
-                // .padding()
-//                Spacer(minLength: 0)
+                    .frame(
+                        minWidth: viewport.size.width,
+                        minHeight: viewport.size.height,
+                        alignment: .center
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.3))
+                    )
             }
-             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.secondary.opacity(0.3))
-                )
         }
         // `minWidth: 0` is load-bearing — see the long note on
         // `ContentView.previewPane`, which is this pane's Mica-mode twin. Without it

@@ -307,6 +307,18 @@ struct ContentView: View {
             // focused view, so without it the canvas is never asked. A text field with a
             // selection keeps its own Copy, which is the behaviour we want.
             .focusable()
+            // **No focus ring**, and this is a fix rather than a preference. macOS 27
+            // draws a focus effect for a plain `.focusable()` where macOS 26 drew
+            // none, and because the ring is painted for a region this size it appears
+            // as a stray accent rectangle across the whole window — most visibly
+            // *during and after a window resize*, where it is rendered against the
+            // frame the column had a pass ago and so no longer lines up with anything
+            // on screen. The canvas is not a control: it is `.focusable()` only so the
+            // standard Copy, Paste and arrow keys route here (see below), and a ring
+            // around the entire preview says nothing a user needs to know.
+            // `.focusEffectDisabled()` suppresses the drawing and **not** the focus, so
+            // all three commands still resolve.
+            .focusEffectDisabled()
             .onCopyCommand(perform: copyIconProviders)
             // Focus-resolved ⌘V, the mirror of the ⌘C above and the replacement for
             // the four ⇧⌘V/I/B/G paste shortcuts C4 removed. `.onPasteCommand` hooks
@@ -883,10 +895,25 @@ struct ContentView: View {
 
     private var previewPane: some View {
         // Size + zoom controls live in the window toolbar (see `.toolbar`).
-        ScrollView([.horizontal, .vertical]) {
-            VStack {
-//                Spacer(minLength: 0)
-
+        //
+        // **The `GeometryReader` is what centres the icon, and it has to sit
+        // *outside* the `ScrollView`.** This was `.frame(maxWidth: .infinity,
+        // maxHeight: .infinity)` on a `VStack` inside the scroll view until macOS 27,
+        // where it stopped centring anything and left the icon pinned to the top
+        // leading corner of the pane. A scroll view proposes `nil` — unbounded — to
+        // its content on both scrollable axes, and `.infinity` against an unbounded
+        // proposal resolves to the child's own ideal size, so the stretch was always
+        // a no-op that macOS 26 happened to paper over. Nothing about it was ever
+        // load-bearing, which is why the two `Spacer(minLength: 0)`s it sat between
+        // had already been commented out with no visible effect.
+        //
+        // A minimum measured off the viewport is the standard answer: content smaller
+        // than the pane grows to fill it and centres inside that frame, content larger
+        // keeps its own size and scrolls. It must go **on the content**, never on the
+        // `ScrollView` itself — see the pin below, which is the same measurement
+        // read the other way round.
+        GeometryReader { viewport in
+            ScrollView([.horizontal, .vertical]) {
                 ScaledIconPreview(
                     settings: $viewModel.iconSettings,
                     displaySize: previewDisplaySize,
@@ -901,11 +928,12 @@ struct ContentView: View {
                     makeDragPayload: makeDragPayload,
                     contextActions: previewContextActions
                 )
-//                .padding()
-
-//                Spacer(minLength: 0)
+                .frame(
+                    minWidth: viewport.size.width,
+                    minHeight: viewport.size.height,
+                    alignment: .center
+                )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         // **`minWidth: 0` is load-bearing: without it, dragging the window narrow
         // kills the app on macOS 27.** The pinned minimum is the whole fix; the rest
@@ -932,6 +960,14 @@ struct ContentView: View {
         // panes hidden, which nails the window open. The price of zero is that with
         // both panes hidden (⌃⌘S, ⌃⌘I) the window drags down to ~97pt where it used
         // to stop near 300; a floor there needs `NSWindow.minSize`, not this frame.
+        //
+        // **The viewport-derived minimum above is not a violation of this**, and the
+        // distinction is the whole reason it is where it is: it is applied to the
+        // scroll view's *content*, and a scroll view's own minimum does not track its
+        // content's — it scrolls instead. What the split view child asks
+        // `NSHostingView` for is this frame, and this frame answers a constant. Both
+        // configurations were re-run under a live drag after the centring landed and
+        // survive; see `.claude/rules/swiftui-presentation.md` for the numbers.
         //
         // `AppexPreviewPane.previewContent` is the same shape and carries the same
         // pin — System mode is the other branch of this column.
