@@ -907,7 +907,35 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // **`minWidth: 0` is load-bearing: without it, dragging the window narrow
+        // kills the app on macOS 27.** The pinned minimum is the whole fix; the rest
+        // of this frame is the fill it always was.
+        //
+        // This is a both-axis `ScrollView` whose content — the icon at its display
+        // size — is routinely far wider than the pane. Absent an explicit minimum,
+        // the minimum `NSHostingView` reports for this split-view child is derived
+        // from the width it was last offered, so it *changes as the window resizes*.
+        // During a live drag that lands SwiftUI's
+        // `SplitViewChildController.hostingView(_:didUpdateMinSize:maxSize:)` on
+        // every constraints pass, each one re-invalidating layout from inside
+        // `NSHostingView._willUpdateConstraintsForSubtree`, until AppKit throws
+        // `NSGenericException` — *"…more Update Constraints in Window passes than
+        // there are views in the window"* — and the process dies mid-drag. A
+        // constant minimum cannot change per pass, so the loop has nothing to feed
+        // on. Measured with the sidebar hidden and the inspector shown: **5/5 crash
+        // at 749pt before, 5/5 survive after**, settling at 734pt — the same width
+        // an inert `Color` in this column settles at.
+        //
+        // **It has to be zero.** A non-zero constant is stable too, but a detail
+        // minimum is not a dial you can set to a width: `minWidth: 320` here put the
+        // window's own minimum at **1334pt in every configuration**, including both
+        // panes hidden, which nails the window open. The price of zero is that with
+        // both panes hidden (⌃⌘S, ⌃⌘I) the window drags down to ~97pt where it used
+        // to stop near 300; a floor there needs `NSWindow.minSize`, not this frame.
+        //
+        // `AppexPreviewPane.previewContent` is the same shape and carries the same
+        // pin — System mode is the other branch of this column.
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
     /// Calculates the preview display size based on zoom level
