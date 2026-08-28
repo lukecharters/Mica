@@ -44,15 +44,10 @@ struct ScaledIconPreview: View {
     /// come back after they have faded — including on a re-click of the layer that
     /// is already selected.
     var outlineWake: Int = 0
-    /// Builds the drag-out payload, or nil to disable dragging the icon out. The
-    /// owner supplies it because the payload needs the export document, which for a
-    /// System-mode layer means view-model state this view never sees. See
-    /// `DraggableIcon`.
-    var makeDragPayload: (() -> DraggableIcon)? = nil
     /// What the right-click menu's Copy Icon / Export as PNG… / Paste rows do, and
-    /// whether the first two are offered. Supplied by the owner for the same
-    /// reason `makeDragPayload` is — they need the export document and the
-    /// pasteboard, which are view-model state this view never sees.
+    /// whether the first two are offered. Supplied by the owner because they need
+    /// the export document and the pasteboard, which are view-model state this view
+    /// never sees.
     var contextActions: PreviewContextActions = .unavailable
 
     /// So a badge drag is one undo step rather than one per frame.
@@ -92,18 +87,7 @@ struct ScaledIconPreview: View {
 
     var body: some View {
         ZStack {
-            // The drag-out source is this layer, not the composite, and that placement
-            // is the whole trick: the badge drag overlay is a sibling *above* it in the
-            // ZStack, so a press on the badge hits the overlay and moves the badge,
-            // while a press anywhere else hits this and drags a PNG out. No gesture
-            // arbitration is involved, which is what keeps it clear of the problem
-            // recorded below — a parent-level `.draggable` would compete with the
-            // overlay's `DragGesture` exactly as `.onTapGesture` did.
-            //
-            // The modifier is applied here, at the call site, so `IconContentView`
-            // itself stays a pure render view per the project notes.
             IconContentView(settings: settings, displaySize: displaySize, badgeAppexImage: badgeAppexImage)
-                .iconDragOut(makeDragPayload)
                 // The app's central object, and not an accessibility element at
                 // all until item C1 — a VoiceOver user was told nothing about
                 // what had been generated. `children: .ignore` because the render

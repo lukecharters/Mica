@@ -59,7 +59,6 @@ Press Escape with an empty search to close the browser.
 | Drop an image on the icon | Imports the icon background. |
 | Drop an image on the badge | Imports the badge background. |
 | Right-click | Opens copy, export, paste, remove, and reset actions. |
-| Drag the icon out | Exports a PNG to the drop target. |
 
 System mode does not accept image drops for that group.
 

@@ -64,10 +64,9 @@ enum IconPasteboard {
     /// `representations(of:)`, so ⇧⌘C and a focused-canvas ⌘C cannot start offering
     /// different things.
     ///
-    /// **Registered eagerly, unlike the drag-out's promise.** A drag may be abandoned,
-    /// so `DraggableIcon` renders on drop; a Copy has already happened by the time the
-    /// user looks at it, and a pasteboard holding an unresolved promise is one a
-    /// receiver may decline to paste at all.
+    /// **Registered eagerly, with the bytes already rendered.** A Copy has already
+    /// happened by the time the user looks at it, and a pasteboard holding an
+    /// unresolved promise is one a receiver may decline to paste at all.
     @MainActor
     static func itemProvider(document: PNGExportDocument) throws -> NSItemProvider {
         let provider = NSItemProvider()

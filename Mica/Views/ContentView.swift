@@ -41,8 +41,8 @@ extension FocusedValues {
     ///
     /// Gated on `canExport` exactly as `exportPNG` is, and for the same reason: a copy
     /// made while a System-mode layer's appex raster is pending would put an icon on
-    /// the pasteboard with that layer missing. Copy, drag-out and ⇧⌘E are three faces
-    /// of one export and answer to one rule.
+    /// the pasteboard with that layer missing. Copy and ⇧⌘E are two faces of one
+    /// export and answer to one rule.
     @Entry var copyIcon: FocusedAction?
 
     // MARK: The View menu
@@ -292,7 +292,6 @@ struct ContentView: View {
                         hovered: hoveredPreviewSelection,
                         pointerIsInside: pointerIsInside,
                         outlineWake: outlineWake,
-                        makeDragPayload: makeDragPayload,
                         contextActions: previewContextActions
                     )
                 }
@@ -704,7 +703,7 @@ struct ContentView: View {
 
     /// Put the rendered icon on the pasteboard as PNG and TIFF.
     ///
-    /// Reuses `pngExportDocument`, so Copy, the drag-out and ⇧⌘E all render the same
+    /// Reuses `pngExportDocument`, so Copy and ⇧⌘E both render the same
     /// icon from the same inputs. No symbol name goes with it: ⌘C in the Symbol field
     /// is the standard Copy and already does that better.
     private func copyIconToPasteboard() {
@@ -712,26 +711,6 @@ struct ContentView: View {
             try IconPasteboard.write(document: pngExportDocument)
         } catch {
             viewModel.report(.copyFailed(error))
-        }
-    }
-
-    /// Builds the drag-out payload, or nil while dragging one out would be wrong.
-    ///
-    /// Returning nil withdraws the drag entirely, on the same rule that withdraws
-    /// ⇧⌘E: `canExport` is false while a System-mode layer's appex raster is still
-    /// rendering, and a PNG written in that window silently omits the pending layer.
-    /// A drag-out *is* an export, so it cannot be the one caller that ignores that.
-    ///
-    /// The payload wraps `pngExportDocument` rather than rebuilding one, so a dragged
-    /// file and a ⇧⌘E export of the same icon are the same bytes under the same name.
-    /// Nothing here renders — see `DraggableIcon`, which is a promise.
-    private var makeDragPayload: (() -> DraggableIcon)? {
-        guard viewModel.canExport else { return nil }
-        return {
-            DraggableIcon(
-                document: pngExportDocument,
-                baseName: viewModel.iconSettings.exportBaseName
-            )
         }
     }
 
@@ -750,7 +729,7 @@ struct ContentView: View {
     ///
     /// Swapping the spec into a *copy* of the window's settings is the whole
     /// mechanism: `viewModel.iconSettings` is untouched, so an override changes one
-    /// file and nothing else — not the inspector, not undo, not the next drag-out.
+    /// file and nothing else — not the inspector, not undo, not the next ⇧⌘C.
     /// Both the Mica and the System branch read the copy, or a System-mode export
     /// would quietly ignore the panel while a Mica one honoured it.
     private func pngExportDocument(export: ExportSpec) -> PNGExportDocument {
@@ -925,7 +904,6 @@ struct ContentView: View {
                     hovered: hoveredPreviewSelection,
                     pointerIsInside: pointerIsInside,
                     outlineWake: outlineWake,
-                    makeDragPayload: makeDragPayload,
                     contextActions: previewContextActions
                 )
                 .frame(
