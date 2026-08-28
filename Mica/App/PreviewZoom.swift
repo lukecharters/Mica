@@ -1,4 +1,5 @@
 // App/PreviewZoom.swift
+import CoreGraphics
 import Foundation
 
 /// The preview's zoom ladder, and the two steps along it.
@@ -67,5 +68,51 @@ enum PreviewZoom {
         // division by a zero starting scale is the shape that would.
         guard zoom.isFinite else { return actualSize }
         return min(max(zoom, minimum), maximum)
+    }
+
+    /// Where the scroll offset must move so the content under `anchor` stays under
+    /// `anchor` when the zoom is multiplied by `factor`. One axis; call it twice.
+    ///
+    /// All lengths are in the viewport's coordinates. `offset` is the *scrolled* amount,
+    /// zero at the leading edge — not a scroll view's raw `contentOffset`, which on a
+    /// pane inside a window with a sidebar and a toolbar starts at minus the safe-area
+    /// insets. `anchor` is the pointer's position within the viewport.
+    ///
+    /// **The centring padding is why this is not just `(offset + anchor) × factor −
+    /// anchor`.** The icon lives in a frame floored at the viewport size, so while it is
+    /// *smaller* than the viewport it carries `(viewport − icon) / 2` of padding either
+    /// side, and while it is larger it carries none. A step that crosses that boundary
+    /// does not scale content positions uniformly, and treating it as if it did keeps
+    /// the wrong *feature* under the pointer — off by the old padding times the factor,
+    /// measured at ~25pt going from 100% to 121% in a 553pt pane. Converting into the
+    /// icon's own space first is exact on both sides of the boundary and across it.
+    ///
+    /// Two results are floors rather than held points, and both are honest:
+    ///
+    /// - **An icon that still fits the viewport scrolls not at all.** It is centred, the
+    ///   scrollable range is empty, and the answer is zero however the pointer moved.
+    /// - **A point close to the leading edge cannot always be held**, because holding it
+    ///   would mean scrolling past the content's own start. It slides instead.
+    ///
+    /// The upper bound is deliberately absent: the scroll view knows the real content
+    /// size and clamps into it.
+    static func anchoredOffset(
+        offset: CGFloat,
+        anchor: CGFloat,
+        viewportExtent: CGFloat,
+        iconExtent: CGFloat,
+        factor: Double
+    ) -> CGFloat {
+        guard factor.isFinite, factor > 0 else { return max(0, offset) }
+        // Still fits, so it is centred and there is nothing to scroll. Returning the
+        // unclamped arithmetic here would hand the scroll view a value it has to throw
+        // away — correct on screen only because of that clamp, which is not a property
+        // worth relying on.
+        guard iconExtent * factor > viewportExtent else { return 0 }
+        // Past the guard the *new* padding is zero, which is what collapses the general
+        // form to this.
+        let paddingBefore = max(0, (viewportExtent - iconExtent) / 2)
+        let withinIcon = (offset + anchor) - paddingBefore
+        return max(0, withinIcon * factor - anchor)
     }
 }

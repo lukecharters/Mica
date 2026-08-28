@@ -147,6 +147,103 @@ struct PreviewZoomTests {
         #expect(PreviewZoom.clamped(-.infinity) == PreviewZoom.actualSize)
     }
 
+    // MARK: - Anchoring the zoom under the pointer
+
+    /// A 553pt pane, the width measured in the running app with both side panes open.
+    private let pane: CGFloat = 553
+
+    @Test("A point under the pointer stays under it while the icon exceeds the viewport")
+    func anchoredOffset_holdsThePointUnderThePointer() {
+        // The icon is larger than the pane, so there is no centring padding either side
+        // and the transform is a plain scale. Anchor 100pt in, zoom by 1.5: the content
+        // point at 100 moves to 150, so the offset must become 50 to put it back.
+        let offset = PreviewZoom.anchoredOffset(
+            offset: 0, anchor: 100, viewportExtent: pane, iconExtent: 1024, factor: 1.5
+        )
+        #expect(offset == 50)
+        // …and the invariant that says it, stated directly.
+        let contentPointAfter = 100 * 1.5
+        #expect(contentPointAfter - offset == 100)
+    }
+
+    @Test("It composes: two zooms from an already-scrolled position still hold the point")
+    func anchoredOffset_composesFromAScrolledPosition() {
+        var offset: CGFloat = 0
+        let anchor: CGFloat = 220
+        var icon: CGFloat = 1024
+        // The content position of the anchored point, tracked independently.
+        var point = offset + anchor
+        for factor in [1.155, 1.155, 0.8] {
+            offset = PreviewZoom.anchoredOffset(
+                offset: offset, anchor: anchor, viewportExtent: pane, iconExtent: icon, factor: factor
+            )
+            point *= factor
+            icon *= factor
+            #expect(abs((point - offset) - anchor) < 0.001,
+                    "the anchored point drifted off the pointer")
+        }
+    }
+
+    @Test("Crossing the fits-the-pane boundary keeps the right feature under the pointer")
+    func anchoredOffset_accountsForTheCentringPadding() {
+        // **This is the case that shipped wrong**, measured at ~25pt of drift on screen.
+        // At 512 the icon is smaller than the 553pt pane, so it is centred with 20.5pt
+        // either side; at 512 × 1.21 = 620 it is larger and has none. So content
+        // positions do *not* all scale by the factor across this step.
+        //
+        // The discriminating assertion has to name a point on the **icon**, because the
+        // naive formula is perfectly self-consistent about *content* positions — it holds
+        // a content point and thereby moves the artwork under the pointer.
+        let icon: CGFloat = 512
+        let factor = 1.21
+        let paddingBefore = (pane - icon) / 2          // 20.5
+        let feature: CGFloat = 379.5                    // somewhere on the icon
+        let anchor = paddingBefore + feature            // the pointer sits on it: 400
+
+        let offset = PreviewZoom.anchoredOffset(
+            offset: 0, anchor: anchor, viewportExtent: pane, iconExtent: icon, factor: factor
+        )
+        // After the zoom there is no padding, so the feature's content position is just
+        // its icon position scaled.
+        #expect(abs((feature * factor - offset) - anchor) < 0.001,
+                "the feature under the pointer should not have moved")
+
+        // The naive formula, for contrast: it drifts by the padding it ignored.
+        let naive = max(0, anchor * factor - anchor)
+        #expect(abs((feature * factor - naive) - anchor) > 20,
+                "the naive formula should visibly move the feature")
+    }
+
+    @Test("An icon smaller than the viewport on both sides of the zoom never scrolls")
+    func anchoredOffset_staysAtZeroWhileTheIconFits() {
+        // 200 → 240 in a 553pt pane: centred throughout, so the scrollable range is
+        // empty and the answer must be zero whatever the pointer did.
+        #expect(PreviewZoom.anchoredOffset(
+            offset: 0, anchor: 300, viewportExtent: pane, iconExtent: 200, factor: 1.2
+        ) == 0)
+    }
+
+    @Test("The result never goes below the leading edge")
+    func anchoredOffset_hasAFloorOfZero() {
+        // Zooming 1024 → 512 in a 553pt pane ends up fitting, so there is nothing to
+        // scroll; and even where it does not fit, holding a point this close to the
+        // leading edge would need a negative offset. Either way the floor applies and
+        // the point slides, which beats scrolling past the content.
+        #expect(PreviewZoom.anchoredOffset(
+            offset: 0, anchor: 10, viewportExtent: pane, iconExtent: 1024, factor: 0.5
+        ) == 0)
+    }
+
+    @Test("A non-finite or non-positive factor cannot corrupt the offset")
+    func anchoredOffset_rejectsNonsenseFactors() {
+        for factor in [Double.nan, .infinity, 0, -2] {
+            let offset = PreviewZoom.anchoredOffset(
+                offset: 120, anchor: 100, viewportExtent: pane, iconExtent: 1024, factor: factor
+            )
+            #expect(offset == 120, "a bad factor should leave the offset alone, got \(offset)")
+        }
+    }
+
     @Test("Scrolling up and back down by the same amount is the identity")
     func exponentialFactors_areSymmetric() {
         // Why `PreviewScrollZoomMonitor` uses `exp(delta × k)` rather than

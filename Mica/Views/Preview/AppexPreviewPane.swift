@@ -75,20 +75,27 @@ struct AppexPreviewPane: View {
                             .stroke(Color.secondary.opacity(0.3))
                     )
             }
+            // Pinch and ⌘-scroll — the same placement, on the `ScrollView`, as this
+            // pane's Mica-mode twin. See the note there and in `PreviewZoomGesture`.
+            .previewZoomGestures(zoom: $zoomLevel, viewport: viewport.size,
+                                 iconSize: iconDisplaySize)
         }
         // `minWidth: 0` is load-bearing — see the long note on
         // `ContentView.previewPane`, which is this pane's Mica-mode twin. Without it
         // a live window drag loops SwiftUI's `SplitViewChildController` against
         // AppKit's constraints pass and macOS 27 terminates the app.
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-        // Pinch and ⌘-scroll — the same placement, after the frame, as this pane's
-        // Mica-mode twin. See the note there and in `PreviewZoomGesture`.
-        .previewZoomGestures(zoom: $zoomLevel)
+    }
+
+    /// The icon's on-screen edge length. Read by `iconContent` and by the zoom
+    /// gesture's anchor maths, which needs the same number — see `PreviewZoomGesture`.
+    private var iconDisplaySize: CGFloat {
+        (previewPointSize ?? viewModel.iconSettings.export.size) * zoomLevel
     }
 
     @ViewBuilder
     private var iconContent: some View {
-        let size = (previewPointSize ?? viewModel.iconSettings.export.size) * zoomLevel
+        let size = iconDisplaySize
         if viewModel.appexIsGenerating {
             VStack(spacing: 12) {
                 ProgressView()
