@@ -42,6 +42,9 @@ A pinch or a ⌘ scroll can set any zoom between 25% and 800%.
 The menu then shows that value with no step ticked.
 ⌘+ and ⌘− still move to the next step up or down.
 
+Both gestures zoom into the point under the pointer.
+Put the pointer on the part of the icon you want to inspect.
+
 ## Symbol browser
 Click the grid button beside a Symbol field to open the symbol browser.
 Type in Search to filter the grid.
