@@ -950,6 +950,12 @@ struct ContentView: View {
         // `AppexPreviewPane.previewContent` is the same shape and carries the same
         // pin — System mode is the other branch of this column.
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+        // Pinch and ⌘-scroll, applied **after** the frame on purpose. The modifier
+        // adds a `.gesture` and a `.background`, neither of which changes what this
+        // column reports as its minimum width — so the pin above is still the pin —
+        // and the background monitor inherits the full pane frame, which is the area
+        // its hit test needs. Re-ran the narrow-drag crash regression after adding it.
+        .previewZoomGestures(zoom: $zoomLevel)
     }
 
     /// Calculates the preview display size based on zoom level

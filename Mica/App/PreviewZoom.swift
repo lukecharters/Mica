@@ -35,4 +35,37 @@ enum PreviewZoom {
     static func zoomedOut(from zoom: Double) -> Double? {
         levels.last { $0 < zoom }
     }
+
+    // MARK: - Continuous zoom
+
+    /// The ends of the ladder, and the range a continuous gesture is held inside.
+    ///
+    /// **Derived from `levels`, not restated beside it.** A second copy of `8.0` would
+    /// let someone add a 16× rung the toolbar menu offers and a pinch cannot reach —
+    /// the same failure the type's doc comment describes for the two step functions.
+    /// The `?? actualSize` fallbacks are unreachable while `levels` has any element;
+    /// they are there so this stays free of force-unwraps.
+    static var minimum: Double { levels.first ?? actualSize }
+    static var maximum: Double { levels.last ?? actualSize }
+
+    /// Bring an arbitrary scale inside the ladder's range.
+    ///
+    /// Pinch and ⌘-scroll produce continuous values, and they stop where the rest of
+    /// the UI stops: `minimum` and `maximum` are the range the toolbar's `ZoomMenu`
+    /// advertises and the points at which Zoom In and Zoom Out disable themselves. A
+    /// gesture free to run past them would show a percentage no menu rung can check
+    /// and — at the top — size the preview far beyond the largest export.
+    ///
+    /// **Off-ladder results are the intended output**, not a rounding step on the way
+    /// to a rung. `zoomedIn(from:)` and `zoomedOut(from:)` already take any `Double`
+    /// (see their notes), so a pinch to 137% leaves ⌘+ and ⌘− working, and neither
+    /// snapping nor quantizing is needed to keep the two surfaces agreeing.
+    static func clamped(_ zoom: Double) -> Double {
+        // NaN would survive a naive `min`/`max` pair and propagate into a frame
+        // size, which SwiftUI resolves to a zero-sized view rather than complaining.
+        // A gesture cannot produce one today; `magnification` is a ratio and a
+        // division by a zero starting scale is the shape that would.
+        guard zoom.isFinite else { return actualSize }
+        return min(max(zoom, minimum), maximum)
+    }
 }

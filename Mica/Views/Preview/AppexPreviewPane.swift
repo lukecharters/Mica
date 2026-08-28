@@ -81,6 +81,9 @@ struct AppexPreviewPane: View {
         // a live window drag loops SwiftUI's `SplitViewChildController` against
         // AppKit's constraints pass and macOS 27 terminates the app.
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+        // Pinch and ⌘-scroll — the same placement, after the frame, as this pane's
+        // Mica-mode twin. See the note there and in `PreviewZoomGesture`.
+        .previewZoomGestures(zoom: $zoomLevel)
     }
 
     @ViewBuilder

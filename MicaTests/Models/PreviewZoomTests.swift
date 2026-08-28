@@ -95,4 +95,67 @@ struct PreviewZoomTests {
         #expect(PreviewZoom.zoomedIn(from: -1) == PreviewZoom.levels.first)
         #expect(PreviewZoom.zoomedOut(from: -1) == nil)
     }
+
+    // MARK: - The continuous range, for pinch and ⌘-scroll
+
+    @Test("The bounds are the ladder's own ends, not a second copy of them")
+    func bounds_areTheLadderEnds() {
+        // The whole reason `minimum`/`maximum` are computed rather than declared. If
+        // someone adds a 16× rung, a pinch has to be able to reach it; this is the
+        // assertion that fails if the two ever drift apart.
+        #expect(PreviewZoom.minimum == PreviewZoom.levels.first)
+        #expect(PreviewZoom.maximum == PreviewZoom.levels.last)
+    }
+
+    @Test("A scale inside the range is returned untouched",
+          arguments: [0.25, 0.4, 1.0, 1.37, 4.9, 8.0])
+    func clamped_passesThroughInRangeValues(_ zoom: Double) {
+        // Off-ladder values are the intended output of a continuous gesture, so this
+        // must not round to a rung. 1.37 staying 1.37 is the point.
+        #expect(PreviewZoom.clamped(zoom) == zoom)
+    }
+
+    @Test("A scale past either end is pulled back to that end",
+          arguments: [(12.0, 8.0), (8.001, 8.0), (0.1, 0.25), (0.0, 0.25), (-3.0, 0.25)])
+    func clamped_pullsBackToTheEnds(_ zoom: Double, _ expected: Double) {
+        #expect(PreviewZoom.clamped(zoom) == expected)
+    }
+
+    @Test("A clamped value is always a legal starting point for the step functions")
+    func clamped_isAlwaysSteppable() {
+        // The two surfaces have to agree: after any gesture, ⌘+ and ⌘− must still
+        // behave. At the ends exactly one of them is unavailable, and in between both
+        // work — which is the same contract the on-ladder tests above assert.
+        for raw in [-5.0, 0.0, 0.3, 1.37, 6.5, 100.0] {
+            let zoom = PreviewZoom.clamped(raw)
+            #expect(zoom >= PreviewZoom.minimum)
+            #expect(zoom <= PreviewZoom.maximum)
+            let canStep = (PreviewZoom.zoomedIn(from: zoom) != nil)
+                || (PreviewZoom.zoomedOut(from: zoom) != nil)
+            #expect(canStep, "clamped \(raw) → \(zoom) left both zoom commands disabled")
+        }
+    }
+
+    @Test("A non-finite scale falls back to Actual Size rather than sizing a frame with it")
+    func clamped_rejectsNonFinite() {
+        // `min`/`max` propagate NaN, and SwiftUI resolves a NaN frame to a zero-sized
+        // view — the icon would vanish with nothing logged. No gesture produces one
+        // today; this is the guard, so the assertion is what stops it being removed
+        // as dead code.
+        #expect(PreviewZoom.clamped(.nan) == PreviewZoom.actualSize)
+        #expect(PreviewZoom.clamped(.infinity) == PreviewZoom.actualSize)
+        #expect(PreviewZoom.clamped(-.infinity) == PreviewZoom.actualSize)
+    }
+
+    @Test("Scrolling up and back down by the same amount is the identity")
+    func exponentialFactors_areSymmetric() {
+        // Why `PreviewScrollZoomMonitor` uses `exp(delta × k)` rather than
+        // `1 + delta × k`: the additive form drifts, because ×1.1 then ×0.9 is ×0.99.
+        // Modelled here rather than reaching into the monitor, which needs a window.
+        let k = 0.004
+        for delta in [1.0, 12.0, 40.0] {
+            let roundTrip = exp(delta * k) * exp(-delta * k)
+            #expect(abs(roundTrip - 1.0) < 1e-12)
+        }
+    }
 }
