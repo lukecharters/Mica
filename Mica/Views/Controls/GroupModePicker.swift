@@ -12,13 +12,24 @@ extension GenerationMode {
     }
 }
 
-/// Two-state segmented control: Mica vs System for a single group. Shown at the
-/// top of a group's inspector (Icon / Badge) so the user can switch that group
-/// between Mica's SwiftUI rendering and Apple's system reference.
+/// Two-state control: Mica vs System for a single group. Shown at the top of a
+/// group's inspector (Icon / Badge) so the user can switch that group between
+/// Mica's SwiftUI rendering and Apple's system reference.
 ///
-/// Uses `FillingSegmentedPicker` so it spans the inspector width. It is the only
-/// user of that wrapper since `LayerTabPicker` — which sat directly beneath it —
-/// was deleted on 2026-08-16, the layer selection having gone back to the sidebar.
+/// **It is a tab control, and says so.** Mica and System are two views of one group
+/// rather than two values of a setting, so it passes `role: .tabs` to
+/// `FillingSegmentedPicker`. On macOS 27 that draws the neutral tab selection —
+/// the same appearance as SwiftUI's `.pickerStyle(.tabs)`, and the same thing
+/// Xcode's navigator and inspector selector bars use. Below 27 the role is ignored
+/// and the control renders exactly as it always has.
+///
+/// **This deliberately does not use `.pickerStyle(.tabs)`.** That style was tried
+/// here on 2026-08-28 and reverted the same day: a SwiftUI picker cannot be
+/// stretched — not by `maxWidth: .infinity`, not by a definite `.frame(width:)`,
+/// both only centre it — so it rendered 156pt wide in a 330pt pane. Going through
+/// `NSSegmentedControl.role` gets the identical look *and* keeps the full-width
+/// fill, which is the whole reason `FillingSegmentedPicker` exists. Don't swap it
+/// back.
 ///
 /// It was two `GenerationModeMenu`s in the window toolbar between 2026-08-04 and
 /// 2026-08-16. The toolbar showed both groups at once, which the inspector cannot;
@@ -45,7 +56,8 @@ struct GroupModePicker: View {
             FillingSegmentedPicker(
                 segments: GenerationMode.allCases.map { ($0.label, $0) },
                 selection: selection,
-                accessibilityLabel: "Generation Mode"
+                accessibilityLabel: "Generation Mode",
+                role: .tabs
             )
             Divider()
         }
