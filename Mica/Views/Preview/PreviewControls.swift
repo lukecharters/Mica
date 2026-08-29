@@ -45,17 +45,20 @@ struct MDMPortalSizePreset: Identifiable {
     /// first appear here, and a vendor's rows in the order they appear within it,
     /// so this list is the only place the menu is arranged.
     static let all: [MDMPortalSizePreset] = [
-        MDMPortalSizePreset(vendor: "Fleet", name: "Desktop - Software View", pointSize: 24),
-        MDMPortalSizePreset(vendor: "Fleet", name: "Desktop - Updates View", pointSize: 64),
-        MDMPortalSizePreset(vendor: "Iru", name: "Self Service - All Views", pointSize: 82),
-        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service+ - Grid View", pointSize: 40),
-        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service+ - Item View", pointSize: 88),
-        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service classic - Grid View", pointSize: 75),
-        MDMPortalSizePreset(vendor: "Jamf", name: "Self Service classic - Item View", pointSize: 120),
-        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Updates View", pointSize: 64),
-        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Categories View", pointSize: 75),
-        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Software View", pointSize: 90),
-        MDMPortalSizePreset(vendor: "Munki", name: "Managed Software Center - Item View", pointSize: 140)
+        MDMPortalSizePreset(vendor: "Fleet Desktop", name: "Software View", pointSize: 24),
+        MDMPortalSizePreset(vendor: "Fleet Desktop", name: "Updates View", pointSize: 64),
+        MDMPortalSizePreset(vendor: "Intune Company Portal", name: "List View", pointSize: 30),
+        MDMPortalSizePreset(vendor: "Intune Company Portal", name: "Grid View", pointSize: 80),
+        MDMPortalSizePreset(vendor: "Intune Company Portal", name: "Item View", pointSize: 163),
+        MDMPortalSizePreset(vendor: "Iru Self Service", name: "All Views", pointSize: 82),
+        MDMPortalSizePreset(vendor: "Jamf Self Service+", name: "Catalog View", pointSize: 40),
+        MDMPortalSizePreset(vendor: "Jamf Self Service+", name: "Item View", pointSize: 88),
+        MDMPortalSizePreset(vendor: "Jamf Self Service classic", name: "Browse View", pointSize: 75),
+        MDMPortalSizePreset(vendor: "Jamf Self Service classic", name: "Item View", pointSize: 120),
+        MDMPortalSizePreset(vendor: "Munki Managed Software Center", name: "Updates View", pointSize: 64),
+        MDMPortalSizePreset(vendor: "Munki Managed Software Center", name: "Categories View", pointSize: 75),
+        MDMPortalSizePreset(vendor: "Munki Managed Software Center", name: "Software View", pointSize: 90),
+        MDMPortalSizePreset(vendor: "Munki Managed Software Center", name: "Item View", pointSize: 140)
     ]
 
     /// `all` split into one group per vendor, which is what the menu's sections are.
