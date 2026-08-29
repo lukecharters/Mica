@@ -20,6 +20,11 @@ enum SymbolPickerPreview {
     /// inspector's shape.
     static let renderingStyleKey = "symbolPicker.renderingStyle"
 
+    /// Where the browser's shaded-background choice is stored. Persisted for the same
+    /// reason the rendering mode is: it is a way of reading a list of 6000 symbols
+    /// rather than a per-visit choice.
+    static let shadedBackgroundKey = "symbolPicker.shadedBackground"
+
     /// The base level of every mode. Hierarchical derives its lower levels from
     /// it, and multicolour falls back to it for a symbol with no colours of its
     /// own.
@@ -35,5 +40,25 @@ enum SymbolPickerPreview {
     /// palette, one for everything else.
     static func colors(for style: SymbolRenderingStyle) -> [Color] {
         style == .palette ? paletteColors : [symbolColor]
+    }
+
+    /// The fill a cell draws under its symbol.
+    ///
+    /// Multicolour and palette symbols carry their own colours, and plenty of them are
+    /// white or near-white at the level that covers most of the glyph — on the control
+    /// background those cells read as empty. The shaded fill is `secondaryLabelColor`,
+    /// which is the label colour at partial opacity, so it composites to a mid tone in
+    /// **both** appearances instead of being pale in one of them.
+    static func cellBackground(shaded: Bool) -> Color {
+        shaded ? Color(nsColor: .secondaryLabelColor)
+               : Color(nsColor: .controlBackgroundColor)
+    }
+
+    /// How strongly the accent tint marking the icon's current symbol is drawn *over*
+    /// that fill. It is a tint rather than a replacement, because replacing the fill is
+    /// what would hide the selected symbol — the one cell the sheet opens on. 0.15 of
+    /// accent vanishes against the shaded fill, which is why there are two values.
+    static func selectionTintOpacity(shaded: Bool) -> Double {
+        shaded ? 0.45 : 0.15
     }
 }
