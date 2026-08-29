@@ -17,6 +17,13 @@ struct SymbolPickerView: View {
     @AppStorage(SymbolPickerPreview.renderingStyleKey)
     private var renderingStyle: SymbolRenderingStyle = .monochrome
 
+    /// Whether the grid draws each symbol on a shaded fill. A companion to the
+    /// rendering mode rather than a separate kind of thing: multicolour is what makes
+    /// it necessary, since a white glyph on the control background reads as an empty
+    /// cell.
+    @AppStorage(SymbolPickerPreview.shadedBackgroundKey)
+    private var usesShadedBackground = false
+
     /// Every SF Symbol shipped in `sf-symbols.txt`, loaded once and cached.
     private static let allSymbols: [String] = {
         guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
@@ -88,6 +95,7 @@ struct SymbolPickerView: View {
     private var footer: some View {
         HStack(spacing: 12) {
             renderingPicker
+            shadedBackgroundToggle
             Spacer()
             Button("Cancel") { dismiss() }
                 .keyboardShortcut(.cancelAction)
@@ -117,6 +125,16 @@ struct SymbolPickerView: View {
         .help("Change how symbols are drawn in this list. Preview only — it does not change the icon.")
     }
 
+    /// Beside the rendering menu, and disclosing the same thing about itself: it
+    /// changes the grid and nothing the sheet returns. A checkbox rather than a second
+    /// menu, because it is one binary choice and there is nothing to name in the off
+    /// state.
+    private var shadedBackgroundToggle: some View {
+        Toggle("Shaded Background", isOn: $usesShadedBackground)
+            .toggleStyle(.checkbox)
+            .help("Draw each symbol on a shaded fill so white and light symbols stay visible. Preview only — it does not change the icon.")
+    }
+
     @ViewBuilder
     private func symbolCell(_ symbol: String) -> some View {
         // Two states, because there are two: the symbol the icon is using, and the one
@@ -127,10 +145,17 @@ struct SymbolPickerView: View {
             renderedSymbol(symbol)
                 .font(.system(size: 36))
                 .frame(width: 76, height: 76)
-                .background(
-                    isSelected ? Color.accentColor.opacity(0.15)
-                               : Color(nsColor: .controlBackgroundColor)
-                )
+                // Two layers, not one colour chosen between: the selection tint has to
+                // sit *over* the shaded fill, or turning the shading on would take the
+                // fill off the one cell the sheet opened on.
+                .background {
+                    SymbolPickerPreview.cellBackground(shaded: usesShadedBackground)
+                    if isSelected {
+                        Color.accentColor.opacity(
+                            SymbolPickerPreview.selectionTintOpacity(shaded: usesShadedBackground)
+                        )
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
