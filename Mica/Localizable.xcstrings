@@ -1335,10 +1335,10 @@
     "Current Family" : {
 
     },
-    "Custom Gradient" : {
+    "Custom" : {
 
     },
-    "Custom…" : {
+    "Custom Gradient" : {
 
     },
     "Derived ratios" : {
@@ -1370,6 +1370,9 @@
 
     },
     "Drag moves" : {
+
+    },
+    "Draw each symbol on a shaded fill so white and light symbols stay visible. Preview only — it does not change the icon." : {
 
     },
     "Drop a screenshot here" : {
@@ -2040,6 +2043,9 @@
     "Settings Index" : {
 
     },
+    "Shaded Background" : {
+
+    },
     "Shadow" : {
 
     },
@@ -2323,9 +2329,6 @@
 
     },
     "Use" : {
-
-    },
-    "Use Preset" : {
 
     },
     "Visible" : {

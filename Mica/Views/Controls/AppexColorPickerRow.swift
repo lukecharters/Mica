@@ -2,9 +2,10 @@
 import SwiftUI
 
 /// Wraps `ColorPickerWithDropdown` for the Apple Reference (`.appex`) pipeline.
-/// Presents Apple's named system colours as presets plus a "Custom…" option that
-/// exposes a full `ColorPicker`. The chosen value is stored as an ``AppexColor``,
-/// which resolves to either a named token or an `"r,g,b,a"` plist string.
+/// Presents Apple's named system colours as presets plus a "Custom" option that
+/// exposes a colour well beside the menu. The chosen value is stored as an
+/// ``AppexColor``, which resolves to either a named token or an `"r,g,b,a"`
+/// plist string.
 ///
 /// The bridge to `MicaColorValue` is exact rather than approximate: `AppexColor`'s
 /// preset/custom pair *is* provenance, in a bespoke shape, so a named preset maps

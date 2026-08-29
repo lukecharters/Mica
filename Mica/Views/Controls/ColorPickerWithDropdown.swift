@@ -1,7 +1,8 @@
 // Views/Controls/ColorPickerWithDropdown.swift
 import SwiftUI
 
-/// A preset dropdown that swaps to a full colour well for a custom colour.
+/// A preset dropdown that names the colour, with a colour well beside it for a
+/// custom one.
 ///
 /// **Which control shows is read from the model, not guessed from the value.**
 /// Until 2026-08-02 the flag was view-local `@State` that reset to `false`
@@ -12,10 +13,15 @@ import SwiftUI
 /// name. `MicaColorValue` carries provenance, so the question is now just
 /// `value.tokenName`.
 ///
-/// One piece of view state survives, and it is not provenance: `forcesPresetPicker`
-/// is the transient "show me the list instead" that the **Use Preset** button sets.
-/// It clears the moment the value changes, so it cannot disagree with the model for
-/// longer than one interaction.
+/// **The dropdown never goes away, and "Custom" is one of its values** — the shape
+/// SF Symbols uses. Until 2026-08-29 a custom colour *replaced* the menu with a
+/// bare `ColorPicker` plus a **Use Preset** link, so the row stopped saying what
+/// the colour was, and getting back to a preset meant finding a button that
+/// existed in only one of the two states. The menu now always reads the answer —
+/// a token's name, or "Custom" — and the well appears next to it exactly when the
+/// value is a custom one. That also retires the last view state here
+/// (`forcesPresetPicker`, the transient "show me the list again"): with the list
+/// always on screen there is nothing left for it to say.
 extension ColorToken {
     /// `displayName` is derived from the token name so that no second list of
     /// colour names can drift out of step with `ColorTokenTable` — which means
@@ -43,55 +49,48 @@ struct ColorPickerWithDropdown: View {
     /// it reads as a control that was never offered rather than an error.
     var supportsOpacity: Bool = true
 
-    @State private var forcesPresetPicker = false
-
     /// Whether `value` names one of the offered presets. A token that is *not*
-    /// offered — `label` arriving from a configuration, say — shows the well, and
-    /// survives as a token for as long as the user leaves it alone.
+    /// offered — `primary` arriving from a configuration, say — reads as Custom and
+    /// gets the well, and survives as a token for as long as the user leaves it
+    /// alone.
     private var isPreset: Bool {
         guard let name = value.tokenName else { return false }
         return presets.contains { $0.name == name }
     }
 
-    private var showsCustomPicker: Bool { !isPreset && !forcesPresetPicker }
-
     var body: some View {
-        content
-            .onChange(of: value) { _, _ in forcesPresetPicker = false }
-    }
+        LabeledContent {
+            HStack(spacing: 8) {
+                Picker(selection: presetBinding) {
+                    // Sorted here rather than taken in `ColorTokenTable`'s order,
+                    // which is alphabetical by the *source* display name: "Gray"
+                    // sorts before "Green" and "Grey" after it, so an en-GB build
+                    // would show one token a place out of order.
+                    ForEach(presets.sorted { $0.localizedDisplayName < $1.localizedDisplayName }) { token in
+                        Text(verbatim: token.localizedDisplayName).tag(Optional(token.name))
+                    }
+                    Divider()
+                    Text("Custom").tag(Optional(Self.customTag))
+                } label: {
+                    // Hidden rather than absent: `.labelsHidden()` still publishes
+                    // the title to accessibility, so the menu reads back as the row
+                    // it belongs to without a second label to double it up.
+                    Text(label)
+                }
+                .labelsHidden()
 
-    @ViewBuilder
-    private var content: some View {
-        if showsCustomPicker {
-            ColorPicker(selection: $value.asColor, supportsOpacity: supportsOpacity) {
-                HStack(spacing: 12) {
-                    swatch
-                    Text(label)
+                if !isPreset {
+                    ColorPicker(selection: $value.asColor, supportsOpacity: supportsOpacity) {
+                        Text("Custom")
+                    }
+                    .labelsHidden()
                 }
             }
-            Button("Use Preset", systemImage: "arrow.clockwise") {
-                forcesPresetPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                swatch
+                Text(label)
             }
-            .buttonStyle(.link)
-        } else {
-            Picker(
-                selection: presetBinding,
-                label: HStack(spacing: 12) {
-                    swatch
-                    Text(label)
-                }
-            ) {
-                // Sorted here rather than taken in `ColorTokenTable`'s order,
-                // which is alphabetical by the *source* display name: "Gray"
-                // sorts before "Green" and "Grey" after it, so an en-GB build
-                // would show one token a place out of order.
-                ForEach(presets.sorted { $0.localizedDisplayName < $1.localizedDisplayName }) { token in
-                    Text(verbatim: token.localizedDisplayName).tag(Optional(token.name))
-                }
-                Divider()
-                Text("Custom…").tag(Optional(Self.customTag))
-            }
-            .pickerStyle(.menu)
         }
     }
 
@@ -106,15 +105,22 @@ struct ColorPickerWithDropdown: View {
     private static let customTag = "\u{0}custom"
 
     /// Selecting a preset writes its **token**, so the choice survives an
-    /// appearance change and an OS update. Selecting "Custom…" converts the value
+    /// appearance change and an OS update. Selecting "Custom" converts the value
     /// to components then and there — the user has said this is a custom colour,
     /// and leaving it a token would make the well's first edit look like a
     /// conversion that had already happened.
+    ///
+    /// The getter answers `customTag` rather than `nil` for a custom colour, which
+    /// is what puts "Custom" in the menu's title instead of leaving it blank. The
+    /// setter's no-op guard is what stops that reading back as a *choice*: without
+    /// it, an unoffered token showing as Custom could be flattened to components by
+    /// a re-selection the user experienced as changing nothing.
     private var presetBinding: Binding<String?> {
         Binding(
-            get: { isPreset ? value.tokenName : nil },
+            get: { isPreset ? value.tokenName : Self.customTag },
             set: { selection in
-                guard let selection else { return }
+                guard let selection, selection != (isPreset ? value.tokenName : Self.customTag)
+                else { return }
                 if selection == Self.customTag {
                     value = .components(ColorParser.ExtendedComponents.resolving(value.resolved))
                 } else {
