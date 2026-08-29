@@ -50,7 +50,7 @@ enum SymbolPickerPreview {
     /// which is the label colour at partial opacity, so it composites to a mid tone in
     /// **both** appearances instead of being pale in one of them.
     static func cellBackground(shaded: Bool) -> Color {
-        shaded ? Color(nsColor: .secondaryLabelColor)
+        shaded ? Color(nsColor: .tertiaryLabelColor)
                : Color(nsColor: .controlBackgroundColor)
     }
 
