@@ -58,7 +58,13 @@ struct PresetPane: View {
     /// saved at all, and what a save captures.
     let iconSettings: IconSettings
 
-    let userPresets: [MicaPreset]
+    /// Every preset, built-ins first, already decoded.
+    ///
+    /// **Resolved by the caller, not here.** Decoding a preset is a
+    /// `JSONSerialization` round trip plus the whole configuration decoder, and this
+    /// view's `body` re-runs on every frame of its own slide-in and on every edit to
+    /// `iconSettings`. See `ResolvedPreset`.
+    let presets: [ResolvedPreset]
     let onApply: (MicaPreset) -> Void
     let onSave: (PresetScope) -> Void
     let onDelete: (MicaPreset) -> Void
@@ -120,7 +126,7 @@ struct PresetPane: View {
 
     @ViewBuilder
     private func section(_ scope: PresetScope, title: LocalizedStringKey) -> some View {
-        let presets = PresetCatalog.builtIn(scope) + userPresets.filter { $0.scope == scope }
+        let rows = presets.filter { $0.scope == scope }
 
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
@@ -135,11 +141,11 @@ struct PresetPane: View {
                 alignment: .leading,
                 spacing: PresetPaneMetrics.rowSpacing
             ) {
-                ForEach(presets) { preset in
+                ForEach(rows) { row in
                     PresetTile(
-                        preset: preset,
-                        onApply: { onApply(preset) },
-                        onDelete: preset.isBuiltIn ? nil : { onDelete(preset) }
+                        resolved: row,
+                        onApply: { onApply(row.preset) },
+                        onDelete: row.preset.isBuiltIn ? nil : { onDelete(row.preset) }
                     )
                 }
             }
@@ -180,7 +186,7 @@ struct PresetPane: View {
 
 /// A thumbnail, its name, and — when it applies — the advanced-controls indicator.
 private struct PresetTile: View {
-    let preset: MicaPreset
+    let resolved: ResolvedPreset
     let onApply: () -> Void
     /// Nil for a built-in, which has no file to delete.
     let onDelete: (() -> Void)?
@@ -199,30 +205,25 @@ private struct PresetTile: View {
     /// rendering mode qualifies. The derived gradient, corner styles, symbol weights
     /// and shadows are all hidden-but-applied and carry no indicator.
     private var showsIndicator: Bool {
-        !advancedControlsEnabled && preset.needsAdvancedControls
+        !advancedControlsEnabled && resolved.needsAdvancedControls
     }
 
     var body: some View {
         Button(action: onApply) {
             VStack(spacing: 5) {
-                PresetThumbnail(preset: preset)
+                PresetThumbnail(resolved: resolved)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(alignment: .topLeading) {
                         if showsIndicator { indicator }
                     }
 
-                // `Text(verbatim:)` for a user preset, and the catalog lookup for a
-                // built-in. **`Text(aString)` takes the verbatim overload silently**,
-                // so a built-in's name would never translate and nothing would report
-                // it — the bug is in the parameter type and is invisible at the call
-                // site. Spelling both branches is what makes the difference visible.
-                Group {
-                    if preset.isBuiltIn {
-                        Text(preset.name.localizedFromCatalog)
-                    } else {
-                        Text(verbatim: preset.name)
-                    }
-                }
+                // `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim
+                // overload silently**, so writing it that way would look like a
+                // localised label and never be one — the bug is in the parameter type
+                // and is invisible at the call site. `displayName` has already been
+                // through the string catalog for a built-in, which is where that
+                // choice is made and where getting it wrong would be visible.
+                Text(verbatim: resolved.displayName)
                 .font(.caption)
                 .lineLimit(2, reservesSpace: true)
                 .multilineTextAlignment(.center)
@@ -236,7 +237,7 @@ private struct PresetTile: View {
         // does not, so the label carries the scope as well as the name — "Installer,
         // icon preset" reads as one item in a rotor rather than as a bare word.
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(preset.scope == .icon
+        .accessibilityHint(resolved.scope == .icon
                            ? "Replaces the icon’s settings"
                            : "Replaces the badge’s settings")
         .help(helpText)
@@ -258,12 +259,10 @@ private struct PresetTile: View {
             .accessibilityHidden(true)   // Said in the label instead.
     }
 
-    private var name: String {
-        preset.isBuiltIn ? preset.name.localizedFromCatalog : preset.name
-    }
+    private var name: String { resolved.displayName }
 
     private var accessibilityLabel: String {
-        let scope = preset.scope == .icon
+        let scope = resolved.scope == .icon
             ? String(localized: "icon preset")
             : String(localized: "badge preset")
         guard showsIndicator else { return "\(name), \(scope)" }

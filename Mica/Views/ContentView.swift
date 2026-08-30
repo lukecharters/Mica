@@ -239,14 +239,24 @@ struct ContentView: View {
     /// value for why.
     @State private var showPresets: Bool = false
 
-    /// The user's saved presets, reloaded whenever the pane opens and after a save
-    /// or a delete.
+    /// Every preset, built-ins first, decoded once.
     ///
-    /// Held here rather than read inside `PresetPane` because a `body` that touches
-    /// the filesystem would do it on every view update. Reloading on open is enough:
-    /// the files change only through this window's own save and delete, or through
-    /// another window's — and the pane opening is when a stale list would first be
-    /// seen.
+    /// **Held here for two reasons, and the second is the expensive one.** A `body`
+    /// that touched the filesystem would read the presets directory on every view
+    /// update; and decoding a preset is a `JSONSerialization` round trip plus the
+    /// whole configuration decoder, which the pane needs three times per tile — the
+    /// thumbnail's settings, its crop corner, and the advanced-controls indicator.
+    /// Read from computed properties in the views that was ~30 codec round trips per
+    /// repaint, on a pane that repaints on every frame of its own slide-in animation
+    /// and on every edit to the icon. See `ResolvedPreset`.
+    ///
+    /// Rebuilt when the pane appears and after a save or a delete. That is enough:
+    /// the files change only through this window's own actions or another window's,
+    /// and the pane opening is when a stale list would first be seen.
+    @State private var resolvedPresets: [ResolvedPreset] = ResolvedPreset.resolve(PresetCatalog.builtIn)
+
+    /// The user's saved presets, kept beside the resolved list because the save sheet
+    /// uniques a name against them and `PresetCatalog.builtIn`.
     @State private var userPresets: [MicaPreset] = []
 
     /// Non-nil while the save sheet is up, carrying the scope it will save.
@@ -370,7 +380,8 @@ struct ContentView: View {
                 zoomLevel: $zoomLevel,
                 previewPointSize: $previewPointSize,
                 inspectorTab: $inspectorTab,
-                showInspector: $showInspector
+                showInspector: $showInspector,
+                showPresets: $showPresets
             )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
@@ -967,7 +978,7 @@ struct ContentView: View {
         PresetPane(
             selectedGroup: selectedGroup,
             iconSettings: viewModel.iconSettings,
-            userPresets: userPresets,
+            presets: resolvedPresets,
             onApply: applyPreset,
             onSave: { savePresetScope = $0 },
             onDelete: deletePreset,
@@ -1015,6 +1026,9 @@ struct ContentView: View {
     private func reloadUserPresets() {
         let result = UserPresetStore.load()
         userPresets = result.presets
+        // Built-ins first, so a user preset of the same name sorts after the one it
+        // was uniqued against rather than in front of it.
+        resolvedPresets = ResolvedPreset.resolve(PresetCatalog.builtIn + result.presets)
         if !result.problems.isEmpty {
             viewModel.report(.advisory(
                 "Some Presets Couldn’t Be Read",

@@ -24,7 +24,7 @@ import SwiftUI
 /// | Placement | Holds | Because |
 /// |---|---|---|
 /// | `.principal` (centre) | Zoom and preview size | How the canvas is looked at |
-/// | `.automatic` (trailing) | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
+/// | `.automatic` (trailing) | Presets, advanced controls, inspector tab, inspector toggle | The panes and what they contain |
 ///
 /// **Nothing here goes at `.navigation`.** Measured 2026-08-04: `.navigation` items
 /// push the window title to their right, which read as the app's own name landing
@@ -34,6 +34,7 @@ struct IconWindowToolbar: ToolbarContent {
     @Binding var previewPointSize: CGFloat?
     @Binding var inspectorTab: InspectorTab
     @Binding var showInspector: Bool
+    @Binding var showPresets: Bool
 
     var body: some ToolbarContent {
         // How the canvas is looked at. *What* is generated is the group's Mica/System
@@ -43,6 +44,25 @@ struct IconWindowToolbar: ToolbarContent {
         ToolbarItemGroup(placement: .principal) {
             ZoomMenu(zoomLevel: $zoomLevel)
             PreviewSizeMenu(previewPointSize: $previewPointSize)
+        }
+
+        // Leftmost of the trailing cluster, because the pane it opens is the leftmost
+        // thing in the window. `.navigation` would be the truer placement and is not
+        // available: measured 2026-08-04, items there push the window title to their
+        // right, so the app's own name lands after them instead of at the leading edge.
+        //
+        // **A `Toggle`, where the inspector button two items along is a `Button`.**
+        // Deliberate rather than an oversight: a toolbar draws a `Toggle` with a
+        // pressed state, and the presets pane is *closed* by default — a control that
+        // looked identical either way would leave the one pane you might forget you
+        // opened unlabelled. The inspector is open by default and visibly occupies a
+        // third of the window, so it needs no such tell. Same reasoning as
+        // `AdvancedControlsToolbarToggle`, which is the other Toggle here.
+        ToolbarItem(placement: .automatic) {
+            Toggle(isOn: $showPresets) {
+                Label("Presets", systemImage: "dial.high")
+            }
+            .help("Show presets")
         }
 
         // Trailing, beside the inspector's own two controls — the flag changes what
