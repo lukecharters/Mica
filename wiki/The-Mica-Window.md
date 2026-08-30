@@ -36,9 +36,9 @@ The icon background is hidden here, so the Icon eye is mixed.
 ## Toolbar
 | Control | Purpose |
 |---|---|
+| Presets button | Shows or hides the presets pane. Sits at the top left, beside the sidebar button. |
 | Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Preview Size | Shows the icon at a chosen point size. |
-| Dial button | Shows or hides the presets pane. |
 | Sliders button | Shows or hides advanced controls. |
 | Controls and Export | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |

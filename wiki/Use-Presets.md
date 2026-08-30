@@ -9,16 +9,17 @@ Neither changes your export size, scale, or colour space.
 
 ## Apply a preset
 1. Open Mica.
-2. Click the dial button in the toolbar. You can also choose **View ▸ Show Presets**, or press **⌃⌘P**.
+2. Click the presets button at the top left, beside the sidebar button. You can also choose **View ▸ Show Presets**, or press **⌃⌘P**.
 3. Click a preset.
 
-The dial button fills in while the pane is open.
+The presets button fills in while the pane is open.
 
 The pane shows Icon Presets first, then Badge Presets.
 Each thumbnail draws that preset on its own.
 It does not show your current icon.
 
-A badge thumbnail shows one corner of a grey placeholder icon.
+A badge thumbnail shows the badge in the centre.
+Behind it is one corner of a grey placeholder icon.
 That corner is the corner the preset puts the badge in.
 
 Press **⌘Z** to undo a preset.
