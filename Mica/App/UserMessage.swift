@@ -134,6 +134,45 @@ struct UserMessage: Equatable {
             message: warnings.map(\.message).joined(separator: "\n\n")
         )
     }
+
+    // MARK: - Presets
+    //
+    // A preset apply that *works* says nothing — the icon changing is the feedback,
+    // exactly as it is for a colour picked in the inspector. These four are the
+    // cases where a click produced no visible result, or produced a smaller one than
+    // the user asked for.
+
+    /// A preset whose keys could not be turned into settings at all.
+    ///
+    /// Unreachable in practice: a preset's keys are built in memory rather than
+    /// parsed, so the codec has nothing to choke on. It exists because the
+    /// alternative to reporting it is a click that silently does nothing, which is
+    /// the worst possible symptom of whatever made it reachable.
+    static func presetApplyFailed(_ name: String, _ error: Error) -> UserMessage {
+        .failure("Couldn’t Apply “\(name)”", error)
+    }
+
+    static func presetSaveFailed(_ name: String, _ error: Error) -> UserMessage {
+        .failure("Couldn’t Save “\(name)”", error)
+    }
+
+    static func presetDeleteFailed(_ name: String, _ error: Error) -> UserMessage {
+        .failure("Couldn’t Delete “\(name)”", error)
+    }
+
+    /// Imported artwork that the saved preset could not carry.
+    ///
+    /// An advisory following a *successful* save, like `configurationImportWarnings`:
+    /// the preset was written and is worth having. A preset is a set of configuration
+    /// keys with nowhere to put a sidecar PNG, so an imported layer would survive
+    /// only as a path to a file that is not there — which renders blank, silently,
+    /// the first time the preset is used on another machine.
+    static func presetDroppedImages(_ name: String, keys: [String]) -> UserMessage {
+        .advisory(
+            "Saved Without Imported Images",
+            message: "“\(name)” was saved, but a preset can’t carry imported artwork, so \(keys.joined(separator: " and ")) was left out."
+        )
+    }
 }
 
 // MARK: - Reporting

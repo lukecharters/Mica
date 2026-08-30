@@ -65,6 +65,16 @@ extension FocusedValues {
     /// The trailing `.inspector` column's visibility.
     @Entry var inspectorVisible: Binding<Bool>?
 
+    /// The presets pane's visibility.
+    ///
+    /// Plain window state like the two above, and nil when nothing has focus, so the
+    /// View menu item disables itself on that alone. **Per window, not app-wide** —
+    /// it sits beside `selectedGroup` and the two `LayerTab`s as `@State` on
+    /// `ContentView`, which are deliberately not persisted for the same reason: two
+    /// windows on two icons are two pieces of work, and a pane one of them opened is
+    /// not a preference about the other.
+    @Entry var presetsVisible: Binding<Bool>?
+
     /// The preview's zoom level, walked by View ▸ Zoom In / Zoom Out along
     /// `PreviewZoom.levels`.
     @Entry var previewZoom: Binding<Double>?
@@ -97,6 +107,7 @@ struct FocusedAction {
 private struct WindowFocusValues: ViewModifier {
     let sidebarVisible: Binding<Bool>
     let inspectorVisible: Binding<Bool>
+    let presetsVisible: Binding<Bool>
     let previewZoom: Binding<Double>
     let previewPointSize: Binding<CGFloat?>
     let messageReporter: UserMessageReporter
@@ -105,6 +116,7 @@ private struct WindowFocusValues: ViewModifier {
         content
             .focusedSceneValue(\.sidebarVisible, sidebarVisible)
             .focusedSceneValue(\.inspectorVisible, inspectorVisible)
+            .focusedSceneValue(\.presetsVisible, presetsVisible)
             .focusedSceneValue(\.previewZoom, previewZoom)
             .focusedSceneValue(\.previewPointSize, previewPointSize)
             .focusedSceneValue(\.userMessageReporter, messageReporter)
@@ -222,6 +234,24 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
+    /// Whether the presets pane is out. **Per window and not persisted**, alongside
+    /// `selectedGroup` and the two `LayerTab`s — see the `presetsVisible` focused
+    /// value for why.
+    @State private var showPresets: Bool = false
+
+    /// The user's saved presets, reloaded whenever the pane opens and after a save
+    /// or a delete.
+    ///
+    /// Held here rather than read inside `PresetPane` because a `body` that touches
+    /// the filesystem would do it on every view update. Reloading on open is enough:
+    /// the files change only through this window's own save and delete, or through
+    /// another window's — and the pane opening is when a stale list would first be
+    /// seen.
+    @State private var userPresets: [MicaPreset] = []
+
+    /// Non-nil while the save sheet is up, carrying the scope it will save.
+    @State private var savePresetScope: PresetScope? = nil
+
     /// Read here too: the selection outline is an advanced-controls affordance, so
     /// with them off the preview draws none (see `currentPreviewSelection`).
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
@@ -268,88 +298,31 @@ struct ContentView: View {
                 max: PaneWidthPreferences.Pane.sidebar.range.upperBound
             )
         } detail: {
-            Group {
-                if viewModel.iconSettings.icon.mode == .mica {
-                    previewPane
-                        .task(id: viewModel.badgeAppexGenerationKey) {
-                            guard viewModel.iconSettings.badge.isVisible,
-                                  viewModel.iconSettings.badge.mode == .system else {
-                                return
-                            }
-                            try? await Task.sleep(for: .milliseconds(400))
-                            guard !Task.isCancelled else { return }
-                            await viewModel.generateBadgeAppexIcon(service: appexService)
-                        }
-                } else {
-                    AppexPreviewPane(
-                        viewModel: viewModel,
-                        appexService: appexService,
-                        zoomLevel: $zoomLevel,
-                        previewPointSize: $previewPointSize,
-                        onSelect: select,
-                        onPointer: pointerChanged,
-                        selection: currentPreviewSelection,
-                        hovered: hoveredPreviewSelection,
-                        pointerIsInside: pointerIsInside,
-                        outlineWake: outlineWake,
-                        contextActions: previewContextActions
-                    )
+            // The presets pane is an `HStack` sibling of the canvas, **not a third
+            // NavigationSplitView column**. `NavigationSplitViewVisibility` has only
+            // `.all`, `.doubleColumn` and `.detailOnly`, and in a three-column layout
+            // `.doubleColumn` means *content + detail* — it hides the **sidebar**, not
+            // the middle column. So the state the app is in almost all the time
+            // (sidebar open, presets closed) is not representable, and ⌃⌘S would start
+            // meaning something else.
+            //
+            // This shape is the one the inspector had before it became `.inspector`;
+            // the note recording that still stands above. It lands immediately right of
+            // the sidebar so it reads as sliding out from it, and `columnVisibility` is
+            // untouched — hide the sidebar and the pane simply butts to the window
+            // edge.
+            HStack(spacing: 0) {
+                if showPresets {
+                    presetPane
+                        .transition(.move(edge: .leading))
+                    Divider()
                 }
+                detailCanvas
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Focus-resolved ⌘C. `.onCopyCommand` hooks the **standard** Copy, which is
-            // the only way the icon can answer to ⌘C at all: two menu items sharing one
-            // key equivalent are deduplicated when the menu is built and the later one
-            // silently loses its shortcut (measured 2026-08-04, see MicaApp.swift).
-            //
-            // `.focusable()` is what makes it reachable — the command routes to the
-            // focused view, so without it the canvas is never asked. A text field with a
-            // selection keeps its own Copy, which is the behaviour we want.
-            .focusable()
-            // **No focus ring**, and this is a fix rather than a preference. macOS 27
-            // draws a focus effect for a plain `.focusable()` where macOS 26 drew
-            // none, and because the ring is painted for a region this size it appears
-            // as a stray accent rectangle across the whole window — most visibly
-            // *during and after a window resize*, where it is rendered against the
-            // frame the column had a pass ago and so no longer lines up with anything
-            // on screen. The canvas is not a control: it is `.focusable()` only so the
-            // standard Copy, Paste and arrow keys route here (see below), and a ring
-            // around the entire preview says nothing a user needs to know.
-            // `.focusEffectDisabled()` suppresses the drawing and **not** the focus, so
-            // all three commands still resolve.
-            .focusEffectDisabled()
-            .onCopyCommand(perform: copyIconProviders)
-            // Focus-resolved ⌘V, the mirror of the ⌘C above and the replacement for
-            // the four ⇧⌘V/I/B/G paste shortcuts C4 removed. `.onPasteCommand` hooks
-            // the **standard** Paste for the same reason: a second Edit-menu item
-            // bound to ⌘V would lose the key equivalent outright when the menu is
-            // built, not per focus.
-            //
-            // **It lands on the icon background, always** — the same target a canvas
-            // drop falls back to when it hits nothing (B4), and for the same reason.
-            // A drop can name a group because it has a location; a paste has none, so
-            // routing it by the sidebar's selection would make one key mean two
-            // things depending on state the user is not looking at. C2 declined that
-            // for the context menu's row order and it is declined here too. The other
-            // three layers are the Edit menu's and the context menu's.
-            //
-            // `of:` is `allDropTypes`, which is exactly what `importFromPasteboard`
-            // reads — a file URL first, then image data — so the standard Paste is
-            // enabled when and only when this can do something. That is C6's question
-            // answered for free on this one route, by the pasteboard type check
-            // AppKit already runs; the Edit menu's four items are still advisory.
-            .onPasteCommand(of: ImageImportService.allDropTypes, perform: pasteAsIconBackground)
-            // Arrow keys nudge the badge — the keyboard equivalent of the canvas
-            // drag, which was mouse-only. Attached beside `.onCopyCommand` and
-            // not inside either preview because both commands mean "the canvas
-            // has focus", and `.focusable()` above is the one thing that makes
-            // either reachable. It therefore works in System mode too, where the
-            // canvas is `AppexPreviewPane` and there is no drag overlay at all.
-            //
-            // `perform:` takes a method rather than a closure deliberately:
-            // `body` sits at the type-checker's ceiling and has been pushed over
-            // it four times, most recently by a fifth `.onChange`.
-            .onMoveCommand(perform: nudgeBadge)
+            // On the container, not on the pane: the canvas has to move over as the
+            // pane arrives, and a transition alone animates only the pane's own
+            // arrival while the canvas jumps.
+            .animation(.easeInOut(duration: 0.2), value: showPresets)
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -418,6 +391,7 @@ struct ContentView: View {
         .modifier(WindowFocusValues(
             sidebarVisible: sidebarVisibleBinding,
             inspectorVisible: $showInspector,
+            presetsVisible: $showPresets,
             previewZoom: $zoomLevel,
             previewPointSize: $previewPointSize,
             messageReporter: viewModel.messageReporter
@@ -512,6 +486,23 @@ struct ContentView: View {
                     case .failure(let error):
                         viewModel.report(.configurationImportFailed(error))
                     }
+                }
+        }
+        // Its own host again, for the reason spelled out at the two above: a view
+        // gets **one** of each presentation kind, and a second attached to the same
+        // view is silently ignored — no warning at build or run time. A sheet is a
+        // different kind from `fileExporter` and `fileImporter`, so this one could in
+        // principle share, but the rule that keeps this file safe is one presentation
+        // per host and no exceptions to remember.
+        .background {
+            Color.clear
+                .sheet(item: $savePresetScope) { scope in
+                    SavePresetSheet(
+                        scope: scope,
+                        existing: PresetCatalog.builtIn + userPresets,
+                        onSave: { savePreset(named: $0, scope: scope) },
+                        onCancel: { savePresetScope = nil }
+                    )
                 }
         }
         // **The** alert. There were four here until 2026-08-05 — one per error
@@ -871,6 +862,181 @@ struct ContentView: View {
     }
 
     // MARK: - Preview Pane
+
+    /// The canvas column: the preview pane for the active mode, plus every
+    /// command that means "the canvas has focus".
+    ///
+    /// Extracted from `body` when the presets pane needed an `HStack` around it.
+    /// `body` has been pushed past the type-checker's time limit four times, and
+    /// wrapping this chain in another container is exactly the kind of edit that
+    /// does it — so the chain moved out rather than gaining a level. A computed
+    /// property buys compile time and **no invalidation boundary**; only a separate
+    /// `View` struct would do that, and nothing here needs one.
+    private var detailCanvas: some View {
+        Group {
+            if viewModel.iconSettings.icon.mode == .mica {
+                previewPane
+                    .task(id: viewModel.badgeAppexGenerationKey) {
+                        guard viewModel.iconSettings.badge.isVisible,
+                              viewModel.iconSettings.badge.mode == .system else {
+                            return
+                        }
+                        try? await Task.sleep(for: .milliseconds(400))
+                        guard !Task.isCancelled else { return }
+                        await viewModel.generateBadgeAppexIcon(service: appexService)
+                    }
+            } else {
+                AppexPreviewPane(
+                    viewModel: viewModel,
+                    appexService: appexService,
+                    zoomLevel: $zoomLevel,
+                    previewPointSize: $previewPointSize,
+                    onSelect: select,
+                    onPointer: pointerChanged,
+                    selection: currentPreviewSelection,
+                    hovered: hoveredPreviewSelection,
+                    pointerIsInside: pointerIsInside,
+                    outlineWake: outlineWake,
+                    contextActions: previewContextActions
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Focus-resolved ⌘C. `.onCopyCommand` hooks the **standard** Copy, which is
+        // the only way the icon can answer to ⌘C at all: two menu items sharing one
+        // key equivalent are deduplicated when the menu is built and the later one
+        // silently loses its shortcut (measured 2026-08-04, see MicaApp.swift).
+        //
+        // `.focusable()` is what makes it reachable — the command routes to the
+        // focused view, so without it the canvas is never asked. A text field with a
+        // selection keeps its own Copy, which is the behaviour we want.
+        .focusable()
+        // **No focus ring**, and this is a fix rather than a preference. macOS 27
+        // draws a focus effect for a plain `.focusable()` where macOS 26 drew
+        // none, and because the ring is painted for a region this size it appears
+        // as a stray accent rectangle across the whole window — most visibly
+        // *during and after a window resize*, where it is rendered against the
+        // frame the column had a pass ago and so no longer lines up with anything
+        // on screen. The canvas is not a control: it is `.focusable()` only so the
+        // standard Copy, Paste and arrow keys route here (see below), and a ring
+        // around the entire preview says nothing a user needs to know.
+        // `.focusEffectDisabled()` suppresses the drawing and **not** the focus, so
+        // all three commands still resolve.
+        .focusEffectDisabled()
+        .onCopyCommand(perform: copyIconProviders)
+        // Focus-resolved ⌘V, the mirror of the ⌘C above and the replacement for
+        // the four ⇧⌘V/I/B/G paste shortcuts C4 removed. `.onPasteCommand` hooks
+        // the **standard** Paste for the same reason: a second Edit-menu item
+        // bound to ⌘V would lose the key equivalent outright when the menu is
+        // built, not per focus.
+        //
+        // **It lands on the icon background, always** — the same target a canvas
+        // drop falls back to when it hits nothing (B4), and for the same reason.
+        // A drop can name a group because it has a location; a paste has none, so
+        // routing it by the sidebar's selection would make one key mean two
+        // things depending on state the user is not looking at. C2 declined that
+        // for the context menu's row order and it is declined here too. The other
+        // three layers are the Edit menu's and the context menu's.
+        //
+        // `of:` is `allDropTypes`, which is exactly what `importFromPasteboard`
+        // reads — a file URL first, then image data — so the standard Paste is
+        // enabled when and only when this can do something. That is C6's question
+        // answered for free on this one route, by the pasteboard type check
+        // AppKit already runs; the Edit menu's four items are still advisory.
+        .onPasteCommand(of: ImageImportService.allDropTypes, perform: pasteAsIconBackground)
+        // Arrow keys nudge the badge — the keyboard equivalent of the canvas
+        // drag, which was mouse-only. Attached beside `.onCopyCommand` and
+        // not inside either preview because both commands mean "the canvas
+        // has focus", and `.focusable()` above is the one thing that makes
+        // either reachable. It therefore works in System mode too, where the
+        // canvas is `AppexPreviewPane` and there is no drag overlay at all.
+        //
+        // `perform:` takes a method rather than a closure deliberately:
+        // `body` sits at the type-checker's ceiling and has been pushed over
+        // it four times, most recently by a fifth `.onChange`.
+        .onMoveCommand(perform: nudgeBadge)
+    }
+
+    /// The presets pane, with everything it needs to act.
+    ///
+    /// The apply routes through `IconViewModel.applyPreset`, which goes through the
+    /// configuration-import path — one redo-safe undo entry, a no-op guard, and any
+    /// continuous edit ended first. **Not through a settings observer**, which is the
+    /// shape known here to kill redo.
+    private var presetPane: some View {
+        PresetPane(
+            selectedGroup: selectedGroup,
+            iconSettings: viewModel.iconSettings,
+            userPresets: userPresets,
+            onApply: applyPreset,
+            onSave: { savePresetScope = $0 },
+            onDelete: deletePreset,
+            onClose: { showPresets = false }
+        )
+        // Reload on appear rather than on a `.onChange(of: showPresets)` in `body`,
+        // which would be a fifth there and the fourth was already at the
+        // type-checker's limit. The pane is built when the flag goes up, so this
+        // fires at exactly the same moment — and reading the directory from `body`
+        // instead would touch the filesystem on every view update.
+        .onAppear { reloadUserPresets() }
+    }
+
+    // MARK: - Presets
+
+    /// Apply a preset, revealing the advanced controls if it needs them.
+    ///
+    /// **The reveal is the indicator's promise being kept.** A tile carrying the
+    /// marker says applying it turns Show Advanced Controls on, so the predicate here
+    /// has to be the same one the tile drew — `preset.needsAdvancedControls`, measured
+    /// against defaults — or the pane would warn about a restructuring that did not
+    /// happen, or fail to warn about one that did.
+    ///
+    /// It mirrors `InspectorControls.revealAdvancedControlsIfNeeded`, which cannot do
+    /// this on its own: that observer watches `usesImportedSources`, and a preset
+    /// carries no imported artwork. A custom gradient or a hierarchical rendering mode
+    /// would otherwise land in a simple pane with no row for it, contradicting the
+    /// preview.
+    ///
+    /// **Undo will not put the flag back**, and that is consistent rather than a
+    /// wart: it is `@AppStorage`, app-wide, and not part of `IconSettings`, so
+    /// undoing a preset restores the icon and leaves the advanced controls on —
+    /// exactly what the image-import reveal already does. Do not try to fold the flag
+    /// into the undo entry.
+    private func applyPreset(_ preset: MicaPreset) {
+        if preset.needsAdvancedControls { advancedControlsEnabled = true }
+        viewModel.applyPreset(preset, undoManager: undoManager)
+    }
+
+    /// Re-read the user presets from disk.
+    ///
+    /// Problems are reported once, joined: a user with three hand-edited files that
+    /// will not parse deserves to hear about all three, and three alerts in a row
+    /// for one action is not how.
+    private func reloadUserPresets() {
+        let result = UserPresetStore.load()
+        userPresets = result.presets
+        if !result.problems.isEmpty {
+            viewModel.report(.advisory(
+                "Some Presets Couldn’t Be Read",
+                message: result.problems.joined(separator: "\n\n")
+            ))
+        }
+    }
+
+    private func savePreset(named name: String, scope: PresetScope) {
+        savePresetScope = nil
+        // Uniqued against the built-ins too, inside the view model — the sheet
+        // previews the same answer, but the list can have moved under it if another
+        // window saved while the sheet was up.
+        let existing = PresetCatalog.builtIn + userPresets
+        _ = viewModel.saveCurrentAsPreset(scope: scope, name: name, existing: existing)
+        reloadUserPresets()
+    }
+
+    private func deletePreset(_ preset: MicaPreset) {
+        viewModel.deletePreset(preset)
+        reloadUserPresets()
+    }
 
     private var previewPane: some View {
         // Size + zoom controls live in the window toolbar (see `.toolbar`).
