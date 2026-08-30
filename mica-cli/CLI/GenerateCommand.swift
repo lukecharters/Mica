@@ -998,6 +998,39 @@ struct GenerateCommand: AsyncParsableCommand {
     )
     var configPath: String?
 
+    // The two preset flags sit beside `--config` for the same reason it is not in an
+    // OptionGroup: every other flag *is* a setting, while these three say where the
+    // settings come from.
+    //
+    // **Applied before the other flags**, so an explicit flag overrides the preset —
+    // see `GenerationContext.load`. That precedence is also what gives the CLI
+    // style-only presets for free: `--icon-preset media --icon-symbol hammer.fill` is
+    // `media` applied to a different glyph, and the CLI never has to know that the GUI
+    // considered and declined a style-only preset kind.
+    //
+    // **Neither is a `MicaConfigKey`, deliberately.** A configuration that named a
+    // preset instead of carrying its values would not be self-contained, which is the
+    // format's central promise. They are accounted for by
+    // `MicaConfigKey.presetFlagNames`, which is what keeps `ConfigFlagParityTests`
+    // from forcing them into the enum.
+    @Option(
+        name: .customLong("icon-preset"),
+        help: ArgumentHelp(
+            "Apply a named icon preset before other flags",
+            valueName: "name"
+        )
+    )
+    var iconPreset: String?
+
+    @Option(
+        name: .customLong("badge-preset"),
+        help: ArgumentHelp(
+            "Apply a named badge preset before other flags",
+            valueName: "name"
+        )
+    )
+    var badgePreset: String?
+
     @OptionGroup(title: "Generation")
     var generation: GenerationOptions
     
@@ -1187,6 +1220,14 @@ struct GenerateCommand: AsyncParsableCommand {
         if iconForeground.foreground == nil, let configBasename = context.outputBasename {
             return configBasename
         }
+        // A preset with no foreground flag names the file after the preset's own
+        // symbol, which `context.base` carries — `outputBasename` is nil for a preset
+        // because a preset is not a file and has no stem to borrow.
+        if iconForeground.foreground == nil,
+           let base = context.base,
+           base.icon.foreground.source == .symbol {
+            return base.icon.foreground.symbolName
+        }
         return defaultOutputBasename()
     }
 
@@ -1200,7 +1241,11 @@ struct GenerateCommand: AsyncParsableCommand {
         // which generation mode the colour flags are validated against.
         let context: GenerationContext
         do {
-            context = try GenerationContext.load(configPath: configPath)
+            context = try GenerationContext.load(
+                configPath: configPath,
+                iconPreset: iconPreset,
+                badgePreset: badgePreset
+            )
         } catch let error as CLIError {
             try reportFailure(reporter, kind: error.kind, message: error.localizedDescription, exit: .failure)
         }
@@ -1326,8 +1371,12 @@ struct GenerateCommand: AsyncParsableCommand {
         // naming a symbol solely to have it hidden. Every other background still
         // requires a foreground, or `--icon-bg-color blue` alone would quietly
         // render whatever `ForegroundSpec.iconDefault` happens to name.
+        // `context.suppliesIconForeground` rather than `context.base != nil`: a
+        // badge-only preset produces a base that says nothing about the icon, and
+        // excusing the requirement on it would render the default `command` glyph
+        // rather than erroring. See `GenerationContext.suppliesIconForeground`.
         let foreground: ForegroundValue?
-        if context.base == nil, !iconBackgroundIsImage {
+        if !context.suppliesIconForeground, !iconBackgroundIsImage {
             foreground = try resolvedForeground()
         } else {
             foreground = try providedForeground()

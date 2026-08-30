@@ -156,6 +156,24 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
         "badge-symbol": .badgeFG,
     ]
 
+    /// The two preset flags, which are `generate` flags and deliberately **not**
+    /// configuration keys.
+    ///
+    /// A fourth exclusion beside `processLevelNames`, `decodeOnlyNames` and
+    /// `cliOnlyAliasNames`, and it exists for a reason none of those three covers.
+    /// `--icon-preset slate` is not sugar for a key (`decodeOnlyNames`), does not
+    /// abbreviate one (`cliOnlyAliasNames`), and describes the *icon* rather than the
+    /// invocation, so it is not process-level either.
+    ///
+    /// **A configuration that named a preset instead of carrying its values would not
+    /// be self-contained**, which is the format's central promise: a file has to render
+    /// the same icon on a machine that has never seen the preset. So the flags expand
+    /// to keys before a configuration is written and never appear in one.
+    ///
+    /// `ConfigFlagParityTests.everyFlagIsAKey` scans the whole help text, so these have
+    /// to be accounted for here or that test forces them into the enum.
+    static let presetFlagNames: Set<String> = ["icon-preset", "badge-preset"]
+
     /// Keys accepted on the way in and never produced on the way out.
     ///
     /// A different thing from `processLevelNames`, which is excluded because those
@@ -377,6 +395,11 @@ private struct ConfigReader {
                 }
             } else if MicaConfigKey.processLevelNames.contains(rawKey) {
                 warn(rawKey, "'\(rawKey)' is a command-line flag, not a configuration key — pass it on the command line")
+            } else if MicaConfigKey.presetFlagNames.contains(rawKey) {
+                // Reachable by anyone who met the flag first. Naming the reason is
+                // the point: "not a configuration key" is true and sounds arbitrary,
+                // where the real answer is that a file has to stand on its own.
+                warn(rawKey, "'--\(rawKey)' is a command-line flag; a configuration carries the preset's values rather than its name")
             } else if let abbreviated = MicaConfigKey.cliOnlyAliasNames[rawKey] {
                 // Reachable by anyone who learned the flag first, so it names the
                 // key rather than reporting the shorthand as simply unknown.
