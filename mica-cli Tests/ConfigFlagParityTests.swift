@@ -121,13 +121,15 @@ struct ConfigFlagParityTests {
 
     @Test("Every long flag in generate's help is a configuration key, an alias, or exempt")
     func everyFlagIsAKey() throws {
-        // Anything a configuration deliberately cannot say. Both sets are the
+        // Anything a configuration deliberately cannot say. All three sets are the
         // codec's own, so the two halves cannot disagree about which flags describe
-        // an invocation rather than an icon, or which abbreviate a key rather than
-        // being one. Keeping the alias list in the codec is the point: a flag
-        // exempted here and unknown there would decode as "not a configuration key".
+        // an invocation rather than an icon, which abbreviate a key rather than being
+        // one, and which name a preset rather than carrying its values. Keeping the
+        // lists in the codec is the point: a flag exempted here and unknown there
+        // would decode as "not a configuration key".
         let exempt = MicaConfigKey.processLevelNames
             .union(MicaConfigKey.cliOnlyAliasNames.keys)
+            .union(MicaConfigKey.presetFlagNames)
             .union(["help", "version"])
         let keys = Set(MicaConfigKey.allCases.map(\.rawValue))
         let aliases = Set(MicaConfigKey.britishAliases.keys)
@@ -170,6 +172,38 @@ struct ConfigFlagParityTests {
             #expect(written[shorthand] == nil, "the encoder wrote the CLI shorthand '\(shorthand)'")
         }
         #expect(written["icon-fg"] as? String == "symbol:star.fill")
+    }
+
+    @Test("The preset flags are never written to a configuration")
+    func presetFlagsAreNeverEncoded() throws {
+        // The exemption above says these flags need no key. This says the encoder
+        // agrees — a written `icon-preset` would make the file depend on a preset
+        // existing on the machine that reads it, which is exactly the self-containment
+        // the format promises and the reason presets are not keys.
+        var settings = IconSettings()
+        settings.icon.foreground.symbolName = "star.fill"
+        settings.badge.foreground.source = .symbol
+        settings.badge.foreground.symbolName = "plus.circle"
+        settings.badge.foreground.isHidden = false
+
+        let data = try MicaConfigCodec.encode(settings: settings)
+        let written = try #require(
+            try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        for flag in MicaConfigKey.presetFlagNames {
+            #expect(written[flag] == nil, "the encoder wrote the preset flag '\(flag)'")
+        }
+    }
+
+    @Test("A preset flag in a configuration warns, and says why it is not a key")
+    func presetFlagInAConfigurationExplainsItself() throws {
+        // "not a configuration key" is true and sounds arbitrary. The reason — a file
+        // has to render the same icon on a machine that has never seen the preset —
+        // is the thing a config author actually needs.
+        let json = #"{"icon-preset": "installer"}"#.data(using: .utf8)!
+        let decoded = try MicaConfigCodec.decode(json: json, configDirectory: nil)
+        let warning = try #require(decoded.warnings.first { $0.key == "icon-preset" })
+        #expect(warning.message.contains("values"))
     }
 
     @Test("A CLI shorthand in a configuration warns, and names the key to use instead")
@@ -382,6 +416,11 @@ struct ConfigFlagParityTests {
         let command = try parseCommand(["--icon-symbol", "star.fill"])
         let context = GenerationContext(
             base: decoded.settings,
+            // A decoded configuration always names an icon foreground — the codec
+            // writes `icon-fg` into the identity set — which is the case
+            // `suppliesIconForeground` was split off `base != nil` to keep separate
+            // from a badge-only preset base. See `GenerationContext`.
+            suppliesIconForeground: true,
             appexColors: decoded.appexColors,
             outputBasename: nil,
             warnings: []
@@ -405,6 +444,7 @@ struct ConfigFlagParityTests {
     func systemColorFlagsOverrideTheConfiguration() throws {
         let context = GenerationContext(
             base: IconSettings(),
+            suppliesIconForeground: true,
             appexColors: MicaAppexColors(iconEnclosure: .red, iconSymbol: .black,
                                          badgeEnclosure: .green, badgeSymbol: .yellow),
             outputBasename: nil,

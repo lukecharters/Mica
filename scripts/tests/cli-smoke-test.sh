@@ -198,6 +198,18 @@ NEGATIVE_CASES=(
     "icon-symbol-weight-invalid|Symbol weight must be one of|star.fill|--icon-symbol-weight|notaweight"
     "icon-fg-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--icon-fg-scale|5.0"
     "icon-fg-symbol-empty|requires a symbol name||--icon-fg|symbol:"
+    # An unknown preset is fatal, and the message lists what is available — presets
+    # are the one part of the CLI's vocabulary that `--help` does not carry, so a
+    # bare "unknown preset" would leave the user with nowhere to look.
+    "icon-preset-unknown|no icon preset named|star.fill|--icon-preset|nosuchpreset"
+    "badge-preset-unknown|no badge preset named|star.fill|--badge-preset|nosuchpreset"
+    # **A badge preset must not excuse a missing icon foreground.** It produces a
+    # base, and `context.base != nil` used to be how the CLI decided a foreground was
+    # optional — so this invocation would have rendered the default blue `command`
+    # icon and reported success. Only the shipped binary's own message says the right
+    # question is being asked; the empty symbol field is what makes this a bare
+    # `--badge-preset` run.
+    "badge-preset-alone-still-needs-a-foreground|Provide an icon foreground||--badge-preset|Update"
     # The new refusals: the shorthand cannot carry the prefix it exists to omit,
     # and cannot be given alongside the flag it abbreviates.
     "icon-symbol-with-prefix|drop the 'symbol:' prefix||--icon-symbol|symbol:star.fill"
@@ -713,6 +725,36 @@ IMPORT_CASES=(
     # import no artwork, so nothing else would supply one.
     "superseded-corner-radius-token|same|--icon-symbol|star.fill|--icon-bg-corner-radius|macos11|--|--icon-symbol|star.fill|--icon-bg-corner-radius|macos15"
     "superseded-shadow-token|same|--icon-symbol|star.fill|--icon-bg-shadow|macos11|--|--icon-symbol|star.fill|--icon-bg-shadow|macos15"
+
+    # ---- presets ----
+    #
+    # The precedence rule end to end: a preset applies *before* the flags, so an
+    # explicit flag overrides it. Only the shipped binary can show this — the
+    # ordering lives in `GenerationContext.load` and reaches the render through the
+    # whole pipeline, and a unit test on the settings cannot see a resource lookup or
+    # an encoder go wrong on the way.
+    #
+    # The two "same" rows are the load-bearing half. A preset that silently failed to
+    # apply would still render, still exit 0, and still differ from its overridden
+    # twin — so a suite of "differ" rows alone would pass with the feature entirely
+    # broken. These pin what a preset *is*: the same icon its keys describe.
+    "icon-preset-equals-its-own-keys|same|--icon-preset|Installer|--|--icon-symbol|arrow.down.app|--icon-bg-color|blue|--icon-bg-gradient|off|--icon-symbol-color|white"
+    "badge-preset-equals-its-own-keys|same|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-fg|symbol:arrow.down|--badge-bg-color|blue|--badge-symbol-color|white|--badge-position|bottom-right"
+    # A flag beats the preset, on both scopes.
+    "icon-flag-overrides-the-preset|differ|--icon-preset|Installer|--|--icon-preset|Installer|--icon-bg-color|red"
+    "badge-flag-overrides-the-preset|differ|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-preset|Update|--badge-position|top-left"
+    # Style-only, for free: `--icon-preset media --icon-symbol hammer.fill` is Media's
+    # look on a different glyph, which is why the CLI needs no style-only preset kind.
+    "symbol-override-is-style-only|differ|--icon-preset|Media|--|--icon-preset|Media|--icon-symbol|hammer.fill"
+    # Scope isolation. An icon preset draws no badge, so adding one must change the
+    # render; a badge preset must not disturb the icon.
+    "icon-preset-draws-no-badge|differ|--icon-preset|Installer|--|--icon-preset|Installer|--badge-preset|Update"
+    "badge-preset-leaves-the-icon-alone|same|--icon-preset|Installer|--badge-preset|Update|--|--icon-symbol|arrow.down.app|--icon-bg-color|blue|--icon-bg-gradient|off|--icon-symbol-color|white|--badge-preset|Update"
+    # Scope-completeness on the shipped binary: a preset resets what it does not
+    # mention, so a flag set *before* the preset in the argument list has no effect on
+    # the preset's own scope. Both orderings must land on the same icon — argument
+    # order is not the precedence rule, the preset-then-flags pipeline is.
+    "argument-order-does-not-change-precedence|same|--icon-preset|Media|--icon-symbol|hammer.fill|--|--icon-symbol|hammer.fill|--icon-preset|Media"
 )
 
 # Bounds-filling artwork, built from a rendered icon so the script needs no new
