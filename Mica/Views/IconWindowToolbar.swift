@@ -23,12 +23,18 @@ import SwiftUI
 ///
 /// | Placement | Holds | Because |
 /// |---|---|---|
+/// | `.navigation` (leading) | The presets toggle | The pane it opens is the leading one |
 /// | `.principal` (centre) | Zoom and preview size | How the canvas is looked at |
-/// | `.automatic` (trailing) | Presets, advanced controls, inspector tab, inspector toggle | The panes and what they contain |
+/// | `.automatic` (trailing) | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
 ///
-/// **Nothing here goes at `.navigation`.** Measured 2026-08-04: `.navigation` items
-/// push the window title to their right, which read as the app's own name landing
-/// after them rather than at the leading edge where the platform puts it.
+/// **`.navigation` does push the window title to its right**, measured 2026-08-04 and
+/// still true — the title now sits after the sidebar toggle *and* the presets toggle
+/// rather than at the leading edge. That ruled the placement out for everything here
+/// until the presets pane, which is the first control whose subject is genuinely at
+/// the leading edge; it is a deliberate trade of title position for a control that
+/// sits over the thing it opens. **Don't take it as a general licence.** Anything
+/// whose subject is the canvas or the inspector still belongs at `.principal` or
+/// `.automatic`.
 struct IconWindowToolbar: ToolbarContent {
     @Binding var zoomLevel: Double
     @Binding var previewPointSize: CGFloat?
@@ -46,21 +52,21 @@ struct IconWindowToolbar: ToolbarContent {
             PreviewSizeMenu(previewPointSize: $previewPointSize)
         }
 
-        // Leftmost of the trailing cluster, because the pane it opens is the leftmost
-        // thing in the window. `.navigation` would be the truer placement and is not
-        // available: measured 2026-08-04, items there push the window title to their
-        // right, so the app's own name lands after them instead of at the leading edge.
+        // Leading, beside AppKit's own sidebar toggle, because the pane it opens is
+        // the leading one — it sits over the thing it shows. The cost is the window
+        // title moving right by one control; see the note in the header, which is
+        // where the trade is recorded.
         //
-        // **A `Toggle`, where the inspector button two items along is a `Button`.**
+        // **A `Toggle`, where the inspector button at the far end is a `Button`.**
         // Deliberate rather than an oversight: a toolbar draws a `Toggle` with a
         // pressed state, and the presets pane is *closed* by default — a control that
         // looked identical either way would leave the one pane you might forget you
         // opened unlabelled. The inspector is open by default and visibly occupies a
         // third of the window, so it needs no such tell. Same reasoning as
-        // `AdvancedControlsToolbarToggle`, which is the other Toggle here.
-        ToolbarItem(placement: .automatic) {
+        // `AdvancedControlsToolbarToggle`, the other Toggle here.
+        ToolbarItem(placement: .navigation) {
             Toggle(isOn: $showPresets) {
-                Label("Presets", systemImage: "dial.high")
+                Label("Presets", systemImage: "rectangle.stack")
             }
             .help("Show presets")
         }
