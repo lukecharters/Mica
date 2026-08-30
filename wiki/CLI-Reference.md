@@ -19,6 +19,24 @@ mica-cli --icon-symbol star.fill --output icon.png
 
 ## Generate
 
+### Presets
+
+| Flag | Details |
+|---|---|
+| `--icon-preset NAME` | Applies a named icon preset. |
+| `--badge-preset NAME` | Applies a named badge preset. |
+
+Presets apply before every other flag, so a flag overrides the preset.
+Names are not case sensitive.
+
+Mica reads the ten built-in presets and any you saved in the app.
+An unknown name stops the command and lists the names that exist.
+
+Neither flag is a configuration key.
+A configuration file holds the preset's values instead of its name.
+
+See [Use Presets](Use-Presets).
+
 ### Generation
 
 | Flag | Details |

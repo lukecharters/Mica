@@ -1,5 +1,6 @@
 # The Mica Window
 The Mica window has three panes for selecting, viewing, and changing an icon.
+A fourth pane holds presets. It is hidden until you ask for it.
 
 <img src="images/window-anatomy.png" width="900" alt="The Mica window with the sidebar, canvas, and inspector labelled">
 
@@ -9,9 +10,14 @@ The Mica window has three panes for selecting, viewing, and changing an icon.
 | Sidebar | Selects the Icon or Badge group and its layers. |
 | Canvas | Shows the current icon and accepts direct actions. |
 | Inspector | Changes the selected group or layer. |
+| Presets | Applies a saved look in one click. Hidden by default. |
 
 Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.
 Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.
+Use **View ▸ Show Presets** or **⌃⌘P** to show the presets pane.
+
+The presets pane opens between the sidebar and the canvas.
+See [Use Presets](Use-Presets).
 
 ## Sidebar
 The sidebar contains the Icon and Badge groups.
@@ -113,6 +119,7 @@ None of these items has a keyboard shortcut.
 | ⌘V | Paste an image as the icon background |
 | ⌃⌘S | Show or hide the sidebar |
 | ⌃⌘I | Show or hide the inspector |
+| ⌃⌘P | Show or hide the presets pane |
 | ⌘+ / ⌘− / ⌘0 | Zoom in, zoom out, or use actual size |
 | ⌘, | Open Settings |
 
