@@ -29,7 +29,7 @@ mica-cli --icon-symbol star.fill --output icon.png
 Presets apply before every other flag, so a flag overrides the preset.
 Names are not case sensitive.
 
-Mica reads the ten built-in presets and any you saved in the app.
+Mica reads the built-in presets and any you saved in the app.
 An unknown name stops the command and lists the names that exist.
 
 Neither flag is a configuration key.

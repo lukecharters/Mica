@@ -1,6 +1,6 @@
 # Use Presets
 A preset is a saved look you can apply in one click.
-Mica ships ten presets and lets you save your own.
+Mica ships a set of presets and lets you save your own.
 
 There are two kinds.
 An icon preset changes the icon only.
@@ -55,7 +55,7 @@ Mica adds a number if the name is taken.
 The sheet tells you before you save.
 
 Right-click one of your presets and choose **Delete** to remove it.
-You cannot delete the ten built-in presets.
+You cannot delete the built-in presets.
 
 Your presets are files. Mica keeps them here:
 
