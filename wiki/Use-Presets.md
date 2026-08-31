@@ -9,12 +9,15 @@ Neither changes your export size, scale, or colour space.
 
 ## Apply a preset
 1. Open Mica.
-2. Click the presets button at the top left, beside the sidebar button. You can also choose **View ▸ Show Presets**, or press **⌃⌘P**.
+2. Click **Presets** at the top of the sidebar. You can also click the presets button at the top left, choose **View ▸ Show Presets**, or press **⌃⌘P**.
 3. Click a preset.
 
-The presets button fills in while the pane is open.
+Click **Layers** to go back to the layer rows.
 
-The pane shows Icon Presets first, then Badge Presets.
+The presets button fills in while the presets are showing.
+It also shows the sidebar first if the sidebar is hidden.
+
+The sidebar shows Icon Presets first, then Badge Presets.
 Each thumbnail draws that preset on its own.
 It does not show your current icon.
 
@@ -44,11 +47,11 @@ The marker only appears while advanced controls are off.
 Undo restores your icon. It leaves advanced controls on.
 
 ## Save your own
-1. Select **Icon** or **Badge** in the sidebar.
-2. Click **Save Icon Preset…** or **Save Badge Preset…** at the bottom of the pane.
-3. Type a name and click **Save**.
+1. Click **+** beside **Icon Presets** or **Badge Presets**.
+2. Type a name and click **Save**.
 
-The button follows the sidebar selection.
+Each **+** saves that kind of preset.
+The **+** beside Badge Presets is dimmed while the badge is off.
 Save a badge preset only while the badge is on.
 
 Mica adds a number if the name is taken.
