@@ -1650,6 +1650,9 @@
     "Keyboard Shortcuts" : {
 
     },
+    "Layers" : {
+
+    },
     "Layout" : {
 
     },
@@ -2055,16 +2058,13 @@
     "Save Badge Preset" : {
 
     },
-    "Save Badge Preset…" : {
-
-    },
     "Save Icon Preset" : {
 
     },
-    "Save Icon Preset…" : {
+    "Save the current badge as a preset" : {
 
     },
-    "Save the current %@ as a preset" : {
+    "Save the current icon as a preset" : {
 
     },
     "Saves the badge’s current settings, including its corner." : {
@@ -2122,9 +2122,6 @@
 
     },
     "Show Inspector" : {
-
-    },
-    "Show presets" : {
 
     },
     "Show Presets" : {

@@ -358,8 +358,7 @@ struct ContentView: View {
                 zoomLevel: $zoomLevel,
                 previewPointSize: $previewPointSize,
                 inspectorTab: $inspectorTab,
-                showInspector: $showInspector,
-                showPresets: presetsVisibleBinding
+                showInspector: $showInspector
             )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
