@@ -734,12 +734,21 @@ IMPORT_CASES=(
     # whole pipeline, and a unit test on the settings cannot see a resource lookup or
     # an encoder go wrong on the way.
     #
+    # **These two rows restate a preset's keys by hand, and that is deliberate** — it is
+    # the one place in the suite where a literal copy of the catalogue is the assertion
+    # rather than a liability, because "a preset equals its own keys" cannot be checked
+    # without writing the keys out. So they are also the one place curation has to be
+    # followed by hand: re-curating Installer or Update means editing these rows. The
+    # 2026-08-31 pass changed Update's symbol and colour and broke this row exactly.
+    # Everywhere else — here and in PresetFlagsTests — expectations are derived from the
+    # preset rather than repeated.
+    #
     # The two "same" rows are the load-bearing half. A preset that silently failed to
     # apply would still render, still exit 0, and still differ from its overridden
     # twin — so a suite of "differ" rows alone would pass with the feature entirely
     # broken. These pin what a preset *is*: the same icon its keys describe.
     "icon-preset-equals-its-own-keys|same|--icon-preset|Installer|--|--icon-symbol|arrow.down.app|--icon-bg-color|blue|--icon-bg-gradient|off|--icon-symbol-color|white"
-    "badge-preset-equals-its-own-keys|same|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-fg|symbol:arrow.down|--badge-bg-color|blue|--badge-symbol-color|white|--badge-position|bottom-right"
+    "badge-preset-equals-its-own-keys|same|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-fg|symbol:arrowshape.up.fill|--badge-bg-color|green|--badge-symbol-color|white|--badge-position|bottom-right"
     # A flag beats the preset, on both scopes.
     "icon-flag-overrides-the-preset|differ|--icon-preset|Installer|--|--icon-preset|Installer|--icon-bg-color|red"
     "badge-flag-overrides-the-preset|differ|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-preset|Update|--badge-position|top-left"

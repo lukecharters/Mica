@@ -96,6 +96,28 @@ struct PresetFlagsTests {
         }
     }
 
+    /// The symbol a built-in names in its own `*-fg` key, with the `symbol:` prefix off.
+    ///
+    /// Tests read the expected glyph from the catalogue rather than repeating it, so that
+    /// re-curating `PresetCatalog` — which happens for taste, and often — cannot fail the
+    /// CLI suite. It is not tautological: the value still has to survive `MicaConfigCodec`
+    /// and the scoped copy to arrive in the base.
+    private func declaredSymbol(_ name: String, scope: PresetScope) throws -> String {
+        let preset = try #require(
+            PresetCatalog.builtIn(scope).first { $0.name.lowercased() == name.lowercased() },
+            "no \(scope) preset named \(name)"
+        )
+        let key = scope == .icon ? "icon-fg" : "badge-fg"
+        guard case .string(let value)? = preset.keys[key] else {
+            throw PresetFixtureError.missingForegroundKey(preset: name, key: key)
+        }
+        let prefix = "symbol:"
+        guard value.hasPrefix(prefix) else {
+            throw PresetFixtureError.foregroundIsNotASymbol(preset: name, value: value)
+        }
+        return String(value.dropFirst(prefix.count))
+    }
+
     // MARK: - The context a preset produces
 
     @Test("An icon preset produces a base and supplies an icon foreground")
@@ -103,7 +125,15 @@ struct PresetFlagsTests {
         let context = try context(icon: "Installer")
         let base = try #require(context.base)
         #expect(context.suppliesIconForeground)
-        #expect(base.icon.foreground.symbolName == "arrow.down.app")
+        // The glyph is read from the preset rather than written here. `PresetCatalog` is
+        // curated for taste, so a literal turns the next recolouring pass into a red CLI
+        // suite — which is how this file broke on 2026-08-31, when Update's badge symbol
+        // changed. What is worth asserting is that the preset's own `icon-fg` survived
+        // the decode, and that is what this compares.
+        // Hoisted out of `#expect`: the macro runs its operands in a non-throwing
+        // autoclosure, so a `try` call has to be a `let` first.
+        let declared = try declaredSymbol("Installer", scope: .icon)
+        #expect(base.icon.foreground.symbolName == declared)
     }
 
     @Test("A badge preset produces a base but supplies no icon foreground")
@@ -125,11 +155,19 @@ struct PresetFlagsTests {
 
     @Test("Both presets compose without touching each other")
     func bothScopesCompose() throws {
-        let context = try context(icon: "Installer", badge: "Update")
-        let base = try #require(context.base)
-        #expect(base.icon.foreground.symbolName == "arrow.down.app")
-        #expect(base.badge.foreground.symbolName == "arrow.down")
-        #expect(base.badge.isVisible)
+        // Asserted *differentially*, against each preset applied alone, rather than
+        // against two literal symbol names. That is both curation-proof and a stronger
+        // claim: two literals would still pass if composing quietly changed the glyph to
+        // some third value, so long as someone updated the expectations to match.
+        let both = try #require(try context(icon: "Installer", badge: "Update").base)
+        let iconOnly = try #require(try context(icon: "Installer").base)
+        let badgeOnly = try #require(try context(badge: "Update").base)
+
+        #expect(both.icon.foreground.symbolName == iconOnly.icon.foreground.symbolName)
+        #expect(both.badge.foreground.symbolName == badgeOnly.badge.foreground.symbolName)
+        #expect(both.icon.background.color == iconOnly.icon.background.color)
+        #expect(both.badge.background.color == badgeOnly.badge.background.color)
+        #expect(both.badge.isVisible)
     }
 
     @Test("A preset produces no warnings")
@@ -145,9 +183,13 @@ struct PresetFlagsTests {
     @Test("An explicit flag overrides the preset")
     func flagOverridesPreset() throws {
         // The whole precedence rule in one assertion.
+        // The preset's own background, read from the preset — an unrelated flag must
+        // leave it alone.
+        let presetBackground = try settings([], icon: "Installer").icon.background.color
         let plain = try settings(["--icon-symbol", "x"], icon: "Installer")
-        #expect(plain.icon.background.color == .blue)
+        #expect(plain.icon.background.color == presetBackground)
 
+        // `red` is the *flag's* value, not the catalogue's, so pinning it is safe.
         let overridden = try settings(["--icon-bg-color", "red"], icon: "Installer")
         #expect(overridden.icon.background.color == .red)
     }
@@ -169,7 +211,11 @@ struct PresetFlagsTests {
     func badgeFlagOverridesBadgePresetOnly() throws {
         let settings = try settings(["--badge-position", "top-left"], icon: "Installer", badge: "Update")
         #expect(settings.badge.position == .topLeft)
-        #expect(settings.icon.foreground.symbolName == "arrow.down.app")
+        // The icon half, compared against the icon preset applied on its own rather than
+        // against a literal glyph: what this test is about is the badge flag *not*
+        // reaching the icon, which is a relation between two runs.
+        let iconOnly = try self.settings([], icon: "Installer")
+        #expect(settings.icon.foreground.symbolName == iconOnly.icon.foreground.symbolName)
     }
 
     @Test("A preset never touches the export settings")
@@ -231,5 +277,21 @@ struct PresetFlagsTests {
         let command = try parseCommand(["--icon-symbol", "hammer.fill"])
         let context = try context(icon: "Installer")
         #expect(command.defaultOutputBasename(in: context) == "hammer.fill")
+    }
+}
+
+/// Failures in this file's own fixtures, kept loud rather than neutral: a helper that
+/// returned an empty string on a missing key would make every assertion using it pass.
+private enum PresetFixtureError: Error, CustomStringConvertible {
+    case missingForegroundKey(preset: String, key: String)
+    case foregroundIsNotASymbol(preset: String, value: String)
+
+    var description: String {
+        switch self {
+        case .missingForegroundKey(let preset, let key):
+            return "\(preset) carries no \(key)"
+        case .foregroundIsNotASymbol(let preset, let value):
+            return "\(preset)'s foreground is \(value), not a symbol: reference"
+        }
     }
 }
