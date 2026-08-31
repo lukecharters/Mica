@@ -9,15 +9,17 @@ Neither changes your export size, scale, or colour space.
 
 ## Apply a preset
 1. Open Mica.
-2. Click **Presets** at the top of the sidebar. You can also click the presets button at the top left, choose **View ▸ Show Presets**, or press **⌃⌘P**.
+2. Click the presets button at the top of the sidebar. It is the right of the two buttons there. You can also choose **View ▸ Show Presets**, or press **⌃⌘P**.
 3. Click a preset.
 
-Click **Layers** to go back to the layer rows.
+Click the left button to go back to the layer rows.
 
-The presets button fills in while the presets are showing.
-It also shows the sidebar first if the sidebar is hidden.
+**⌃⌘P** shows the sidebar first if the sidebar is hidden.
+Pressing it again goes back to the layer rows. It leaves the sidebar showing.
 
 The sidebar shows Icon Presets first, then Badge Presets.
+Click a section heading to fold that section away.
+Mica remembers which sections you folded.
 Each thumbnail draws that preset on its own.
 It does not show your current icon.
 

@@ -14,15 +14,17 @@ The sidebar has two modes. One holds layers, the other holds presets.
 Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.
 Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.
 Use **View ▸ Show Presets** or **⌃⌘P** to show the presets.
+There is no toolbar button for them; the sidebar's own buttons are the control.
 
 The presets appear in the sidebar, in place of the layer rows.
 The inspector stays where it is, so you can apply a preset and adjust it without switching back.
 See [Use Presets](Use-Presets).
 
 ## Sidebar
-Two buttons at the top of the sidebar choose what it shows: **Layers** or **Presets**.
+Two buttons at the top of the sidebar choose what it shows: layers or presets.
+The left button shows the layers. The right button shows the presets.
 
-Switching to Presets does not change which group is selected.
+Switching to presets does not change which group is selected.
 The inspector keeps showing the same controls.
 
 ### Layers
@@ -42,7 +44,6 @@ The icon background is hidden here, so the Icon eye is mixed.
 ## Toolbar
 | Control | Purpose |
 |---|---|
-| Presets button | Switches the sidebar to the presets. Sits at the top left, beside the sidebar button. Shows the sidebar first if it is hidden. |
 | Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Preview Size | Shows the icon at a chosen point size. |
 | Sliders button | Shows or hides advanced controls. |
