@@ -234,10 +234,13 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
-    /// Whether the presets pane is out. **Per window and not persisted**, alongside
-    /// `selectedGroup` and the two `LayerTab`s — see the `presetsVisible` focused
-    /// value for why.
-    @State private var showPresets: Bool = false
+    /// What the sidebar column is showing — the layer list or the preset library.
+    ///
+    /// **Per window and not persisted**, alongside `selectedGroup` and the two
+    /// `LayerTab`s. The presets library is somewhere you visit rather than a place to
+    /// be left on relaunch, and it is deliberately not a case on `LayerSidebarRow`;
+    /// see `SidebarMode` for both.
+    @State private var sidebarMode: SidebarMode = .layers
 
     /// Every preset, built-ins first, decoded once.
     ///
@@ -290,13 +293,7 @@ struct ContentView: View {
         // the detail column — the inspector keeps its custom `ResizeHandle` and `.move`
         // transition, unchanged, so only the left sidebar's behavior differs.
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            LayerSidebar(
-                iconSettings: $viewModel.iconSettings,
-                selection: $selectedGroup,
-                iconTab: $iconTab,
-                badgeTab: $badgeTab,
-                onPointer: pointerChanged
-            )
+            sidebarColumn
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
             // it *ahead of* `ideal:`, so the sidebar width already survives a
@@ -308,31 +305,12 @@ struct ContentView: View {
                 max: PaneWidthPreferences.Pane.sidebar.range.upperBound
             )
         } detail: {
-            // The presets pane is an `HStack` sibling of the canvas, **not a third
-            // NavigationSplitView column**. `NavigationSplitViewVisibility` has only
-            // `.all`, `.doubleColumn` and `.detailOnly`, and in a three-column layout
-            // `.doubleColumn` means *content + detail* — it hides the **sidebar**, not
-            // the middle column. So the state the app is in almost all the time
-            // (sidebar open, presets closed) is not representable, and ⌃⌘S would start
-            // meaning something else.
-            //
-            // This shape is the one the inspector had before it became `.inspector`;
-            // the note recording that still stands above. It lands immediately right of
-            // the sidebar so it reads as sliding out from it, and `columnVisibility` is
-            // untouched — hide the sidebar and the pane simply butts to the window
-            // edge.
-            HStack(spacing: 0) {
-                if showPresets {
-                    presetPane
-                        .transition(.move(edge: .leading))
-                    Divider()
-                }
-                detailCanvas
-            }
-            // On the container, not on the pane: the canvas has to move over as the
-            // pane arrives, and a transition alone animates only the pane's own
-            // arrival while the canvas jumps.
-            .animation(.easeInOut(duration: 0.2), value: showPresets)
+            // **The canvas, and nothing else.** The presets library was an `HStack`
+            // sibling here — a slide-out pane between the sidebar and the canvas,
+            // 216pt of it, for as long as it was open — until 2026-08-31, when it
+            // became the sidebar column's second mode. See `SidebarColumn` for why,
+            // and `PresetList` for what changed in the library itself.
+            detailCanvas
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -381,7 +359,7 @@ struct ContentView: View {
                 previewPointSize: $previewPointSize,
                 inspectorTab: $inspectorTab,
                 showInspector: $showInspector,
-                showPresets: $showPresets
+                showPresets: presetsVisibleBinding
             )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
@@ -402,7 +380,7 @@ struct ContentView: View {
         .modifier(WindowFocusValues(
             sidebarVisible: sidebarVisibleBinding,
             inspectorVisible: $showInspector,
-            presetsVisible: $showPresets,
+            presetsVisible: presetsVisibleBinding,
             previewZoom: $zoomLevel,
             previewPointSize: $previewPointSize,
             messageReporter: viewModel.messageReporter
@@ -567,6 +545,44 @@ struct ContentView: View {
         Binding(
             get: { columnVisibility != .detailOnly },
             set: { columnVisibility = $0 ? .all : .detailOnly }
+        )
+    }
+
+    /// "Are the presets showing?", as the one `Bool` the View menu and the toolbar
+    /// toggle can both drive.
+    ///
+    /// It is derived from **two** pieces of state, which is the one genuinely new
+    /// interaction this shape introduces: the library is showing only if the sidebar
+    /// column is out *and* it is in Presets mode. So showing presets has to reveal the
+    /// column — otherwise ⌃⌘P with the sidebar hidden (⌃⌘S) would set a mode nobody
+    /// can see and report success. The two commands were independent while the library
+    /// was a detail-column pane; they are not any more, and this is where that is paid
+    /// for rather than in each caller.
+    ///
+    /// Hiding goes back to Layers and **leaves the column alone**. The alternative —
+    /// hiding the whole sidebar — would make "Hide Presets" throw away the layer list
+    /// as a side effect, which is not what it says.
+    private var presetsVisibleBinding: Binding<Bool> {
+        Binding(
+            get: { sidebarPresentation.showsPresets },
+            set: { showing in
+                let next = sidebarPresentation.settingPresets(showing)
+                sidebarMode = next.mode
+                columnVisibility = next.isColumnVisible ? .all : .detailOnly
+            }
+        )
+    }
+
+    /// The two pieces of sidebar state as one value, so the rule above can live in
+    /// `SidebarPresentation` where a test can reach it.
+    ///
+    /// `columnVisibility` reads as "not `.detailOnly`" rather than "== `.all`" for the
+    /// same reason `sidebarVisibleBinding` does — the transient `.doubleColumn` a drag
+    /// can leave behind still counts as shown.
+    private var sidebarPresentation: SidebarPresentation {
+        SidebarPresentation(
+            mode: sidebarMode,
+            isColumnVisible: columnVisibility != .detailOnly
         )
     }
 
@@ -968,28 +984,37 @@ struct ContentView: View {
         .onMoveCommand(perform: nudgeBadge)
     }
 
-    /// The presets pane, with everything it needs to act.
+    /// The sidebar column — the selector bar, and either the layer list or the preset
+    /// library beneath it.
     ///
-    /// The apply routes through `IconViewModel.applyPreset`, which goes through the
-    /// configuration-import path — one redo-safe undo entry, a no-op guard, and any
+    /// **Out here rather than inline in the `NavigationSplitView`**, for the reason
+    /// every other extraction in this file exists: `body` sits at the type-checker's
+    /// ceiling and has been pushed over it five times. This one view takes eleven
+    /// arguments, where the `LayerSidebar` it replaced took five.
+    ///
+    /// The preset apply routes through `IconViewModel.applyPreset`, which goes through
+    /// the configuration-import path — one redo-safe undo entry, a no-op guard, and any
     /// continuous edit ended first. **Not through a settings observer**, which is the
     /// shape known here to kill redo.
-    private var presetPane: some View {
-        PresetPane(
-            selectedGroup: selectedGroup,
-            iconSettings: viewModel.iconSettings,
+    private var sidebarColumn: some View {
+        SidebarColumn(
+            mode: $sidebarMode,
+            iconSettings: $viewModel.iconSettings,
+            selection: $selectedGroup,
+            iconTab: $iconTab,
+            badgeTab: $badgeTab,
+            onPointer: pointerChanged,
             presets: resolvedPresets,
-            onApply: applyPreset,
-            onSave: { savePresetScope = $0 },
-            onDelete: deletePreset,
-            onClose: { showPresets = false }
+            onApplyPreset: applyPreset,
+            onSavePreset: { savePresetScope = $0 },
+            onDeletePreset: deletePreset,
+            // Reload when the library appears rather than from an `.onChange` in
+            // `body`, which would be a fifth there and the fourth was already at the
+            // type-checker's limit. The library is built when the mode flips, so this
+            // fires at exactly the same moment — and reading the directory from a
+            // `body` instead would touch the filesystem on every view update.
+            onPresetsAppear: reloadUserPresets
         )
-        // Reload on appear rather than on a `.onChange(of: showPresets)` in `body`,
-        // which would be a fifth there and the fourth was already at the
-        // type-checker's limit. The pane is built when the flag goes up, so this
-        // fires at exactly the same moment — and reading the directory from `body`
-        // instead would touch the filesystem on every view update.
-        .onAppear { reloadUserPresets() }
     }
 
     // MARK: - Presets

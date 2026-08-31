@@ -26,7 +26,7 @@ import SwiftUI
 /// suppressed — see `ResolvedPreset.thumbnailSettings(for:)`.
 struct IconPresetThumbnail: View {
     let settings: IconSettings
-    var size: CGFloat = PresetPaneMetrics.thumbnailSize
+    var size: CGFloat = PresetGridMetrics.thumbnailSize
 
     var body: some View {
         IconContentView(settings: settings, displaySize: size)
@@ -64,7 +64,7 @@ struct IconPresetThumbnail: View {
 /// `settings` arrives already staged as the ghost.
 struct BadgePresetThumbnail: View {
     let settings: IconSettings
-    var size: CGFloat = PresetPaneMetrics.thumbnailSize
+    var size: CGFloat = PresetGridMetrics.thumbnailSize
 
     /// The whole ghost icon, of which a badge-sized window is shown.
     ///
@@ -126,7 +126,7 @@ struct BadgePresetThumbnail: View {
 /// The right thumbnail for a preset's scope, so call sites do not branch.
 struct PresetThumbnail: View {
     let resolved: ResolvedPreset
-    var size: CGFloat = PresetPaneMetrics.thumbnailSize
+    var size: CGFloat = PresetGridMetrics.thumbnailSize
 
     var body: some View {
         switch resolved.scope {
@@ -146,8 +146,8 @@ struct PresetThumbnail: View {
     let resolved = ResolvedPreset.resolve(PresetCatalog.builtIn)
     ScrollView {
         LazyVGrid(columns: [
-            GridItem(.fixed(PresetPaneMetrics.thumbnailSize)),
-            GridItem(.fixed(PresetPaneMetrics.thumbnailSize)),
+            GridItem(.fixed(PresetGridMetrics.thumbnailSize)),
+            GridItem(.fixed(PresetGridMetrics.thumbnailSize)),
         ]) {
             ForEach(resolved) { PresetThumbnail(resolved: $0) }
         }

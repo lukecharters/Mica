@@ -23,23 +23,30 @@ import SwiftUI
 ///
 /// | Placement | Holds | Because |
 /// |---|---|---|
-/// | `.navigation` (leading) | The presets toggle | The pane it opens is the leading one |
+/// | `.navigation` (leading) | The presets toggle | The column it switches is the leading one |
 /// | `.principal` (centre) | Zoom and preview size | How the canvas is looked at |
 /// | `.automatic` (trailing) | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
 ///
 /// **`.navigation` does push the window title to its right**, measured 2026-08-04 and
 /// still true — the title now sits after the sidebar toggle *and* the presets toggle
 /// rather than at the leading edge. That ruled the placement out for everything here
-/// until the presets pane, which is the first control whose subject is genuinely at
-/// the leading edge; it is a deliberate trade of title position for a control that
-/// sits over the thing it opens. **Don't take it as a general licence.** Anything
-/// whose subject is the canvas or the inspector still belongs at `.principal` or
+/// until the presets control, which is the first one whose subject is genuinely at the
+/// leading edge; it is a deliberate trade of title position for a control that sits
+/// over the thing it acts on. **Don't take it as a general licence.** Anything whose
+/// subject is the canvas or the inspector still belongs at `.principal` or
 /// `.automatic`.
 struct IconWindowToolbar: ToolbarContent {
     @Binding var zoomLevel: Double
     @Binding var previewPointSize: CGFloat?
     @Binding var inspectorTab: InspectorTab
     @Binding var showInspector: Bool
+    /// Whether the sidebar column is showing the preset library.
+    ///
+    /// **A derived binding, not a stored flag** — `ContentView.presetsVisibleBinding`,
+    /// over `columnVisibility` *and* `sidebarMode`, because the library is showing only
+    /// if the column is out and in Presets mode. Setting it true reveals the column;
+    /// setting it false goes back to Layers and leaves the column alone. This struct
+    /// neither knows nor needs to know that.
     @Binding var showPresets: Bool
 
     var body: some ToolbarContent {
@@ -52,17 +59,23 @@ struct IconWindowToolbar: ToolbarContent {
             PreviewSizeMenu(previewPointSize: $previewPointSize)
         }
 
-        // Leading, beside AppKit's own sidebar toggle, because the pane it opens is
-        // the leading one — it sits over the thing it shows. The cost is the window
-        // title moving right by one control; see the note in the header, which is
-        // where the trade is recorded.
+        // Leading, beside AppKit's own sidebar toggle, because the column it switches
+        // is the leading one — it sits over the thing it acts on. The cost is the
+        // window title moving right by one control; see the note in the header, which
+        // is where the trade is recorded.
+        //
+        // **This is a second surface on the same state**, the sidebar's own selector
+        // bar being the first — the way the advanced-controls flag has three. It is
+        // what makes ⌃⌘P discoverable, and it is what reveals the column when the
+        // sidebar is hidden, which the selector bar cannot do from inside a column
+        // that is not on screen.
         //
         // **A `Toggle`, where the inspector button at the far end is a `Button`.**
         // Deliberate rather than an oversight: a toolbar draws a `Toggle` with a
-        // pressed state, and the presets pane is *closed* by default — a control that
-        // looked identical either way would leave the one pane you might forget you
-        // opened unlabelled. The inspector is open by default and visibly occupies a
-        // third of the window, so it needs no such tell. Same reasoning as
+        // pressed state, and the sidebar starts on Layers — a control that looked
+        // identical either way would leave the mode you might forget you switched
+        // unlabelled. The inspector is open by default and visibly occupies a third of
+        // the window, so it needs no such tell. Same reasoning as
         // `AdvancedControlsToolbarToggle`, the other Toggle here.
         ToolbarItem(placement: .navigation) {
             Toggle(isOn: $showPresets) {

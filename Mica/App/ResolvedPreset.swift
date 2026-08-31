@@ -10,7 +10,7 @@
 // over, since `cropAlignment` asked again), and the tile's advanced-controls
 // indicator. Ten tiles came to roughly thirty codec round trips per repaint, and the
 // pane repaints on every frame of its own slide-in animation and on every edit to the
-// icon, because `PresetPane` reads `iconSettings`.
+// icon, because `PresetList` reads `iconSettings`.
 //
 // Nothing about that is visible in a profile of the tests, and nothing about it fails:
 // it is simply slow, in a view whose whole selling point is being cheap enough to draw
