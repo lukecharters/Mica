@@ -66,7 +66,7 @@ struct IconWindowToolbar: ToolbarContent {
         // `AdvancedControlsToolbarToggle`, the other Toggle here.
         ToolbarItem(placement: .navigation) {
             Toggle(isOn: $showPresets) {
-                Label("Presets", systemImage: "rectangle.stack")
+                Label("Presets", systemImage: "square.grid.2x2")
             }
             .help("Show presets")
         }

@@ -31,6 +31,10 @@ struct IconPresetThumbnail: View {
     var body: some View {
         IconContentView(settings: settings, displaySize: size)
             .frame(width: size, height: size)
+            .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color(nsColor: .systemFill), lineWidth: 1)
+                )
     }
 }
 
@@ -110,6 +114,10 @@ struct BadgePresetThumbnail: View {
             // when the clip applies.
             .frame(width: size, height: size, alignment: .center)
             .clipped()
+            .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color(nsColor: .systemFill), lineWidth: 1)
+                )
     }
 }
 
@@ -127,5 +135,22 @@ struct PresetThumbnail: View {
         case .badge:
             BadgePresetThumbnail(settings: resolved.thumbnailSettings, size: size)
         }
+    }
+}
+
+// MARK: - Preview
+
+/// Every built-in, through the same resolve step the pane uses — so both scopes'
+/// staging and the badge crop are on show, at the pane's own two-column width.
+#Preview {
+    let resolved = ResolvedPreset.resolve(PresetCatalog.builtIn)
+    ScrollView {
+        LazyVGrid(columns: [
+            GridItem(.fixed(PresetPaneMetrics.thumbnailSize)),
+            GridItem(.fixed(PresetPaneMetrics.thumbnailSize)),
+        ]) {
+            ForEach(resolved) { PresetThumbnail(resolved: $0) }
+        }
+        .padding()
     }
 }
