@@ -64,11 +64,18 @@ struct ResolvedPreset: Identifiable, Equatable {
     /// The preset over defaults, staged for its thumbnail.
     ///
     /// An icon preset draws itself with the badge suppressed. A badge preset draws
-    /// over a **ghost icon**: `secondary` is the adaptive ~50%-of-label token, so the
-    /// placeholder reads correctly in both appearances without pinning a grey that
-    /// would be wrong in one of them, and it is flat and shadowless because a gradient
-    /// or a drop shadow on a stand-in competes with the badge — the only thing in that
-    /// thumbnail the user is being asked to look at.
+    /// over a **ghost icon**, flat and shadowless because a gradient or a drop shadow
+    /// on a stand-in competes with the badge — the only thing in that thumbnail the
+    /// user is being asked to look at.
+    ///
+    /// **`primary`, and the weight is applied in the view, not here.** The placeholder
+    /// has to be adaptive, so it has to be one of `ColorTokenTable`'s two semantic
+    /// tokens; `BadgePresetThumbnail.ghostLayer` then multiplies it down to ≈0.25 with
+    /// `.opacity`. This was `secondary` (~50%) until 2026-08-31, which was too heavy
+    /// against the badge — the one thing in that thumbnail the user is being asked to
+    /// look at. **Changing this token changes the ghost's weight**, since the opacity
+    /// there is calibrated against `primary`'s ~0.85; the arithmetic is written out in
+    /// that property's comment.
     private static func thumbnailSettings(for preset: MicaPreset) -> IconSettings {
         var settings = PresetApplication.previewSettings(for: preset)
 
@@ -80,7 +87,7 @@ struct ResolvedPreset: Identifiable, Equatable {
         case .badge:
             settings.icon.foreground.isHidden = true
             settings.icon.background.source = .color
-            settings.icon.background.color = .token("secondary")
+            settings.icon.background.color = .token("primary")
             settings.icon.background.usesGradient = false
             settings.icon.background.usesCustomGradient = false
             settings.icon.background.shadowStyle = .off

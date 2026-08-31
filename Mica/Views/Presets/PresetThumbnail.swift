@@ -2,6 +2,11 @@
 //
 // What a preset looks like, drawn in isolation on neutral ground.
 //
+// **The ground, the clip and the border are not here** — they are
+// `presetTileChrome()` in `PresetList.swift`, one shape applied once. They were split
+// across two files with two radii and two corner styles until 2026-08-31, which is how
+// the border came to be drawn with its corners clipped off.
+//
 // **A catalogue, not a preview of the current document.** Every thumbnail renders the
 // preset over `IconSettings()` and nothing else, so the pane is stable while the icon
 // is being edited — a preset row does not change because the user picked a different
@@ -29,12 +34,11 @@ struct IconPresetThumbnail: View {
     var size: CGFloat = PresetGridMetrics.thumbnailSize
 
     var body: some View {
+        // No ground, clip or border here: `presetTileChrome()` owns all three, over
+        // one shape. This view used to stroke a 6pt radius inside a 10pt continuous
+        // clip, which is how the border lost its corners.
         IconContentView(settings: settings, displaySize: size)
             .frame(width: size, height: size)
-            .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(nsColor: .systemFill), lineWidth: 1)
-                )
     }
 }
 
@@ -102,22 +106,96 @@ struct BadgePresetThumbnail: View {
     }
 
     var body: some View {
-        IconContentView(settings: settings, displaySize: ghostSize)
+        ZStack {
+            ghostLayer
+            badgeLayer
+        }
+        // Frame first, then clip: the frame picks the window by centring the
+        // oversized content, and the clip is what actually removes the rest.
+        // Reversing them clips nothing, because the content is still its full size
+        // when the clip applies.
+        .frame(width: size, height: size, alignment: .center)
+        .clipped()
+    }
+
+    /// The placeholder chiclet, at a quarter weight.
+    ///
+    /// **`.opacity` on the render, not a colour of its own — and a mask was tried and
+    /// reverted.** The ghost has to be adaptive, and the only adaptive colours
+    /// `IconSettings` can carry are `ColorTokenTable`'s two semantic tokens: `primary`
+    /// (~85% of label) and `secondary` (~50%). `secondary` was the original choice and
+    /// is too heavy against the badge — the thing in this thumbnail the user is
+    /// actually being asked to look at. Adding a lighter token would put a colour into
+    /// the app's user-facing vocabulary and the CLI's colour grammar for the sake of a
+    /// thumbnail, and extracting components from a dynamic `NSColor` is not possible at
+    /// all: `NSColor.colorSpace` raises on one.
+    ///
+    /// So the colour is `primary` and the *weight* is here: 0.85 × 0.30 ≈ **0.25**,
+    /// which is `tertiaryLabelColor`'s alpha and a little under half what `secondary`
+    /// was. Measured luminance delta against the `controlBackgroundColor` ground, and
+    /// it barely moves between appearances — 0.26 light, 0.22 dark.
+    ///
+    /// **A rejected version filled a rectangle and masked it with this render**, to
+    /// reach `tertiarySystemFill` directly. What killed it is why the `*SystemFill`
+    /// family cannot be used here at all: **those fills are 2–5% contrast against this
+    /// ground.** Measured alphas — `quaternarySystemFill` 0.027, `tertiarySystemFill`
+    /// 0.047, `secondarySystemFill` 0.078. They are built to tint a control sitting on
+    /// a window, not to be the only thing separating two greys. Shipped for one build,
+    /// `tertiarySystemFill` rendered the tile as flat quadrants with no readable chiclet
+    /// at all. `.opacity` on the render reaches a usable weight without a mask, and
+    /// keeps `IconContentView` authoritative for every pixel of the shape.
+    ///
+    /// **The ghost's rounded corner is not visible, and that is correct.** The crop is
+    /// centred on the badge, and the badge sits *at* a corner of the chiclet, so the
+    /// arc is directly behind it; what shows either side of the badge is the chiclet's
+    /// two straight edges leaving the frame. This reads as a squared-off ghost in a
+    /// screenshot and cost an investigation — the shape is fine, the badge is simply in
+    /// front of it. Which corner is still legible from *where the grey mass sits*, and
+    /// that is what `badge-position` being in scope buys.
+    private var ghostLayer: some View {
+        IconContentView(settings: Self.ghostOnly(settings), displaySize: ghostSize)
             .frame(width: ghostSize, height: ghostSize)
+            .opacity(Self.ghostOpacity)
             // `.offset` is layout-neutral — it reports the child's original size — so
-            // the frame below still centres the full ghost and only the *drawing*
+            // the frame above still centres the full ghost and only the *drawing*
             // slides. That is what lets the crop be aimed without the frame chasing it.
             .offset(cropShift)
-            // Frame first, then clip: the frame picks the window by centring the
-            // oversized content, and the clip is what actually removes the rest.
-            // Reversing them clips nothing, because the content is still its full size
-            // when the clip applies.
-            .frame(width: size, height: size, alignment: .center)
-            .clipped()
-            .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(nsColor: .systemFill), lineWidth: 1)
-                )
+    }
+
+    /// Multiplied into the `primary` token's ~0.85 to land at ≈0.25. See `ghostLayer`.
+    private static let ghostOpacity: Double = 0.30
+
+    /// The badge, drawn over the ghost at the same geometry.
+    ///
+    /// **A second `IconContentView` pass rather than one shared with the ghost**, which
+    /// is what lets the ghost be recoloured without touching the badge: a mask over a
+    /// single render would have taken the badge's colours with it. Both passes are the
+    /// same cheap SwiftUI view at the same `displaySize`, so the badge lands in exactly
+    /// the same place in both — `BadgeGeometry.offset` reads the enclosure, which the
+    /// icon's layer visibility does not change.
+    private var badgeLayer: some View {
+        IconContentView(settings: Self.badgeOnly(settings), displaySize: ghostSize)
+            .frame(width: ghostSize, height: ghostSize)
+            .offset(cropShift)
+    }
+
+    /// The staged settings with the badge switched off — the mask's source.
+    private static func ghostOnly(_ settings: IconSettings) -> IconSettings {
+        var copy = settings
+        copy.badge.isHidden = true
+        return copy
+    }
+
+    /// The staged settings with both icon layers switched off.
+    ///
+    /// The foreground is already hidden by the staging; the background goes too, so
+    /// the chiclet is drawn once — by `ghostLayer` — rather than twice, with this pass
+    /// laying an opaque black one over the tinted one.
+    private static func badgeOnly(_ settings: IconSettings) -> IconSettings {
+        var copy = settings
+        copy.icon.foreground.isHidden = true
+        copy.icon.background.isHidden = true
+        return copy
     }
 }
 
@@ -149,7 +227,7 @@ struct PresetThumbnail: View {
             GridItem(.fixed(PresetGridMetrics.thumbnailSize)),
             GridItem(.fixed(PresetGridMetrics.thumbnailSize)),
         ]) {
-            ForEach(resolved) { PresetThumbnail(resolved: $0) }
+            ForEach(resolved) { PresetThumbnail(resolved: $0).presetTileChrome() }
         }
         .padding()
     }
