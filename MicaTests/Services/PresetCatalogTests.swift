@@ -1,13 +1,13 @@
 // PresetCatalogTests.swift
 // Tests for the built-in set, and for the derived advanced-controls indicator.
 //
-// **What is pinned is the coverage, not the taste.** The names, colours and symbols
-// in `PresetCatalog` are placeholders — the real catalogue is curated later — so a
-// test asserting that Media is orange-to-pink would break on the first curation pass
-// and teach nobody anything. What these assert instead is that the set still reaches
-// every major option, which is the reason it exists: flat and gradient backgrounds,
-// both gradient kinds, monochrome and hierarchical rendering, three corners, a
-// non-default scale, non-zero offsets.
+// **Nothing here pins a count or a colour.** The catalogue answers to taste and is
+// re-curated freely, so an assertion that there are five icon presets, or that Media is
+// orange-to-pink, breaks on a curation pass and teaches nobody anything — it reports a
+// decision as a defect. What these assert is what must hold of *any* catalogue: every
+// entry is well-formed, decodes cleanly, keeps to its scope, and carries the right
+// indicator. The option space the decoder must support moved to `PresetCoverageTests`,
+// where synthetic presets exercise it without constraining what ships.
 //
 // The indicator tests are the finer half. `resetToSimpleControls()` folds **only**
 // custom gradients, imported sources and non-monochrome rendering — so the derived
@@ -55,11 +55,16 @@ struct PresetCatalogTests {
         }
     }
 
-    @Test("Five presets per scope, ten in all")
-    func catalogueSize() {
-        #expect(PresetCatalog.builtInIcon.count == 5)
-        #expect(PresetCatalog.builtInBadge.count == 5)
-        #expect(PresetCatalog.builtIn.count == 10)
+    @Test("Neither scope's catalogue is empty")
+    func catalogueIsPopulated() {
+        // Deliberately a floor and not a count. The number of presets is a curation
+        // decision, and pinning it reports that decision as a failure. What is worth
+        // catching is an *empty* scope: every other test in this file iterates the
+        // catalogue, so an empty one passes all of them vacuously, and the pane would
+        // ship a blank section with nothing failing.
+        #expect(!PresetCatalog.builtInIcon.isEmpty)
+        #expect(!PresetCatalog.builtInBadge.isEmpty)
+        #expect(PresetCatalog.builtIn.count == PresetCatalog.builtInIcon.count + PresetCatalog.builtInBadge.count)
     }
 
     @Test("No built-in is a System-mode preset")
@@ -76,77 +81,6 @@ struct PresetCatalogTests {
             case .badge: #expect(settings.badge.mode == .mica, "\(preset.name) is a System-mode badge preset")
             }
         }
-    }
-
-    // MARK: - Coverage
-
-    @Test("The icon set reaches both gradient kinds and a genuinely flat background")
-    func iconCoverage_backgrounds() {
-        let settings = PresetCatalog.builtInIcon.map(PresetApplication.previewSettings(for:))
-
-        // A custom two-colour gradient — the list-encoded form.
-        #expect(settings.contains { $0.icon.background.usesCustomGradient })
-        // The derived gradient, which is a different thing and is the default.
-        #expect(settings.contains { $0.icon.background.usesGradient && !$0.icon.background.usesCustomGradient })
-        // **Flat**, which needs `icon-bg-gradient: false` spelled out:
-        // `IconBackgroundSpec().usesGradient` is `true`, so under scope-completeness an
-        // omitted key means the default, which is *on*. This is the assertion that
-        // catches someone "tidying away" that explicit false.
-        #expect(settings.contains { !$0.icon.background.usesGradient })
-    }
-
-    @Test("The icon set reaches monochrome and a non-monochrome rendering mode")
-    func iconCoverage_rendering() {
-        let styles = Set(PresetCatalog.builtInIcon.map {
-            PresetApplication.previewSettings(for: $0).icon.foreground.renderingStyle
-        })
-        #expect(styles.contains(.monochrome))
-        #expect(styles.contains { $0 != .monochrome })
-    }
-
-    @Test("The icon set reaches a non-default corner style, shadow and weight")
-    func iconCoverage_hiddenButApplied() {
-        // The three axes `resetToSimpleControls()` does *not* fold. They matter
-        // because they are the ones that survive the simple pane unrepresented, and
-        // because the set has to prove they carry no indicator.
-        let settings = PresetCatalog.builtInIcon.map(PresetApplication.previewSettings(for:))
-        #expect(settings.contains { $0.icon.background.cornerRadiusStyle != IconBackgroundSpec().cornerRadiusStyle })
-        #expect(settings.contains { $0.icon.background.shadowStyle != IconBackgroundSpec().shadowStyle })
-        #expect(settings.contains { $0.icon.foreground.symbolWeight != .auto })
-    }
-
-    @Test("The icon set reaches a white symbol and a coloured one")
-    func iconCoverage_symbolColours() {
-        let colours = PresetCatalog.builtInIcon.map {
-            PresetApplication.previewSettings(for: $0).icon.foreground.color
-        }
-        #expect(colours.contains(.white))
-        #expect(colours.contains { $0 != .white })
-    }
-
-    @Test("The badge set reaches three corners")
-    func badgeCoverage_corners() {
-        // Three, not four: the fourth adds a file and covers no code path the other
-        // three do not. What the corners are for is the ghost-corner thumbnail, and
-        // three of them prove the crop follows the preset rather than being fixed.
-        let corners = Set(PresetCatalog.builtInBadge.map {
-            PresetApplication.previewSettings(for: $0).badge.position
-        })
-        #expect(corners.count >= 3, "the badge set covers only \(corners.count) corner(s)")
-    }
-
-    @Test("The badge set reaches a non-default scale and non-zero offsets")
-    func badgeCoverage_layout() {
-        let settings = PresetCatalog.builtInBadge.map(PresetApplication.previewSettings(for:))
-        #expect(settings.contains { $0.badge.scale != BadgeSpec().scale })
-        #expect(settings.contains { $0.badge.offsetX != 0 || $0.badge.offsetY != 0 })
-    }
-
-    @Test("The badge set reaches both background kinds")
-    func badgeCoverage_backgrounds() {
-        let settings = PresetCatalog.builtInBadge.map(PresetApplication.previewSettings(for:))
-        #expect(settings.contains { $0.badge.background.usesCustomGradient })
-        #expect(settings.contains { !$0.badge.background.usesCustomGradient })
     }
 
     // MARK: - The advanced-controls indicator
@@ -176,12 +110,20 @@ struct PresetCatalogTests {
         }
     }
 
-    @Test("Two icon presets and one badge preset carry the indicator")
-    func indicatorCount() {
-        // The count from the plan, pinned so re-curating the catalogue is a decision
-        // rather than a drift. If this moves, check it moved for a reason.
-        #expect(PresetCatalog.builtInIcon.filter(\.needsAdvancedControls).count == 2)
-        #expect(PresetCatalog.builtInBadge.filter(\.needsAdvancedControls).count == 1)
+    @Test("The indicator discriminates — some presets carry it, some do not")
+    func indicatorDiscriminates() {
+        // `indicatorMatchesTheFold` already proves each preset's flag is *correct*, so
+        // an exact count adds nothing about correctness — whatever the number is, it is
+        // right by construction. What a count weakly stood in for is this: an indicator
+        // that flagged everything, or nothing, would still satisfy the fold and would
+        // still be useless in the pane. That property survives any curation.
+        for scope in PresetScope.allCases {
+            let presets = PresetCatalog.builtIn(scope)
+            #expect(presets.contains { $0.needsAdvancedControls },
+                    "no \(scope) preset carries the indicator")
+            #expect(presets.contains { !$0.needsAdvancedControls },
+                    "every \(scope) preset carries the indicator")
+        }
     }
 
     @Test("Corner styles, shadows, weights and the derived gradient carry no indicator")
