@@ -54,6 +54,19 @@ enum PresetGridMetrics {
     static let rowSpacing: CGFloat = 14
     static let horizontalPadding: CGFloat = 14
 
+    /// The tile's corner radius — **one number, because there were two.**
+    ///
+    /// The thumbnails stroked a 6pt-radius rectangle while the tile clipped to a 10pt
+    /// *continuous* one, so the clip sheared the corners off the border it was drawn
+    /// inside. Both now come from `tileShape`, and the stroke is a `strokeBorder` so
+    /// its full width sits inside the shape rather than half of it straddling the clip.
+    static let tileCornerRadius: CGFloat = 10
+
+    /// The one shape the ground, the clip and the border all use.
+    static var tileShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
+    }
+
     /// One adaptive column spec, not N fixed ones.
     ///
     /// The count absorbs the column's width — two at 220pt, three by ~330pt — which is
@@ -70,6 +83,30 @@ enum PresetGridMetrics {
     static let columns = [
         GridItem(.adaptive(minimum: thumbnailSize), spacing: columnSpacing)
     ]
+}
+
+// MARK: - Tile chrome
+
+extension View {
+    /// A preset thumbnail's ground, clip and border — in that order, over one shape.
+    ///
+    /// **The ground is `controlBackgroundColor`**, near-white in light appearance and
+    /// near-black in dark, which is what Apple's own apps put behind a symbol or a
+    /// shape in a thumbnail. It matters here because every icon is a rounded chiclet
+    /// inset from its canvas: without a ground the sidebar's material showed through
+    /// the corners, so each tile read as a floating shape rather than as a swatch.
+    ///
+    /// **Applied in one place on purpose.** The clip and the border were in two —
+    /// `PresetTile` clipped, each thumbnail stroked — with different radii and
+    /// different corner styles, which is how the border lost its corners.
+    func presetTileChrome() -> some View {
+        background(Color(nsColor: .controlBackgroundColor), in: PresetGridMetrics.tileShape)
+            .clipShape(PresetGridMetrics.tileShape)
+            .overlay(
+                PresetGridMetrics.tileShape
+                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+            )
+    }
 }
 
 // MARK: - The list
@@ -89,11 +126,22 @@ struct PresetList: View {
     let onSave: (PresetScope) -> Void
     let onDelete: (MicaPreset) -> Void
 
+    /// Per-section expansion, persisted.
+    ///
+    /// **`@AppStorage` under the `sidebar.*.expanded` prefix**, which is the key
+    /// namespace `InspectorControls` already keeps its thirteen section states in — a
+    /// collapsed section is a lasting preference about the shape of the pane, not
+    /// per-window view state like `SidebarMode`. Read directly here rather than
+    /// threaded from `ContentView`, the way every other reader of a preference in this
+    /// project does.
+    @AppStorage("sidebar.iconPresets.expanded") private var iconPresetsExpanded = true
+    @AppStorage("sidebar.badgePresets.expanded") private var badgePresetsExpanded = true
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                section(.icon, title: "Icon Presets")
-                section(.badge, title: "Badge Presets")
+                section(.icon, title: "Icon Presets", isExpanded: $iconPresetsExpanded)
+                section(.badge, title: "Badge Presets", isExpanded: $badgePresetsExpanded)
             }
             .padding(.horizontal, PresetGridMetrics.horizontalPadding)
             .padding(.vertical, 14)
@@ -110,51 +158,91 @@ struct PresetList: View {
     /// user looking for a badge preset should not have to first select the badge to
     /// see that badge presets exist. That was true of the pane and is true here.
     @ViewBuilder
-    private func section(_ scope: PresetScope, title: LocalizedStringKey) -> some View {
+    private func section(
+        _ scope: PresetScope,
+        title: LocalizedStringKey,
+        isExpanded: Binding<Bool>
+    ) -> some View {
         let rows = presets.filter { $0.scope == scope }
 
         VStack(alignment: .leading, spacing: 8) {
-            header(scope, title: title)
+            header(scope, title: title, isExpanded: isExpanded)
 
-            // **`maxWidth: .infinity` is load-bearing.** Without it the grid sized to
-            // its own content and reported 207pt inside a 252pt content area — so the
-            // adaptive columns were computing against the wrong width and the slack
-            // came back as a trailing hole, the very thing dropping `maximum:` was
-            // meant to fix. A `VStack(alignment: .leading)` sizes to its widest child;
-            // the grid has to be told to take the room instead.
-            LazyVGrid(
-                columns: PresetGridMetrics.columns,
-                alignment: .leading,
-                spacing: PresetGridMetrics.rowSpacing
-            ) {
-                ForEach(rows) { row in
-                    PresetTile(
-                        resolved: row,
-                        onApply: { onApply(row.preset) },
-                        onDelete: row.preset.isBuiltIn ? nil : { onDelete(row.preset) }
-                    )
+            if isExpanded.wrappedValue {
+                // **`maxWidth: .infinity` is load-bearing.** Without it the grid sized
+                // to its own content and reported 207pt inside a 252pt content area —
+                // so the adaptive columns were computing against the wrong width and
+                // the slack came back as a trailing hole, the very thing dropping
+                // `maximum:` was meant to fix. A `VStack(alignment: .leading)` sizes to
+                // its widest child; the grid has to be told to take the room instead.
+                LazyVGrid(
+                    columns: PresetGridMetrics.columns,
+                    alignment: .leading,
+                    spacing: PresetGridMetrics.rowSpacing
+                ) {
+                    ForEach(rows) { row in
+                        PresetTile(
+                            resolved: row,
+                            onApply: { onApply(row.preset) },
+                            onDelete: row.preset.isBuiltIn ? nil : { onDelete(row.preset) }
+                        )
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    /// The section name, and the `+` that saves the current state into it.
+    /// The section name as a disclosure control, and the `+` that saves into it.
+    ///
+    /// **Hand-rolled rather than a `DisclosureGroup`.** The row has to carry a second,
+    /// independently clickable control, and a `DisclosureGroup`'s label is entirely a
+    /// toggle target — the `+` inside one competes with the disclosure for the click.
+    /// `Section(_:isExpanded:)`, which is how `InspectorControls` does its thirteen,
+    /// needs a `Form` and would style a thumbnail grid as form rows.
+    ///
+    /// The chevron is the standard leading disclosure, rotated rather than swapped for
+    /// a second symbol so it animates. The title is `.subheadline.weight(.semibold)` in
+    /// `.primary` — it was `.caption` in `.secondary`, which read as a caption on the
+    /// grid below it rather than as a heading over it.
     ///
     /// **Saving a badge preset needs a badge**, which is why the badge's button can be
     /// disabled: a preset captured from a switched-off badge carries no activating key,
     /// so applying it would do nothing — and the one thing a badge preset must do is
     /// turn a badge on. Sitting in the badge section, the disabled control says which
     /// scope is unavailable without the help text having to; the help text says why.
-    private func header(_ scope: PresetScope, title: LocalizedStringKey) -> some View {
+    private func header(
+        _ scope: PresetScope,
+        title: LocalizedStringKey,
+        isExpanded: Binding<Bool>
+    ) -> some View {
         let canSave = UserPresetStore.canCapture(iconSettings, scope: scope)
 
         return HStack(spacing: 4) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 0)
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    isExpanded.wrappedValue.toggle()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+                // The whole row up to the `+` is the target, not just the words —
+                // a heading you have to hit exactly is a heading people stop using.
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(isExpanded.wrappedValue ? "Hide these presets" : "Show these presets")
+            .accessibilityLabel(title)
+            .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
+            .accessibilityAddTraits(.isHeader)
 
             Button {
                 onSave(scope)
@@ -216,7 +304,7 @@ private struct PresetTile: View {
         Button(action: onApply) {
             VStack(spacing: 5) {
                 PresetThumbnail(resolved: resolved)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .presetTileChrome()
                     .overlay(alignment: .topLeading) {
                         if showsIndicator { indicator }
                     }
