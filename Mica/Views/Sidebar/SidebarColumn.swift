@@ -94,12 +94,20 @@ struct SidebarColumn: View {
 /// rather than `.pickerStyle(.tabs)` for the reason recorded on that type: a SwiftUI
 /// picker cannot be stretched, so the tabs style would render ~156pt wide in a 280pt
 /// column. Don't swap it.
+///
+/// **Glyphs, not words.** Two segments across a 220–360pt column left each label
+/// floating in far more room than it needed, and the words competed with the section
+/// headers immediately below them. `SidebarMode.label` still carries the text — it is
+/// the accessibility description and the tooltip, which are now the only things that
+/// name a segment.
 private struct SidebarSelector: View {
     @Binding var mode: SidebarMode
 
     var body: some View {
         FillingSegmentedPicker(
-            segments: SidebarMode.allCases.map { ($0.label, $0) },
+            segments: SidebarMode.allCases.map {
+                .init($0.label, systemImage: $0.systemImage, value: $0)
+            },
             selection: $mode,
             accessibilityLabel: "Sidebar",
             role: .tabs

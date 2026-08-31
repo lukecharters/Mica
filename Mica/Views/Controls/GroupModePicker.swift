@@ -54,7 +54,7 @@ struct GroupModePicker: View {
                 .foregroundStyle(.secondary)
 
             FillingSegmentedPicker(
-                segments: GenerationMode.allCases.map { ($0.label, $0) },
+                segments: GenerationMode.allCases.map { .init($0.label, value: $0) },
                 selection: selection,
                 accessibilityLabel: "Generation Mode",
                 role: .tabs

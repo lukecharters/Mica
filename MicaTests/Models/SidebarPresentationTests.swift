@@ -15,6 +15,7 @@
 // column, ⌃⌘P and ⌃⌘S were independent of each other.
 
 import Testing
+import AppKit
 @testable import Mica
 
 @Suite("Sidebar presentation", .tags(.unit))
@@ -104,10 +105,37 @@ struct SidebarPresentationTests {
 
     // MARK: - The mode itself
 
-    /// Two modes, each with a segment title. A blank one would render an unlabelled
-    /// segment in the selector bar rather than fail anything.
+    /// Two modes, each with a segment title.
+    ///
+    /// The bar draws glyphs, so this text is the segment's accessibility description
+    /// and its tooltip — the only two things that name it. A blank one would render an
+    /// unlabelled, unspeakable segment rather than fail anything.
     @Test("Every mode has a non-empty label", arguments: SidebarMode.allCases)
     func everyModeIsLabelled(mode: SidebarMode) {
         #expect(!mode.label.isEmpty)
+    }
+
+    /// Every glyph resolves through `NSImage`.
+    ///
+    /// **A misspelled SF Symbol name draws nothing at all, with no error** — the
+    /// selector bar would show one empty segment and one glyph, and nothing else would
+    /// report it. Same guard, same reason, as `LayerTabTests` puts on the row glyphs.
+    /// `FillingSegmentedPicker` falls back to the text if the name does not resolve,
+    /// which keeps a typo legible but does not make it correct.
+    @Test("Every mode's glyph resolves", arguments: SidebarMode.allCases)
+    func everyGlyphResolves(mode: SidebarMode) {
+        #expect(
+            NSImage(systemSymbolName: mode.systemImage, accessibilityDescription: nil) != nil,
+            Comment(rawValue: "\(mode.systemImage) is not an SF Symbol")
+        )
+    }
+
+    /// The two glyphs are different.
+    ///
+    /// A selector whose segments draw the same picture is a selector with no visible
+    /// state, and it is exactly what a copy-paste of the `switch` above produces.
+    @Test("The two modes do not share a glyph")
+    func glyphsAreDistinct() {
+        #expect(SidebarMode.layers.systemImage != SidebarMode.presets.systemImage)
     }
 }

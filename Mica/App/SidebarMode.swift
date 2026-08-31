@@ -22,15 +22,33 @@ enum SidebarMode: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
-    /// The selector bar's segment title.
+    /// The selector bar's name for this mode.
     ///
     /// Through `String(localized:)` rather than returned as a bare literal:
-    /// `FillingSegmentedPicker` hands these to `NSSegmentedControl.setLabel`, which
-    /// takes a `String` and so never reaches the string catalog on its own.
+    /// `FillingSegmentedPicker` hands these to `NSSegmentedControl`, which takes a
+    /// `String` and so never reaches the string catalog on its own.
+    ///
+    /// **The bar draws the glyph, not this** — so this is the segment's accessibility
+    /// description and its tooltip, which are then the only things that name it. It is
+    /// not decoration, and it is why `Segment` requires a label even for an image.
     var label: String {
         switch self {
         case .layers: String(localized: "Layers")
         case .presets: String(localized: "Presets")
+        }
+    }
+
+    /// The segment's glyph.
+    ///
+    /// A pair chosen to read as one idea seen twice, the way the two layer rows are:
+    /// stacked planes for the layer list, a shape on a shape for the library of
+    /// composed presets. **A misspelled name draws nothing at all, with no error**, so
+    /// `SidebarPresentationTests` resolves both through `NSImage` — the same guard
+    /// `LayerTabTests` puts on the row glyphs.
+    var systemImage: String {
+        switch self {
+        case .layers: "square.3.layers.3d"
+        case .presets: "square.on.circle"
         }
     }
 }
