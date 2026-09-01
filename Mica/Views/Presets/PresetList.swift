@@ -67,6 +67,19 @@ enum PresetGridMetrics {
         RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
     }
 
+    /// The metadata row beneath the name: the glyph size, the gap between two glyphs,
+    /// and the height the row holds whether or not it has any.
+    ///
+    /// **Reserved rather than conditional.** A `LazyVGrid` row sizes to its tallest
+    /// cell, so letting the row collapse on an unflagged tile would make every grid row
+    /// containing one flagged preset stand taller than its neighbours — the grid reads
+    /// as ragged rather than as a grid, and which rows are tall depends on where the
+    /// flagged presets happen to fall. It is the same trade the name makes with
+    /// `lineLimit(2, reservesSpace: true)`, and for the same reason.
+    static let indicatorGlyphSize: CGFloat = 11
+    static let indicatorSpacing: CGFloat = 5
+    static let indicatorRowHeight: CGFloat = 14
+
     /// One adaptive column spec, not N fixed ones.
     ///
     /// The count absorbs the column's width — two at 220pt, three by ~330pt — which is
@@ -276,7 +289,7 @@ struct PresetList: View {
 
 // MARK: - One preset
 
-/// A thumbnail, its name, and — when it applies — the advanced-controls indicator.
+/// A thumbnail, its name, and a row of indicators beneath both.
 private struct PresetTile: View {
     let resolved: ResolvedPreset
     let onApply: () -> Void
@@ -285,19 +298,17 @@ private struct PresetTile: View {
 
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    /// Shown only while the simple controls are active.
+    /// The glyphs this tile draws, in reading order.
     ///
-    /// Applying this preset will turn "Show Advanced Controls" on — mirroring the
-    /// existing rule for imported sources — and the indicator is what stops that
-    /// being a surprise. With the advanced controls already on there is nothing to
-    /// warn about, so the marker would be noise.
-    ///
-    /// **Derived, not authored**: see `MicaPreset.needsAdvancedControls`. It is finer
-    /// than "anything fancy" — only a custom two-colour gradient or a non-monochrome
-    /// rendering mode qualifies. The derived gradient, corner styles, symbol weights
-    /// and shadows are all hidden-but-applied and carry no indicator.
-    private var showsIndicator: Bool {
-        !advancedControlsEnabled && resolved.needsAdvancedControls
+    /// The rule is `PresetIndicator.indicators`, not a condition written here, so that
+    /// the row, the tooltip and the accessibility label below cannot disagree about
+    /// which indicators apply — and so that a test can reach it at all.
+    private var indicators: [PresetIndicator] {
+        PresetIndicator.indicators(
+            isUserPreset: resolved.isUserPreset,
+            needsAdvancedControls: resolved.needsAdvancedControls,
+            advancedControlsEnabled: advancedControlsEnabled
+        )
     }
 
     var body: some View {
@@ -305,9 +316,8 @@ private struct PresetTile: View {
             VStack(spacing: 5) {
                 PresetThumbnail(resolved: resolved)
                     .presetTileChrome()
-                    .overlay(alignment: .bottomTrailing) {
-                        if showsIndicator { indicator }
-                    }
+
+                indicatorRow
 
                 // `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim
                 // overload silently**, so writing it that way would look like a
@@ -326,8 +336,9 @@ private struct PresetTile: View {
         }
         .buttonStyle(.plain)
         // Two presets can differ only in colour, which a thumbnail shows and a name
-        // does not, so the label carries the scope as well as the name — "Installer,
-        // icon preset" reads as one item in a rotor rather than as a bare word.
+        // does not, so the label carries the scope as well as the name — "Settings,
+        // icon preset" reads as one item in a rotor rather than as a bare word. The
+        // indicators' clauses follow, because their glyphs are hidden from the tree.
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(resolved.scope == .icon
                            ? "Replaces the icon’s settings"
@@ -340,15 +351,33 @@ private struct PresetTile: View {
         }
     }
 
-    private var indicator: some View {
-        Image(systemName: "slider.horizontal.3")
-            .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(.secondary)
-            .padding(5)
-            .background(Circle().fill(.regularMaterial))
-            .padding(-5)
-            .help("Turns on Show Advanced Controls")
-            .accessibilityHidden(true)   // Said in the label instead.
+    /// The indicators, beneath the name and **outside the thumbnail**.
+    ///
+    /// **No ground, no tint, no material — because it is off the artwork.** A marker over
+    /// a thumbnail needs a fill that separates it from any colour the app can render, and
+    /// there is none; out here the sidebar material is the ground and `.secondary` reads
+    /// as chrome. `PresetIndicator`'s header and `presets.md` carry why. A row also grows
+    /// sideways for a second glyph where a corner badge would crowd an 84pt tile.
+    ///
+    /// **Above the name, not below it, and that is a grouping measurement rather than a
+    /// preference.** The name reserves two lines, so under a one-line name — which most
+    /// are — the row ends up separated from it by that empty line: measured at 26pt from
+    /// its own label and 24pt from the *next* grid row's thumbnail, i.e. floating
+    /// between two tiles rather than belonging to one. Here every element in the tile is
+    /// one `VStack` spacing apart and the reserved line falls at the tile's bottom edge,
+    /// against the grid's row spacing, where it costs nothing.
+    private var indicatorRow: some View {
+        HStack(spacing: PresetGridMetrics.indicatorSpacing) {
+            ForEach(indicators) { indicator in
+                Image(systemName: indicator.symbolName)
+                    .font(.system(size: PresetGridMetrics.indicatorGlyphSize,
+                                  weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .help(indicator.help)
+            }
+        }
+        .frame(height: PresetGridMetrics.indicatorRowHeight)
+        .accessibilityHidden(true)   // Said in the tile's own label instead.
     }
 
     private var name: String { resolved.displayName }
@@ -357,21 +386,40 @@ private struct PresetTile: View {
         let scope = resolved.scope == .icon
             ? String(localized: "icon preset")
             : String(localized: "badge preset")
-        guard showsIndicator else { return "\(name), \(scope)" }
-        return "\(name), \(scope), \(String(localized: "turns on advanced controls"))"
+        return ([name, scope] + indicators.map(\.clause)).joined(separator: ", ")
     }
 
     private var helpText: String {
-        showsIndicator
-            ? "\(name) — turns on Show Advanced Controls"
-            : name
+        let clauses = indicators.map(\.clause)
+        guard !clauses.isEmpty else { return name }
+        return "\(name) — \(clauses.joined(separator: ", "))"
     }
 }
 
 #Preview {
+    // A synthetic user preset in each scope, so the `person.fill` indicator is on
+    // screen here — the built-in catalogue cannot show it, and a preview that never
+    // draws a control is a preview that cannot be used to judge it.
+    let mine = [
+        MicaPreset(
+            name: "My Icon",
+            scope: .icon,
+            keys: ["icon-fg": .string("symbol:sparkles"),
+                   "icon-bg": .string("custom-gradient"),
+                   "icon-bg-gradient-colors": .strings(["purple", "blue"])],
+            isBuiltIn: false
+        ),
+        MicaPreset(
+            name: "My Badge",
+            scope: .badge,
+            keys: ["badge-fg": .string("symbol:bolt.fill"),
+                   "badge-bg-color": .string("orange")],
+            isBuiltIn: false
+        ),
+    ]
     PresetList(
         iconSettings: IconSettings(),
-        presets: ResolvedPreset.resolve(PresetCatalog.builtIn),
+        presets: ResolvedPreset.resolve(PresetCatalog.builtIn + mine),
         onApply: { _ in },
         onSave: { _ in },
         onDelete: { _ in }

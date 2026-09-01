@@ -38,6 +38,12 @@ struct ResolvedPreset: Identifiable, Equatable {
     var id: String { preset.id }
     var scope: PresetScope { preset.scope }
 
+    /// Whether the user saved this preset, as opposed to Mica shipping it.
+    ///
+    /// The inverse of `preset.isBuiltIn`, named for what the tile's indicator says
+    /// rather than for what the model calls it. See `PresetIndicator.userPreset`.
+    var isUserPreset: Bool { !preset.isBuiltIn }
+
     /// The display name, already through the string catalog for a built-in.
     ///
     /// A built-in's name is a literal in `PresetCatalog`, so it has an entry to find;
@@ -70,12 +76,9 @@ struct ResolvedPreset: Identifiable, Equatable {
     ///
     /// **`primary`, and the weight is applied in the view, not here.** The placeholder
     /// has to be adaptive, so it has to be one of `ColorTokenTable`'s two semantic
-    /// tokens; `BadgePresetThumbnail.ghostLayer` then multiplies it down to ≈0.25 with
-    /// `.opacity`. This was `secondary` (~50%) until 2026-08-31, which was too heavy
-    /// against the badge — the one thing in that thumbnail the user is being asked to
-    /// look at. **Changing this token changes the ghost's weight**, since the opacity
-    /// there is calibrated against `primary`'s ~0.85; the arithmetic is written out in
-    /// that property's comment.
+    /// tokens; `BadgePresetThumbnail.ghostLayer` multiplies it down with `.opacity`.
+    /// **Changing this token changes the ghost's weight**, since that multiplier is
+    /// calibrated against `primary`'s ~0.85.
     private static func thumbnailSettings(for preset: MicaPreset) -> IconSettings {
         var settings = PresetApplication.previewSettings(for: preset)
 
