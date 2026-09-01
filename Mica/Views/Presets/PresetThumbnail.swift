@@ -163,7 +163,7 @@ struct BadgePresetThumbnail: View {
     }
 
     /// Multiplied into the `primary` token's ~0.85 to land at ≈0.25. See `ghostLayer`.
-    private static let ghostOpacity: Double = 0.30
+    private static let ghostOpacity: Double = 0.10
 
     /// The badge, drawn over the ghost at the same geometry.
     ///
