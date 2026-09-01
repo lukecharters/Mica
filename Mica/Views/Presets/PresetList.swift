@@ -226,11 +226,11 @@ struct PresetList: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
                     Text(title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.primary)
                 }
                 // The whole row up to the `+` is the target, not just the words —
@@ -305,7 +305,7 @@ private struct PresetTile: View {
             VStack(spacing: 5) {
                 PresetThumbnail(resolved: resolved)
                     .presetTileChrome()
-                    .overlay(alignment: .topLeading) {
+                    .overlay(alignment: .bottomTrailing) {
                         if showsIndicator { indicator }
                     }
 
@@ -316,7 +316,7 @@ private struct PresetTile: View {
                 // through the string catalog for a built-in, which is where that
                 // choice is made and where getting it wrong would be visible.
                 Text(verbatim: resolved.displayName)
-                .font(.caption)
+                .font(.subheadline)
                 .lineLimit(2, reservesSpace: true)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
@@ -342,12 +342,12 @@ private struct PresetTile: View {
 
     private var indicator: some View {
         Image(systemName: "slider.horizontal.3")
-            .font(.system(size: 8, weight: .bold))
-            .foregroundStyle(.white)
-            .padding(3)
-            .background(Circle().fill(.tint))
-            .padding(4)
-            .help("Turns on Show Advanced Controls")
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(.secondary)
+            .padding(5)
+            .background(Circle().fill(.regularMaterial))
+            .padding(-5)
+            .help("Requires Advanced Controls to be enabled")
             .accessibilityHidden(true)   // Said in the label instead.
     }
 
@@ -358,12 +358,23 @@ private struct PresetTile: View {
             ? String(localized: "icon preset")
             : String(localized: "badge preset")
         guard showsIndicator else { return "\(name), \(scope)" }
-        return "\(name), \(scope), \(String(localized: "turns on advanced controls"))"
+        return "\(name), \(scope), \(String(localized: "requires Advanced Controls to be enabled"))"
     }
 
     private var helpText: String {
         showsIndicator
-            ? "\(name) — turns on Show Advanced Controls"
+            ? "\(name) — requires Advanced Controls to be enabled"
             : name
     }
+}
+
+#Preview {
+    PresetList(
+        iconSettings: IconSettings(),
+        presets: ResolvedPreset.resolve(PresetCatalog.builtIn),
+        onApply: { _ in },
+        onSave: { _ in },
+        onDelete: { _ in }
+    )
+    .frame(width: 280, height: 600)
 }
