@@ -1208,6 +1208,9 @@
     "Cmd+Up/Down" : {
 
     },
+    "Collapsed" : {
+
+    },
     "Color" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1405,6 +1408,9 @@
     "Escape" : {
 
     },
+    "Expanded" : {
+
+    },
     "Export" : {
 
     },
@@ -1538,6 +1544,9 @@
 
     },
     "Hide the Foreground on Import" : {
+
+    },
+    "Hide these presets" : {
 
     },
     "How large the imported image is drawn within its layer" : {
@@ -2022,6 +2031,12 @@
     "Report an Issue…" : {
 
     },
+    "requires Advanced Controls to be enabled" : {
+
+    },
+    "Requires Advanced Controls to be enabled" : {
+
+    },
     "Reset" : {
 
     },
@@ -2134,6 +2149,9 @@
 
     },
     "Show the Developer Menu" : {
+
+    },
+    "Show these presets" : {
 
     },
     "Show Wiper" : {
@@ -2384,12 +2402,6 @@
 
     },
     "Turn them on in Settings ▸ Developer to use this window." : {
-
-    },
-    "turns on advanced controls" : {
-
-    },
-    "Turns on Show Advanced Controls" : {
 
     },
     "Type" : {
