@@ -166,6 +166,9 @@
         }
       }
     },
+    "A preset you saved" : {
+
+    },
     "Accept Shown Predictions" : {
 
     },
@@ -2031,12 +2034,6 @@
     "Report an Issue…" : {
 
     },
-    "requires Advanced Controls to be enabled" : {
-
-    },
-    "Requires Advanced Controls to be enabled" : {
-
-    },
     "Reset" : {
 
     },
@@ -2404,6 +2401,12 @@
     "Turn them on in Settings ▸ Developer to use this window." : {
 
     },
+    "turns on advanced controls" : {
+
+    },
+    "Turns on Show Advanced Controls" : {
+
+    },
     "Type" : {
 
     },
@@ -2479,6 +2482,9 @@
 
     },
     "Y Offset" : {
+
+    },
+    "your preset" : {
 
     },
     "Zoom In" : {
