@@ -59,7 +59,6 @@ struct GroupModePicker: View {
                 accessibilityLabel: "Generation Mode",
                 role: .tabs
             )
-            Divider()
         }
         // No top padding: `InspectorGroupHeader` sits directly above and its bottom
         // padding is the gap. (It carried `.padding(.top, 8)` before the header

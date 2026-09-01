@@ -55,7 +55,6 @@ struct SidebarColumn: View {
     var body: some View {
         VStack(spacing: 0) {
             SidebarSelector(mode: $mode)
-            Divider()
             content
         }
     }
@@ -116,3 +115,26 @@ private struct SidebarSelector: View {
         .padding(.vertical, 8)
     }
 }
+
+#Preview {
+    @Previewable @State var mode: SidebarMode = .layers
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var selection: IconLayerGroup = .icon
+    @Previewable @State var iconTab: LayerTab = .foreground
+    @Previewable @State var badgeTab: LayerTab = .layout
+    SidebarColumn(
+        mode: $mode,
+        iconSettings: $settings,
+        selection: $selection,
+        iconTab: $iconTab,
+        badgeTab: $badgeTab,
+        presets: ResolvedPreset.resolve(PresetCatalog.builtIn),
+        onApplyPreset: { _ in },
+        onSavePreset: { _ in },
+        onDeletePreset: { _ in },
+        onPresetsAppear: {}
+    )
+    .frame(width: 280, height: 600)
+}
+
+
