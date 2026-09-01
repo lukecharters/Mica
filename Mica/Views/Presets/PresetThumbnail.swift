@@ -162,7 +162,9 @@ struct BadgePresetThumbnail: View {
             .offset(cropShift)
     }
 
-    /// Multiplied into the `primary` token's ~0.85 to land at ≈0.25. See `ghostLayer`.
+    /// Multiplied into the `primary` token's ~0.85 — the ghost's effective alpha is the
+    /// product. A taste setting; `presets.md` records the bounds either side of it and
+    /// deliberately does not restate this number. See `ghostLayer`.
     private static let ghostOpacity: Double = 0.10
 
     /// The badge, drawn over the ghost at the same geometry.

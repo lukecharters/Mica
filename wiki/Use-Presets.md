@@ -75,17 +75,17 @@ Mica saves the rest and tells you what it left out.
 Use `--icon-preset` and `--badge-preset` with the preset's name.
 
 ```shell
-mica-cli --icon-preset Installer --output icon.png
+mica-cli --icon-preset Settings --output icon.png
 ```
 
 Presets apply before your other flags.
 So a flag always wins.
 
 ```shell
-mica-cli --icon-preset Media --icon-symbol hammer.fill --output icon.png
+mica-cli --icon-preset Settings --icon-symbol hammer.fill --output icon.png
 ```
 
-That command uses Media's colours with a different symbol.
+That command uses the Settings preset's colours with a different symbol.
 
 `mica-cli` reads the presets you saved in the app.
 Names are not case sensitive.
