@@ -734,36 +734,40 @@ IMPORT_CASES=(
     # whole pipeline, and a unit test on the settings cannot see a resource lookup or
     # an encoder go wrong on the way.
     #
-    # **These two rows restate a preset's keys by hand, and that is deliberate** — it is
-    # the one place in the suite where a literal copy of the catalogue is the assertion
-    # rather than a liability, because "a preset equals its own keys" cannot be checked
-    # without writing the keys out. So they are also the one place curation has to be
-    # followed by hand: re-curating Installer or Update means editing these rows. The
-    # 2026-08-31 pass changed Update's symbol and colour and broke this row exactly.
-    # Everywhere else — here and in PresetFlagsTests — expectations are derived from the
-    # preset rather than repeated.
+    # **The three "same" rows restate a preset's keys by hand, and that is deliberate** —
+    # it is the one place in the suite where a literal copy of the catalogue is the
+    # assertion rather than a liability, because "a preset equals its own keys" cannot be
+    # checked without writing the keys out. It is therefore also the one place where
+    # **curation has to be followed by hand**: renaming or re-keying `Settings` (icon) or
+    # `Update` (badge) means editing the rows below, and nothing else in the suite will
+    # say so. Everywhere else — here and in PresetFlagsTests — expectations are derived
+    # from the preset rather than repeated.
     #
-    # The two "same" rows are the load-bearing half. A preset that silently failed to
+    # A key the preset does not name must be left off the flag side too, not spelled at
+    # its default: both sides then take the same default, and the row keeps testing the
+    # preset rather than the default.
+    #
+    # Those "same" rows are the load-bearing half. A preset that silently failed to
     # apply would still render, still exit 0, and still differ from its overridden
     # twin — so a suite of "differ" rows alone would pass with the feature entirely
     # broken. These pin what a preset *is*: the same icon its keys describe.
-    "icon-preset-equals-its-own-keys|same|--icon-preset|Installer|--|--icon-symbol|arrow.down.app|--icon-bg-color|blue|--icon-bg-gradient|off|--icon-symbol-color|white"
-    "badge-preset-equals-its-own-keys|same|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-fg|symbol:arrowshape.up.fill|--badge-bg-color|green|--badge-symbol-color|white|--badge-position|bottom-right"
+    "icon-preset-equals-its-own-keys|same|--icon-preset|Settings|--|--icon-symbol|gear|--icon-bg-color|grey|--icon-symbol-color|white"
+    "badge-preset-equals-its-own-keys|same|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-fg|symbol:arrowshape.up.fill|--badge-bg-color|green|--badge-symbol-color|white"
     # A flag beats the preset, on both scopes.
-    "icon-flag-overrides-the-preset|differ|--icon-preset|Installer|--|--icon-preset|Installer|--icon-bg-color|red"
+    "icon-flag-overrides-the-preset|differ|--icon-preset|Settings|--|--icon-preset|Settings|--icon-bg-color|red"
     "badge-flag-overrides-the-preset|differ|--icon-symbol|star.fill|--badge-preset|Update|--|--icon-symbol|star.fill|--badge-preset|Update|--badge-position|top-left"
-    # Style-only, for free: `--icon-preset media --icon-symbol hammer.fill` is Media's
-    # look on a different glyph, which is why the CLI needs no style-only preset kind.
-    "symbol-override-is-style-only|differ|--icon-preset|Media|--|--icon-preset|Media|--icon-symbol|hammer.fill"
+    # Style-only, for free: an icon preset plus `--icon-symbol` is that preset's look on
+    # a different glyph, which is why the CLI needs no style-only preset kind.
+    "symbol-override-is-style-only|differ|--icon-preset|Settings|--|--icon-preset|Settings|--icon-symbol|hammer.fill"
     # Scope isolation. An icon preset draws no badge, so adding one must change the
     # render; a badge preset must not disturb the icon.
-    "icon-preset-draws-no-badge|differ|--icon-preset|Installer|--|--icon-preset|Installer|--badge-preset|Update"
-    "badge-preset-leaves-the-icon-alone|same|--icon-preset|Installer|--badge-preset|Update|--|--icon-symbol|arrow.down.app|--icon-bg-color|blue|--icon-bg-gradient|off|--icon-symbol-color|white|--badge-preset|Update"
+    "icon-preset-draws-no-badge|differ|--icon-preset|Settings|--|--icon-preset|Settings|--badge-preset|Update"
+    "badge-preset-leaves-the-icon-alone|same|--icon-preset|Settings|--badge-preset|Update|--|--icon-symbol|gear|--icon-bg-color|grey|--icon-symbol-color|white|--badge-preset|Update"
     # Scope-completeness on the shipped binary: a preset resets what it does not
     # mention, so a flag set *before* the preset in the argument list has no effect on
     # the preset's own scope. Both orderings must land on the same icon — argument
     # order is not the precedence rule, the preset-then-flags pipeline is.
-    "argument-order-does-not-change-precedence|same|--icon-preset|Media|--icon-symbol|hammer.fill|--|--icon-symbol|hammer.fill|--icon-preset|Media"
+    "argument-order-does-not-change-precedence|same|--icon-preset|Settings|--icon-symbol|hammer.fill|--|--icon-symbol|hammer.fill|--icon-preset|Settings"
 )
 
 # Bounds-filling artwork, built from a rendered icon so the script needs no new

@@ -223,32 +223,49 @@ struct UserPresetStoreTests {
 
     // MARK: - Unique names
 
+    /// A stand-in catalogue for the uniquing tests.
+    ///
+    /// **Not `PresetCatalog.builtIn`.** Uniquing is a property of the function, not of
+    /// what Mica happens to ship, and asserting it against the shipping catalogue turns
+    /// every name mentioned here into a constraint on curation — re-curating a preset
+    /// away then arrives as a broken test rather than as a design decision. The names
+    /// below exist only in this file, so curation cannot reach them. `isBuiltIn` is
+    /// `true` because a built-in is exactly what a user preset must not collide with.
+    private static let existing: [MicaPreset] = [
+        MicaPreset(name: "Taken", scope: .icon, keys: [:], isBuiltIn: true),
+        MicaPreset(name: "Spoken For", scope: .badge, keys: [:], isBuiltIn: true),
+    ]
+
     @Test("A free name is returned unchanged")
     func uniqueName_free() {
-        let name = UserPresetStore.uniqueName("Fresh", in: .icon, existing: PresetCatalog.builtIn)
+        let name = UserPresetStore.uniqueName("Fresh", in: .icon, existing: Self.existing)
         #expect(name == "Fresh")
     }
 
     @Test("A taken name gains a numeric suffix, and keeps counting")
     func uniqueName_taken() {
-        var existing = PresetCatalog.builtIn
-        #expect(UserPresetStore.uniqueName("Installer", in: .icon, existing: existing) == "Installer 2")
+        var existing = Self.existing
+        #expect(UserPresetStore.uniqueName("Taken", in: .icon, existing: existing) == "Taken 2")
 
-        existing.append(MicaPreset(name: "Installer 2", scope: .icon, keys: [:]))
-        #expect(UserPresetStore.uniqueName("Installer", in: .icon, existing: existing) == "Installer 3")
+        existing.append(MicaPreset(name: "Taken 2", scope: .icon, keys: [:]))
+        #expect(UserPresetStore.uniqueName("Taken", in: .icon, existing: existing) == "Taken 3")
     }
 
     @Test("Uniquing is case-insensitive and counts built-ins")
     func uniqueName_matchesBuiltIns() {
-        // A user preset called "installer" would sit in the same section as the
-        // built-in one, and two identically-labelled rows a click apart is the
-        // confusion this avoids.
-        #expect(UserPresetStore.uniqueName("installer", in: .icon, existing: PresetCatalog.builtIn) == "installer 2")
+        // A user preset called "taken" would sit in the same section as the built-in
+        // one, and two identically-labelled rows a click apart is the confusion this
+        // avoids.
+        #expect(UserPresetStore.uniqueName("taken", in: .icon, existing: Self.existing) == "taken 2")
     }
 
     @Test("The same name in the other scope is free")
     func uniqueName_isPerScope() {
-        #expect(UserPresetStore.uniqueName("Installer", in: .badge, existing: PresetCatalog.builtIn) == "Installer")
+        // Both halves, because the free-in-the-other-scope assertion passes on its own
+        // for a name that is taken in *neither* — which is not the property being
+        // claimed. "Spoken For" is a badge preset in the fixture above.
+        #expect(UserPresetStore.uniqueName("Spoken For", in: .badge, existing: Self.existing) == "Spoken For 2")
+        #expect(UserPresetStore.uniqueName("Spoken For", in: .icon, existing: Self.existing) == "Spoken For")
     }
 
     @Test("A blank name becomes a usable one")
