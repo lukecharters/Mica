@@ -67,18 +67,13 @@ enum PresetGridMetrics {
         RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
     }
 
-    /// The metadata row beneath the name: the glyph size, the gap between two glyphs,
-    /// and the height the row holds whether or not it has any.
-    ///
-    /// **Reserved rather than conditional.** A `LazyVGrid` row sizes to its tallest
-    /// cell, so letting the row collapse on an unflagged tile would make every grid row
-    /// containing one flagged preset stand taller than its neighbours — the grid reads
-    /// as ragged rather than as a grid, and which rows are tall depends on where the
-    /// flagged presets happen to fall. It is the same trade the name makes with
-    /// `lineLimit(2, reservesSpace: true)`, and for the same reason.
-    static let indicatorGlyphSize: CGFloat = 11
+    /// Reserved on every tile, flagged or not — a band sized to its contents would draw
+    /// a flagged preset's icon smaller than its neighbours'.
+    static let indicatorBandHeight: CGFloat = 14
+    static let indicatorGlyphSize: CGFloat = 10
     static let indicatorSpacing: CGFloat = 5
-    static let indicatorRowHeight: CGFloat = 14
+
+    static var iconRenderSize: CGFloat { thumbnailSize - indicatorBandHeight }
 
     /// One adaptive column spec, not N fixed ones.
     ///
@@ -314,10 +309,7 @@ private struct PresetTile: View {
     var body: some View {
         Button(action: onApply) {
             VStack(spacing: 5) {
-                PresetThumbnail(resolved: resolved)
-                    .presetTileChrome()
-
-                indicatorRow
+                tileFace
 
                 // `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim
                 // overload silently**, so writing it that way would look like a
@@ -351,21 +343,18 @@ private struct PresetTile: View {
         }
     }
 
-    /// The indicators, beneath the name and **outside the thumbnail**.
-    ///
-    /// **No ground, no tint, no material — because it is off the artwork.** A marker over
-    /// a thumbnail needs a fill that separates it from any colour the app can render, and
-    /// there is none; out here the sidebar material is the ground and `.secondary` reads
-    /// as chrome. `PresetIndicator`'s header and `presets.md` carry why. A row also grows
-    /// sideways for a second glyph where a corner badge would crowd an 84pt tile.
-    ///
-    /// **Above the name, not below it, and that is a grouping measurement rather than a
-    /// preference.** The name reserves two lines, so under a one-line name — which most
-    /// are — the row ends up separated from it by that empty line: measured at 26pt from
-    /// its own label and 24pt from the *next* grid row's thumbnail, i.e. floating
-    /// between two tiles rather than belonging to one. Here every element in the tile is
-    /// one `VStack` spacing apart and the reserved line falls at the tile's bottom edge,
-    /// against the grid's row spacing, where it costs nothing.
+    /// Centred with the band overlaid, **not** a `VStack` of the two: stacking leaves the
+    /// reserved band as empty space under the artwork on every unflagged tile, so the icon
+    /// reads as sitting high. The glyphs' room is the chiclet's own inset.
+    private var tileFace: some View {
+        PresetThumbnail(resolved: resolved, size: PresetGridMetrics.iconRenderSize)
+            .frame(width: PresetGridMetrics.thumbnailSize,
+                   height: PresetGridMetrics.thumbnailSize)
+            .overlay(alignment: .bottom) { indicatorRow }
+            .presetTileChrome()
+    }
+
+    /// Must stay clear of the artwork — see `PresetIndicator`'s header.
     private var indicatorRow: some View {
         HStack(spacing: PresetGridMetrics.indicatorSpacing) {
             ForEach(indicators) { indicator in
@@ -376,7 +365,7 @@ private struct PresetTile: View {
                     .help(indicator.help)
             }
         }
-        .frame(height: PresetGridMetrics.indicatorRowHeight)
+        .frame(height: PresetGridMetrics.indicatorBandHeight)
         .accessibilityHidden(true)   // Said in the tile's own label instead.
     }
 
