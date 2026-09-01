@@ -51,74 +51,64 @@ enum PresetCatalog {
 
     // MARK: - Icon presets
 
-    /// Five icon presets. Two carry the advanced-controls indicator (Media's custom
-    /// gradient, Developer's hierarchical rendering); three do not.
     static let builtInIcon: [MicaPreset] = [
-        // The baseline path: flat colour, white glyph.
-        //
-        // `icon-bg-gradient: false` is explicit and has to be.
-        // `IconBackgroundSpec().usesGradient` is `true`, so under scope-complete an
-        // omitted key means the default — which is *on*. A preset that means flat
-        // must say so.
+        
         MicaPreset(
-            name: "Installer",
+            name: "Attention",
             scope: .icon,
             keys: [
-                "icon-bg": .string("standard"),
-                "icon-bg-color": .string("blue"),
-                "icon-bg-gradient": .bool(false),
-                "icon-fg": .string("symbol:arrow.down.app"),
                 "icon-symbol-color": .string("white"),
+                "icon-bg-color": .string("yellow"),
+                "icon-fg": .string("symbol:exclamationmark.triangle.fill"),
             ],
             isBuiltIn: true
         ),
-
-        // A symbol colour that is not white, over a light background — the pair the
-        // simple pane's two colour rows exist for.
+        
         MicaPreset(
-            name: "Software Update 1",
+            name: "Account",
+            scope: .icon,
+            keys: [
+                "icon-bg-color": .string("blue"),
+                "icon-symbol-color": .string("white"),
+                "icon-fg": .string("symbol:person.fill"),
+                "icon-fg-scale" : .number(1.1),
+            ],
+            isBuiltIn: true
+        ),
+        
+        
+        
+        MicaPreset(
+            name: "Fail",
+            scope: .icon,
+            keys: [
+                "icon-symbol-color": .string("white"),
+                "icon-bg-color": .string("red"),
+                "icon-fg": .string("symbol:xmark"),
+                "icon-symbol-weight": .string("bold"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Settings",
             scope: .icon,
             keys: [
                 "icon-bg-color": .string("grey"),
                 "icon-symbol-color": .string("white"),
-                "icon-fg": .string("symbol:gear.badge"),
+                "icon-fg": .string("symbol:gear"),
             ],
             isBuiltIn: true
         ),
+        
         MicaPreset(
-            name: "Software Update 2",
+            name: "Software Update",
             scope: .icon,
             keys: [
                 "icon-bg-color": .string("grey"),
                 "icon-symbol-rendering": .string("multicolor"),
                 "icon-symbol-color": .string("white"),
                 "icon-fg": .string("symbol:gear.badge"),
-            ],
-            isBuiltIn: true
-        ),
-
-        // A custom two-colour gradient — the list-encoded form, and the *other*
-        // gradient kind from `icon-bg-gradient`. Carries the indicator:
-        // `resetToSimpleControls()` clears `usesCustomGradient`.
-        MicaPreset(
-            name: "Media",
-            scope: .icon,
-            keys: [
-                "icon-bg": .string("custom-gradient"),
-                "icon-bg-gradient-colors": .strings(["orange", "pink"]),
-                "icon-symbol-color": .string("white"),
-                "icon-fg": .string("symbol:play.fill"),
-            ],
-            isBuiltIn: true
-        ),
-
-        MicaPreset(
-            name: "Developer",
-            scope: .icon,
-            keys: [
-                "icon-symbol-color": .string("white"),
-                "icon-bg-color": .string("blue"),
-                "icon-fg": .string("symbol:chevron.left.forwardslash.chevron.right"),
             ],
             isBuiltIn: true
         ),
@@ -135,34 +125,6 @@ enum PresetCatalog {
             isBuiltIn: true
         ),
         
-        MicaPreset(
-            name: "Check Engine",
-            scope: .icon,
-            keys: [
-                "icon-symbol-color": .string("orange"),
-                "icon-bg-color": .string("black"),
-                "icon-fg": .string("symbol:engine.combustion"),
-//                "icon-symbol-weight": .string("bold"),
-            ],
-            isBuiltIn: true
-        ),
-
-        // The three "hidden but applied" axes at once — corner radius off, shadow
-        // off, a non-auto weight. **No indicator**, and that is the point of this
-        // entry: `resetToSimpleControls()` folds none of these, so they survive the
-        // simple pane untouched and unrepresented.
-        MicaPreset(
-            name: "Documentation",
-            scope: .icon,
-            keys: [
-                "icon-bg-corner-radius": .string("off"),
-                "icon-bg-shadow": .string("off"),
-                "icon-symbol-weight": .string("bold"),
-                "icon-bg-color": .string("gray"),
-                "icon-fg": .string("symbol:doc.text.fill"),
-            ],
-            isBuiltIn: true
-        ),
     ]
 
     // MARK: - Badge presets
@@ -174,42 +136,6 @@ enum PresetCatalog {
     /// `PresetApplication`. The corner is part of every one of them, because the
     /// ghost-corner thumbnail only means something if the preset sets it.
     static let builtInBadge: [MicaPreset] = [
-        // The baseline: default corner, default scale.
-        MicaPreset(
-            name: "Update",
-            scope: .badge,
-            keys: [
-                "badge-fg": .string("symbol:arrowshape.up.fill"),
-                "badge-bg-color": .string("green"),
-                "badge-symbol-color": .string("white"),
-                "badge-position": .string("bottom-right"),
-            ],
-            isBuiltIn: true
-        ),
-        MicaPreset(
-            name: "New",
-            scope: .badge,
-            keys: [
-                "badge-fg": .string("symbol:plus"),
-                "badge-symbol-weight": .string("bold"),
-                "badge-symbol-color": .string("white"),
-                "badge-bg-color": .string("green"),
-                "badge-position": .string("top-right"),
-            ],
-            isBuiltIn: true
-        ),
-        MicaPreset(
-            name: "Locked",
-            scope: .badge,
-            keys: [
-                "badge-fg": .string("symbol:lock.fill"),
-                "badge-symbol-color": .string("white"),
-                "badge-symbol-weight": .string("medium"),
-                "badge-bg-color": .string("gray"),
-                "badge-position": .string("bottom-left"),
-            ],
-            isBuiltIn: true
-        ),
         MicaPreset(
             name: "Attention",
             scope: .badge,
@@ -226,7 +152,19 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
-
+        
+        MicaPreset(
+            name: "Delete",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:trash.fill"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("medium"),
+                "badge-bg-color": .string("red"),
+            ],
+            isBuiltIn: true
+        ),
+        
         MicaPreset(
             name: "Download",
             scope: .badge,
@@ -238,6 +176,99 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
+        
+        MicaPreset(
+            name: "Fail",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:xmark"),
+                "badge-bg-color": .string("red"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("bold"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Locked",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:lock.fill"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("medium"),
+                "badge-bg-color": .string("gray"),
+                "badge-position": .string("bottom-left"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "New",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:plus"),
+                "badge-symbol-weight": .string("bold"),
+                "badge-symbol-color": .string("white"),
+                "badge-bg-color": .string("green"),
+                "badge-position": .string("top-right"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Notification dot",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:circlebadge.fill"),
+                "badge-fg-scale": .number(0.3),
+                "badge-symbol-color": .string("white"),
+                "badge-bg-color": .string("red"),
+                "badge-fg-shadow": .bool(false),
+                "badge-bg-gradient": .bool(false),
+                "badge-position": .string("top-right"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Notification 1",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:1.circle.fill"),
+                "badge-fg-scale": .number(1.50),
+                "badge-symbol-color": .string("red"),
+                "badge-symbol-rendering" : .string("multicolor"),
+                "badge-bg-visibility": .bool(false),
+                "badge-position": .string("top-right"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Privacy",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:hand.raised.fill"),
+                "badge-symbol-color": .string("white"),
+                "badge-bg-color": .string("blue"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Recording",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:record.circle"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("light"),
+                "badge-bg-color": .string("red"),
+                "badge-fg-shadow": .bool(false),
+                "badge-bg-gradient": .bool(false),
+            ],
+            isBuiltIn: true
+        ),
+        
         MicaPreset(
             name: "Refresh",
             scope: .badge,
@@ -249,8 +280,9 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
+        
         MicaPreset(
-            name: "Reset 1",
+            name: "Reconfigure",
             scope: .badge,
             keys: [
                 "badge-fg": .string("symbol:gearshape.arrow.trianglehead.2.clockwise.rotate.90"),
@@ -260,8 +292,23 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
+        
         MicaPreset(
-            name: "Reset 2",
+            name: "Repair",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:screwdriver.fill"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("medium"),
+                "badge-bg-color": .string("grey"),
+                "badge-fg-offset-x": .number(0.03),
+                "badge-fg-scale": .number(0.85),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Reset",
             scope: .badge,
             keys: [
                 "badge-fg": .string("symbol:arrow.uturn.backward"),
@@ -271,6 +318,31 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
+        
+        MicaPreset(
+            name: "Settings",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:gearshape.fill"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("medium"),
+                "badge-bg-color": .string("grey"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
+            name: "Success",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:checkmark"),
+                "badge-bg-color": .string("green"),
+                "badge-symbol-color": .string("white"),
+                "badge-symbol-weight": .string("bold"),
+            ],
+            isBuiltIn: true
+        ),
+        
         MicaPreset(
             name: "Uninstall",
             scope: .badge,
@@ -283,17 +355,18 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
+        
         MicaPreset(
-            name: "Delete",
+            name: "Update",
             scope: .badge,
             keys: [
-                "badge-fg": .string("symbol:trash"),
+                "badge-fg": .string("symbol:arrowshape.up.fill"),
+                "badge-bg-color": .string("green"),
                 "badge-symbol-color": .string("white"),
-                "badge-symbol-weight": .string("bold"),
-                "badge-bg-color": .string("red"),
             ],
             isBuiltIn: true
         ),
+
     ]
 
     /// Every built-in, icon presets first.
