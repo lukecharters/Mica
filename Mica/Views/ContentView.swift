@@ -1173,45 +1173,45 @@ struct ContentView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    @MainActor static var previews: some View {
-        Group {
-//            ContentView()
-//                .previewDisplayName("Default VM")
-//                .previewLayout(.fixed(width: 1200, height: 800))
-//            
-            ContentView(viewModel: customVM, showInspector: false)
-                .previewDisplayName("Custom VM")
-                .previewLayout(.fixed(width: 1200, height: 800))
-
-
-//            ContentView(viewModel: IconViewModel())
-//                .previewDisplayName("Injected VM")
+//struct ContentView_Previews: PreviewProvider {
+//    @MainActor static var previews: some View {
+//        Group {
+////            ContentView()
+////                .previewDisplayName("Default VM")
+////                .previewLayout(.fixed(width: 1200, height: 800))
+////            
+//            ContentView(viewModel: customVM, showInspector: false)
+//                .previewDisplayName("Custom VM")
 //                .previewLayout(.fixed(width: 1200, height: 800))
 //
-//            ContentView(viewModel: retinaLargeVM)
-//                .previewDisplayName("Retina 1024px")
-//                .previewLayout(.fixed(width: 1200, height: 800))
-        }
-    }
-
-    @MainActor private static var customVM: IconViewModel {
-        let vm = IconViewModel()
-        vm.iconSettings.icon.mode = .mica
-        vm.iconSettings.icon.foreground.symbolName = "gearshape.fill"
-//        vm.iconSettings.icon.background.usesCustomGradient = true
-//        vm.iconSettings.icon.background.gradientStartColor = .blue
-//        vm.iconSettings.icon.background.gradientEndColor = .indigo
-        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
-        vm.iconSettings.badge.isVisible = true
-        vm.iconSettings.badge.position = .bottomRight
-        vm.iconSettings.badge.foreground.symbolName = "checkmark.seal.fill"
-        vm.iconSettings.badge.foreground.renderingStyle = .monochrome
-        vm.iconSettings.badge.foreground.hierarchicalColor = .white
-        vm.iconSettings.export.size = 512
-        vm.iconSettings.export.isRetina = false
-        return vm
-    }
+//
+////            ContentView(viewModel: IconViewModel())
+////                .previewDisplayName("Injected VM")
+////                .previewLayout(.fixed(width: 1200, height: 800))
+////
+////            ContentView(viewModel: retinaLargeVM)
+////                .previewDisplayName("Retina 1024px")
+////                .previewLayout(.fixed(width: 1200, height: 800))
+//        }
+//    }
+//
+//    @MainActor private static var customVM: IconViewModel {
+//        let vm = IconViewModel()
+//        vm.iconSettings.icon.mode = .mica
+//        vm.iconSettings.icon.foreground.symbolName = "gearshape.fill"
+////        vm.iconSettings.icon.background.usesCustomGradient = true
+////        vm.iconSettings.icon.background.gradientStartColor = .blue
+////        vm.iconSettings.icon.background.gradientEndColor = .indigo
+//        vm.iconSettings.icon.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.badge.isVisible = true
+//        vm.iconSettings.badge.position = .bottomRight
+//        vm.iconSettings.badge.foreground.symbolName = "checkmark.seal.fill"
+//        vm.iconSettings.badge.foreground.renderingStyle = .monochrome
+//        vm.iconSettings.badge.foreground.hierarchicalColor = .white
+//        vm.iconSettings.export.size = 512
+//        vm.iconSettings.export.isRetina = false
+//        return vm
+//    }
 //
 //    @MainActor private static var retinaLargeVM: IconViewModel {
 //        let vm = IconViewModel()
@@ -1301,9 +1301,30 @@ struct ContentView_Previews: PreviewProvider {
 //        vm.iconSettings.export.isRetina = false
 //        return vm
 //    }
-}
+//}
+
+//#Preview {
+//    ContentView()
+//        .frame(width: 1200, height: 800)
+//}
 
 #Preview {
-    ContentView()
-        .frame(width: 1200, height: 800)
+    @Previewable @State var mode: SidebarMode = .layers
+    @Previewable @State var settings = IconSettings()
+    @Previewable @State var selection: IconLayerGroup = .icon
+    @Previewable @State var iconTab: LayerTab = .foreground
+    @Previewable @State var badgeTab: LayerTab = .layout
+    SidebarColumn(
+        mode: $mode,
+        iconSettings: $settings,
+        selection: $selection,
+        iconTab: $iconTab,
+        badgeTab: $badgeTab,
+        presets: ResolvedPreset.resolve(PresetCatalog.builtIn),
+        onApplyPreset: { _ in },
+        onSavePreset: { _ in },
+        onDeletePreset: { _ in },
+        onPresetsAppear: {}
+    )
+    .frame(width: 300, height: 400)
 }
