@@ -347,7 +347,7 @@ private struct PresetTile: View {
             .padding(5)
             .background(Circle().fill(.regularMaterial))
             .padding(-5)
-            .help("Requires Advanced Controls to be enabled")
+            .help("Turns on Show Advanced Controls")
             .accessibilityHidden(true)   // Said in the label instead.
     }
 
@@ -358,12 +358,12 @@ private struct PresetTile: View {
             ? String(localized: "icon preset")
             : String(localized: "badge preset")
         guard showsIndicator else { return "\(name), \(scope)" }
-        return "\(name), \(scope), \(String(localized: "requires Advanced Controls to be enabled"))"
+        return "\(name), \(scope), \(String(localized: "turns on advanced controls"))"
     }
 
     private var helpText: String {
         showsIndicator
-            ? "\(name) — requires Advanced Controls to be enabled"
+            ? "\(name) — turns on Show Advanced Controls"
             : name
     }
 }
