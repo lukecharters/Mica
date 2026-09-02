@@ -65,16 +65,6 @@ extension FocusedValues {
     /// The trailing `.inspector` column's visibility.
     @Entry var inspectorVisible: Binding<Bool>?
 
-    /// The presets pane's visibility.
-    ///
-    /// Plain window state like the two above, and nil when nothing has focus, so the
-    /// View menu item disables itself on that alone. **Per window, not app-wide** —
-    /// it sits beside `selectedGroup` and the two `LayerTab`s as `@State` on
-    /// `ContentView`, which are deliberately not persisted for the same reason: two
-    /// windows on two icons are two pieces of work, and a pane one of them opened is
-    /// not a preference about the other.
-    @Entry var presetsVisible: Binding<Bool>?
-
     /// The preview's zoom level, walked by View ▸ Zoom In / Zoom Out along
     /// `PreviewZoom.levels`.
     @Entry var previewZoom: Binding<Double>?
@@ -133,7 +123,6 @@ struct FocusedAction {
 private struct WindowFocusValues: ViewModifier {
     let sidebarVisible: Binding<Bool>
     let inspectorVisible: Binding<Bool>
-    let presetsVisible: Binding<Bool>
     let previewZoom: Binding<Double>
     let previewPointSize: Binding<CGFloat?>
     let messageReporter: UserMessageReporter
@@ -142,7 +131,6 @@ private struct WindowFocusValues: ViewModifier {
         content
             .focusedSceneValue(\.sidebarVisible, sidebarVisible)
             .focusedSceneValue(\.inspectorVisible, inspectorVisible)
-            .focusedSceneValue(\.presetsVisible, presetsVisible)
             .focusedSceneValue(\.previewZoom, previewZoom)
             .focusedSceneValue(\.previewPointSize, previewPointSize)
             .focusedSceneValue(\.userMessageReporter, messageReporter)
@@ -393,7 +381,6 @@ struct ContentView: View {
         .modifier(WindowFocusValues(
             sidebarVisible: sidebarVisibleBinding,
             inspectorVisible: $showInspector,
-            presetsVisible: presetsVisibleBinding,
             previewZoom: $zoomLevel,
             previewPointSize: $previewPointSize,
             messageReporter: viewModel.messageReporter
@@ -560,44 +547,6 @@ struct ContentView: View {
         Binding(
             get: { columnVisibility != .detailOnly },
             set: { columnVisibility = $0 ? .all : .detailOnly }
-        )
-    }
-
-    /// "Are the presets showing?", as the one `Bool` the View menu and the toolbar
-    /// toggle can both drive.
-    ///
-    /// It is derived from **two** pieces of state, which is the one genuinely new
-    /// interaction this shape introduces: the library is showing only if the sidebar
-    /// column is out *and* it is in Presets mode. So showing presets has to reveal the
-    /// column — otherwise ⌃⌘P with the sidebar hidden (⌃⌘S) would set a mode nobody
-    /// can see and report success. The two commands were independent while the library
-    /// was a detail-column pane; they are not any more, and this is where that is paid
-    /// for rather than in each caller.
-    ///
-    /// Hiding goes back to Layers and **leaves the column alone**. The alternative —
-    /// hiding the whole sidebar — would make "Hide Presets" throw away the layer list
-    /// as a side effect, which is not what it says.
-    private var presetsVisibleBinding: Binding<Bool> {
-        Binding(
-            get: { sidebarPresentation.showsPresets },
-            set: { showing in
-                let next = sidebarPresentation.settingPresets(showing)
-                sidebarMode = next.mode
-                columnVisibility = next.isColumnVisible ? .all : .detailOnly
-            }
-        )
-    }
-
-    /// The two pieces of sidebar state as one value, so the rule above can live in
-    /// `SidebarPresentation` where a test can reach it.
-    ///
-    /// `columnVisibility` reads as "not `.detailOnly`" rather than "== `.all`" for the
-    /// same reason `sidebarVisibleBinding` does — the transient `.doubleColumn` a drag
-    /// can leave behind still counts as shown.
-    private var sidebarPresentation: SidebarPresentation {
-        SidebarPresentation(
-            mode: sidebarMode,
-            isColumnVisible: columnVisibility != .detailOnly
         )
     }
 

@@ -19,7 +19,6 @@ struct MicaApp: App {
     // disables itself when its own is nil.
     @FocusedBinding(\.sidebarVisible) private var sidebarVisible
     @FocusedBinding(\.inspectorVisible) private var inspectorVisible
-    @FocusedBinding(\.presetsVisible) private var presetsVisible
     @FocusedBinding(\.previewZoom) private var previewZoom
     @FocusedValue(\.previewPointSize) private var previewPointSize
 
@@ -306,23 +305,24 @@ struct MicaApp: App {
                 .keyboardShortcut("i", modifiers: [.control, .command])
                 .disabled(inspectorVisible == nil)
 
-                // ⌃⌘P completes the ⌃⌘S / ⌃⌘I set: three panes, three control-command
-                // letters, each the initial of what it shows. It was free — the nine
-                // taken shortcuts are ⇧⌘C, ⇧⌘E, ⌘O, ⌘S, ⌃⌘S, ⌃⌘I, ⌘+, ⌘− and ⌘0 —
-                // and **a shortcut may only be bound once**: two menu items sharing a
-                // key equivalent are deduplicated when the menu is *built*, and the
-                // later one loses it outright with no diagnostic.
+                // ⌃⌘P completes the ⌃⌘S / ⌃⌘I set: three control-command letters, each
+                // the initial of what it shows. It was free — the nine other taken
+                // shortcuts are ⇧⌘C, ⇧⌘E, ⌘O, ⌘S, ⌃⌘S, ⌃⌘I, ⌘+, ⌘− and ⌘0 — and **a
+                // shortcut may only be bound once**: two menu items sharing a key
+                // equivalent are deduplicated when the menu is *built*, and the later
+                // one loses it outright with no diagnostic.
                 //
-                // A flipping title like its two neighbours, not a checkmark. That is
-                // how the platform writes a pane toggle, and a checkmark item would
-                // also give this whole visual group a gutter and indent every item in
-                // it — which is why the Advanced Controls toggle below needs a divider
-                // on each side.
-                Button(presetsVisible == true ? "Hide Presets" : "Show Presets") {
-                    presetsVisible?.toggle()
+                // A plain item, unlike its two neighbours: it opens or fronts the
+                // Presets window, the way Xcode's Show Library does, so there is
+                // nothing to hide and no title to flip. Never disabled — the window
+                // browses without an icon window to apply to. The Window menu's own
+                // entry for the scene carries no key equivalent, so the two do not
+                // collide. Opening this way writes nothing to `PresetsWindowRequest`;
+                // the window keeps whatever scope it last showed.
+                Button("Show Presets") {
+                    openWindow(id: PresetsWindow.id)
                 }
                 .keyboardShortcut("p", modifiers: [.control, .command])
-                .disabled(presetsVisible == nil)
 
                 Divider()
 
