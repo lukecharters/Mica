@@ -3,8 +3,8 @@
 // The two marks a preset tile can carry, and the rule that decides which of them apply.
 //
 // **A value rather than three computed properties inside the tile**, for the same
-// reason `SidebarPresentation` and `LayerSidebarRow.selected` are values: the glyph
-// row, the tile's tooltip and its accessibility label all describe the same preset,
+// reason `SidebarPresentation` and `LayerSidebarRow.selected` are values: the name
+// line's glyphs, the tile's tooltip and its accessibility label all describe the same preset,
 // and a rule spread across a view's `body` is reachable by no test. Nothing in
 // `PresetList` is covered — that is a standing gap — so the part that can be a pure
 // function is one, and `PresetIndicatorTests` enumerates it.
@@ -18,16 +18,9 @@ struct PresetIndicator: Identifiable, Equatable {
     /// The SF Symbol the tile draws for it.
     let symbolName: String
 
-    /// The glyph's own tooltip, phrased as a standalone sentence because it is read on
-    /// its own when the pointer stops over the glyph.
-    let help: LocalizedStringKey
-
-    /// The same fact phrased as a clause, for the tile's tooltip and its accessibility
-    /// label, where it joins a comma-separated list after the preset's name.
-    ///
-    /// Two spellings of one fact. They are side by side here so they cannot drift into
-    /// saying different things, which is what happens when a tooltip is written at the
-    /// glyph and a VoiceOver label is assembled somewhere else.
+    /// The fact the glyph stands for, phrased as a clause for the tile's tooltip and its
+    /// accessibility label, where it joins a comma-separated list after the preset's
+    /// name. The glyph is inline in the name and carries no tooltip of its own.
     let clause: String
 
     var id: String { symbolName }
@@ -41,7 +34,6 @@ struct PresetIndicator: Identifiable, Equatable {
     static var userPreset: PresetIndicator {
         PresetIndicator(
             symbolName: "person.fill",
-            help: "A preset you saved",
             clause: String(localized: "your preset")
         )
     }
@@ -55,7 +47,6 @@ struct PresetIndicator: Identifiable, Equatable {
     static var advancedControls: PresetIndicator {
         PresetIndicator(
             symbolName: "slider.horizontal.3",
-            help: "Turns on Show Advanced Controls",
             clause: String(localized: "turns on advanced controls")
         )
     }

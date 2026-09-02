@@ -78,7 +78,7 @@ struct PresetApplicationTests {
     @Test("A badge preset resets badge layout it does not mention to its defaults")
     func badgePresetIsScopeComplete() throws {
         // Layout is the sharpest case: `badge-position`, `badge-scale` and the two
-        // offsets are in scope precisely so the ghost-corner thumbnail is truthful,
+        // offsets are in scope precisely so the thumbnail's corner arrow is truthful,
         // and the accepted cost is that a badge preset overwrites an arrow-key nudge.
         // That cost is this test.
         let preset = MicaPreset(
@@ -260,7 +260,7 @@ struct PresetApplicationTests {
         #expect(first.badge == IconSettings().badge)
     }
 
-    @Test("A badge preview leaves the icon at its defaults for the ghost to override")
+    @Test("A badge preview leaves the icon at its defaults for the staging to hide")
     func previewSettingsForBadgeLeavesIconDefault() {
         let preview = PresetApplication.previewSettings(for: PresetCatalog.builtInBadge[0])
         #expect(preview.icon == IconSettings().icon)

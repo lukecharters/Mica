@@ -44,7 +44,7 @@ struct MicaPresetTests {
 
     @Test("The badge layout keys are the badge scope's")
     func badgeLayoutIsScoped() {
-        // The ghost-corner thumbnail is only truthful if the preset sets the corner.
+        // The thumbnail's corner arrow is only truthful if the preset sets the corner.
         for key in [MicaConfigKey.badgePosition, .badgeScale, .badgeOffsetX, .badgeOffsetY] {
             #expect(PresetScope.badge.owns(key), "'\(key.rawValue)' left the badge scope")
         }

@@ -126,8 +126,8 @@ struct PresetCoverageTests {
         ("bottom-right", BadgePosition.bottomRight),
     ])
     func badgeCorners(name: String, expected: BadgePosition) {
-        // The corner is what the pane's ghost-corner thumbnail crops to, so a corner that
-        // failed to decode would put the badge in the wrong crop rather than error.
+        // The corner is what the thumbnail's arrow points to, so a corner that failed to
+        // decode would draw the wrong arrow rather than error.
         #expect(badgeSettings(["badge-position": .string(name)]).badge.position == expected)
     }
 

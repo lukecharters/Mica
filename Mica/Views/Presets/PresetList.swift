@@ -67,11 +67,9 @@ enum PresetGridMetrics {
         RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
     }
 
-    /// The advanced-controls chip in the thumbnail's top-leading corner: its glyph, the
-    /// padding that makes the circle around it, and its inset from the tile's edge.
-    static let indicatorGlyphSize: CGFloat = 8
-    static let indicatorPadding: CGFloat = 3
-    static let indicatorInset: CGFloat = 4
+    /// The arrow in a badge thumbnail's corner, and its inset from the tile's edge.
+    static let cornerArrowSize: CGFloat = 10
+    static let cornerArrowInset: CGFloat = 6
 
     /// One adaptive column spec, not N fixed ones.
     ///
@@ -282,8 +280,9 @@ struct PresetList: View {
 
 // MARK: - One preset
 
-/// A thumbnail and its name. A user preset's name leads with `person.fill`; a preset
-/// that turns the advanced controls on carries a chip in the thumbnail's corner.
+/// A thumbnail and its name. The indicators sit on the name line: `person.fill` leads
+/// a user preset's name, and `slider.horizontal.3` trails one that turns the advanced
+/// controls on.
 private struct PresetTile: View {
     let resolved: ResolvedPreset
     let onApply: () -> Void
@@ -310,11 +309,6 @@ private struct PresetTile: View {
             VStack(spacing: 5) {
                 PresetThumbnail(resolved: resolved)
                     .presetTileChrome()
-                    .overlay(alignment: .topLeading) {
-                        if indicators.contains(.advancedControls) {
-                            advancedControlsChip
-                        }
-                    }
 
                 nameLabel
                     .font(.subheadline)
@@ -342,11 +336,11 @@ private struct PresetTile: View {
         }
     }
 
-    /// The name, led by `person.fill` when the preset is the user's.
+    /// The name line: identity leads the name and the warning trails it.
     ///
-    /// One concatenated `Text` rather than an `HStack`, so the glyph is part of the
-    /// first line: it wraps with the name, and the two-line centring the label already
-    /// does treats glyph and name as one run.
+    /// One concatenated `Text` rather than an `HStack`, so the glyphs are part of the
+    /// text: they wrap with the name, and the two-line centring the label already does
+    /// treats glyphs and name as one run.
     ///
     /// `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim overload
     /// silently**, so writing it that way would look like a localised label and never be
@@ -354,32 +348,18 @@ private struct PresetTile: View {
     /// `displayName` has already been through the string catalog for a built-in, which
     /// is where that choice is made and where getting it wrong would be visible.
     private var nameLabel: Text {
-        let name = Text(verbatim: resolved.displayName)
-        guard indicators.contains(.userPreset) else { return name }
-        return Text(Image(systemName: PresetIndicator.userPreset.symbolName))
-            .foregroundStyle(.secondary)
-            + Text(verbatim: " ")
-            + name
+        var label = Text(verbatim: resolved.displayName)
+        if indicators.contains(.userPreset) {
+            label = glyph(.userPreset) + Text(verbatim: " ") + label
+        }
+        if indicators.contains(.advancedControls) {
+            label = label + Text(verbatim: " ") + glyph(.advancedControls)
+        }
+        return label
     }
 
-    /// The advanced-controls chip: the glyph in white on a tinted circle, glass on
-    /// macOS 26 and a flat fill before it.
-    private var advancedControlsChip: some View {
-        let glyph = Image(systemName: PresetIndicator.advancedControls.symbolName)
-            .font(.system(size: PresetGridMetrics.indicatorGlyphSize, weight: .bold))
-            .foregroundStyle(.white)
-            .padding(PresetGridMetrics.indicatorPadding)
-
-        return Group {
-            if #available(macOS 26.0, *) {
-                glyph.glassEffect(.regular.tint(.accentColor), in: Circle())
-            } else {
-                glyph.background(Circle().fill(.tint))
-            }
-        }
-        .padding(PresetGridMetrics.indicatorInset)
-        .help(PresetIndicator.advancedControls.help)
-        .accessibilityHidden(true)   // Said in the tile's own label instead.
+    private func glyph(_ indicator: PresetIndicator) -> Text {
+        Text(Image(systemName: indicator.symbolName)).foregroundStyle(.secondary)
     }
 
     private var name: String { resolved.displayName }

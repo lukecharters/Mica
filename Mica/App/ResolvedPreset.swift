@@ -70,15 +70,8 @@ struct ResolvedPreset: Identifiable, Equatable {
     /// The preset over defaults, staged for its thumbnail.
     ///
     /// An icon preset draws itself with the badge suppressed. A badge preset draws
-    /// over a **ghost icon**, flat and shadowless because a gradient or a drop shadow
-    /// on a stand-in competes with the badge — the only thing in that thumbnail the
-    /// user is being asked to look at.
-    ///
-    /// **`primary`, and the weight is applied in the view, not here.** The placeholder
-    /// has to be adaptive, so it has to be one of `ColorTokenTable`'s two semantic
-    /// tokens; `BadgePresetThumbnail.ghostLayer` multiplies it down with `.opacity`.
-    /// **Changing this token changes the ghost's weight**, since that multiplier is
-    /// calibrated against `primary`'s ~0.85.
+    /// only the badge: both icon layers are hidden, and `BadgePresetThumbnail` says
+    /// which corner with an arrow.
     private static func thumbnailSettings(for preset: MicaPreset) -> IconSettings {
         var settings = PresetApplication.previewSettings(for: preset)
 
@@ -89,11 +82,7 @@ struct ResolvedPreset: Identifiable, Equatable {
             settings.badge.isHidden = true
         case .badge:
             settings.icon.foreground.isHidden = true
-            settings.icon.background.source = .color
-            settings.icon.background.color = .token("primary")
-            settings.icon.background.usesGradient = false
-            settings.icon.background.usesCustomGradient = false
-            settings.icon.background.shadowStyle = .off
+            settings.icon.background.isHidden = true
         }
         return settings
     }
