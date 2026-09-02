@@ -518,6 +518,11 @@ struct MicaApp: App {
         //
         // No loss even when the tools are on: `openWindow(id:)` brings an existing
         // window forward, which is all the Window-menu item did.
+        Window("Presets", id: PresetsWindow.id) {
+            PresetsWindow()
+        }
+        .defaultSize(width: 720, height: 560)
+
         Window("Symbol Metrics Generator", id: "metrics-generator") {
             DeferredWindowContent { SymbolMetricsGeneratorView() }
         }

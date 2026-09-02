@@ -86,6 +86,32 @@ extension FocusedValues {
     @Entry var previewPointSize: Binding<CGFloat?>?
 }
 
+/// Publishes this window to `PresetTarget` whenever it becomes key, and withdraws
+/// it when the window closes.
+///
+/// `controlActiveState` rather than a `FocusedValue`, because the reader is another
+/// window: the Presets window is key while the user clicks in it, and a focused
+/// value is nil at exactly that moment. Losing key deliberately publishes nothing —
+/// the icon window that just lost key to the Presets window is the one a click
+/// there should reach.
+private struct PresetTargetPublisher: ViewModifier {
+    let viewModel: IconViewModel
+    let undoManager: UndoManager?
+    @Environment(\.controlActiveState) private var controlActiveState
+    @State private var id = UUID()
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: controlActiveState, initial: true) { _, state in
+                guard state == .key else { return }
+                PresetTarget.shared.windowBecameKey(
+                    IconWindowHandle(id: id, viewModel: viewModel, undoManager: undoManager)
+                )
+            }
+            .onDisappear { PresetTarget.shared.windowClosed(id) }
+    }
+}
+
 /// A menu-invokable action published by the focused window.
 ///
 /// `FocusedValues` entries have to be plain values, and a bare `(() -> Void)?` entry
@@ -384,6 +410,8 @@ struct ContentView: View {
             previewPointSize: $previewPointSize,
             messageReporter: viewModel.messageReporter
         ))
+        // This window as the Presets window's target while it is, or was last, key.
+        .modifier(PresetTargetPublisher(viewModel: viewModel, undoManager: undoManager))
         // The in-window route to the same alert: the canvas drop and the
         // inspector's Choose File… buttons, both too deep to hand a closure to.
         // See `UserMessage`.
@@ -1004,7 +1032,7 @@ struct ContentView: View {
             badgeTab: $badgeTab,
             onPointer: pointerChanged,
             presets: resolvedPresets,
-            onApplyPreset: applyPreset,
+            onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
             onSavePreset: { savePresetScope = $0 },
             onDeletePreset: deletePreset,
             // Reload when the library appears rather than from an `.onChange` in
@@ -1017,30 +1045,6 @@ struct ContentView: View {
     }
 
     // MARK: - Presets
-
-    /// Apply a preset, revealing the advanced controls if it needs them.
-    ///
-    /// **The reveal is the indicator's promise being kept.** A tile carrying the
-    /// marker says applying it turns Show Advanced Controls on, so the predicate here
-    /// has to be the same one the tile drew — `preset.needsAdvancedControls`, measured
-    /// against defaults — or the pane would warn about a restructuring that did not
-    /// happen, or fail to warn about one that did.
-    ///
-    /// It mirrors `InspectorControls.revealAdvancedControlsIfNeeded`, which cannot do
-    /// this on its own: that observer watches `usesImportedSources`, and a preset
-    /// carries no imported artwork. A custom gradient or a hierarchical rendering mode
-    /// would otherwise land in a simple pane with no row for it, contradicting the
-    /// preview.
-    ///
-    /// **Undo will not put the flag back**, and that is consistent rather than a
-    /// wart: it is `@AppStorage`, app-wide, and not part of `IconSettings`, so
-    /// undoing a preset restores the icon and leaves the advanced controls on —
-    /// exactly what the image-import reveal already does. Do not try to fold the flag
-    /// into the undo entry.
-    private func applyPreset(_ preset: MicaPreset) {
-        if preset.needsAdvancedControls { advancedControlsEnabled = true }
-        viewModel.applyPreset(preset, undoManager: undoManager)
-    }
 
     /// Re-read the user presets from disk.
     ///

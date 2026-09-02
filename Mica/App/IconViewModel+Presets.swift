@@ -25,17 +25,36 @@ extension IconViewModel {
 
     // MARK: - Applying
 
-    /// Apply a preset to the current icon as one undoable step.
+    /// Apply a preset to the current icon as one undoable step, revealing the
+    /// advanced controls if it needs them.
     ///
     /// The merge is scoped, so an icon preset leaves the badge alone and vice versa.
     /// The rest — the undo entry, the no-op guard, ending a continuous edit — is the
     /// import path's, unchanged.
+    ///
+    /// **The reveal is the indicator's promise being kept.** A tile carrying the
+    /// marker says applying it turns Show Advanced Controls on, so the predicate here
+    /// is the same one the tile drew — `preset.needsAdvancedControls`, measured
+    /// against defaults. It lives here rather than in a view so that every route to
+    /// an apply — the popovers, the Presets window — keeps the promise the same way;
+    /// `@AppStorage` readers pick the write up through `UserDefaults`.
+    ///
+    /// It mirrors `InspectorControls.revealAdvancedControlsIfNeeded`, which cannot do
+    /// this on its own: that observer watches `usesImportedSources`, and a preset
+    /// carries no imported artwork.
+    ///
+    /// **Undo will not put the flag back**, and that is consistent rather than a
+    /// wart: it is app-wide and not part of `IconSettings`, exactly as the
+    /// image-import reveal behaves. Do not try to fold the flag into the undo entry.
     ///
     /// Warnings come from the codec and are reported the same way an import's are. A
     /// built-in produces none; a hand-edited user preset with an unreadable value
     /// will, and hearing about it is the difference between a preset that half-works
     /// and one that explains itself.
     func applyPreset(_ preset: MicaPreset, undoManager: UndoManager?) {
+        if preset.needsAdvancedControls {
+            UserDefaults.standard.set(true, forKey: InspectorPreferences.advancedControlsKey)
+        }
         var settings = iconSettings
         var appexColors = micaAppexColors
 
