@@ -222,6 +222,16 @@
     "Apple's IconServices render of the current symbol and colours on this Mac. Follows the system appearance. No badge — badge ground truth needs screenshots." : {
 
     },
+    "Apply “%@” (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Apply “%1$@” (%2$@)"
+          }
+        }
+      }
+    },
     "Apply Calibration to %@..." : {
 
     },
@@ -1870,6 +1880,9 @@
     "No families match the current filter" : {
 
     },
+    "No Icon Window" : {
+
+    },
     "No Preview" : {
 
     },
@@ -1889,6 +1902,9 @@
 
     },
     "Opacity" : {
+
+    },
+    "Open an icon window to apply a preset." : {
 
     },
     "Or create new family:" : {
