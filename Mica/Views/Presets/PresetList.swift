@@ -67,18 +67,11 @@ enum PresetGridMetrics {
         RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
     }
 
-   /// The metadata row beneath the name: the glyph size, the gap between two glyphs,
-    /// and the height the row holds whether or not it has any.
-    ///
-    /// **Reserved rather than conditional.** A `LazyVGrid` row sizes to its tallest
-    /// cell, so letting the row collapse on an unflagged tile would make every grid row
-    /// containing one flagged preset stand taller than its neighbours — the grid reads
-    /// as ragged rather than as a grid, and which rows are tall depends on where the
-    /// flagged presets happen to fall. It is the same trade the name makes with
-    /// `lineLimit(2, reservesSpace: true)`, and for the same reason.
-    static let indicatorGlyphSize: CGFloat = 11
-    static let indicatorSpacing: CGFloat = 5
-    static let indicatorRowHeight: CGFloat = 14
+    /// The advanced-controls chip in the thumbnail's top-leading corner: its glyph, the
+    /// padding that makes the circle around it, and its inset from the tile's edge.
+    static let indicatorGlyphSize: CGFloat = 8
+    static let indicatorPadding: CGFloat = 3
+    static let indicatorInset: CGFloat = 4
 
     /// One adaptive column spec, not N fixed ones.
     ///
@@ -289,7 +282,8 @@ struct PresetList: View {
 
 // MARK: - One preset
 
-/// A thumbnail, its name, and a row of indicators beneath both.
+/// A thumbnail and its name. A user preset's name leads with `person.fill`; a preset
+/// that turns the advanced controls on carries a chip in the thumbnail's corner.
 private struct PresetTile: View {
     let resolved: ResolvedPreset
     let onApply: () -> Void
@@ -298,10 +292,10 @@ private struct PresetTile: View {
 
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
-    /// The glyphs this tile draws, in reading order.
+    /// The indicators this tile draws, in reading order.
     ///
     /// The rule is `PresetIndicator.indicators`, not a condition written here, so that
-    /// the row, the tooltip and the accessibility label below cannot disagree about
+    /// the glyphs, the tooltip and the accessibility label below cannot disagree about
     /// which indicators apply — and so that a test can reach it at all.
     private var indicators: [PresetIndicator] {
         PresetIndicator.indicators(
@@ -316,20 +310,17 @@ private struct PresetTile: View {
             VStack(spacing: 5) {
                 PresetThumbnail(resolved: resolved)
                     .presetTileChrome()
+                    .overlay(alignment: .topLeading) {
+                        if indicators.contains(.advancedControls) {
+                            advancedControlsChip
+                        }
+                    }
 
-                indicatorRow
-
-                // `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim
-                // overload silently**, so writing it that way would look like a
-                // localised label and never be one — the bug is in the parameter type
-                // and is invisible at the call site. `displayName` has already been
-                // through the string catalog for a built-in, which is where that
-                // choice is made and where getting it wrong would be visible.
-                Text(verbatim: resolved.displayName)
-                .font(.subheadline)
-                .lineLimit(2, reservesSpace: true)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
+                nameLabel
+                    .font(.subheadline)
+                    .lineLimit(2, reservesSpace: true)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
             }
             .frame(width: PresetGridMetrics.thumbnailSize)
             .contentShape(Rectangle())
@@ -351,32 +342,43 @@ private struct PresetTile: View {
         }
     }
 
-/// The indicators, beneath the name and **outside the thumbnail**.
+    /// The name, led by `person.fill` when the preset is the user's.
     ///
-    /// **No ground, no tint, no material — because it is off the artwork.** A marker over
-    /// a thumbnail needs a fill that separates it from any colour the app can render, and
-    /// there is none; out here the sidebar material is the ground and `.secondary` reads
-    /// as chrome. `PresetIndicator`'s header and `presets.md` carry why. A row also grows
-    /// sideways for a second glyph where a corner badge would crowd an 84pt tile.
+    /// One concatenated `Text` rather than an `HStack`, so the glyph is part of the
+    /// first line: it wraps with the name, and the two-line centring the label already
+    /// does treats glyph and name as one run.
     ///
-    /// **Above the name, not below it, and that is a grouping measurement rather than a
-    /// preference.** The name reserves two lines, so under a one-line name — which most
-    /// are — the row ends up separated from it by that empty line: measured at 26pt from
-    /// its own label and 24pt from the *next* grid row's thumbnail, i.e. floating
-    /// between two tiles rather than belonging to one. Here every element in the tile is
-    /// one `VStack` spacing apart and the reserved line falls at the tile's bottom edge,
-    /// against the grid's row spacing, where it costs nothing.
-    private var indicatorRow: some View {
-        HStack(spacing: PresetGridMetrics.indicatorSpacing) {
-            ForEach(indicators) { indicator in
-                Image(systemName: indicator.symbolName)
-                    .font(.system(size: PresetGridMetrics.indicatorGlyphSize,
-                                  weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .help(indicator.help)
+    /// `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim overload
+    /// silently**, so writing it that way would look like a localised label and never be
+    /// one — the bug is in the parameter type and is invisible at the call site.
+    /// `displayName` has already been through the string catalog for a built-in, which
+    /// is where that choice is made and where getting it wrong would be visible.
+    private var nameLabel: Text {
+        let name = Text(verbatim: resolved.displayName)
+        guard indicators.contains(.userPreset) else { return name }
+        return Text(Image(systemName: PresetIndicator.userPreset.symbolName))
+            .foregroundStyle(.secondary)
+            + Text(verbatim: " ")
+            + name
+    }
+
+    /// The advanced-controls chip: the glyph in white on a tinted circle, glass on
+    /// macOS 26 and a flat fill before it.
+    private var advancedControlsChip: some View {
+        let glyph = Image(systemName: PresetIndicator.advancedControls.symbolName)
+            .font(.system(size: PresetGridMetrics.indicatorGlyphSize, weight: .bold))
+            .foregroundStyle(.white)
+            .padding(PresetGridMetrics.indicatorPadding)
+
+        return Group {
+            if #available(macOS 26.0, *) {
+                glyph.glassEffect(.regular.tint(.accentColor), in: Circle())
+            } else {
+                glyph.background(Circle().fill(.tint))
             }
         }
-        .frame(height: PresetGridMetrics.indicatorRowHeight)
+        .padding(PresetGridMetrics.indicatorInset)
+        .help(PresetIndicator.advancedControls.help)
         .accessibilityHidden(true)   // Said in the tile's own label instead.
     }
 

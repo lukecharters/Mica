@@ -1,7 +1,6 @@
 // App/PresetIndicator.swift
 //
-// The small glyphs a preset tile carries beneath its name, and the rule that decides
-// which of them apply.
+// The two marks a preset tile can carry, and the rule that decides which of them apply.
 //
 // **A value rather than three computed properties inside the tile**, for the same
 // reason `SidebarPresentation` and `LayerSidebarRow.selected` are values: the glyph
@@ -10,21 +9,13 @@
 // `PresetList` is covered — that is a standing gap — so the part that can be a pure
 // function is one, and `PresetIndicatorTests` enumerates it.
 //
-// **Nothing here may be drawn on top of a thumbnail.** A marker over one has to separate
-// itself from a rendered icon, and a rendered icon is a coloured chiclet in any colour
-// the app can produce: a tint merges into the blue icons, and a material resolves to
-// something close to the white and grey ones. The artwork owns the whole palette, so no
-// fill wins — the constraint is the placement, not the fill. Outside the thumbnail the
-// sidebar material is the ground and `.secondary` reads as chrome, so the glyphs need no
-// fill at all. `presets.md` carries the measurements.
-//
 // **App-target only**, since the tile that draws these is app-only.
 
 import SwiftUI
 
-/// One glyph in a preset tile's metadata row.
+/// One mark on a preset tile.
 struct PresetIndicator: Identifiable, Equatable {
-    /// The SF Symbol drawn in the row.
+    /// The SF Symbol the tile draws for it.
     let symbolName: String
 
     /// The glyph's own tooltip, phrased as a standalone sentence because it is read on
