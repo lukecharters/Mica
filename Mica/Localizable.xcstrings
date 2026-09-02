@@ -222,16 +222,6 @@
     "Apple's IconServices render of the current symbol and colours on this Mac. Follows the system appearance. No badge — badge ground truth needs screenshots." : {
 
     },
-    "Apply “%@” (%@)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Apply “%1$@” (%2$@)"
-          }
-        }
-      }
-    },
     "Apply Calibration to %@..." : {
 
     },
@@ -334,6 +324,9 @@
 
     },
     "Browse SF Symbols" : {
+
+    },
+    "Built-in" : {
 
     },
     "Calibrated:" : {
@@ -1880,10 +1873,13 @@
     "No families match the current filter" : {
 
     },
-    "No Icon Window" : {
+    "No Preview" : {
 
     },
-    "No Preview" : {
+    "No saved badge presets yet. Click + to save the current badge." : {
+
+    },
+    "No saved icon presets yet. Click + to save the current icon." : {
 
     },
     "Nothing measured yet — use Measure All Symbols below." : {
@@ -1905,6 +1901,9 @@
 
     },
     "Open an icon window to apply a preset." : {
+
+    },
+    "Open an icon window to save a preset" : {
 
     },
     "Or create new family:" : {
@@ -1938,6 +1937,9 @@
 
     },
     "Position" : {
+
+    },
+    "Preset Scope" : {
 
     },
     "Presets" : {
@@ -2107,6 +2109,9 @@
     "Search families..." : {
 
     },
+    "Search Presets" : {
+
+    },
     "Secondary" : {
 
     },
@@ -2174,6 +2179,9 @@
 
     },
     "Skipped:" : {
+
+    },
+    "Some Presets Couldn’t Be Read" : {
 
     },
     "Sort" : {
@@ -2498,6 +2506,9 @@
 
     },
     "your preset" : {
+
+    },
+    "Yours" : {
 
     },
     "Zoom In" : {
