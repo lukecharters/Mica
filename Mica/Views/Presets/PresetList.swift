@@ -314,7 +314,10 @@ private struct PresetTile: View {
     var body: some View {
         Button(action: onApply) {
             VStack(spacing: 5) {
-                tileFace
+                PresetThumbnail(resolved: resolved)
+                    .presetTileChrome()
+
+                indicatorRow
 
                 // `Text(verbatim:)`, always. **`Text(aString)` takes the verbatim
                 // overload silently**, so writing it that way would look like a
@@ -348,18 +351,21 @@ private struct PresetTile: View {
         }
     }
 
-    /// Centred with the band overlaid, **not** a `VStack` of the two: stacking leaves the
-    /// reserved band as empty space under the artwork on every unflagged tile, so the icon
-    /// reads as sitting high. The glyphs' room is the chiclet's own inset.
-    private var tileFace: some View {
-        PresetThumbnail(resolved: resolved, size: PresetGridMetrics.iconRenderSize)
-            .frame(width: PresetGridMetrics.thumbnailSize,
-                   height: PresetGridMetrics.thumbnailSize)
-            .overlay(alignment: .bottom) { indicatorRow }
-            .presetTileChrome()
-    }
-
-    /// Must stay clear of the artwork — see `PresetIndicator`'s header.
+/// The indicators, beneath the name and **outside the thumbnail**.
+    ///
+    /// **No ground, no tint, no material — because it is off the artwork.** A marker over
+    /// a thumbnail needs a fill that separates it from any colour the app can render, and
+    /// there is none; out here the sidebar material is the ground and `.secondary` reads
+    /// as chrome. `PresetIndicator`'s header and `presets.md` carry why. A row also grows
+    /// sideways for a second glyph where a corner badge would crowd an 84pt tile.
+    ///
+    /// **Above the name, not below it, and that is a grouping measurement rather than a
+    /// preference.** The name reserves two lines, so under a one-line name — which most
+    /// are — the row ends up separated from it by that empty line: measured at 26pt from
+    /// its own label and 24pt from the *next* grid row's thumbnail, i.e. floating
+    /// between two tiles rather than belonging to one. Here every element in the tile is
+    /// one `VStack` spacing apart and the reserved line falls at the tile's bottom edge,
+    /// against the grid's row spacing, where it costs nothing.
     private var indicatorRow: some View {
         HStack(spacing: PresetGridMetrics.indicatorSpacing) {
             ForEach(indicators) { indicator in
@@ -370,7 +376,7 @@ private struct PresetTile: View {
                     .help(indicator.help)
             }
         }
-        .frame(height: PresetGridMetrics.indicatorBandHeight)
+        .frame(height: PresetGridMetrics.indicatorRowHeight)
         .accessibilityHidden(true)   // Said in the tile's own label instead.
     }
 
