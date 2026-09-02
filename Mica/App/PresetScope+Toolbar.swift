@@ -18,6 +18,15 @@ extension PresetScope {
         }
     }
 
+    /// The scope's name in the Presets window's selector, where the window's own title
+    /// already says "Presets".
+    var segmentTitle: String {
+        switch self {
+        case .icon:  String(localized: "Icon")
+        case .badge: String(localized: "Badge")
+        }
+    }
+
     /// The toolbar button's glyph.
     ///
     /// **A misspelled name draws nothing at all, with no error**, so

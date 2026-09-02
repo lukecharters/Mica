@@ -205,17 +205,6 @@ struct PresetList: View {
 
     /// The section name as a disclosure control, and the `+` that saves into it.
     ///
-    /// **Hand-rolled rather than a `DisclosureGroup`.** The row has to carry a second,
-    /// independently clickable control, and a `DisclosureGroup`'s label is entirely a
-    /// toggle target — the `+` inside one competes with the disclosure for the click.
-    /// `Section(_:isExpanded:)`, which is how `InspectorControls` does its thirteen,
-    /// needs a `Form` and would style a thumbnail grid as form rows.
-    ///
-    /// The chevron is the standard leading disclosure, rotated rather than swapped for
-    /// a second symbol so it animates. The title is `.subheadline.weight(.semibold)` in
-    /// `.primary` — it was `.caption` in `.secondary`, which read as a caption on the
-    /// grid below it rather than as a heading over it.
-    ///
     /// The `+` sits in the badge section's own header, so its disabled state says which
     /// scope is unavailable without the help text having to.
     private func header(
@@ -223,34 +212,78 @@ struct PresetList: View {
         title: LocalizedStringKey,
         isExpanded: Binding<Bool>
     ) -> some View {
+        PresetSectionHeader(title, isExpanded: isExpanded) {
+            PresetSaveButton(scope: scope, iconSettings: iconSettings, onSave: onSave)
+        }
+    }
+}
+
+// MARK: - A section heading
+
+/// A section name as a disclosure control, with room for one control at its trailing
+/// end — the `+` in the sidebar's sections; nothing in the Presets window's.
+///
+/// **Hand-rolled rather than a `DisclosureGroup`.** The row has to carry a second,
+/// independently clickable control, and a `DisclosureGroup`'s label is entirely a
+/// toggle target — the `+` inside one competes with the disclosure for the click.
+/// `Section(_:isExpanded:)`, which is how `InspectorControls` does its thirteen,
+/// needs a `Form` and would style a thumbnail grid as form rows.
+///
+/// The chevron is the standard leading disclosure, rotated rather than swapped for
+/// a second symbol so it animates. The title is 13pt medium in `.primary`: a
+/// `.caption` in `.secondary` reads as a caption on the grid below it rather than as
+/// a heading over it.
+struct PresetSectionHeader<Trailing: View>: View {
+    let title: LocalizedStringKey
+    @Binding var isExpanded: Bool
+    let trailing: Trailing
+
+    init(
+        _ title: LocalizedStringKey,
+        isExpanded: Binding<Bool>,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.title = title
+        self._isExpanded = isExpanded
+        self.trailing = trailing()
+    }
+
+    var body: some View {
         HStack(spacing: 4) {
             Button {
                 withAnimation(.easeInOut(duration: 0.18)) {
-                    isExpanded.wrappedValue.toggle()
+                    isExpanded.toggle()
                 }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     Text(title)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.primary)
                 }
-                // The whole row up to the `+` is the target, not just the words —
-                // a heading you have to hit exactly is a heading people stop using.
+                // The whole row up to the trailing control is the target, not just
+                // the words — a heading you have to hit exactly is a heading people
+                // stop using.
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(isExpanded.wrappedValue ? "Hide these presets" : "Show these presets")
+            .help(isExpanded ? "Hide these presets" : "Show these presets")
             .accessibilityLabel(title)
-            .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
+            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
             .accessibilityAddTraits(.isHeader)
 
-            PresetSaveButton(scope: scope, iconSettings: iconSettings, onSave: onSave)
+            trailing
         }
+    }
+}
+
+extension PresetSectionHeader where Trailing == EmptyView {
+    init(_ title: LocalizedStringKey, isExpanded: Binding<Bool>) {
+        self.init(title, isExpanded: isExpanded) { EmptyView() }
     }
 }
 
@@ -322,13 +355,17 @@ struct PresetSaveButton: View {
         }
         .buttonStyle(.borderless)
         .disabled(!canSave)
-        .help(helpText(canSave: canSave))
-        .accessibilityLabel(scope == .icon
-                            ? "Save Icon Preset"
-                            : "Save Badge Preset")
+        .help(Self.helpText(for: scope, canSave: canSave))
+        .accessibilityLabel(Self.title(for: scope))
     }
 
-    private func helpText(canSave: Bool) -> LocalizedStringKey {
+    /// The button's name, here and in the Presets window's toolbar.
+    static func title(for scope: PresetScope) -> LocalizedStringKey {
+        scope == .icon ? "Save Icon Preset" : "Save Badge Preset"
+    }
+
+    /// The tooltip, which says why when the button is off.
+    static func helpText(for scope: PresetScope, canSave: Bool) -> LocalizedStringKey {
         guard canSave else { return "Add a badge before saving a badge preset" }
         return scope == .icon
             ? "Save the current icon as a preset"

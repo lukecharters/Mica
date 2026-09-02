@@ -122,6 +122,9 @@ struct PresetPopover: View {
 
             Button {
                 dismiss()
+                // The scope travels beside the open, not through it: `openWindow(id:)`
+                // carries no value. See `PresetsWindowRequest`.
+                PresetsWindowRequest.shared.open(scope)
                 openWindow(id: PresetsWindow.id)
             } label: {
                 Text("Show All Presets…")

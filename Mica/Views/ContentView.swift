@@ -1034,16 +1034,11 @@ struct ContentView: View {
 
     // MARK: - Presets
 
-    /// Re-read the user presets, reporting problems once, joined: a user with three
-    /// hand-edited files that will not parse deserves to hear about all three, and
-    /// three alerts in a row for one action is not how.
+    /// Re-read the user presets, reporting any files that could not be read.
     private func reloadUserPresets() {
         let problems = presetLibrary.reload()
         if !problems.isEmpty {
-            viewModel.report(.advisory(
-                "Some Presets Couldn’t Be Read",
-                message: problems.joined(separator: "\n\n")
-            ))
+            viewModel.report(.presetsUnreadable(problems))
         }
     }
 

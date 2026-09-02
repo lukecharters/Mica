@@ -160,6 +160,16 @@ struct UserMessage: Equatable {
         .failure("Couldn’t Delete “\(name)”", error)
     }
 
+    /// User preset files that could not be read, reported once and joined: a user
+    /// with three hand-edited files that will not parse deserves to hear about all
+    /// three, and three alerts in a row for one action is not how.
+    static func presetsUnreadable(_ problems: [String]) -> UserMessage {
+        .advisory(
+            String(localized: "Some Presets Couldn’t Be Read"),
+            message: problems.joined(separator: "\n\n")
+        )
+    }
+
     /// Imported artwork that the saved preset could not carry.
     ///
     /// An advisory following a *successful* save, like `configurationImportWarnings`:
