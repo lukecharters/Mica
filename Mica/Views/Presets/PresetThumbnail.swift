@@ -33,11 +33,15 @@ struct IconPresetThumbnail: View {
     let settings: IconSettings
     var size: CGFloat = PresetGridMetrics.thumbnailSize
 
+    /// The render's size as a fraction of the tile. `IconContentView` insets the
+    /// chiclet by 25/256 of the render on each side, so this is the dial on how much
+    /// ground shows around it.
+    static let renderRatio: CGFloat = 0.9
+
     var body: some View {
         // No ground, clip or border here: `presetTileChrome()` owns all three, over
-        // one shape. This view used to stroke a 6pt radius inside a 10pt continuous
-        // clip, which is how the border lost its corners.
-        IconContentView(settings: settings, displaySize: size)
+        // one shape.
+        IconContentView(settings: settings, displaySize: size * Self.renderRatio)
             .frame(width: size, height: size)
     }
 }
@@ -60,7 +64,7 @@ struct BadgePresetThumbnail: View {
     /// The enclosure a badge of this preset's scale is sized against, as a multiple of
     /// the tile. At 1.43 a scale-1 badge is about 55% of the tile, which leaves the
     /// corners clear for the arrow.
-    static let enclosureRatio: CGFloat = 1.43
+    static let enclosureRatio: CGFloat = 1.8
 
     private var badgeSize: CGFloat {
         BadgeGeometry.diameter(enclosureSize: size * Self.enclosureRatio,
