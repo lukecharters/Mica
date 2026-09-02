@@ -56,14 +56,14 @@ extension IconSettings {
     /// advanced controls will have them revealed regardless, so the preset is not
     /// what turned them on.
     ///
-    /// Currently unused by the reveal itself, which goes through
-    /// `InspectorControls.revealAdvancedControlsIfNeeded` on the settings that
-    /// result. Kept because `PresetIndicatorTests` compares the two, which is what
-    /// catches the pane's indicator and the apply's reveal disagreeing.
+    /// Not used by the reveal itself, which `IconViewModel.applyPreset` does on
+    /// `needsAdvancedControls`. Kept because `PresetCatalogTests` compares the two
+    /// predicates, which is what catches the tile's indicator and the apply's reveal
+    /// disagreeing.
     func wouldRevealAdvancedControls(applying preset: MicaPreset) -> Bool {
         var applied = self
         var colors = MicaAppexColors()
-        try? PresetApplication.apply(preset, to: &applied, appexColors: &colors)
+        _ = try? PresetApplication.apply(preset, to: &applied, appexColors: &colors)
 
         var folded = applied
         folded.resetToSimpleControls()
