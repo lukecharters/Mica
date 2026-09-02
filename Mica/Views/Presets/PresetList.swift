@@ -87,6 +87,19 @@ enum PresetGridMetrics {
     static let columns = [
         GridItem(.adaptive(minimum: thumbnailSize), spacing: columnSpacing)
     ]
+
+    /// A fixed column count, for a host whose width is fixed too — a popover reflowing
+    /// as it opens reads as broken, so it states its columns and takes `width(forColumns:)`.
+    static func fixedColumns(_ count: Int) -> [GridItem] {
+        Array(repeating: GridItem(.fixed(thumbnailSize), spacing: columnSpacing), count: count)
+    }
+
+    /// The content width `count` fixed columns need, padding included.
+    static func width(forColumns count: Int) -> CGFloat {
+        CGFloat(count) * thumbnailSize
+            + CGFloat(max(count - 1, 0)) * columnSpacing
+            + 2 * horizontalPadding
+    }
 }
 
 // MARK: - Tile chrome
@@ -116,8 +129,7 @@ extension View {
 // MARK: - The list
 
 struct PresetList: View {
-    /// The current settings, read for one thing only: whether each scope can be
-    /// captured, which is what enables its section's `+`.
+    /// Handed to each section's `PresetSaveButton`, which reads it for one thing.
     let iconSettings: IconSettings
 
     /// Every preset, built-ins first, already decoded.
@@ -173,26 +185,7 @@ struct PresetList: View {
             header(scope, title: title, isExpanded: isExpanded)
 
             if isExpanded.wrappedValue {
-                // **`maxWidth: .infinity` is load-bearing.** Without it the grid sized
-                // to its own content and reported 207pt inside a 252pt content area —
-                // so the adaptive columns were computing against the wrong width and
-                // the slack came back as a trailing hole, the very thing dropping
-                // `maximum:` was meant to fix. A `VStack(alignment: .leading)` sizes to
-                // its widest child; the grid has to be told to take the room instead.
-                LazyVGrid(
-                    columns: PresetGridMetrics.columns,
-                    alignment: .leading,
-                    spacing: PresetGridMetrics.rowSpacing
-                ) {
-                    ForEach(rows) { row in
-                        PresetTile(
-                            resolved: row,
-                            onApply: { onApply(row.preset) },
-                            onDelete: row.preset.isBuiltIn ? nil : { onDelete(row.preset) }
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                PresetGrid(rows: rows, onApply: onApply, onDelete: onDelete)
             }
         }
     }
@@ -210,19 +203,14 @@ struct PresetList: View {
     /// `.primary` — it was `.caption` in `.secondary`, which read as a caption on the
     /// grid below it rather than as a heading over it.
     ///
-    /// **Saving a badge preset needs a badge**, which is why the badge's button can be
-    /// disabled: a preset captured from a switched-off badge carries no activating key,
-    /// so applying it would do nothing — and the one thing a badge preset must do is
-    /// turn a badge on. Sitting in the badge section, the disabled control says which
-    /// scope is unavailable without the help text having to; the help text says why.
+    /// The `+` sits in the badge section's own header, so its disabled state says which
+    /// scope is unavailable without the help text having to.
     private func header(
         _ scope: PresetScope,
         title: LocalizedStringKey,
         isExpanded: Binding<Bool>
     ) -> some View {
-        let canSave = UserPresetStore.canCapture(iconSettings, scope: scope)
-
-        return HStack(spacing: 4) {
+        HStack(spacing: 4) {
             Button {
                 withAnimation(.easeInOut(duration: 0.18)) {
                     isExpanded.wrappedValue.toggle()
@@ -248,29 +236,86 @@ struct PresetList: View {
             .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
             .accessibilityAddTraits(.isHeader)
 
-            Button {
-                onSave(scope)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.caption.weight(.semibold))
-                    // **The glyph is 8×8, and a `.borderless` button is exactly its
-                    // label.** Measured in the AX tree at 8×8pt — a quarter of the
-                    // 20pt a small control should offer and far under the 28pt Apple
-                    // asks for a primary target. The frame plus `contentShape` is the
-                    // hit area; the glyph stays the size it looks right at.
-                    .frame(width: 22, height: 22)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.borderless)
-            .disabled(!canSave)
-            .help(helpText(for: scope, canSave: canSave))
-            .accessibilityLabel(scope == .icon
-                                ? "Save Icon Preset"
-                                : "Save Badge Preset")
+            PresetSaveButton(scope: scope, iconSettings: iconSettings, onSave: onSave)
         }
     }
+}
 
-    private func helpText(for scope: PresetScope, canSave: Bool) -> LocalizedStringKey {
+// MARK: - One scope's grid
+
+/// One scope's tiles, in a grid that takes the width it is given.
+///
+/// The sidebar and the Presets window show one of these under each section heading;
+/// a toolbar popover shows exactly one, with no heading, because the button that
+/// opened it already said which scope. `columns` is adaptive by default and fixed
+/// where the host's width is fixed.
+///
+/// **`maxWidth: .infinity` is load-bearing.** A `VStack(alignment: .leading)` sizes to
+/// its widest child, so without it the grid reports a width short of its container
+/// and the adaptive columns compute against the wrong number, leaving the slack as a
+/// hole down the trailing edge. The grid has to be told to take the room.
+struct PresetGrid: View {
+    let rows: [ResolvedPreset]
+    var columns: [GridItem] = PresetGridMetrics.columns
+    let onApply: (MicaPreset) -> Void
+    let onDelete: (MicaPreset) -> Void
+
+    var body: some View {
+        LazyVGrid(
+            columns: columns,
+            alignment: .leading,
+            spacing: PresetGridMetrics.rowSpacing
+        ) {
+            ForEach(rows) { row in
+                PresetTile(
+                    resolved: row,
+                    onApply: { onApply(row.preset) },
+                    onDelete: row.preset.isBuiltIn ? nil : { onDelete(row.preset) }
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - The save button
+
+/// The `+` that saves the current icon or badge as a preset of one scope.
+///
+/// **Saving a badge preset needs a badge**, which is why this can be disabled: a
+/// preset captured from a switched-off badge carries no activating key, so applying
+/// it would do nothing — and the one thing a badge preset must do is turn a badge on.
+/// The help text says why.
+///
+/// **The glyph is 8×8, and a `.borderless` button is exactly its label** — a quarter
+/// of the 20pt a small control should offer. The frame plus `contentShape` is the hit
+/// area; the glyph stays the size it looks right at.
+struct PresetSaveButton: View {
+    let scope: PresetScope
+    /// Read for one thing only: whether this scope can be captured right now.
+    let iconSettings: IconSettings
+    let onSave: (PresetScope) -> Void
+
+    var body: some View {
+        let canSave = UserPresetStore.canCapture(iconSettings, scope: scope)
+
+        Button {
+            onSave(scope)
+        } label: {
+            Image(systemName: "plus")
+                .font(.caption.weight(.semibold))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(!canSave)
+        .help(helpText(canSave: canSave))
+        .accessibilityLabel(scope == .icon
+                            ? "Save Icon Preset"
+                            : "Save Badge Preset")
+    }
+
+    private func helpText(canSave: Bool) -> LocalizedStringKey {
         guard canSave else { return "Add a badge before saving a badge preset" }
         return scope == .icon
             ? "Save the current icon as a preset"
