@@ -67,13 +67,18 @@ enum PresetGridMetrics {
         RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous)
     }
 
-    /// Reserved on every tile, flagged or not — a band sized to its contents would draw
-    /// a flagged preset's icon smaller than its neighbours'.
-    static let indicatorBandHeight: CGFloat = 14
-    static let indicatorGlyphSize: CGFloat = 10
+   /// The metadata row beneath the name: the glyph size, the gap between two glyphs,
+    /// and the height the row holds whether or not it has any.
+    ///
+    /// **Reserved rather than conditional.** A `LazyVGrid` row sizes to its tallest
+    /// cell, so letting the row collapse on an unflagged tile would make every grid row
+    /// containing one flagged preset stand taller than its neighbours — the grid reads
+    /// as ragged rather than as a grid, and which rows are tall depends on where the
+    /// flagged presets happen to fall. It is the same trade the name makes with
+    /// `lineLimit(2, reservesSpace: true)`, and for the same reason.
+    static let indicatorGlyphSize: CGFloat = 11
     static let indicatorSpacing: CGFloat = 5
-
-    static var iconRenderSize: CGFloat { thumbnailSize - indicatorBandHeight }
+    static let indicatorRowHeight: CGFloat = 14
 
     /// One adaptive column spec, not N fixed ones.
     ///

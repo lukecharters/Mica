@@ -10,11 +10,13 @@
 // `PresetList` is covered — that is a standing gap — so the part that can be a pure
 // function is one, and `PresetIndicatorTests` enumerates it.
 //
-// **Never draw these over a thumbnail's artwork.** A rendered icon can be any colour the
-// app produces, so no fill separates a marker from it — a tint merges into the blue
-// icons, a material resolves close to the white and grey ones. The band along the bottom
-// of the tile is the fix, and `controlBackgroundColor` there is why `.secondary` suffices
-// with no fill of its own. Measurements in `presets.md`.
+// **Nothing here may be drawn on top of a thumbnail.** A marker over one has to separate
+// itself from a rendered icon, and a rendered icon is a coloured chiclet in any colour
+// the app can produce: a tint merges into the blue icons, and a material resolves to
+// something close to the white and grey ones. The artwork owns the whole palette, so no
+// fill wins — the constraint is the placement, not the fill. Outside the thumbnail the
+// sidebar material is the ground and `.secondary` reads as chrome, so the glyphs need no
+// fill at all. `presets.md` carries the measurements.
 //
 // **App-target only**, since the tile that draws these is app-only.
 
