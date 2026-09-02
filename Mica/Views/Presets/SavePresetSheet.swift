@@ -2,9 +2,9 @@
 //
 // "Save Current as Preset…": one field and two buttons.
 //
-// The scope is not asked for. It comes from the sidebar selection, which is the only
-// thing on screen that answers "which scope" — and asking again would be asking the
-// user to repeat a choice they made by selecting a group.
+// The scope is not asked for. It comes from the `+` that opened the sheet — a popover's
+// title row, or the Presets window's toolbar with its selector — and asking again would
+// be asking the user to repeat a choice they have already made.
 //
 // Duplicate names are not refused either. `UserPresetStore.uniqueName` appends " 2",
 // the Finder's convention for the same problem, and the sheet says so ahead of time

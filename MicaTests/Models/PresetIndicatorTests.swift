@@ -97,7 +97,7 @@ struct PresetIndicatorTests {
     func everyGlyphResolves() {
         // **A misspelled SF Symbol name draws nothing at all, with no error** — the row
         // would simply be short one glyph, with nothing to say which. Same guard, same
-        // reason, as `SidebarPresentationTests` puts on the selector bar's two.
+        // reason, as `PresetsToolbarTests` puts on the two toolbar buttons' glyphs.
         for indicator in PresetIndicator.all {
             #expect(
                 NSImage(systemSymbolName: indicator.symbolName,

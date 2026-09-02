@@ -3,7 +3,7 @@
 // What a preset looks like, drawn in isolation on neutral ground.
 //
 // **The ground, the clip and the border are not here** — they are
-// `presetTileChrome()` in `PresetList.swift`, one shape applied once. They were split
+// `presetTileChrome()` in `PresetGrid.swift`, one shape applied once. They were split
 // across two files with two radii and two corner styles until 2026-08-31, which is how
 // the border came to be drawn with its corners clipped off.
 //

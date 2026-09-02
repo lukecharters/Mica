@@ -3,7 +3,7 @@
 // The two marks a preset tile can carry, and the rule that decides which of them apply.
 //
 // **A value rather than three computed properties inside the tile**, for the same
-// reason `SidebarPresentation` and `LayerSidebarRow.selected` are values: the name
+// reason `LayerSidebarRow.selected` is a value: the name
 // line's glyphs, the tile's tooltip and its accessibility label all describe the same preset,
 // and a rule spread across a view's `body` is reachable by no test. Nothing in
 // `PresetList` is covered — that is a standing gap — so the part that can be a pure

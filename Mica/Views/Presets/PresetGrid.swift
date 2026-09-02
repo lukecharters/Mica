@@ -1,41 +1,18 @@
-// Views/Presets/PresetList.swift
+// Views/Presets/PresetGrid.swift
 //
-// The preset library, as the content of the sidebar column's Presets mode.
+// The preset library's grid and the pieces around it: the tile, the section heading,
+// the `+` that saves into a scope, and the metrics they share.
 //
-// ## It was a slide-out pane in the detail column until 2026-08-31
+// Two hosts show the grid. A toolbar popover shows one scope's grid, three fixed
+// columns, with no heading — the button that opened it already said which scope. The
+// Presets window shows the selected scope in two sections, Built-in and Yours, each
+// under a `PresetSectionHeader`, in a grid that adapts to the window's width. Nothing
+// here paints a background: both hosts supply their own.
 //
-// The first shape was an `HStack` sibling of the preview inside the detail column,
-// with a `.move(edge: .leading)` transition, a fixed 216pt width and its own
-// `.thinMaterial` background — the shape the inspector had before it became
-// `.inspector`. It worked, and it carried two costs its own doc comment recorded as
-// accepted: **no sidebar vibrancy** (it read as a panel, not as a second sidebar) and
-// **216pt off the canvas** for as long as it was open.
-//
-// Both of those are what moving into the sidebar column pays off. The column already
-// has the material, the width and the drag-resize, and the canvas keeps its full
-// width. What replaces the pane's own chrome:
-//
-// | The pane had | The sidebar has |
-// |---|---|
-// | A "Presets" title and a close button | The `SidebarSelector` bar above it |
-// | A fixed 216pt width, two fixed columns | The column's 220–360pt, an adaptive grid |
-// | `.thinMaterial` over window content | The split view's real sidebar material |
-// | One footer button, scoped by the sidebar selection | A `+` in each section header |
-//
-// **The footer button is the change worth understanding.** It read
-// `Save Icon Preset…` / `Save Badge Preset…` off `selectedGroup`, on the stated
-// grounds that the sidebar's selected row was already the user's answer to "which
-// scope" and asking again would be a redundant question. In this shape the layer rows
-// are *behind* the Presets tab while you are looking at presets, so that answer is no
-// longer on screen and the justification lapses with it. A `+` in each section header
-// says which scope by position, needs no selection to read, and puts the badge's
-// "you need a badge first" disabled state next to the badge section rather than in
-// help text on a single shared button. `selectedGroup` is not a parameter here any
-// more, which is the tell that the dependency is really gone.
-//
-// The three-column question does not arise in this shape: the sidebar column already
-// exists and this is its content, so `NavigationSplitViewVisibility` is untouched and
-// ⌃⌘S keeps meaning exactly what it meant.
+// **Nothing here decodes a preset.** The rows arrive as `ResolvedPreset`, resolved once
+// by `PresetLibrary` when it reloads; this file's `body`s re-run on every edit to the
+// icon, and a decode in one of them would run the whole configuration decoder per
+// keystroke.
 
 import SwiftUI
 
@@ -44,10 +21,9 @@ import SwiftUI
 /// The grid's geometry, in one place so the thumbnails and the columns cannot
 /// disagree about how much room there is.
 ///
-/// **There is no `width` here any more.** The pane owned its width; the sidebar
-/// column owns this one, it is drag-resizable between 220 and 360, and AppKit
-/// autosaves the divider — so the column count has to follow the width rather than be
-/// fixed at two. See `columns`.
+/// Two column rules, one per host: `columns` adapts to whatever width the Presets
+/// window gives it, and `fixedColumns(_:)` states a count for the popover, whose width
+/// is fixed and comes from `width(forColumns:)`.
 enum PresetGridMetrics {
     static let thumbnailSize: CGFloat = 84
     static let columnSpacing: CGFloat = 12
@@ -73,12 +49,12 @@ enum PresetGridMetrics {
 
     /// One adaptive column spec, not N fixed ones.
     ///
-    /// The count absorbs the column's width — two at 220pt, three by ~330pt — which is
-    /// what a drag-resizable sidebar needs and what two fixed columns could not do.
+    /// The count absorbs the host's width — two at 220pt, three by ~330pt — which is
+    /// what a resizable window needs and what a fixed count could not do.
     ///
     /// **No `maximum:`, and that is the fix rather than the loose end.** Capping the
     /// cell at `thumbnailSize` keeps every tile the right width but leaves *all* the
-    /// slack at the trailing edge: measured at the default 280pt column it was a 72pt
+    /// slack at the trailing edge: measured at a 280pt width it was a 72pt
     /// hole down the right-hand side of the grid, which reads as a mistake. Uncapped,
     /// the cells share the width evenly and `PresetTile`'s own
     /// `.frame(width: thumbnailSize)` keeps the render square and centres it in its
@@ -123,7 +99,7 @@ extension View {
     /// **The ground is `controlBackgroundColor`**, near-white in light appearance and
     /// near-black in dark, which is what Apple's own apps put behind a symbol or a
     /// shape in a thumbnail. It matters here because every icon is a rounded chiclet
-    /// inset from its canvas: without a ground the sidebar's material showed through
+    /// inset from its canvas: without a ground the host's material showed through
     /// the corners, so each tile read as a floating shape rather than as a swatch.
     ///
     /// **Applied in one place on purpose.** The clip and the border were in two —
@@ -139,89 +115,10 @@ extension View {
     }
 }
 
-// MARK: - The list
-
-struct PresetList: View {
-    /// Handed to each section's `PresetSaveButton`, which reads it for one thing.
-    let iconSettings: IconSettings
-
-    /// Every preset, built-ins first, already decoded.
-    ///
-    /// **Resolved by the caller, not here.** Decoding a preset is a
-    /// `JSONSerialization` round trip plus the whole configuration decoder, and this
-    /// view's `body` re-runs on every edit to `iconSettings`. See `ResolvedPreset`.
-    let presets: [ResolvedPreset]
-    let onApply: (MicaPreset) -> Void
-    let onSave: (PresetScope) -> Void
-    let onDelete: (MicaPreset) -> Void
-
-    /// Per-section expansion, persisted.
-    ///
-    /// **`@AppStorage` under the `sidebar.*.expanded` prefix**, which is the key
-    /// namespace `InspectorControls` already keeps its thirteen section states in — a
-    /// collapsed section is a lasting preference about the shape of the pane, not
-    /// per-window view state like `SidebarMode`. Read directly here rather than
-    /// threaded from `ContentView`, the way every other reader of a preference in this
-    /// project does.
-    @AppStorage("sidebar.iconPresets.expanded") private var iconPresetsExpanded = true
-    @AppStorage("sidebar.badgePresets.expanded") private var badgePresetsExpanded = true
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                section(.icon, title: "Icon Presets", isExpanded: $iconPresetsExpanded)
-                section(.badge, title: "Badge Presets", isExpanded: $badgePresetsExpanded)
-            }
-            .padding(.horizontal, PresetGridMetrics.horizontalPadding)
-            .padding(.vertical, 14)
-        }
-        // No background of its own: the `NavigationSplitView` sidebar column paints
-        // the material behind this, which is the whole point of being here.
-    }
-
-    // MARK: Sections
-
-    /// One scope's presets, headed by its name and its own save button.
-    ///
-    /// Both sections are always shown, and deliberately not filtered by anything: a
-    /// user looking for a badge preset should not have to first select the badge to
-    /// see that badge presets exist. That was true of the pane and is true here.
-    @ViewBuilder
-    private func section(
-        _ scope: PresetScope,
-        title: LocalizedStringKey,
-        isExpanded: Binding<Bool>
-    ) -> some View {
-        let rows = presets.filter { $0.scope == scope }
-
-        VStack(alignment: .leading, spacing: 8) {
-            header(scope, title: title, isExpanded: isExpanded)
-
-            if isExpanded.wrappedValue {
-                PresetGrid(rows: rows, onApply: onApply, onDelete: onDelete)
-            }
-        }
-    }
-
-    /// The section name as a disclosure control, and the `+` that saves into it.
-    ///
-    /// The `+` sits in the badge section's own header, so its disabled state says which
-    /// scope is unavailable without the help text having to.
-    private func header(
-        _ scope: PresetScope,
-        title: LocalizedStringKey,
-        isExpanded: Binding<Bool>
-    ) -> some View {
-        PresetSectionHeader(title, isExpanded: isExpanded) {
-            PresetSaveButton(scope: scope, iconSettings: iconSettings, onSave: onSave)
-        }
-    }
-}
-
 // MARK: - A section heading
 
 /// A section name as a disclosure control, with room for one control at its trailing
-/// end — the `+` in the sidebar's sections; nothing in the Presets window's.
+/// end. The Presets window's sections use none; the `+` there is in the toolbar.
 ///
 /// **Hand-rolled rather than a `DisclosureGroup`.** The row has to carry a second,
 /// independently clickable control, and a `DisclosureGroup`'s label is entirely a
@@ -291,10 +188,10 @@ extension PresetSectionHeader where Trailing == EmptyView {
 
 /// One scope's tiles, in a grid that takes the width it is given.
 ///
-/// The sidebar and the Presets window show one of these under each section heading;
-/// a toolbar popover shows exactly one, with no heading, because the button that
-/// opened it already said which scope. `columns` is adaptive by default and fixed
-/// where the host's width is fixed.
+/// The Presets window shows one of these under each section heading; a toolbar
+/// popover shows exactly one, with no heading, because the button that opened it
+/// already said which scope. `columns` is adaptive by default and fixed where the
+/// host's width is fixed.
 ///
 /// **`maxWidth: .infinity` is load-bearing.** A `VStack(alignment: .leading)` sizes to
 /// its widest child, so without it the grid reports a width short of its container
@@ -494,12 +391,13 @@ private struct PresetTile: View {
             isBuiltIn: false
         ),
     ]
-    PresetList(
-        iconSettings: IconSettings(),
-        presets: ResolvedPreset.resolve(PresetCatalog.builtIn + mine),
-        onApply: { _ in },
-        onSave: { _ in },
-        onDelete: { _ in }
-    )
-    .frame(width: 280, height: 600)
+    ScrollView {
+        PresetGrid(
+            rows: ResolvedPreset.resolve(PresetCatalog.builtIn + mine),
+            onApply: { _ in },
+            onDelete: { _ in }
+        )
+        .padding(PresetGridMetrics.horizontalPadding)
+    }
+    .frame(width: 320, height: 600)
 }

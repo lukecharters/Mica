@@ -248,14 +248,6 @@ struct ContentView: View {
     @State private var showInspector: Bool = true
     @State private var inspectorTab: InspectorTab = .controls
 
-    /// What the sidebar column is showing — the layer list or the preset library.
-    ///
-    /// **Per window and not persisted**, alongside `selectedGroup` and the two
-    /// `LayerTab`s. The presets library is somewhere you visit rather than a place to
-    /// be left on relaunch, and it is deliberately not a case on `LayerSidebarRow`;
-    /// see `SidebarMode` for both.
-    @State private var sidebarMode: SidebarMode = .layers
-
     /// The one preset list, shared with every other window. See `PresetLibrary`.
     private let presetLibrary = PresetLibrary.shared
 
@@ -290,7 +282,13 @@ struct ContentView: View {
         // the detail column — the inspector keeps its custom `ResizeHandle` and `.move`
         // transition, unchanged, so only the left sidebar's behavior differs.
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            sidebarColumn
+            LayerSidebar(
+                iconSettings: $viewModel.iconSettings,
+                selection: $selectedGroup,
+                iconTab: $iconTab,
+                badgeTab: $badgeTab,
+                onPointer: pointerChanged
+            )
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
             // it *ahead of* `ideal:`, so the sidebar width already survives a
@@ -302,11 +300,8 @@ struct ContentView: View {
                 max: PaneWidthPreferences.Pane.sidebar.range.upperBound
             )
         } detail: {
-            // **The canvas, and nothing else.** The presets library was an `HStack`
-            // sibling here — a slide-out pane between the sidebar and the canvas,
-            // 216pt of it, for as long as it was open — until 2026-08-31, when it
-            // became the sidebar column's second mode. See `SidebarColumn` for why,
-            // and `PresetList` for what changed in the library itself.
+            // **The canvas, and nothing else.** The preset library lives in the
+            // toolbar's two popovers and in the Presets window, not in this column.
             detailCanvas
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
@@ -948,39 +943,6 @@ struct ContentView: View {
         .onMoveCommand(perform: nudgeBadge)
     }
 
-    /// The sidebar column — the selector bar, and either the layer list or the preset
-    /// library beneath it.
-    ///
-    /// **Out here rather than inline in the `NavigationSplitView`**, for the reason
-    /// every other extraction in this file exists: `body` sits at the type-checker's
-    /// ceiling and has been pushed over it five times. This one view takes eleven
-    /// arguments, where the `LayerSidebar` it replaced took five.
-    ///
-    /// The preset apply routes through `IconViewModel.applyPreset`, which goes through
-    /// the configuration-import path — one redo-safe undo entry, a no-op guard, and any
-    /// continuous edit ended first. **Not through a settings observer**, which is the
-    /// shape known here to kill redo.
-    private var sidebarColumn: some View {
-        SidebarColumn(
-            mode: $sidebarMode,
-            iconSettings: $viewModel.iconSettings,
-            selection: $selectedGroup,
-            iconTab: $iconTab,
-            badgeTab: $badgeTab,
-            onPointer: pointerChanged,
-            presets: presetLibrary.resolved,
-            onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
-            onSavePreset: { savePresetScope = $0 },
-            onDeletePreset: deletePreset,
-            // Reload when the library appears rather than from an `.onChange` in
-            // `body`, which would be a fifth there and the fourth was already at the
-            // type-checker's limit. The library is built when the mode flips, so this
-            // fires at exactly the same moment — and reading the directory from a
-            // `body` instead would touch the filesystem on every view update.
-            onPresetsAppear: reloadUserPresets
-        )
-    }
-
     // MARK: - Presets
 
     /// Re-read the user presets, reporting any files that could not be read.
@@ -1236,24 +1198,3 @@ struct ContentView: View {
 //    ContentView()
 //        .frame(width: 1200, height: 800)
 //}
-
-#Preview {
-    @Previewable @State var mode: SidebarMode = .layers
-    @Previewable @State var settings = IconSettings()
-    @Previewable @State var selection: IconLayerGroup = .icon
-    @Previewable @State var iconTab: LayerTab = .foreground
-    @Previewable @State var badgeTab: LayerTab = .layout
-    SidebarColumn(
-        mode: $mode,
-        iconSettings: $settings,
-        selection: $selection,
-        iconTab: $iconTab,
-        badgeTab: $badgeTab,
-        presets: ResolvedPreset.resolve(PresetCatalog.builtIn),
-        onApplyPreset: { _ in },
-        onSavePreset: { _ in },
-        onDeletePreset: { _ in },
-        onPresetsAppear: {}
-    )
-    .frame(width: 300, height: 400)
-}
