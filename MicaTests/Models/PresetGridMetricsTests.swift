@@ -24,6 +24,13 @@ struct PresetGridMetricsTests {
         #expect(actual == expected, "\(actual.bitPattern) vs \(expected.bitPattern)")
     }
 
+    @Test("The padded width is the grid width plus the padding either side", arguments: [1, 3])
+    func paddedWidthWrapsGridWidth(count: Int) {
+        let expected: CGFloat = PresetGridMetrics.gridWidth(forColumns: count) + 2 * PresetGridMetrics.horizontalPadding
+        let actual = PresetGridMetrics.width(forColumns: count)
+        #expect(actual == expected)
+    }
+
     @Test("One more column adds exactly a tile and a gap")
     func widthGrowsByTileAndGap() {
         let tile = PresetGridMetrics.thumbnailSize

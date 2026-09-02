@@ -94,11 +94,24 @@ enum PresetGridMetrics {
         Array(repeating: GridItem(.fixed(thumbnailSize), spacing: columnSpacing), count: count)
     }
 
+    /// How far a popover's scroll view keeps its overlay scroller in from the popover's
+    /// bezel. SwiftUI lays popover content flush against the bezel, so an indicator at
+    /// the content's edge is drawn under the border and reads as chopped off. See
+    /// `PresetPopover` for how it is applied; it is not a padding.
+    static let scrollerInset: CGFloat = 8
+
+    /// The width `count` fixed columns of tiles occupy, gaps included and nothing else.
+    ///
+    /// A fixed-column `LazyVGrid` reports more than this as its ideal width, and a
+    /// `ScrollView` whose content is wider than its frame grows past the frame on both
+    /// sides — so the grid is pinned to exactly this in a popover.
+    static func gridWidth(forColumns count: Int) -> CGFloat {
+        CGFloat(count) * thumbnailSize + CGFloat(max(count - 1, 0)) * columnSpacing
+    }
+
     /// The content width `count` fixed columns need, padding included.
     static func width(forColumns count: Int) -> CGFloat {
-        CGFloat(count) * thumbnailSize
-            + CGFloat(max(count - 1, 0)) * columnSpacing
-            + 2 * horizontalPadding
+        gridWidth(forColumns: count) + 2 * horizontalPadding
     }
 }
 

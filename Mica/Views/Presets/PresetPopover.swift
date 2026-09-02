@@ -48,9 +48,12 @@ struct PresetsToolbarButton: View {
 /// dismisses on apply, and nothing should be added that does.
 ///
 /// **Width and columns are fixed.** `PresetGridMetrics.width(forColumns:)` for
-/// `columnCount` columns, so the popover states its size rather than reflowing as it
-/// opens. The grid scrolls past `maxGridHeight`, about four rows, so a long user
-/// library never runs the popover off the bottom of a small display.
+/// `columnCount` columns plus the scroller inset each side, so the popover states its
+/// size rather than reflowing as it opens. The grid scrolls past `maxGridHeight`, about four rows,
+/// so a long user library never runs the popover off the bottom of a small display.
+///
+/// The overlay scroller is kept in from the bezel and to the right of the tiles — the
+/// Shapes popover's layout. How is a measured thing; see the scroll view in `body`.
 struct PresetPopover: View {
     let scope: PresetScope
     let iconSettings: IconSettings
@@ -60,6 +63,12 @@ struct PresetPopover: View {
 
     static let columnCount = 3
     static let maxGridHeight: CGFloat = 520
+
+    /// The padded grid plus the scroller inset on each side — the scroll view's content
+    /// plus its safe area, exactly. See the scroll view below for why that has to be exact.
+    static var width: CGFloat {
+        PresetGridMetrics.width(forColumns: columnCount) + 2 * PresetGridMetrics.scrollerInset
+    }
 
     private let library = PresetLibrary.shared
     @Environment(\.openWindow) private var openWindow
@@ -90,10 +99,23 @@ struct PresetPopover: View {
                     onApply: onApply,
                     onDelete: onDelete
                 )
+                .frame(width: PresetGridMetrics.gridWidth(forColumns: Self.columnCount))
                 .padding(.horizontal, PresetGridMetrics.horizontalPadding)
                 .padding(.vertical, 8)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { gridHeight = $0 }
             }
+            // **The scroll view's geometry in a popover, measured in the AX tree.** Its
+            // `NSScrollView` is the larger of its frame and its content plus safe areas,
+            // centred; its content is laid out from that area's leading edge and is
+            // *not* inset by the safe area; its overlay scroller is inset by the trailing
+            // safe area. So: the grid is pinned to `gridWidth` (a fixed-column
+            // `LazyVGrid` asks for more), the content is padded symmetrically so the
+            // tiles start where the heading does, the safe-area padding is what moves the
+            // scroller in from the bezel, and `Self.width` is content plus both safe
+            // areas so nothing overflows and nothing is centred off by half the excess.
+            // Padding around the scroll view and `contentMargins(for: .scrollIndicators)`
+            // were both measured widening the area past the frame instead.
+            .safeAreaPadding(.horizontal, PresetGridMetrics.scrollerInset)
             // A `ScrollView` takes all the height it is offered; sized to its content
             // up to the cap instead, so a short list does not leave a blank well.
             .frame(height: min(gridHeight, Self.maxGridHeight))
@@ -109,7 +131,7 @@ struct PresetPopover: View {
             .padding(.horizontal, PresetGridMetrics.horizontalPadding)
             .padding(.vertical, 12)
         }
-        .frame(width: PresetGridMetrics.width(forColumns: Self.columnCount))
+        .frame(width: Self.width)
     }
 }
 
