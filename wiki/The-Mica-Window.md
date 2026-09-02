@@ -1,33 +1,23 @@
 # The Mica Window
 The Mica window has three panes for selecting, viewing, and changing an icon.
-The sidebar has two modes. One holds layers, the other holds presets.
 
 <img src="images/window-anatomy.png" width="900" alt="The Mica window with the sidebar, canvas, and inspector labelled">
 
 ## Panes
 | Pane | Purpose |
 |---|---|
-| Sidebar | Selects the Icon or Badge group and its layers, or shows the presets. |
+| Sidebar | Selects the Icon or Badge group and its layers. |
 | Canvas | Shows the current icon and accepts direct actions. |
 | Inspector | Changes the selected group or layer. |
 
 Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.
 Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.
-Use **View ▸ Show Presets** or **⌃⌘P** to show the presets.
-There is no toolbar button for them; the sidebar's own buttons are the control.
+Use **View ▸ Show Presets** or **⌃⌘P** to open the Presets window.
 
-The presets appear in the sidebar, in place of the layer rows.
-The inspector stays where it is, so you can apply a preset and adjust it without switching back.
-See [Use Presets](Use-Presets).
+Presets are not a pane. Two toolbar buttons open them in a popover.
+The Presets window shows them all. See [Use Presets](Use-Presets).
 
 ## Sidebar
-Two buttons at the top of the sidebar choose what it shows: layers or presets.
-The left button shows the layers. The right button shows the presets.
-
-Switching to presets does not change which group is selected.
-The inspector keeps showing the same controls.
-
-### Layers
 The sidebar contains the Icon and Badge groups.
 Advanced controls add Foreground and Background rows.
 The Badge group also has a Layout row.
@@ -46,6 +36,7 @@ The icon background is hidden here, so the Icon eye is mixed.
 |---|---|
 | Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Preview Size | Shows the icon at a chosen point size. |
+| Icon Presets and Badge Presets | Open the presets for that part of the icon. |
 | Sliders button | Shows or hides advanced controls. |
 | Controls and Export | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
@@ -127,7 +118,7 @@ None of these items has a keyboard shortcut.
 | ⌘V | Paste an image as the icon background |
 | ⌃⌘S | Show or hide the sidebar |
 | ⌃⌘I | Show or hide the inspector |
-| ⌃⌘P | Show or hide the presets |
+| ⌃⌘P | Open the Presets window |
 | ⌘+ / ⌘− / ⌘0 | Zoom in, zoom out, or use actual size |
 | ⌘, | Open Settings |
 

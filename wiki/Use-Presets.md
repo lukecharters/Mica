@@ -9,25 +9,41 @@ Neither changes your export size, scale, or colour space.
 
 ## Apply a preset
 1. Open Mica.
-2. Click the presets button at the top of the sidebar. It is the right of the two buttons there. You can also choose **View ▸ Show Presets**, or press **⌃⌘P**.
+2. Click **Icon Presets** or **Badge Presets** in the toolbar. They are the two buttons right of the zoom and size menus.
 3. Click a preset.
 
-Click the left button to go back to the layer rows.
+The presets open in a popover under the button.
+The popover stays open, so you can try several presets in a row.
+Click anywhere else, or press **Escape**, to close it.
 
-**⌃⌘P** shows the sidebar first if the sidebar is hidden.
-Pressing it again goes back to the layer rows. It leaves the sidebar showing.
-
-The sidebar shows Icon Presets first, then Badge Presets.
-Click a section heading to fold that section away.
-Mica remembers which sections you folded.
 Each thumbnail draws that preset on its own.
 It does not show your current icon.
 
 A badge thumbnail shows the badge in the centre.
-Behind it is one corner of a grey placeholder icon.
-That corner is the corner the preset puts the badge in.
+A small arrow points to the corner the preset puts the badge in.
 
 Press **⌘Z** to undo a preset.
+
+## The Presets window
+The Presets window shows every preset and has a search field.
+Open it in one of three ways.
+
+| Way | Where |
+|---|---|
+| **Show All Presets…** | The button at the bottom of either popover |
+| **View ▸ Show Presets** | The menu bar. Or press **⌃⌘P**. |
+| **Window ▸ Presets** | The menu bar |
+
+Click **Icon** or **Badge** at the top to choose the kind.
+Type in the search field to filter by name.
+Each kind has two sections: **Built-in** and **Yours**.
+Click a section heading to fold that section away.
+Mica remembers which sections you folded.
+
+A preset applies to the icon window you used last.
+The Presets window can stay open while you work in that window.
+With no icon window open, a notice appears and the presets dim.
+You can still browse and delete presets. Open an icon window to apply one.
 
 ## What a preset replaces
 A preset replaces its whole half of the icon.
@@ -41,20 +57,23 @@ Applying a badge preset turns the badge on.
 
 ## The advanced controls marker
 Some presets need settings the simple inspector cannot show.
-Those presets carry a small marker in the corner of the thumbnail.
+Those presets show a sliders symbol after their name.
 
 Applying one turns on **Show Advanced Controls**.
-The marker only appears while advanced controls are off.
+The symbol only appears while advanced controls are off.
 
 Undo restores your icon. It leaves advanced controls on.
 
 ## Save your own
-1. Click **+** beside **Icon Presets** or **Badge Presets**.
+1. Click **+** at the top of the **Icon Presets** or **Badge Presets** popover.
 2. Type a name and click **Save**.
 
-Each **+** saves that kind of preset.
-The **+** beside Badge Presets is dimmed while the badge is off.
+Each popover's **+** saves that kind of preset.
+The **+** in the Presets window saves the kind you chose at the top.
+A badge **+** is dimmed while the badge is off.
 Save a badge preset only while the badge is on.
+
+Your presets show a person symbol before their name.
 
 Mica adds a number if the name is taken.
 The sheet tells you before you save.
