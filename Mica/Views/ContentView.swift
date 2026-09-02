@@ -367,7 +367,12 @@ struct ContentView: View {
                 zoomLevel: $zoomLevel,
                 previewPointSize: $previewPointSize,
                 inspectorTab: $inspectorTab,
-                showInspector: $showInspector
+                showInspector: $showInspector,
+                iconSettings: viewModel.iconSettings,
+                onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
+                onSavePreset: { savePresetScope = $0 },
+                onDeletePreset: deletePreset,
+                onPresetsAppear: reloadUserPresets
             )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
