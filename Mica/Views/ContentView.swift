@@ -268,25 +268,8 @@ struct ContentView: View {
     /// see `SidebarMode` for both.
     @State private var sidebarMode: SidebarMode = .layers
 
-    /// Every preset, built-ins first, decoded once.
-    ///
-    /// **Held here for two reasons, and the second is the expensive one.** A `body`
-    /// that touched the filesystem would read the presets directory on every view
-    /// update; and decoding a preset is a `JSONSerialization` round trip plus the
-    /// whole configuration decoder, which the pane needs three times per tile — the
-    /// thumbnail's settings, its crop corner, and the advanced-controls indicator.
-    /// Read from computed properties in the views that was ~30 codec round trips per
-    /// repaint, on a pane that repaints on every frame of its own slide-in animation
-    /// and on every edit to the icon. See `ResolvedPreset`.
-    ///
-    /// Rebuilt when the pane appears and after a save or a delete. That is enough:
-    /// the files change only through this window's own actions or another window's,
-    /// and the pane opening is when a stale list would first be seen.
-    @State private var resolvedPresets: [ResolvedPreset] = ResolvedPreset.resolve(PresetCatalog.builtIn)
-
-    /// The user's saved presets, kept beside the resolved list because the save sheet
-    /// uniques a name against them and `PresetCatalog.builtIn`.
-    @State private var userPresets: [MicaPreset] = []
+    /// The one preset list, shared with every other window. See `PresetLibrary`.
+    private let presetLibrary = PresetLibrary.shared
 
     /// Non-nil while the save sheet is up, carrying the scope it will save.
     @State private var savePresetScope: PresetScope? = nil
@@ -515,7 +498,7 @@ struct ContentView: View {
                 .sheet(item: $savePresetScope) { scope in
                     SavePresetSheet(
                         scope: scope,
-                        existing: PresetCatalog.builtIn + userPresets,
+                        existing: presetLibrary.all,
                         onSave: { savePreset(named: $0, scope: scope) },
                         onCancel: { savePresetScope = nil }
                     )
@@ -1031,7 +1014,7 @@ struct ContentView: View {
             iconTab: $iconTab,
             badgeTab: $badgeTab,
             onPointer: pointerChanged,
-            presets: resolvedPresets,
+            presets: presetLibrary.resolved,
             onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
             onSavePreset: { savePresetScope = $0 },
             onDeletePreset: deletePreset,
@@ -1046,21 +1029,15 @@ struct ContentView: View {
 
     // MARK: - Presets
 
-    /// Re-read the user presets from disk.
-    ///
-    /// Problems are reported once, joined: a user with three hand-edited files that
-    /// will not parse deserves to hear about all three, and three alerts in a row
-    /// for one action is not how.
+    /// Re-read the user presets, reporting problems once, joined: a user with three
+    /// hand-edited files that will not parse deserves to hear about all three, and
+    /// three alerts in a row for one action is not how.
     private func reloadUserPresets() {
-        let result = UserPresetStore.load()
-        userPresets = result.presets
-        // Built-ins first, so a user preset of the same name sorts after the one it
-        // was uniqued against rather than in front of it.
-        resolvedPresets = ResolvedPreset.resolve(PresetCatalog.builtIn + result.presets)
-        if !result.problems.isEmpty {
+        let problems = presetLibrary.reload()
+        if !problems.isEmpty {
             viewModel.report(.advisory(
                 "Some Presets Couldn’t Be Read",
-                message: result.problems.joined(separator: "\n\n")
+                message: problems.joined(separator: "\n\n")
             ))
         }
     }
@@ -1070,8 +1047,7 @@ struct ContentView: View {
         // Uniqued against the built-ins too, inside the view model — the sheet
         // previews the same answer, but the list can have moved under it if another
         // window saved while the sheet was up.
-        let existing = PresetCatalog.builtIn + userPresets
-        _ = viewModel.saveCurrentAsPreset(scope: scope, name: name, existing: existing)
+        _ = viewModel.saveCurrentAsPreset(scope: scope, name: name, existing: presetLibrary.all)
         reloadUserPresets()
     }
 
