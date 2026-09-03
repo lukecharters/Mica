@@ -89,6 +89,12 @@ struct MDMPortalVendorGroup: Identifiable {
 ///
 /// The rungs come from `PreviewZoom`, which View ▸ Zoom In / Zoom Out walks too, so
 /// the keyboard cannot land on a percentage this menu does not list.
+///
+/// **The label is a `Label` whose *icon* is the percentage.** A toolbar captions an
+/// item from its label's title and names it to VoiceOver by the same title, so a bare
+/// `Text(value)` face has no caption in Icon and Text mode and no name at all. With the
+/// value in the icon slot the face still reads "100%" and the item reads "Zoom"
+/// beneath it, which is how Keynote's zoom control is labelled.
 struct ZoomMenu: View {
     @Binding var zoomLevel: Double
 
@@ -104,7 +110,11 @@ struct ZoomMenu: View {
                 }
             }
         } label: {
+            Label {
+                Text("Zoom")
+            } icon: {
                 Text(verbatim: zoomLabel)
+            }
         }
         .help("Preview zoom")
     }
@@ -139,7 +149,12 @@ struct PreviewSizeMenu: View {
         Menu {
             PreviewSizeMenuContent(previewPointSize: $previewPointSize)
         } label: {
-            Text(verbatim: sizeLabel)
+            // The size in the icon slot, the name as the title — see `ZoomMenu`.
+            Label {
+                Text("Preview Size")
+            } icon: {
+                Text(verbatim: sizeLabel)
+            }
         }
         .help("Preview size")
     }
