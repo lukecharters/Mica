@@ -25,6 +25,7 @@ import SwiftUI
 /// |---|---|---|
 /// | `.principal` (centre) | Zoom and preview size | How the canvas is looked at |
 /// | `.principal` (centre) | Icon Presets, Badge Presets | What can be applied to it |
+/// | `.automatic` (trailing) | Export | What is done with the result, where Pages keeps Share |
 /// | `.automatic` (trailing) | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
 ///
 /// **Nothing sits at `.navigation`.** Items there push the window title to their right —
@@ -45,6 +46,11 @@ struct IconWindowToolbar: CustomizableToolbarContent {
     @Binding var previewPointSize: CGFloat?
     @Binding var inspectorTab: InspectorTab
     @Binding var showInspector: Bool
+
+    // The Export button's half: the same flag and the same gate as File ▸ Export as
+    // PNG… (⇧⌘E), so the two can never disagree about whether there is an icon to save.
+    @Binding var showExportDialog: Bool
+    let canExport: Bool
 
     // The preset popovers' half. `iconSettings` is read for one thing — whether each
     // scope can be captured — and the closures are the window's, so an apply lands in
@@ -75,6 +81,18 @@ struct IconWindowToolbar: CustomizableToolbarContent {
         }
         ToolbarItem(id: "badgePresets", placement: .principal) {
             presetsButton(for: .badge)
+        }
+
+        // Export must not share a glass capsule with the Advanced Controls toggle
+        // beside it — the two are unrelated, and a shared capsule says otherwise.
+        // `ToolbarSpacer` is inert in a customizable (`.toolbar(id:)`) toolbar, in
+        // any placement and with or without the availability wrapper (measured
+        // 2026-09-03, macOS 27), so the separation comes from opting Export out of
+        // the shared background instead.
+        if #available(macOS 26.0, *) {
+            exportItem.sharedBackgroundVisibility(.hidden)
+        } else {
+            exportItem
         }
 
         // Trailing, beside the inspector's own two controls — the flag changes what
@@ -109,6 +127,18 @@ struct IconWindowToolbar: CustomizableToolbarContent {
                 Label("Show/Hide Inspector", systemImage: "sidebar.right")
             }
             .help("Show or hide Inspector")
+        }
+    }
+
+    private var exportItem: some CustomizableToolbarContent {
+        ToolbarItem(id: "export", placement: .automatic) {
+            Button {
+                showExportDialog = true
+            } label: {
+                Label("Export", systemImage: "square.and.arrow.up")
+            }
+            .help("Export as PNG")
+            .disabled(!canExport)
         }
     }
 

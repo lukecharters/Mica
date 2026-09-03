@@ -37,6 +37,7 @@ The icon background is hidden here, so the Icon eye is mixed.
 | Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Preview Size | Shows the icon at a chosen point size. |
 | Icon Presets and Badge Presets | Open the presets for that part of the icon. |
+| Export | Saves the icon as a PNG. Same as ⇧⌘E. |
 | Sliders button | Shows or hides advanced controls. |
 | Format and Document | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
@@ -87,7 +88,7 @@ Both zoom gestures work in Mica mode and System mode.
 The pointer must be over the canvas.
 
 ## Exporting a PNG
-Press ⇧⌘E, or click **Export** in the Export tab.
+Press ⇧⌘E, click **Export** in the toolbar, or click **Export** in the Document tab.
 The Save panel opens with the size, scale, and colour space at the bottom.
 Change them there to export one file at different settings.
 The window's own settings do not change.

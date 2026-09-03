@@ -353,6 +353,8 @@ struct ContentView: View {
                 previewPointSize: $previewPointSize,
                 inspectorTab: $inspectorTab,
                 showInspector: $showInspector,
+                showExportDialog: $viewModel.showExportDialog,
+                canExport: viewModel.canExport,
                 iconSettings: viewModel.iconSettings,
                 onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
                 onSavePreset: { savePresetScope = $0 },
