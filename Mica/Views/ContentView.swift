@@ -303,28 +303,23 @@ struct ContentView: View {
             // **The canvas, and nothing else.** The preset library lives in the
             // toolbar's two popovers and in the Presets window, not in this column.
             //
-            // The window toolbar is attached here, inside the detail column, and
-            // not to the NavigationSplitView after `.inspector` like everything
-            // else. A toolbar attached outside the inspector loses every
-            // `ToolbarSpacer` in its trailing items — adjacent buttons all share one
-            // glass capsule — in customizable and plain toolbars alike, while the
-            // same toolbar attached here keeps them (measured 2026-09-03, macOS 27,
-            // in a three-window reproduction outside Mica).
+            // The canvas half of the window toolbar is attached here, inside the
+            // detail column; the inspector half is attached to the inspector's
+            // content below, under the same id. Not to the NavigationSplitView after
+            // `.inspector`: a toolbar attached there loses every `ToolbarSpacer` in
+            // its trailing items and its buttons share one glass capsule. See
+            // `IconWindowToolbar` for the measurement and the layout it buys.
             //
-            // One `CustomizableToolbarContent` type, not an inline block. Building
-            // it inline broke the build with "unable to type-check this expression
-            // in reasonable time" — `body`'s fourth trip over that ceiling. See
-            // `IconWindowToolbar`. The id is what lets AppKit autosave the
-            // toolbar's configuration, display mode included.
+            // `CustomizableToolbarContent` types, not inline blocks. Building the
+            // toolbar inline broke the build with "unable to type-check this
+            // expression in reasonable time" — `body`'s fourth trip over that
+            // ceiling. The id is what lets AppKit autosave the toolbar's
+            // configuration, display mode included.
             detailCanvas
                 .toolbar(id: "iconWindow") {
                     IconWindowToolbar(
                         zoomLevel: $zoomLevel,
                         previewPointSize: $previewPointSize,
-                        inspectorTab: $inspectorTab,
-                        showInspector: $showInspector,
-                        showExportDialog: $viewModel.showExportDialog,
-                        canExport: viewModel.canExport,
                         iconSettings: viewModel.iconSettings,
                         onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
                         onSavePreset: { savePresetScope = $0 },
@@ -369,6 +364,15 @@ struct ContentView: View {
                 ideal: openingInspectorWidth,
                 max: PaneWidthPreferences.Pane.inspector.range.upperBound
             )
+            // The inspector half of the window toolbar; see the detail column above.
+            .toolbar(id: "iconWindow") {
+                InspectorToolbar(
+                    inspectorTab: $inspectorTab,
+                    showInspector: $showInspector,
+                    showExportDialog: $viewModel.showExportDialog,
+                    canExport: viewModel.canExport
+                )
+            }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)

@@ -34,13 +34,15 @@ The icon background is hidden here, so the Icon eye is mixed.
 ## Toolbar
 | Control | Purpose |
 |---|---|
-| Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
-| Preview Size | Shows the icon at a chosen point size. |
 | Icon Presets and Badge Presets | Open the presets for that part of the icon. |
-| Export | Saves the icon as a PNG. Same as ⇧⌘E. |
+| Preview Size | Shows the icon at a chosen point size. |
+| Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
+| Export | Saves the icon as a PNG. Same as ⇧⌘E. Sits above the inspector's left edge. |
 | Sliders button | Shows or hides advanced controls. |
 | Format and Document | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
+
+The last four buttons sit above the inspector. When the inspector is too narrow for all of them, the extra ones move to a » menu. Widen the inspector to bring them back.
 
 Right-click the toolbar to show or hide the text under each button.
 The same menu has Customise Toolbar…, which lets you remove, add and reorder buttons.

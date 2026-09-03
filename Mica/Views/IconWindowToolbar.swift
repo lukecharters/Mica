@@ -19,14 +19,23 @@ import SwiftUI
 /// its own `@AppStorage` from inside a real view instead, and everything else arrives
 /// as a binding.
 ///
-/// Three groups:
+/// **Two halves, attached in two places, one toolbar id.** This type holds the canvas
+/// half and `ContentView` attaches it to the detail column; `InspectorToolbar` below
+/// holds the inspector half and is attached to the inspector's *content*. That is what
+/// gives the window Pages' layout: AppKit inserts a tracking separator at the inspector
+/// divider, the inspector items lay out in their own section — Export at its leading
+/// edge, the controls at its trailing edge, a flexible spacer between — and they stay
+/// in the toolbar when the inspector is hidden. Attaching one toolbar to the
+/// `NavigationSplitView` after `.inspector` gets none of this: every `ToolbarSpacer`
+/// in the trailing run is dropped and the buttons share one glass capsule (measured
+/// 2026-09-03, macOS 27, in a three-window reproduction outside Mica).
 ///
-/// | Placement | Holds | Because |
-/// |---|---|---|
-/// | `.principal` (centre) | Zoom and preview size | How the canvas is looked at |
-/// | `.principal` (centre) | Icon Presets, Badge Presets | What can be applied to it |
-/// | `.automatic` (trailing) | Export | What is done with the result, where Pages keeps Share |
-/// | `.automatic` (trailing) | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
+/// | Half | Placement | Holds | Because |
+/// |---|---|---|---|
+/// | canvas | `.principal` (centre) | Icon Presets, Badge Presets | What can be applied to the canvas |
+/// | canvas | `.principal` (centre) | Preview size and zoom | How the canvas is looked at |
+/// | inspector | leading | Export | What is done with the result, where Pages keeps Share |
+/// | inspector | trailing | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
 ///
 /// **Nothing sits at `.navigation`.** Items there push the window title to their right —
 /// measured 2026-08-04 and still true — so that placement is reserved for actual
@@ -44,13 +53,6 @@ import SwiftUI
 struct IconWindowToolbar: CustomizableToolbarContent {
     @Binding var zoomLevel: Double
     @Binding var previewPointSize: CGFloat?
-    @Binding var inspectorTab: InspectorTab
-    @Binding var showInspector: Bool
-
-    // The Export button's half: the same flag and the same gate as File ▸ Export as
-    // PNG… (⇧⌘E), so the two can never disagree about whether there is an icon to save.
-    @Binding var showExportDialog: Bool
-    let canExport: Bool
 
     // The preset popovers' half. `iconSettings` is read for one thing — whether each
     // scope can be captured — and the closures are the window's, so an apply lands in
@@ -66,13 +68,6 @@ struct IconWindowToolbar: CustomizableToolbarContent {
         // picker, which is back at the top of that group's inspector pane — it sits
         // with the controls it reshapes, and `InspectorGroupHeader` above it names the
         // group, so showing one group at a time is unambiguous.
-        ToolbarItem(id: "zoom", placement: .principal) {
-            ZoomMenu(zoomLevel: $zoomLevel)
-        }
-        ToolbarItem(id: "previewSize", placement: .principal) {
-            PreviewSizeMenu(previewPointSize: $previewPointSize)
-        }
-
         // What can be applied to the canvas: one popover per scope, side by side so
         // they read as a cluster the way the iWork insert buttons do. Each button owns
         // its popover — see `PresetsToolbarButton`.
@@ -82,10 +77,38 @@ struct IconWindowToolbar: CustomizableToolbarContent {
         ToolbarItem(id: "badgePresets", placement: .principal) {
             presetsButton(for: .badge)
         }
+        ToolbarItem(id: "previewSize", placement: .principal) {
+            PreviewSizeMenu(previewPointSize: $previewPointSize)
+        }
+        ToolbarItem(id: "zoom", placement: .principal) {
+            ZoomMenu(zoomLevel: $zoomLevel)
+        }
+    }
 
-        // The spacer keeps Export out of the Advanced Controls capsule — the two are
-        // unrelated, and a shared capsule says otherwise. It only works because
-        // `ContentView` attaches this toolbar inside the detail column; see there.
+    private func presetsButton(for scope: PresetScope) -> some View {
+        PresetsToolbarButton(
+            scope: scope,
+            iconSettings: iconSettings,
+            onApply: onApplyPreset,
+            onSave: onSavePreset,
+            onDelete: onDeletePreset,
+            onPresetsAppear: onPresetsAppear
+        )
+    }
+}
+
+/// The inspector half of the window toolbar; see `IconWindowToolbar` for why it is a
+/// separate type attached to the inspector's content.
+struct InspectorToolbar: CustomizableToolbarContent {
+    @Binding var inspectorTab: InspectorTab
+    @Binding var showInspector: Bool
+
+    // The same flag and the same gate as File ▸ Export as PNG… (⇧⌘E), so the two can
+    // never disagree about whether there is an icon to save.
+    @Binding var showExportDialog: Bool
+    let canExport: Bool
+
+    var body: some CustomizableToolbarContent {
         ToolbarItem(id: "export", placement: .automatic) {
             Button {
                 showExportDialog = true
@@ -97,11 +120,11 @@ struct IconWindowToolbar: CustomizableToolbarContent {
         }
 
         if #available(macOS 26.0, *) {
-            ToolbarSpacer(.fixed)
+            ToolbarSpacer(.flexible)
         }
 
-        // Trailing, beside the inspector's own two controls — the flag changes what
-        // that panel contains, so it belongs with them rather than with the canvas.
+        // The flag changes what the inspector contains, so it sits with the
+        // inspector's own two controls rather than beside Export.
         ToolbarItem(id: "advancedControls", placement: .automatic) {
             AdvancedControlsToolbarToggle()
         }
@@ -133,16 +156,5 @@ struct IconWindowToolbar: CustomizableToolbarContent {
             }
             .help("Show or hide Inspector")
         }
-    }
-
-    private func presetsButton(for scope: PresetScope) -> some View {
-        PresetsToolbarButton(
-            scope: scope,
-            iconSettings: iconSettings,
-            onApply: onApplyPreset,
-            onSave: onSavePreset,
-            onDelete: onDeletePreset,
-            onPresetsAppear: onPresetsAppear
-        )
     }
 }
