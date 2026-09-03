@@ -302,7 +302,36 @@ struct ContentView: View {
         } detail: {
             // **The canvas, and nothing else.** The preset library lives in the
             // toolbar's two popovers and in the Presets window, not in this column.
+            //
+            // The window toolbar is attached here, inside the detail column, and
+            // not to the NavigationSplitView after `.inspector` like everything
+            // else. A toolbar attached outside the inspector loses every
+            // `ToolbarSpacer` in its trailing items — adjacent buttons all share one
+            // glass capsule — in customizable and plain toolbars alike, while the
+            // same toolbar attached here keeps them (measured 2026-09-03, macOS 27,
+            // in a three-window reproduction outside Mica).
+            //
+            // One `CustomizableToolbarContent` type, not an inline block. Building
+            // it inline broke the build with "unable to type-check this expression
+            // in reasonable time" — `body`'s fourth trip over that ceiling. See
+            // `IconWindowToolbar`. The id is what lets AppKit autosave the
+            // toolbar's configuration, display mode included.
             detailCanvas
+                .toolbar(id: "iconWindow") {
+                    IconWindowToolbar(
+                        zoomLevel: $zoomLevel,
+                        previewPointSize: $previewPointSize,
+                        inspectorTab: $inspectorTab,
+                        showInspector: $showInspector,
+                        showExportDialog: $viewModel.showExportDialog,
+                        canExport: viewModel.canExport,
+                        iconSettings: viewModel.iconSettings,
+                        onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
+                        onSavePreset: { savePresetScope = $0 },
+                        onDeletePreset: deletePreset,
+                        onPresetsAppear: reloadUserPresets
+                    )
+                }
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -339,27 +368,6 @@ struct ContentView: View {
                 min: PaneWidthPreferences.Pane.inspector.range.lowerBound,
                 ideal: openingInspectorWidth,
                 max: PaneWidthPreferences.Pane.inspector.range.upperBound
-            )
-        }
-        // One `CustomizableToolbarContent` type, not an inline block. Building it
-        // inline broke the build with "unable to type-check this expression in
-        // reasonable time" — `body`'s fourth trip over that ceiling. The two
-        // generation-mode menus that caused it are gone, but the type stays; see
-        // `IconWindowToolbar`. The id is what lets AppKit autosave the toolbar's
-        // configuration, display mode included.
-        .toolbar(id: "iconWindow") {
-            IconWindowToolbar(
-                zoomLevel: $zoomLevel,
-                previewPointSize: $previewPointSize,
-                inspectorTab: $inspectorTab,
-                showInspector: $showInspector,
-                showExportDialog: $viewModel.showExportDialog,
-                canExport: viewModel.canExport,
-                iconSettings: viewModel.iconSettings,
-                onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
-                onSavePreset: { savePresetScope = $0 },
-                onDeletePreset: deletePreset,
-                onPresetsAppear: reloadUserPresets
             )
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)

@@ -83,16 +83,21 @@ struct IconWindowToolbar: CustomizableToolbarContent {
             presetsButton(for: .badge)
         }
 
-        // Export must not share a glass capsule with the Advanced Controls toggle
-        // beside it — the two are unrelated, and a shared capsule says otherwise.
-        // `ToolbarSpacer` is inert in a customizable (`.toolbar(id:)`) toolbar, in
-        // any placement and with or without the availability wrapper (measured
-        // 2026-09-03, macOS 27), so the separation comes from opting Export out of
-        // the shared background instead.
+        // The spacer keeps Export out of the Advanced Controls capsule — the two are
+        // unrelated, and a shared capsule says otherwise. It only works because
+        // `ContentView` attaches this toolbar inside the detail column; see there.
+        ToolbarItem(id: "export", placement: .automatic) {
+            Button {
+                showExportDialog = true
+            } label: {
+                Label("Export", systemImage: "square.and.arrow.up")
+            }
+            .help("Export as PNG")
+            .disabled(!canExport)
+        }
+
         if #available(macOS 26.0, *) {
-            exportItem.sharedBackgroundVisibility(.hidden)
-        } else {
-            exportItem
+            ToolbarSpacer(.fixed)
         }
 
         // Trailing, beside the inspector's own two controls — the flag changes what
@@ -127,18 +132,6 @@ struct IconWindowToolbar: CustomizableToolbarContent {
                 Label("Show/Hide Inspector", systemImage: "sidebar.right")
             }
             .help("Show or hide Inspector")
-        }
-    }
-
-    private var exportItem: some CustomizableToolbarContent {
-        ToolbarItem(id: "export", placement: .automatic) {
-            Button {
-                showExportDialog = true
-            } label: {
-                Label("Export", systemImage: "square.and.arrow.up")
-            }
-            .help("Export as PNG")
-            .disabled(!canExport)
         }
     }
 
