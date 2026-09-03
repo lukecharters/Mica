@@ -66,7 +66,7 @@ struct InspectorControls: View {
         VStack(alignment: .leading, spacing: 0) {
             // Outside the ScrollView on purpose — see `InspectorGroupHeader`.
             InspectorGroupHeader(group: group, sublayer: headerSublayer)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 15)
                 .padding(.top, 16)
                 .padding(.bottom, 12)
 
@@ -252,7 +252,7 @@ struct InspectorControls: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             GroupModePicker(isSystem: mode)
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 15)
 
             if isSystem {
                 systemContent()

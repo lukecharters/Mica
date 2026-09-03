@@ -52,9 +52,11 @@ struct InspectorGroupHeader: View {
         // `group.label` and `sublayer.label` are `String` variables, which resolve
         // to `Text`'s non-localizing overload — so no `verbatim:` needed here, and
         // no `LocalizedStringKey` interpolation to go wrong. See the project notes.
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+//        HStack() {
             Text(group.label)
             if let sublayer {
+                Text(" ")
                 Text(sublayer.label)
                     .foregroundStyle(.secondary)
             }
