@@ -5,11 +5,11 @@ struct AppexPreviewPane: View {
     @ObservedObject var viewModel: IconViewModel
     var appexService: AppexReferenceService
 
-    /// Display zoom, owned by `ContentView` and driven by the toolbar's `ZoomPicker`.
+    /// Display zoom, owned by `ContentView` and driven by the toolbar's `ZoomMenu`.
     @Binding var zoomLevel: Double
     /// Preview-only override of the icon's display point size (MDM portal sizes,
     /// etc.); `nil` follows the export size. Owned by `ContentView`, driven by the
-    /// toolbar's `PreviewSizePicker`.
+    /// toolbar's `PreviewSizeMenu`.
     @Binding var previewPointSize: CGFloat?
     /// Click-to-select, as in `ScaledIconPreview`. The icon is a single appex image
     /// here, so clicking it reports the background layer and the owner collapses

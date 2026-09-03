@@ -54,9 +54,8 @@ struct IconWindowToolbar: ToolbarContent {
         // with the controls it reshapes, and `InspectorGroupHeader` above it names the
         // group, so showing one group at a time is unambiguous.
         ToolbarItemGroup(placement: .principal) {
-            ZoomPicker(zoomLevel: $zoomLevel)
-            PreviewSizePicker(previewPointSize: $previewPointSize)
-                .pickerStyle(.menu)
+            ZoomMenu(zoomLevel: $zoomLevel)
+            PreviewSizeMenu(previewPointSize: $previewPointSize)
         }
 
         // What can be applied to the canvas: one popover per scope, in one group so

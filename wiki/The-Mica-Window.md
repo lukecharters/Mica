@@ -44,7 +44,7 @@ The icon background is hidden here, so the Icon eye is mixed.
 Preview size and zoom do not change the exported PNG.
 
 A pinch or a ⌘ scroll can set any zoom between 25% and 800%.
-The Zoom menu then lists that value as an extra step.
+The menu then shows that value with no step ticked.
 ⌘+ and ⌘− still move to the next step up or down.
 
 Both gestures zoom into the point under the pointer.

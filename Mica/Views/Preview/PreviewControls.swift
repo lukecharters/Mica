@@ -85,87 +85,136 @@ struct MDMPortalVendorGroup: Identifiable {
 
     var id: String { vendor }
 }
-/// The zoom pop-up in the window toolbar: the current percentage on its face, "Zoom"
-/// as its caption.
+/// Zoom-level menu for the SwiftUI preview, shown in the window toolbar.
 ///
-/// A `Picker`, not a `Menu`. The toolbar captions an item from its label's title, and a
-/// `Menu` has only its face — which here has to be the value. A menu-style `Picker`
-/// shows the selected row on its face and hands its title to the toolbar, which is how
-/// Keynote's zoom control reads "125%" with "Zoom" beneath it.
-///
-/// The rungs come from `PreviewZoom`, which View ▸ Zoom In / Zoom Out walks too, so the
-/// keyboard cannot land on a percentage this list does not offer. A pinch or ⌘-scroll
-/// can, and a picker can only show a value it has a row for — so
-/// `PreviewZoom.pickerLevels(including:)` adds that value as a rung of its own.
-struct ZoomPicker: View {
+/// The rungs come from `PreviewZoom`, which View ▸ Zoom In / Zoom Out walks too, so
+/// the keyboard cannot land on a percentage this menu does not list.
+struct ZoomMenu: View {
     @Binding var zoomLevel: Double
 
     var body: some View {
-        Picker("Zoom", selection: $zoomLevel) {
-            ForEach(PreviewZoom.pickerLevels(including: zoomLevel), id: \.self) { level in
-                // `verbatim:` — a percentage is a value, not prose, and an Int
-                // interpolated into a `LocalizedStringKey` picks up the locale's digit
-                // grouping. Harmless at 25–800%, wrong the moment anyone adds a rung
-                // past 1000%. See the project notes.
-                Text(verbatim: "\(Int(level * 100))%").tag(level)
+        Menu {
+            ForEach(PreviewZoom.levels, id: \.self) { level in
+                Toggle(isOn: zoomBinding(for: level)) {
+                    // `verbatim:` — a percentage is a value, not prose, and an Int
+                    // interpolated into a `LocalizedStringKey` picks up the locale's
+                    // digit grouping. Harmless at 25–800%, wrong the moment anyone
+                    // adds a rung past 1000%. See the project notes.
+                    Text(verbatim: "\(Int(level * 100))%")
+                }
             }
+        } label: {
+                Text(verbatim: zoomLabel)
         }
-        .pickerStyle(.menu)
         .help("Preview zoom")
+    }
+
+    /// A `Toggle` rather than a `Button` so the current rung gets the menu's own
+    /// checkmark gutter. Setting it off does nothing: these are mutually exclusive,
+    /// and there is no "no zoom".
+    private func zoomBinding(for level: Double) -> Binding<Bool> {
+        Binding(
+            get: { zoomLevel == level },
+            set: { if $0 { zoomLevel = level } }
+        )
+    }
+
+    /// Off-ladder values are expected here — pinch and ⌘-scroll produce them — so this
+    /// reads the level rather than looking it up in `PreviewZoom.levels`.
+    private var zoomLabel: String {
+        "\(Int(zoomLevel * 100))%"
     }
 }
 
-/// The preview-size pop-up. Chooses the point size the preview renders the icon at —
-/// either a standard size or the size used by a specific MDM self service portal — so
-/// you can judge how the icon reads where users will see it. Preview-only; export size
-/// lives in `ExportSettingsSection`. `nil` follows the current export size, and the
-/// chosen size is the base that `ZoomPicker` scales.
-///
-/// A `Picker` for the reason `ZoomPicker` is one: the toolbar captions it "Preview Size"
-/// while its face shows the size. **Two surfaces show this picker** — the toolbar, in
-/// menu style, and View ▸ Preview Size, where a `Picker` in a `CommandGroup` renders as
-/// a submenu — and they are one view rather than two copies of the rows, so an MDM
-/// portal added to `MDMPortalSizePreset.all` cannot appear in only one of them.
-///
-/// The selection is a `PreviewSizeChoice`, not the point size: a picker needs one tag
-/// per row and several rows name the same size. Which row is checked for a shared size
-/// is that type's rule.
-struct PreviewSizePicker: View {
+/// Preview-size menu, shown in the window toolbar. Chooses the point size the
+/// preview renders the icon at — either a standard size or the size used by a
+/// specific MDM self service portal — so you can judge how the icon reads where
+/// users will see it. This is preview-only and never affects export (export size
+/// lives in `ExportSettingsSection`). `nil` follows the current export size.
+/// Composes with `ZoomMenu` — the chosen preview size is the base that zoom scales.
+struct PreviewSizeMenu: View {
     @Binding var previewPointSize: CGFloat?
 
     var body: some View {
-        Picker("Preview Size", selection: choice) {
-            Text("Match Export Size").tag(PreviewSizeChoice.matchExport)
-
-            Section {
-                ForEach(PreviewSizeChoice.standardSizes, id: \.self) { size in
-                    // `verbatim:` — 1024 would render as "1,024pt" otherwise.
-                    Text(verbatim: "\(size)pt").tag(PreviewSizeChoice.standard(size))
-                }
-            }
-
-            // One section per vendor, headed by the vendor's name. A menu section
-            // header is a real `NSMenu` header item on macOS, so this is the platform's
-            // own grouping rather than a disabled row pretending to be one.
-            ForEach(MDMPortalSizePreset.grouped) { group in
-                Section {
-                    ForEach(group.presets) { preset in
-                        Text(verbatim: "\(preset.name) (\(preset.pointSize)pt)")
-                            .tag(PreviewSizeChoice.portal(preset.id))
-                    }
-                } header: {
-                    // `verbatim:` — a vendor is a proper noun, not prose.
-                    Text(verbatim: group.vendor)
-                }
-            }
+        Menu {
+            PreviewSizeMenuContent(previewPointSize: $previewPointSize)
+        } label: {
+            Text(verbatim: sizeLabel)
         }
         .help("Preview size")
     }
 
-    private var choice: Binding<PreviewSizeChoice> {
+    private var sizeLabel: String {
+        guard let previewPointSize else { return "Match Export" }
+        return "\(Int(previewPointSize))pt"
+    }
+}
+
+/// The rows of the preview-size menu, with no `Menu` around them.
+///
+/// Two menus show this list — the toolbar's `PreviewSizeMenu` and View ▸ Preview
+/// Size — and they are one view rather than two copies of a `ForEach`, so an MDM
+/// portal added to `MDMPortalSizePreset.all` cannot appear in only one of them.
+struct PreviewSizeMenuContent: View {
+    @Binding var previewPointSize: CGFloat?
+
+    /// Not `ExportPreferences.sizeChoices`, though it is the same seven numbers
+    /// today. These are *preview* point sizes — how big the icon is drawn on screen
+    /// — and that list is the export sizes offered in two pickers. Sharing them
+    /// would tie a change in one meaning to the other.
+    private let standardSizes: [Int] = [16, 32, 64, 128, 256, 512, 1024]
+
+    var body: some View {
+        // `Toggle` rather than `Button` + a `Label` whose systemImage was
+        // `"checkmark"` or `""`: a menu draws a Toggle's state in its own checkmark
+        // gutter, where the old spelling put an SF Symbol inline with the title and
+        // relied on an empty image name rendering as nothing. That reads as a
+        // stray icon in the menu bar, which is where this list now also appears.
+        Toggle(isOn: sizeBinding(for: nil)) {
+            Text("Match Export Size")
+        }
+
+        Section {
+            ForEach(standardSizes, id: \.self) { size in
+                Toggle(isOn: sizeBinding(for: CGFloat(size))) {
+                    // `verbatim:` — 1024 would render as "1,024pt" otherwise.
+                    Text(verbatim: "\(size)pt")
+                }
+            }
+        }
+
+        // One section per vendor, headed by the vendor's name. A menu section
+        // header is a real `NSMenu` header item on macOS, so this is the platform's
+        // own grouping rather than a disabled row pretending to be one.
+        ForEach(MDMPortalSizePreset.grouped) { group in
+            Section {
+                ForEach(group.presets) { preset in
+                    Toggle(isOn: sizeBinding(for: CGFloat(preset.pointSize))) {
+                        Text(verbatim: "\(preset.name) (\(preset.pointSize)pt)")
+                    }
+                }
+            } header: {
+                // `verbatim:` — a vendor is a proper noun, not prose.
+                Text(verbatim: group.vendor)
+            }
+        }
+    }
+
+    /// Selecting a row sets that size; switching a row *off* is meaningless here
+    /// (the rows are mutually exclusive and one is always current), so it is
+    /// ignored rather than mapped to some other size.
+    ///
+    /// **More than one row can be checked, across sections as well as within one,
+    /// and that is not a bug.** The state is a point size and nothing else, so every
+    /// row naming that size reads as current — 64 is a standard size, Munki's updates
+    /// list *and* Fleet's; 75 is both Jamf Self Service classic's catalogue and
+    /// Munki's categories; 40 is both Jamf Self Service+'s catalogue and Fleet's
+    /// narrow window. Making exactly one check would mean storing *which row* was
+    /// picked, which no renderer would read; the rows are honest as they stand.
+    private func sizeBinding(for size: CGFloat?) -> Binding<Bool> {
         Binding(
-            get: { PreviewSizeChoice(pointSize: previewPointSize) },
-            set: { previewPointSize = $0.pointSize }
+            get: { previewPointSize == size },
+            set: { if $0 { previewPointSize = size } }
         )
     }
 }
@@ -174,9 +223,8 @@ struct PreviewSizePicker: View {
     @Previewable @State var zoomLevel: Double = 1.0
     @Previewable @State var previewPointSize: CGFloat? = nil
     HStack {
-        ZoomPicker(zoomLevel: $zoomLevel)
-        PreviewSizePicker(previewPointSize: $previewPointSize)
-            .pickerStyle(.menu)
+        ZoomMenu(zoomLevel: $zoomLevel)
+        PreviewSizeMenu(previewPointSize: $previewPointSize)
     }
     .padding()
 }

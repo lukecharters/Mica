@@ -33,29 +33,8 @@ struct PreviewZoomTests {
     @Test("Actual Size is a rung, not a value beside the ladder")
     func actualSize_isOnTheLadder() {
         // Otherwise ⌘0 would land somewhere Zoom In and Zoom Out cannot step from,
-        // and the toolbar's ZoomPicker would show no checkmark after using it.
+        // and the toolbar's ZoomMenu would show no checkmark after using it.
         #expect(PreviewZoom.levels.contains(PreviewZoom.actualSize))
-    }
-
-    // MARK: - The picker's rows
-
-    @Test("On a rung, the picker offers exactly the ladder")
-    func pickerLevels_onLadder_isTheLadder() {
-        for level in PreviewZoom.levels {
-            #expect(PreviewZoom.pickerLevels(including: level) == PreviewZoom.levels)
-        }
-    }
-
-    @Test("Between rungs, the picker adds that value in its sorted place")
-    func pickerLevels_offLadder_insertsTheValue() {
-        // A picker can only show a value it has a row for, so a pinch to 137% needs a
-        // 137% row — and it belongs between 100% and 150%, not appended at the end.
-        let rows = PreviewZoom.pickerLevels(including: 1.37)
-        let expectedCount = PreviewZoom.levels.count + 1
-        #expect(rows.count == expectedCount)
-        #expect(rows == rows.sorted())
-        #expect(rows.contains(1.37))
-        #expect(Set(rows).isSuperset(of: PreviewZoom.levels))
     }
 
     // MARK: - Stepping between rungs
