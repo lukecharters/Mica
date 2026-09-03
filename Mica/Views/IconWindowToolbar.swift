@@ -1,8 +1,8 @@
 // Views/IconWindowToolbar.swift
 import SwiftUI
 
-/// The icon window's toolbar, as a `ToolbarContent` type rather than an inline
-/// `.toolbar { … }` block.
+/// The icon window's toolbar, as a `CustomizableToolbarContent` type rather than an
+/// inline `.toolbar { … }` block.
 ///
 /// **This exists because `ContentView.body` does not compile otherwise.** Adding two
 /// generation-mode menus inline failed the build with "the compiler is unable to
@@ -33,7 +33,14 @@ import SwiftUI
 /// they open a library that acts on the canvas, so they sit with the canvas's other
 /// controls at `.principal`. **Anything whose subject is the canvas or the inspector
 /// belongs at `.principal` or `.automatic`.**
-struct IconWindowToolbar: ToolbarContent {
+///
+/// **Every item carries an id, and `ContentView` installs this with `.toolbar(id:)`.**
+/// That is what makes the toolbar an AppKit toolbar that autosaves its configuration,
+/// and the display mode — Icon and Text or Icon Only, chosen from the toolbar's
+/// context menu — is part of that configuration. A toolbar without an id forgets the
+/// choice on every launch. The ids and the toolbar's own id are UserDefaults keys
+/// (`NSToolbar Configuration <id>`), so renaming one silently resets a user's toolbar.
+struct IconWindowToolbar: CustomizableToolbarContent {
     @Binding var zoomLevel: Double
     @Binding var previewPointSize: CGFloat?
     @Binding var inspectorTab: InspectorTab
@@ -48,39 +55,35 @@ struct IconWindowToolbar: ToolbarContent {
     let onDeletePreset: (MicaPreset) -> Void
     let onPresetsAppear: () -> Void
 
-    var body: some ToolbarContent {
+    var body: some CustomizableToolbarContent {
         // How the canvas is looked at. *What* is generated is the group's Mica/System
         // picker, which is back at the top of that group's inspector pane — it sits
         // with the controls it reshapes, and `InspectorGroupHeader` above it names the
         // group, so showing one group at a time is unambiguous.
-        ToolbarItemGroup(placement: .principal) {
+        ToolbarItem(id: "zoom", placement: .principal) {
             ZoomMenu(zoomLevel: $zoomLevel)
+        }
+        ToolbarItem(id: "previewSize", placement: .principal) {
             PreviewSizeMenu(previewPointSize: $previewPointSize)
         }
 
-        // What can be applied to the canvas: one popover per scope, in one group so
+        // What can be applied to the canvas: one popover per scope, side by side so
         // they read as a cluster the way the iWork insert buttons do. Each button owns
         // its popover — see `PresetsToolbarButton`.
-        ToolbarItemGroup(placement: .principal) {
-            ForEach(PresetScope.allCases) { scope in
-                PresetsToolbarButton(
-                    scope: scope,
-                    iconSettings: iconSettings,
-                    onApply: onApplyPreset,
-                    onSave: onSavePreset,
-                    onDelete: onDeletePreset,
-                    onPresetsAppear: onPresetsAppear
-                )
-            }
+        ToolbarItem(id: "iconPresets", placement: .principal) {
+            presetsButton(for: .icon)
+        }
+        ToolbarItem(id: "badgePresets", placement: .principal) {
+            presetsButton(for: .badge)
         }
 
         // Trailing, beside the inspector's own two controls — the flag changes what
         // that panel contains, so it belongs with them rather than with the canvas.
-        ToolbarItem(placement: .automatic) {
+        ToolbarItem(id: "advancedControls", placement: .automatic) {
             AdvancedControlsToolbarToggle()
         }
 
-        ToolbarItem(placement: .automatic) {
+        ToolbarItem(id: "inspectorTab", placement: .automatic) {
             Picker("Format  Document", selection: $inspectorTab) {
                 Label("Format", systemImage: InspectorTab.controls.systemImage)
                     .tag(InspectorTab.controls)
@@ -99,7 +102,7 @@ struct IconWindowToolbar: ToolbarContent {
             ToolbarSpacer(.fixed)
         }
 
-        ToolbarItem(placement: .automatic) {
+        ToolbarItem(id: "inspector", placement: .automatic) {
             Button {
                 showInspector.toggle()
             } label: {
@@ -107,5 +110,16 @@ struct IconWindowToolbar: ToolbarContent {
             }
             .help("Show or hide Inspector")
         }
+    }
+
+    private func presetsButton(for scope: PresetScope) -> some View {
+        PresetsToolbarButton(
+            scope: scope,
+            iconSettings: iconSettings,
+            onApply: onApplyPreset,
+            onSave: onSavePreset,
+            onDelete: onDeletePreset,
+            onPresetsAppear: onPresetsAppear
+        )
     }
 }

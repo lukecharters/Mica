@@ -38,8 +38,12 @@ The icon background is hidden here, so the Icon eye is mixed.
 | Preview Size | Shows the icon at a chosen point size. |
 | Icon Presets and Badge Presets | Open the presets for that part of the icon. |
 | Sliders button | Shows or hides advanced controls. |
-| Controls and Export | Selects the inspector tab. |
+| Format and Document | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
+
+Right-click the toolbar to show or hide the text under each button.
+The same menu has Customise Toolbar…, which lets you remove, add and reorder buttons.
+Mica remembers both choices across launches.
 
 Preview size and zoom do not change the exported PNG.
 

@@ -341,11 +341,13 @@ struct ContentView: View {
                 max: PaneWidthPreferences.Pane.inspector.range.upperBound
             )
         }
-        // One `ToolbarContent` type, not an inline block. Building it inline broke
-        // the build with "unable to type-check this expression in reasonable time" —
-        // `body`'s fourth trip over that ceiling. The two generation-mode menus that
-        // caused it are gone, but the type stays; see `IconWindowToolbar`.
-        .toolbar {
+        // One `CustomizableToolbarContent` type, not an inline block. Building it
+        // inline broke the build with "unable to type-check this expression in
+        // reasonable time" — `body`'s fourth trip over that ceiling. The two
+        // generation-mode menus that caused it are gone, but the type stays; see
+        // `IconWindowToolbar`. The id is what lets AppKit autosave the toolbar's
+        // configuration, display mode included.
+        .toolbar(id: "iconWindow") {
             IconWindowToolbar(
                 zoomLevel: $zoomLevel,
                 previewPointSize: $previewPointSize,
