@@ -71,16 +71,19 @@ struct IconWindowToolbar: CustomizableToolbarContent {
         // What can be applied to the canvas: one popover per scope, side by side so
         // they read as a cluster the way the iWork insert buttons do. Each button owns
         // its popover — see `PresetsToolbarButton`.
-        ToolbarItem(id: "iconPresets", placement: .principal) {
+        ToolbarItem(id: "iconPresets", placement: .automatic) {
             presetsButton(for: .icon)
         }
-        ToolbarItem(id: "badgePresets", placement: .principal) {
+        ToolbarItem(id: "badgePresets", placement: .automatic) {
             presetsButton(for: .badge)
         }
-        ToolbarItem(id: "previewSize", placement: .principal) {
+        if #available(macOS 26.0, *) {
+            ToolbarSpacer(.flexible)
+        }
+        ToolbarItem(id: "previewSize", placement: .automatic) {
             PreviewSizeMenu(previewPointSize: $previewPointSize)
         }
-        ToolbarItem(id: "zoom", placement: .principal) {
+        ToolbarItem(id: "zoom", placement: .automatic) {
             ZoomMenu(zoomLevel: $zoomLevel)
         }
     }
