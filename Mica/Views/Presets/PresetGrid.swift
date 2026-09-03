@@ -245,8 +245,9 @@ struct PresetSaveButton: View {
         Button {
             onSave(scope)
         } label: {
-            Image(systemName: "plus")
-                .font(.caption.weight(.semibold))
+            Image(systemName: "plus.circle")
+//                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 14, weight: .semibold))
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
         }

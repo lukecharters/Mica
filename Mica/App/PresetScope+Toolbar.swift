@@ -33,8 +33,8 @@ extension PresetScope {
     /// `PresetsToolbarTests` resolves both through `NSImage`.
     var toolbarSymbolName: String {
         switch self {
-        case .icon:  "square.on.circle"
-        case .badge: "app.badge"
+        case .icon:  "square.grid.2x2"
+        case .badge: "circle.grid.2x2"
         }
     }
 }
