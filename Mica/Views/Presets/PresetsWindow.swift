@@ -35,7 +35,7 @@ struct PresetsWindow: View {
     /// Per-section folds, persisted: a folded section is a lasting preference about
     /// the shape of the window, like the inspector's thirteen.
     @AppStorage("presetsWindow.builtIn.expanded") private var builtInExpanded = true
-    @AppStorage("presetsWindow.yours.expanded") private var yoursExpanded = true
+    @AppStorage("presetsWindow.saved.expanded") private var savedExpanded = true
 
     private var isSearching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -125,7 +125,7 @@ struct PresetsWindow: View {
     private var sections: some View {
         let rows = PresetSearch.filter(library.resolved, scope: scope, query: query)
         let builtIn = rows.filter { !$0.isUserPreset }
-        let yours = rows.filter(\.isUserPreset)
+        let saved = rows.filter(\.isUserPreset)
 
         if rows.isEmpty && isSearching {
             ContentUnavailableView.search(text: query)
@@ -133,12 +133,12 @@ struct PresetsWindow: View {
             VStack(alignment: .leading, spacing: 18) {
                 // A section with no matches is left out of a search rather than shown
                 // empty; without a search every section is shown, so the user can see
-                // that "Yours" exists before they have saved anything.
+                // that "Saved" exists before they have saved anything.
                 if !builtIn.isEmpty || !isSearching {
                     section("Built-in", rows: builtIn, isExpanded: $builtInExpanded)
                 }
-                if !yours.isEmpty || !isSearching {
-                    section("Yours", rows: yours, isExpanded: $yoursExpanded)
+                if !saved.isEmpty || !isSearching {
+                    section("Saved", rows: saved, isExpanded: $savedExpanded)
                 }
             }
         }
