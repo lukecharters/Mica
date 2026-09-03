@@ -65,8 +65,8 @@ struct InspectorControls: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Outside the ScrollView on purpose — see `InspectorGroupHeader`.
-            InspectorGroupHeader(group: group)
-                .padding(.horizontal, 20)
+            InspectorGroupHeader(group: group, sublayer: headerSublayer)
+                .padding(.horizontal, 15)
                 .padding(.top, 16)
                 .padding(.bottom, 12)
 
@@ -125,6 +125,17 @@ struct InspectorControls: View {
     /// mode (no layer rows), but still fine to read — it just doesn't change there.
     private var activeTab: LayerTab {
         group == .icon ? iconTab : badgeTab
+    }
+
+    /// The layer named beside the group in the header: the active tab whenever the
+    /// sidebar would show a row for it, otherwise nothing.
+    private var headerSublayer: LayerTab? {
+        InspectorGroupHeader.sublayer(
+            for: activeTab,
+            in: group,
+            isSystem: group == .icon ? isIconAppleReference : isBadgeAppleReference,
+            advancedControlsEnabled: advancedControlsEnabled
+        )
     }
 
     private var isIconAppleReference: Bool {
@@ -241,7 +252,7 @@ struct InspectorControls: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             GroupModePicker(isSystem: mode)
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 15)
 
             if isSystem {
                 systemContent()

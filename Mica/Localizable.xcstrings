@@ -4,6 +4,9 @@
     "" : {
 
     },
+    " " : {
+
+    },
     "—" : {
 
     },
@@ -2097,10 +2100,13 @@
     "Save the current icon as a preset" : {
 
     },
-    "Saves the badge’s current settings, including its corner." : {
+    "Saved" : {
 
     },
-    "Saves the icon’s current settings. The badge isn’t included." : {
+    "Saves the badge’s current settings." : {
+
+    },
+    "Saves the icon’s current settings." : {
 
     },
     "Search" : {
@@ -2514,9 +2520,6 @@
 
     },
     "your preset" : {
-
-    },
-    "Yours" : {
 
     },
     "Zoom" : {
