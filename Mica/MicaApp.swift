@@ -327,7 +327,7 @@ struct MicaApp: App {
                 Divider()
 
                 // Zoom In / Zoom Out walk `PreviewZoom.levels`, the same nine rungs
-                // the toolbar's ZoomMenu lists, so the keyboard cannot land on a
+                // the toolbar's ZoomPicker lists, so the keyboard cannot land on a
                 // percentage that menu does not offer. Each disables at its end.
                 Button("Zoom In") {
                     guard let current = previewZoom,
@@ -351,20 +351,16 @@ struct MicaApp: App {
                 .keyboardShortcut("0", modifiers: .command)
                 .disabled(previewZoom == nil || previewZoom == PreviewZoom.actualSize)
 
-                // The same rows as the toolbar's PreviewSizeMenu, from one view.
+                // The same rows as the toolbar's PreviewSizePicker, from one view; a
+                // `Picker` in a `CommandGroup` renders as a submenu of radio items.
                 //
-                // **The `.disabled` goes on the content, not on the `Menu`.**
-                // Measured 2026-08-04: `Menu(…) { }.disabled(true)` in a
-                // `CommandGroup` renders fully enabled — with no window focused the
-                // submenu still opened, onto rows bound to `.constant(nil)` that
-                // silently did nothing. Disabling the content instead greys every
-                // row, so the one case the binding is missing cannot be clicked.
-                Menu("Preview Size") {
-                    PreviewSizeMenuContent(
-                        previewPointSize: previewPointSize ?? .constant(nil)
-                    )
+                // **`.disabled` on a `Menu` here is ignored** — measured 2026-08-04, a
+                // disabled `Menu` in a `CommandGroup` rendered fully enabled with no
+                // window focused, onto rows bound to `.constant(nil)`. The `Picker`
+                // greys its rows when disabled, which is what keeps the one case the
+                // binding is missing from being clickable.
+                PreviewSizePicker(previewPointSize: previewPointSize ?? .constant(nil))
                     .disabled(previewPointSize == nil)
-                }
 
                 Divider()
 

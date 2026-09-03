@@ -4,7 +4,7 @@ import Foundation
 
 /// The preview's zoom ladder, and the two steps along it.
 ///
-/// One list, read by both surfaces that offer zoom: the toolbar's `ZoomMenu`, which
+/// One list, read by both surfaces that offer zoom: the toolbar's `ZoomPicker`, which
 /// shows every rung, and View ▸ Zoom In / Zoom Out, which walks between them. They
 /// were the same nine numbers in one private array until the View menu arrived
 /// (item B1 of the Mac-conventions plan); a second copy would have let ⌘+
@@ -38,6 +38,17 @@ enum PreviewZoom {
         levels.last { $0 < zoom }
     }
 
+    /// The rows the toolbar's zoom picker offers: the ladder, plus `zoom` itself in its
+    /// sorted place when a pinch or ⌘-scroll has left it between rungs.
+    ///
+    /// A picker can only show a value it has a row for, and the off-ladder value is
+    /// what the user is looking at. The extra row lasts as long as the value does; the
+    /// next step or rung removes it.
+    static func pickerLevels(including zoom: Double) -> [Double] {
+        if levels.contains(zoom) { return levels }
+        return (levels + [zoom]).sorted()
+    }
+
     // MARK: - Continuous zoom
 
     /// The ends of the ladder, and the range a continuous gesture is held inside.
@@ -53,7 +64,7 @@ enum PreviewZoom {
     /// Bring an arbitrary scale inside the ladder's range.
     ///
     /// Pinch and ⌘-scroll produce continuous values, and they stop where the rest of
-    /// the UI stops: `minimum` and `maximum` are the range the toolbar's `ZoomMenu`
+    /// the UI stops: `minimum` and `maximum` are the range the toolbar's `ZoomPicker`
     /// advertises and the points at which Zoom In and Zoom Out disable themselves. A
     /// gesture free to run past them would show a percentage no menu rung can check
     /// and — at the top — size the preview far beyond the largest export.

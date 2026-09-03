@@ -1,7 +1,7 @@
 // Views/Controls/PreviewZoomGesture.swift
 //
 // Continuous zoom for the preview canvas: a trackpad pinch and ⌘-scroll, both
-// writing the same `zoomLevel` the toolbar's `ZoomMenu` and View ▸ Zoom In / Zoom Out
+// writing the same `zoomLevel` the toolbar's `ZoomPicker` and View ▸ Zoom In / Zoom Out
 // write. Added 2026-08-28.
 //
 // **Both gestures are continuous and the ladder is not.** `PreviewZoom.levels` stays
