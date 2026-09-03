@@ -81,14 +81,14 @@ struct IconWindowToolbar: ToolbarContent {
         }
 
         ToolbarItem(placement: .automatic) {
-            Picker("Styling/Export", selection: $inspectorTab) {
-                Label("Controls", systemImage: InspectorTab.controls.systemImage)
+            Picker("Format  Document", selection: $inspectorTab) {
+                Label("Format", systemImage: InspectorTab.controls.systemImage)
                     .tag(InspectorTab.controls)
-                Label("Export", systemImage: InspectorTab.export.systemImage)
+                Label("Document", systemImage: InspectorTab.export.systemImage)
                     .tag(InspectorTab.export)
             }
             .pickerStyle(.segmented)
-            .help("Inspector tab")
+            .help("Select Format or Document tab")
             // Selecting a tab reveals the inspector if it's hidden.
             .onChange(of: inspectorTab) {
                 if !showInspector { showInspector = true }
@@ -103,9 +103,9 @@ struct IconWindowToolbar: ToolbarContent {
             Button {
                 showInspector.toggle()
             } label: {
-                Label("Show Inspector", systemImage: "sidebar.right")
+                Label("Show/Hide Inspector", systemImage: "sidebar.right")
             }
-            .help("Toggle Inspector")
+            .help("Show or hide Inspector")
         }
     }
 }
