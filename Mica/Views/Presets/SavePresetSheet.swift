@@ -43,8 +43,8 @@ struct SavePresetSheet: View {
                 .font(.headline)
 
             Text(scope == .icon
-                 ? "Saves the icon’s current settings. The badge isn’t included."
-                 : "Saves the badge’s current settings, including its corner.")
+                 ? "Saves the icon’s current settings."
+                 : "Saves the badge’s current settings.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

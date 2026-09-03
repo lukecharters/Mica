@@ -34,12 +34,19 @@ The icon background is hidden here, so the Icon eye is mixed.
 ## Toolbar
 | Control | Purpose |
 |---|---|
-| Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
-| Preview Size | Shows the icon at a chosen point size. |
 | Icon Presets and Badge Presets | Open the presets for that part of the icon. |
+| Preview Size | Shows the icon at a chosen point size. |
+| Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
+| Export | Saves the icon as a PNG. Same as ⇧⌘E. Sits above the inspector's left edge. |
 | Sliders button | Shows or hides advanced controls. |
-| Controls and Export | Selects the inspector tab. |
+| Format and Document | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
+
+The last four buttons sit above the inspector. When the inspector is too narrow for all of them, the extra ones move to a » menu. Widen the inspector to bring them back.
+
+Right-click the toolbar to show or hide the text under each button.
+The same menu has Customise Toolbar…, which lets you remove, add and reorder buttons.
+Mica remembers both choices across launches.
 
 Preview size and zoom do not change the exported PNG.
 
@@ -83,7 +90,7 @@ Both zoom gestures work in Mica mode and System mode.
 The pointer must be over the canvas.
 
 ## Exporting a PNG
-Press ⇧⌘E, or click **Export** in the Export tab.
+Press ⇧⌘E, click **Export** in the toolbar, or click **Export** in the Document tab.
 The Save panel opens with the size, scale, and colour space at the bottom.
 Change them there to export one file at different settings.
 The window's own settings do not change.

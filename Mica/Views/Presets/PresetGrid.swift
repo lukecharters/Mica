@@ -5,7 +5,7 @@
 //
 // Two hosts show the grid. A toolbar popover shows one scope's grid, three fixed
 // columns, with no heading — the button that opened it already said which scope. The
-// Presets window shows the selected scope in two sections, Built-in and Yours, each
+// Presets window shows the selected scope in two sections, Built-in and Saved, each
 // under a `PresetSectionHeader`, in a grid that adapts to the window's width. Nothing
 // here paints a background: both hosts supply their own.
 //

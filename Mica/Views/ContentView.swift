@@ -302,7 +302,31 @@ struct ContentView: View {
         } detail: {
             // **The canvas, and nothing else.** The preset library lives in the
             // toolbar's two popovers and in the Presets window, not in this column.
+            //
+            // The canvas half of the window toolbar is attached here, inside the
+            // detail column; the inspector half is attached to the inspector's
+            // content below, under the same id. Not to the NavigationSplitView after
+            // `.inspector`: a toolbar attached there loses every `ToolbarSpacer` in
+            // its trailing items and its buttons share one glass capsule. See
+            // `IconWindowToolbar` for the measurement and the layout it buys.
+            //
+            // `CustomizableToolbarContent` types, not inline blocks. Building the
+            // toolbar inline broke the build with "unable to type-check this
+            // expression in reasonable time" — `body`'s fourth trip over that
+            // ceiling. The id is what lets AppKit autosave the toolbar's
+            // configuration, display mode included.
             detailCanvas
+                .toolbar(id: "iconWindow") {
+                    IconWindowToolbar(
+                        zoomLevel: $zoomLevel,
+                        previewPointSize: $previewPointSize,
+                        iconSettings: viewModel.iconSettings,
+                        onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
+                        onSavePreset: { savePresetScope = $0 },
+                        onDeletePreset: deletePreset,
+                        onPresetsAppear: reloadUserPresets
+                    )
+                }
         }
         // EXPERIMENT: the right panel is now a native `.inspector` trailing column
         // instead of a hand-rolled panel + `ResizeHandle`. `.inspector` owns the
@@ -340,23 +364,15 @@ struct ContentView: View {
                 ideal: openingInspectorWidth,
                 max: PaneWidthPreferences.Pane.inspector.range.upperBound
             )
-        }
-        // One `ToolbarContent` type, not an inline block. Building it inline broke
-        // the build with "unable to type-check this expression in reasonable time" —
-        // `body`'s fourth trip over that ceiling. The two generation-mode menus that
-        // caused it are gone, but the type stays; see `IconWindowToolbar`.
-        .toolbar {
-            IconWindowToolbar(
-                zoomLevel: $zoomLevel,
-                previewPointSize: $previewPointSize,
-                inspectorTab: $inspectorTab,
-                showInspector: $showInspector,
-                iconSettings: viewModel.iconSettings,
-                onApplyPreset: { viewModel.applyPreset($0, undoManager: undoManager) },
-                onSavePreset: { savePresetScope = $0 },
-                onDeletePreset: deletePreset,
-                onPresetsAppear: reloadUserPresets
-            )
+            // The inspector half of the window toolbar; see the detail column above.
+            .toolbar(id: "iconWindow") {
+                InspectorToolbar(
+                    inspectorTab: $inspectorTab,
+                    showInspector: $showInspector,
+                    showExportDialog: $viewModel.showExportDialog,
+                    canExport: viewModel.canExport
+                )
+            }
         }
         .focusedSceneValue(\.iconSettings, $viewModel.iconSettings)
         .focusedSceneValue(\.exportPNG, viewModel.canExport ? $viewModel.showExportDialog : nil)
