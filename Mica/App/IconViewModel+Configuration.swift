@@ -117,7 +117,8 @@ extension IconViewModel {
         settings: IconSettings,
         appexColors: MicaAppexColors,
         warnings: [MicaConfigWarning],
-        undoManager: UndoManager?
+        undoManager: UndoManager?,
+        actionName: String = "Import Configuration"
     ) {
         // An import is not part of whatever gesture or burst preceded it.
         endContinuousEdit()
@@ -139,7 +140,8 @@ extension IconViewModel {
             registerConfigurationUndo(
                 restoringSettings: previousSettings,
                 appexColors: previousColors,
-                undoManager: undoManager
+                undoManager: undoManager,
+                actionName: actionName
             )
         }
 
@@ -159,7 +161,8 @@ extension IconViewModel {
     func registerConfigurationUndo(
         restoringSettings previousSettings: IconSettings,
         appexColors previousColors: MicaAppexColors,
-        undoManager: UndoManager
+        undoManager: UndoManager,
+        actionName: String = "Import Configuration"
     ) {
         undoManager.registerUndo(withTarget: self) { target in
             MainActor.assumeIsolated {
@@ -179,10 +182,11 @@ extension IconViewModel {
                 target.registerConfigurationUndo(
                     restoringSettings: currentSettings,
                     appexColors: currentColors,
-                    undoManager: undoManager
+                    undoManager: undoManager,
+                    actionName: actionName
                 )
             }
         }
-        undoManager.setActionName("Import Configuration")
+        undoManager.setActionName(actionName.localizedFromCatalog)
     }
 }

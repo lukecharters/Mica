@@ -305,6 +305,25 @@ struct MicaApp: App {
                 .keyboardShortcut("i", modifiers: [.control, .command])
                 .disabled(inspectorVisible == nil)
 
+                // ⌃⌘P completes the ⌃⌘S / ⌃⌘I set: three control-command letters, each
+                // the initial of what it shows. It was free — the nine other taken
+                // shortcuts are ⇧⌘C, ⇧⌘E, ⌘O, ⌘S, ⌃⌘S, ⌃⌘I, ⌘+, ⌘− and ⌘0 — and **a
+                // shortcut may only be bound once**: two menu items sharing a key
+                // equivalent are deduplicated when the menu is *built*, and the later
+                // one loses it outright with no diagnostic.
+                //
+                // A plain item, unlike its two neighbours: it opens or fronts the
+                // Presets window, the way Xcode's Show Library does, so there is
+                // nothing to hide and no title to flip. Never disabled — the window
+                // browses without an icon window to apply to. The Window menu's own
+                // entry for the scene carries no key equivalent, so the two do not
+                // collide. Opening this way writes nothing to `PresetsWindowRequest`;
+                // the window keeps whatever scope it last showed.
+                Button("Show Presets") {
+                    openWindow(id: PresetsWindow.id)
+                }
+                .keyboardShortcut("p", modifiers: [.control, .command])
+
                 Divider()
 
                 // Zoom In / Zoom Out walk `PreviewZoom.levels`, the same nine rungs
@@ -499,6 +518,11 @@ struct MicaApp: App {
         //
         // No loss even when the tools are on: `openWindow(id:)` brings an existing
         // window forward, which is all the Window-menu item did.
+        Window("Presets", id: PresetsWindow.id) {
+            PresetsWindow()
+        }
+        .defaultSize(width: 720, height: 560)
+
         Window("Symbol Metrics Generator", id: "metrics-generator") {
             DeferredWindowContent { SymbolMetricsGeneratorView() }
         }

@@ -115,6 +115,7 @@
 				Models/ImportedImage.swift,
 				Models/MicaAppexColors.swift,
 				Models/MicaColorValue.swift,
+				Models/MicaPreset.swift,
 				Models/SymbolCalibration.swift,
 				Services/AppexColorResolver.swift,
 				Services/AppexReferenceService.swift,
@@ -124,6 +125,8 @@
 				Services/MicaConfig.swift,
 				Services/MicaConfigAssetCatalog.swift,
 				Services/PNGExporter.swift,
+				Services/PresetApplication.swift,
+				Services/PresetCatalog.swift,
 				Services/Rendering/BadgeGeometry.swift,
 				Services/Rendering/BadgeView.swift,
 				Services/Rendering/IconContentView.swift,
@@ -132,6 +135,7 @@
 				Services/SettingsTokens.swift,
 				Services/SymbolAutoSizingService.swift,
 				Services/SymbolSizingService.swift,
+				Services/UserPresetStore.swift,
 			);
 			target = 8C3148C82E61E39F00C7A0A9 /* mica-cli */;
 		};
@@ -164,6 +168,7 @@
 				Models/ImportedImage.swift,
 				Models/MicaAppexColors.swift,
 				Models/MicaColorValue.swift,
+				Models/MicaPreset.swift,
 				Models/SymbolCalibration.swift,
 				Services/AppexColorResolver.swift,
 				Services/AppexReferenceService.swift,
@@ -173,6 +178,8 @@
 				Services/MicaConfig.swift,
 				Services/MicaConfigAssetCatalog.swift,
 				Services/PNGExporter.swift,
+				Services/PresetApplication.swift,
+				Services/PresetCatalog.swift,
 				Services/Rendering/BadgeGeometry.swift,
 				Services/Rendering/BadgeView.swift,
 				Services/Rendering/IconContentView.swift,
@@ -181,6 +188,7 @@
 				Services/SettingsTokens.swift,
 				Services/SymbolAutoSizingService.swift,
 				Services/SymbolSizingService.swift,
+				Services/UserPresetStore.swift,
 			);
 			target = 8C75F5802E8D5AC4008FB893 /* mica-cli Tests */;
 		};
@@ -686,7 +694,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = "";

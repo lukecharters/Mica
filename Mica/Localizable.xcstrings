@@ -172,6 +172,9 @@
     "Actual Size" : {
 
     },
+    "Add a badge before saving a badge preset" : {
+
+    },
     "Adopt the predicted multiplier and mark the symbol calibrated from the rule" : {
 
     },
@@ -302,6 +305,12 @@
     "Badge Layout" : {
 
     },
+    "badge preset" : {
+
+    },
+    "Badge Presets" : {
+
+    },
     "Baseline Y Correction" : {
 
     },
@@ -315,6 +324,9 @@
 
     },
     "Browse SF Symbols" : {
+
+    },
+    "Built-in" : {
 
     },
     "Calibrated:" : {
@@ -1199,6 +1211,9 @@
     "Cmd+Up/Down" : {
 
     },
+    "Collapsed" : {
+
+    },
     "Color" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1341,6 +1356,9 @@
     "Custom Gradient" : {
 
     },
+    "Delete" : {
+
+    },
     "Derived ratios" : {
 
     },
@@ -1391,6 +1409,9 @@
 
     },
     "Escape" : {
+
+    },
+    "Expanded" : {
 
     },
     "Export" : {
@@ -1525,6 +1546,9 @@
     "Hide the Foreground on Import" : {
 
     },
+    "Hide these presets" : {
+
+    },
     "How large the imported image is drawn within its layer" : {
 
     },
@@ -1532,6 +1556,12 @@
 
     },
     "Icon Padding" : {
+
+    },
+    "icon preset" : {
+
+    },
+    "Icon Presets" : {
 
     },
     "Image" : {
@@ -1550,9 +1580,6 @@
 
     },
     "Import as Icon Symbol…" : {
-
-    },
-    "Import Configuration" : {
 
     },
     "Import Configuration…" : {
@@ -1810,6 +1837,9 @@
     "Multiplier" : {
 
     },
+    "Name" : {
+
+    },
     "Needs review:" : {
 
     },
@@ -1840,6 +1870,12 @@
     "No Preview" : {
 
     },
+    "No saved badge presets yet. Click + to save the current badge." : {
+
+    },
+    "No saved icon presets yet. Click + to save the current icon." : {
+
+    },
     "Nothing measured yet — use Measure All Symbols below." : {
 
     },
@@ -1856,6 +1892,12 @@
 
     },
     "Opacity" : {
+
+    },
+    "Open an icon window to apply a preset." : {
+
+    },
+    "Open an icon window to save a preset" : {
 
     },
     "Or create new family:" : {
@@ -1889,6 +1931,12 @@
 
     },
     "Position" : {
+
+    },
+    "Preset Scope" : {
+
+    },
+    "Presets" : {
 
     },
     "Preview always renders at 512pt @2x." : {
@@ -1986,6 +2034,12 @@
     "Rendering" : {
 
     },
+    "Replaces the badge’s settings" : {
+
+    },
+    "Replaces the icon’s settings" : {
+
+    },
     "Report an Issue…" : {
 
     },
@@ -2019,6 +2073,27 @@
     "Same as previous + advance member" : {
 
     },
+    "Save" : {
+
+    },
+    "Save Badge Preset" : {
+
+    },
+    "Save Icon Preset" : {
+
+    },
+    "Save the current badge as a preset" : {
+
+    },
+    "Save the current icon as a preset" : {
+
+    },
+    "Saves the badge’s current settings, including its corner." : {
+
+    },
+    "Saves the icon’s current settings. The badge isn’t included." : {
+
+    },
     "Search" : {
 
     },
@@ -2026,6 +2101,9 @@
 
     },
     "Search families..." : {
+
+    },
+    "Search Presets" : {
 
     },
     "Secondary" : {
@@ -2067,7 +2145,13 @@
     "Show Advanced Controls" : {
 
     },
+    "Show All Presets…" : {
+
+    },
     "Show Inspector" : {
+
+    },
+    "Show Presets" : {
 
     },
     "Show Sidebar" : {
@@ -2079,6 +2163,9 @@
     "Show the Developer Menu" : {
 
     },
+    "Show these presets" : {
+
+    },
     "Show Wiper" : {
 
     },
@@ -2086,6 +2173,9 @@
 
     },
     "Skipped:" : {
+
+    },
+    "Some Presets Couldn’t Be Read" : {
 
     },
     "Sort" : {
@@ -2295,6 +2385,16 @@
     "The whole badge, relative to the size macOS itself draws one. Past about 109% it starts moving inward to stay on the canvas." : {
 
     },
+    "There’s already a preset called “%@”. This one will be saved as “%@”." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There’s already a preset called “%1$@”. This one will be saved as “%2$@”."
+          }
+        }
+      }
+    },
     "This export only — the window’s settings are unchanged." : {
 
     },
@@ -2317,6 +2417,9 @@
 
     },
     "Turn them on in Settings ▸ Developer to use this window." : {
+
+    },
+    "turns on advanced controls" : {
 
     },
     "Type" : {
@@ -2394,6 +2497,15 @@
 
     },
     "Y Offset" : {
+
+    },
+    "your preset" : {
+
+    },
+    "Yours" : {
+
+    },
+    "Zoom" : {
 
     },
     "Zoom In" : {

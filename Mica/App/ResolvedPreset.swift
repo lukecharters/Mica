@@ -1,0 +1,89 @@
+// App/ResolvedPreset.swift
+//
+// A preset with everything the pane needs to draw it, computed once.
+//
+// **This exists because decoding a preset is not free and `body` is not a cache.**
+// `PresetApplication.previewSettings` runs `JSONSerialization` over the preset's keys
+// and then the whole configuration decoder. Reading it from a computed property
+// inside a view means paying for that on **every** body evaluation — and three
+// properties did: the icon thumbnail's settings, the badge thumbnail's settings (twice
+// over, since `cropAlignment` asked again), and the tile's advanced-controls
+// indicator. Ten tiles came to roughly thirty codec round trips per repaint, and the
+// pane repaints on every frame of its own slide-in animation and on every edit to the
+// icon, because `PresetList` reads `iconSettings`.
+//
+// Nothing about that is visible in a profile of the tests, and nothing about it fails:
+// it is simply slow, in a view whose whole selling point is being cheap enough to draw
+// live. Resolving once, where the list is built, removes it entirely.
+//
+// **App-target only.** `needsAdvancedControls` reads `resetToSimpleControls()`, which
+// `mica-cli` does not compile.
+
+import SwiftUI
+
+/// A preset, its thumbnail's settings, and whether it needs the advanced controls.
+///
+/// Built by `resolve(_:)` when the preset list is loaded — on the pane appearing, and
+/// after a save or a delete — and treated as a plain value from then on.
+struct ResolvedPreset: Identifiable, Equatable {
+    let preset: MicaPreset
+
+    /// What the thumbnail draws: the preset over defaults, with the per-scope
+    /// staging already applied. See `thumbnailSettings(for:)`.
+    let thumbnailSettings: IconSettings
+
+    /// Whether applying this preset turns on Show Advanced Controls.
+    let needsAdvancedControls: Bool
+
+    var id: String { preset.id }
+    var scope: PresetScope { preset.scope }
+
+    /// Whether the user saved this preset, as opposed to Mica shipping it.
+    ///
+    /// The inverse of `preset.isBuiltIn`, named for what the tile's indicator says
+    /// rather than for what the model calls it. See `PresetIndicator.userPreset`.
+    var isUserPreset: Bool { !preset.isBuiltIn }
+
+    /// The display name, already through the string catalog for a built-in.
+    ///
+    /// A built-in's name is a literal in `PresetCatalog`, so it has an entry to find;
+    /// a user's is whatever they typed and is shown as it was typed. Resolved here so
+    /// the view has a plain `String` and the choice between the two `Text` overloads
+    /// is made once, in a place where getting it wrong is visible.
+    var displayName: String {
+        preset.isBuiltIn ? preset.name.localizedFromCatalog : preset.name
+    }
+
+    init(_ preset: MicaPreset) {
+        self.preset = preset
+        self.thumbnailSettings = Self.thumbnailSettings(for: preset)
+        self.needsAdvancedControls = preset.needsAdvancedControls
+    }
+
+    /// Resolve a list, in order.
+    static func resolve(_ presets: [MicaPreset]) -> [ResolvedPreset] {
+        presets.map(ResolvedPreset.init)
+    }
+
+    // MARK: - Staging
+
+    /// The preset over defaults, staged for its thumbnail.
+    ///
+    /// An icon preset draws itself with the badge suppressed. A badge preset draws
+    /// only the badge: both icon layers are hidden, and `BadgePresetThumbnail` says
+    /// which corner with an arrow.
+    private static func thumbnailSettings(for preset: MicaPreset) -> IconSettings {
+        var settings = PresetApplication.previewSettings(for: preset)
+
+        switch preset.scope {
+        case .icon:
+            // Already hidden in `IconSettings()`; belt and braces against a future
+            // default, and it costs one line.
+            settings.badge.isHidden = true
+        case .badge:
+            settings.icon.foreground.isHidden = true
+            settings.icon.background.isHidden = true
+        }
+        return settings
+    }
+}

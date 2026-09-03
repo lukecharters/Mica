@@ -12,6 +12,10 @@ The Mica window has three panes for selecting, viewing, and changing an icon.
 
 Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.
 Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.
+Use **View ▸ Show Presets** or **⌃⌘P** to open the Presets window.
+
+Presets are not a pane. Two toolbar buttons open them in a popover.
+The Presets window shows them all. See [Use Presets](Use-Presets).
 
 ## Sidebar
 The sidebar contains the Icon and Badge groups.
@@ -32,6 +36,7 @@ The icon background is hidden here, so the Icon eye is mixed.
 |---|---|
 | Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Preview Size | Shows the icon at a chosen point size. |
+| Icon Presets and Badge Presets | Open the presets for that part of the icon. |
 | Sliders button | Shows or hides advanced controls. |
 | Controls and Export | Selects the inspector tab. |
 | Inspector button | Shows or hides the inspector. |
@@ -113,6 +118,7 @@ None of these items has a keyboard shortcut.
 | ⌘V | Paste an image as the icon background |
 | ⌃⌘S | Show or hide the sidebar |
 | ⌃⌘I | Show or hide the inspector |
+| ⌃⌘P | Open the Presets window |
 | ⌘+ / ⌘− / ⌘0 | Zoom in, zoom out, or use actual size |
 | ⌘, | Open Settings |
 

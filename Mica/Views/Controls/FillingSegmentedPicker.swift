@@ -42,8 +42,38 @@ enum SegmentedRole {
 /// `.small`/`.regular`/`.large`/`.extraLarge`) but never fills, topping out at
 /// 176pt in a 330pt pane.
 struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
-    /// Segments in display order, paired with the value each one selects.
-    let segments: [(label: String, value: Value)]
+
+    /// One segment: what it selects, and how it draws.
+    ///
+    /// **A struct rather than the `(label:value:)` tuple this took until symbols were
+    /// needed**, because a tuple cannot carry an optional third member with a default
+    /// and every call site would have had to name it. The two initializers keep a
+    /// text segment as short to write as it was.
+    ///
+    /// `label` is required even for an image segment: it is the segment's
+    /// accessibility description and its tooltip, which are the only things that name
+    /// a control drawn as a bare glyph.
+    struct Segment {
+        var label: String
+        /// An SF Symbol name. When set, the segment draws the glyph and **no text**.
+        var systemImage: String?
+        var value: Value
+
+        init(_ label: String, value: Value) {
+            self.label = label
+            self.systemImage = nil
+            self.value = value
+        }
+
+        init(_ label: String, systemImage: String, value: Value) {
+            self.label = label
+            self.systemImage = systemImage
+            self.value = value
+        }
+    }
+
+    /// Segments in display order.
+    let segments: [Segment]
     @Binding var selection: Value
     /// Spoken/described name for the control as a whole.
     var accessibilityLabel: String
@@ -60,6 +90,7 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
         control.segmentDistribution = .fillEqually
         control.controlSize = .large
         applyAppearance(to: control)
+        applySegments(to: control)
         control.setAccessibilityLabel(accessibilityLabel)
         // Let SwiftUI stretch us instead of pinning to the intrinsic width.
         control.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -70,21 +101,60 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
     func updateNSView(_ control: NSSegmentedControl, context: Context) {
         context.coordinator.parent = self
         applyAppearance(to: control)
-
-        // The segment set changes with the selected group — the badge has three
-        // tabs, the icon two — so rebuild labels whenever they don't match.
-        if control.segmentCount != segments.count {
-            control.segmentCount = segments.count
-        }
-        for (index, segment) in segments.enumerated() where control.label(forSegment: index) != segment.label {
-            control.setLabel(segment.label, forSegment: index)
-        }
+        applySegments(to: control)
 
         if let index = segments.firstIndex(where: { $0.value == selection }),
            control.selectedSegment != index {
             control.selectedSegment = index
         }
         control.setAccessibilityLabel(accessibilityLabel)
+    }
+
+    /// Labels, images and tooltips, from both `makeNSView` and `updateNSView`.
+    ///
+    /// The segment *set* changes with the selected group — the badge has three tabs,
+    /// the icon two — so the count is reconciled here rather than assumed.
+    ///
+    /// **An image segment sets its label to the empty string.** `NSSegmentedControl`
+    /// draws both when both are present, so leaving the text in place gives a glyph
+    /// with a word beside it in a segment sized for one of them.
+    private func applySegments(to control: NSSegmentedControl) {
+        if control.segmentCount != segments.count {
+            control.segmentCount = segments.count
+        }
+
+        for (index, segment) in segments.enumerated() {
+            // A tooltip on every segment, because an image segment has no other way
+            // to say what it is on hover.
+            control.setToolTip(segment.label, forSegment: index)
+
+            guard let symbol = segment.systemImage else {
+                control.setImage(nil, forSegment: index)
+                if control.label(forSegment: index) != segment.label {
+                    control.setLabel(segment.label, forSegment: index)
+                }
+                continue
+            }
+
+            // **A misspelled SF Symbol name returns nil and draws nothing at all**,
+            // with no error — the trap `LayerTabTests` resolves each of its glyphs
+            // through `NSImage` to catch. Falling back to the text keeps a typo
+            // legible rather than shipping an invisible segment.
+            guard let image = NSImage(
+                systemSymbolName: symbol,
+                accessibilityDescription: segment.label
+            ) else {
+                control.setImage(nil, forSegment: index)
+                control.setLabel(segment.label, forSegment: index)
+                continue
+            }
+
+            if control.label(forSegment: index) != "" {
+                control.setLabel("", forSegment: index)
+            }
+            control.setImage(image, forSegment: index)
+            control.setImageScaling(.scaleProportionallyDown, forSegment: index)
+        }
     }
 
     /// The two version-gated appearance knobs, set from both `makeNSView` and
@@ -143,14 +213,18 @@ struct FillingSegmentedPicker<Value: Hashable>: NSViewRepresentable {
     @Previewable @State var selection = "b"
     VStack(spacing: 16) {
         FillingSegmentedPicker(
-            segments: [("Alpha", "a"), ("Beta", "b")],
+            segments: [.init("Alpha", value: "a"), .init("Beta", value: "b")],
             selection: $selection,
             accessibilityLabel: "Two segments"
         )
         FillingSegmentedPicker(
-            segments: [("Alpha", "a"), ("Beta", "b"), ("Gamma", "c")],
+            segments: [
+                .init("Layers", systemImage: "square.3.layers.3d", value: "a"),
+                .init("Presets", systemImage: "square.on.circle", value: "b"),
+                .init("Gamma", value: "c"),
+            ],
             selection: $selection,
-            accessibilityLabel: "Three segments"
+            accessibilityLabel: "Mixed text and glyph segments"
         )
         Text("Selected: \(selection)")
             .font(.caption)

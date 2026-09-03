@@ -241,7 +241,7 @@ struct InspectorControls: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             GroupModePicker(isSystem: mode)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 10)
 
             if isSystem {
                 systemContent()

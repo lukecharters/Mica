@@ -19,21 +19,34 @@ import SwiftUI
 /// its own `@AppStorage` from inside a real view instead, and everything else arrives
 /// as a binding.
 ///
-/// Two regions:
+/// Three groups:
 ///
 /// | Placement | Holds | Because |
 /// |---|---|---|
 /// | `.principal` (centre) | Zoom and preview size | How the canvas is looked at |
+/// | `.principal` (centre) | Icon Presets, Badge Presets | What can be applied to it |
 /// | `.automatic` (trailing) | Advanced controls, inspector tab, inspector toggle | The inspector's own controls |
 ///
-/// **Nothing here goes at `.navigation`.** Measured 2026-08-04: `.navigation` items
-/// push the window title to their right, which read as the app's own name landing
-/// after them rather than at the leading edge where the platform puts it.
+/// **Nothing sits at `.navigation`.** Items there push the window title to their right —
+/// measured 2026-08-04 and still true — so that placement is reserved for actual
+/// navigation controls, and this app has none. The preset buttons are not navigation:
+/// they open a library that acts on the canvas, so they sit with the canvas's other
+/// controls at `.principal`. **Anything whose subject is the canvas or the inspector
+/// belongs at `.principal` or `.automatic`.**
 struct IconWindowToolbar: ToolbarContent {
     @Binding var zoomLevel: Double
     @Binding var previewPointSize: CGFloat?
     @Binding var inspectorTab: InspectorTab
     @Binding var showInspector: Bool
+
+    // The preset popovers' half. `iconSettings` is read for one thing — whether each
+    // scope can be captured — and the closures are the window's, so an apply lands in
+    // this window with this window's undo manager.
+    let iconSettings: IconSettings
+    let onApplyPreset: (MicaPreset) -> Void
+    let onSavePreset: (PresetScope) -> Void
+    let onDeletePreset: (MicaPreset) -> Void
+    let onPresetsAppear: () -> Void
 
     var body: some ToolbarContent {
         // How the canvas is looked at. *What* is generated is the group's Mica/System
@@ -43,6 +56,22 @@ struct IconWindowToolbar: ToolbarContent {
         ToolbarItemGroup(placement: .principal) {
             ZoomMenu(zoomLevel: $zoomLevel)
             PreviewSizeMenu(previewPointSize: $previewPointSize)
+        }
+
+        // What can be applied to the canvas: one popover per scope, in one group so
+        // they read as a cluster the way the iWork insert buttons do. Each button owns
+        // its popover — see `PresetsToolbarButton`.
+        ToolbarItemGroup(placement: .principal) {
+            ForEach(PresetScope.allCases) { scope in
+                PresetsToolbarButton(
+                    scope: scope,
+                    iconSettings: iconSettings,
+                    onApply: onApplyPreset,
+                    onSave: onSavePreset,
+                    onDelete: onDeletePreset,
+                    onPresetsAppear: onPresetsAppear
+                )
+            }
         }
 
         // Trailing, beside the inspector's own two controls — the flag changes what
