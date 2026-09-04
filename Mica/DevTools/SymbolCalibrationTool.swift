@@ -938,6 +938,9 @@ struct SymbolCalibrationTool: View {
                 Divider()
                 keyboardShortcutsHelp
             }
+            // Both bounds: a max alone adopts a wider child's width, and the
+            // scroll view then centres the overflow off the pane's left edge.
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             .padding()
         }
     }
@@ -955,19 +958,16 @@ struct SymbolCalibrationTool: View {
                     loadCurrentMember()
                 }
 
-            HStack(spacing: 12) {
-                Picker("Filter", selection: $filterMode) {
-                    ForEach(FamilyFilterMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: filterMode) { _, newMode in
-                    if newMode == .outliers { rebuildOutlierSnapshot() }
-                    selectedIndex = 0
-                    memberIndex = firstRelevantMemberIndex()
-                    loadCurrentMember()
-                }
+            FillingSegmentedPicker(
+                segments: FamilyFilterMode.allCases.map { .init($0.rawValue, value: $0) },
+                selection: $filterMode,
+                accessibilityLabel: "Filter"
+            )
+            .onChange(of: filterMode) { _, newMode in
+                if newMode == .outliers { rebuildOutlierSnapshot() }
+                selectedIndex = 0
+                memberIndex = firstRelevantMemberIndex()
+                loadCurrentMember()
             }
 
             if filterMode == .outliers && !boxFit.hasMeasurements {
@@ -1189,7 +1189,7 @@ struct SymbolCalibrationTool: View {
                         acceptMultiplier: { acceptPrediction(for: symbol) },
                         acceptYOffset: { acceptSuggestedYOffset(for: symbol) })
                 }
-                HStack(spacing: 4) {
+                WrappingHStack(horizontalSpacing: 4, verticalSpacing: 4) {
                     ForEach([0.43, 0.44, 0.46, 0.48, 0.5, 0.52, 0.53, 0.54, 0.56, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66], id: \.self) { val in
                         Button(String(format: "%.2f", val)) {
                             multiplier = val
