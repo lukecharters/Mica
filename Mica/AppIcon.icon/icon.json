@@ -1,4 +1,7 @@
 {
+  "features" : [
+    "refractivity"
+  ],
   "fill" : {
     "automatic-gradient" : "extended-gray:1.00000,1.00000"
   },
@@ -26,9 +29,14 @@
           -13
         ]
       },
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : true,
+        "strength" : 1
+      },
       "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+        "kind" : "layer-color",
+        "opacity" : 0.1
       },
       "specular" : true,
       "translucency" : {
