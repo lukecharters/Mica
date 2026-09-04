@@ -9,7 +9,6 @@ The app and command line tool produce identical output from the same settings.
 - [Generation Modes](Generation-Modes) helps you choose Mica mode or System mode.
 
 ## How to
-- [Make Icons For Self Service](Make-Icons-For-Self-Service)
 - [Badge An Icon](Badge-An-Icon)
 - [Use Presets](Use-Presets)
 - [Use Your Own Artwork](Use-Your-Own-Artwork)

@@ -6,7 +6,6 @@
 - [Generation Modes](Generation-Modes)
 
 **How to**
-- [Make Icons For Self Service](Make-Icons-For-Self-Service)
 - [Badge An Icon](Badge-An-Icon)
 - [Use Presets](Use-Presets)
 - [Use Your Own Artwork](Use-Your-Own-Artwork)

@@ -66,6 +66,5 @@ mica-cli extract /Applications/Safari.app --output ~/Desktop
 
 ## Next
 
-- [Make Icons For Self Service](Make-Icons-For-Self-Service)
 - [Reuse Settings With Config Files](Reuse-Settings-With-Config-Files)
 - [Settings Index](Settings-Index)
