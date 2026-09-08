@@ -52,18 +52,22 @@ enum PresetApplication {
             throw MicaConfigError.invalidJSON("\"\(preset.name)\" holds a value that cannot be written as JSON")
         }
         let json = try JSONSerialization.data(withJSONObject: object)
-        // No `configDirectory`: a preset carries no imported images. There is
-        // nothing structural stopping one — `icon-bg` takes a path — but a preset
-        // that referenced a file on the author's disk would break the moment it was
-        // shared, and the pane's thumbnails would have to load it asynchronously.
-        // A relative path in a preset therefore resolves against nothing and warns,
-        // which is the honest failure.
-        let contents = try MicaConfigCodec.decode(json: json, configDirectory: nil)
+        // A preset carries no imported images. There is nothing structural stopping
+        // one — `icon-bg` takes a path — but a preset that referenced a file on the
+        // author's disk would break the moment it was shared, and the pane's
+        // thumbnails would have to load it asynchronously. So the loader refuses
+        // every path, whatever it points at: the key warns and its layer opens
+        // without pixels, which is the honest failure.
+        let contents = try MicaConfigCodec.decode(json: json, configDirectory: nil, loadImage: refuseImage)
         return Decoded(
             settings: contents.settings,
             appexColors: contents.appexColors,
             warnings: contents.warnings
         )
+    }
+
+    private static func refuseImage(_ url: URL) throws -> ImportedImage {
+        throw CocoaError(.fileReadUnsupportedScheme, userInfo: [NSFilePathErrorKey: url.path])
     }
 
     /// Apply a preset in place, replacing the half of `settings` its scope owns.

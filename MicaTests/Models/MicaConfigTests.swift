@@ -844,6 +844,31 @@ struct MicaConfigTests {
         #expect(result.settings.icon.foreground.color == IconSettings().icon.foreground.color)
     }
 
+    @Test("an image path outside the configuration's folder loads, and warns")
+    func imagePathOutsideTheFolderWarns() throws {
+        // `~`, an absolute path, or a relative one that climbs out. Each loads — the
+        // reader may well mean it — but a shared file naming one of their own files
+        // is something to hear about before the render is published.
+        let folder = URL(fileURLWithPath: "/Users/someone/Icons", isDirectory: true)
+        for path in ["~/Desktop/shot.png", "/Users/someone/Desktop/shot.png", "../Desktop/shot.png"] {
+            let result = try Self.decode(["icon-bg": path], configDirectory: folder)
+            #expect(result.settings.icon.background.image != nil, "\(path)")
+            #expect(result.warnings.contains { $0.key == "icon-bg" && $0.message.contains("outside") }, "\(path)")
+        }
+    }
+
+    @Test("an image inside the configuration's folder loads without a warning")
+    func imagePathInsideTheFolderIsQuiet() throws {
+        let folder = URL(fileURLWithPath: "/Users/someone/Icons", isDirectory: true)
+        for path in ["bg.png", "Assets/bg.png", "./Assets/../bg.png"] {
+            let result = try Self.decode(["icon-bg": path], configDirectory: folder)
+            #expect(result.warnings.isEmpty, "\(path)")
+        }
+        // No folder to escape from: a bare relative name resolves against the
+        // working directory, which is the caller's business rather than the file's.
+        #expect(try Self.decode(["icon-bg": "bg.png"]).warnings.isEmpty)
+    }
+
     @Test("an unknown key warns and changes nothing")
     func unknownKeyWarns() throws {
         let result = try Self.decode(["render-quality": "high"])

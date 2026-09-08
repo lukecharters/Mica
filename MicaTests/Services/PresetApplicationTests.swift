@@ -299,4 +299,19 @@ struct PresetApplicationTests {
         #expect(throws: MicaConfigError.self) { try PresetApplication.decode(preset) }
         #expect(PresetApplication.previewSettings(for: preset) == IconSettings())
     }
+
+    @Test("An image key in a preset warns and loads nothing, wherever it points")
+    func imageKeysAreRefused() throws {
+        let preset = MicaPreset(
+            name: "Leaky",
+            scope: .icon,
+            keys: ["icon-fg": .string("symbol:star"), "icon-bg": .string("/System/Library/CoreServices/Finder.app")]
+        )
+        var settings = IconSettings()
+        var colors = MicaAppexColors()
+        let warnings = try PresetApplication.apply(preset, to: &settings, appexColors: &colors)
+
+        #expect(warnings.contains { $0.key == "icon-bg" })
+        #expect(settings.icon.background.image == nil)
+    }
 }

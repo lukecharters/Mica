@@ -528,6 +528,11 @@ private struct ConfigReader {
     /// configuration's directory) and load it. A failure warns and returns nil —
     /// the layer keeps its `.image` source with no pixels, so the configuration
     /// still loads.
+    ///
+    /// A path that reaches outside the configuration's own folder — `~`, an
+    /// absolute path, or a relative one that climbs out — loads but warns. A shared
+    /// configuration can name any file the reader can open, and the reader should
+    /// know it is about to render one of their own into the icon.
     mutating func importImage(atPath path: String, key: MicaConfigKey) -> ImportedImage? {
         let expanded = (path as NSString).expandingTildeInPath
         let url: URL
@@ -538,12 +543,26 @@ private struct ConfigReader {
         } else {
             url = URL(fileURLWithPath: expanded)
         }
+        if reachesOutsideConfiguration(original: path, expanded: expanded, resolved: url) {
+            warn(key.rawValue, "image \"\(path)\" is outside the configuration's folder")
+        }
         do {
             return try loadImage(url)
         } catch {
             warn(key.rawValue, "image \"\(path)\" could not be loaded — the layer opens without it")
             return nil
         }
+    }
+
+    /// Lexical, deliberately: `URL.standardized` folds `.` and `..` without
+    /// consulting the filesystem, so the answer does not change with whether the
+    /// file exists or sits behind a symlink.
+    private func reachesOutsideConfiguration(original: String, expanded: String, resolved: URL) -> Bool {
+        if expanded != original || expanded.hasPrefix("/") { return true }
+        guard let configDirectory else { return false }
+        let base = configDirectory.standardized.path
+        let target = resolved.standardized.path
+        return target != base && !target.hasPrefix(base.hasSuffix("/") ? base : base + "/")
     }
 
     // MARK: Application
