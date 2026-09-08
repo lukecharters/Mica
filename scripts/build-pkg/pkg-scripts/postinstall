@@ -1,11 +1,26 @@
 #!/bin/bash
-set -e
+set -eu
 
-CLI_SOURCE="/Applications/Mica.app/Contents/MacOS/mica-cli"
-SYMLINK_DIR="/usr/local/bin"
+# $3 is the target volume. The link's target is the boot-time path so it is valid
+# once that volume boots; the existence check has to look on the volume itself.
+TARGET_VOLUME="${3:-/}"
+TARGET_VOLUME="${TARGET_VOLUME%/}"
+
+CLI_TARGET="/Applications/Mica.app/Contents/MacOS/mica-cli"
+CLI_SOURCE="${TARGET_VOLUME}${CLI_TARGET}"
+SYMLINK_DIR="${TARGET_VOLUME}/usr/local/bin"
 SYMLINK_PATH="${SYMLINK_DIR}/mica-cli"
 
+[ -x "$CLI_SOURCE" ] || exit 0
+
 mkdir -p "$SYMLINK_DIR"
-ln -sf "$CLI_SOURCE" "$SYMLINK_PATH"
+
+# Replace only a symlink or nothing. A regular file or directory at the path is
+# someone else's and is left alone; -f alone would follow a link to a directory
+# and create the symlink inside it.
+if [ -L "$SYMLINK_PATH" ] || [ ! -e "$SYMLINK_PATH" ]; then
+    rm -f "$SYMLINK_PATH"
+    ln -s "$CLI_TARGET" "$SYMLINK_PATH"
+fi
 
 exit 0
