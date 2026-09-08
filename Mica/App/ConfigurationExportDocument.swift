@@ -62,7 +62,17 @@ struct ConfigurationExportDocument: FileDocument {
             assets: &catalog
         )
         self.assets = catalog.assets
-        self.jsonName = "\(baseName).json"
+        self.jsonName = "\(Self.childName(for: baseName)).json"
+    }
+
+    /// A name a `FileWrapper` child can carry. The save panel sanitises the folder's
+    /// own name; nothing sanitises this one, and a `/` in it makes the write fail.
+    static func childName(for baseName: String) -> String {
+        let cleaned = baseName
+            .components(separatedBy: CharacterSet(charactersIn: "/:"))
+            .joined(separator: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? "Configuration" : cleaned
     }
 
     init(configuration: ReadConfiguration) throws {

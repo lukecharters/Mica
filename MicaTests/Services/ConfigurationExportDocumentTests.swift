@@ -105,6 +105,25 @@ struct ConfigurationExportDocumentTests {
         #expect(jsonNames == ["My Icon.json"])
     }
 
+    @Test("A slash in the base name cannot reach the folder's JSON child")
+    func directory_sanitisesTheJSONChildName() throws {
+        // A child named `a/b.json` fails at write time with "The file “b.json”
+        // doesn't exist", so the write is what this asserts on, not just the name.
+        let document = try ConfigurationExportDocument(
+            settings: try settingsWithImportedIcon(),
+            baseName: "Restart/Required: now"
+        )
+        let wrapper = document.makeFileWrapper()
+        let jsonNames = try #require(wrapper.fileWrappers).keys.filter { $0.hasSuffix(".json") }
+        #expect(jsonNames == ["Restart-Required- now.json"])
+
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mica-export-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try wrapper.write(to: folder, options: [], originalContentsURL: nil)
+        #expect(FileManager.default.fileExists(atPath: folder.appendingPathComponent("Restart-Required- now.json").path))
+    }
+
     @Test("Every child of the folder is flat — no nested directories for the importer to walk")
     func directory_isFlat() throws {
         // The second image goes on the *badge*, not the icon background: an
