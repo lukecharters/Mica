@@ -62,10 +62,9 @@ extension IconViewModel {
         do {
             warnings = try PresetApplication.apply(preset, to: &settings, appexColors: &appexColors)
         } catch {
-            // Only unreadable JSON throws, and a preset's keys are built in memory
-            // rather than parsed from text — so this is unreachable in practice.
-            // Reported rather than swallowed because a silent no-op click is the
-            // worst version of whatever made it reachable.
+            // Only a preset the codec cannot write as JSON reaches here. Reported
+            // rather than swallowed because a silent no-op click is the worst
+            // version of whatever made it reachable.
             report(.presetApplyFailed(preset.name, error))
             return
         }

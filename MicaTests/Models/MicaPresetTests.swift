@@ -126,6 +126,13 @@ struct MicaPresetTests {
         #expect(MicaPresetValue(json: [1, "mixed"]) == nil)
     }
 
+    @Test("A non-finite number is refused, because the JSON writer cannot hold one")
+    func valueRefusesNonFinite() {
+        #expect(MicaPresetValue(json: NSNumber(value: -Double.infinity)) == nil)
+        #expect(MicaPresetValue(json: NSNumber(value: Double.infinity)) == nil)
+        #expect(MicaPresetValue(json: NSNumber(value: Double.nan)) == nil)
+    }
+
     // MARK: - Identity
 
     @Test("A built-in and a user preset of the same name and scope are distinct")

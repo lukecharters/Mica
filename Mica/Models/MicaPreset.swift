@@ -117,6 +117,9 @@ enum MicaPresetValue: Equatable, Sendable {
         } else if let string = json as? String {
             self = .string(string)
         } else if let number = json as? NSNumber {
+            // `JSONSerialization` reads `-1e999` as `-inf`, and its writer then
+            // refuses it with an Objective-C exception Swift cannot catch.
+            guard number.doubleValue.isFinite else { return nil }
             self = .number(number.doubleValue)
         } else if let array = json as? [String] {
             self = .strings(array)

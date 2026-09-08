@@ -41,12 +41,17 @@ enum PresetApplication {
     /// preset scope-complete: it is the step that turns "this key is absent" into
     /// "this key is at its default" rather than "leave whatever is there".
     ///
-    /// Only unreadable JSON throws, and a preset's keys are built in memory rather
-    /// than parsed from text, so in practice this cannot — a preset whose values
-    /// are wrong produces warnings and defaults instead. The `throws` is kept
-    /// because it is the codec's, not because a caller has a useful recovery.
+    /// Throws only when the keys cannot be written as JSON at all. A non-finite
+    /// number is the one value `MicaPresetValue` can hold that `JSONSerialization`
+    /// refuses, and it is checked here because the writer raises an Objective-C
+    /// exception rather than throwing. A preset whose values are merely wrong
+    /// produces warnings and defaults instead.
     static func decode(_ preset: MicaPreset) throws -> Decoded {
-        let json = try JSONSerialization.data(withJSONObject: preset.jsonObject)
+        let object = preset.jsonObject
+        guard JSONSerialization.isValidJSONObject(object) else {
+            throw MicaConfigError.invalidJSON("\"\(preset.name)\" holds a value that cannot be written as JSON")
+        }
+        let json = try JSONSerialization.data(withJSONObject: object)
         // No `configDirectory`: a preset carries no imported images. There is
         // nothing structural stopping one — `icon-bg` takes a path — but a preset
         // that referenced a file on the author's disk would break the moment it was

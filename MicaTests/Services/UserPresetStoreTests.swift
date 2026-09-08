@@ -151,6 +151,24 @@ struct UserPresetStoreTests {
         #expect(loaded.problems[0].contains("icon-broken.json"))
     }
 
+    @Test("A non-finite number loses its key and cannot reach the JSON writer")
+    func nonFiniteNumberIsDropped() throws {
+        // `JSONSerialization` reads `-1e999` as negative infinity and raises an
+        // uncatchable Objective-C exception when asked to write it back — which
+        // `PresetApplication.decode` does for every preset the pane shows.
+        let directory = try temporaryDirectory()
+        try write(
+            #"{"$name": "Overflow", "$scope": "icon", "icon-fg": "symbol:star", "icon-fg-scale": -1e999}"#,
+            named: "icon-overflow.json", in: directory
+        )
+
+        let loaded = UserPresetStore.load(from: [directory])
+        let preset = try #require(loaded.presets.first)
+        #expect(preset.keys["icon-fg-scale"] == nil)
+        #expect(preset.keys["icon-fg"] == .string("symbol:star"))
+        #expect(PresetApplication.previewSettings(for: preset).icon.foreground.symbolName == "star")
+    }
+
     @Test("A file with no name or no scope is refused, and says which")
     func envelopeIsRequired() throws {
         let directory = try temporaryDirectory()

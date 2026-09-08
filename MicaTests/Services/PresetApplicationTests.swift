@@ -285,4 +285,18 @@ struct PresetApplicationTests {
         #expect(warnings.contains { $0.key == "icon-bg-color" })
         #expect(settings.icon.foreground.symbolName == "star")
     }
+
+    @Test("A non-finite number in a preset throws rather than raising")
+    func nonFiniteNumberThrows() {
+        // `UserPresetStore` drops such a key on load; this is the guard behind it,
+        // for a value built in memory. Without it `JSONSerialization` raises an
+        // Objective-C exception Swift cannot catch, and every preset surface dies.
+        let preset = MicaPreset(
+            name: "Overflow",
+            scope: .icon,
+            keys: ["icon-fg": .string("symbol:star"), "icon-fg-scale": .number(-.infinity)]
+        )
+        #expect(throws: MicaConfigError.self) { try PresetApplication.decode(preset) }
+        #expect(PresetApplication.previewSettings(for: preset) == IconSettings())
+    }
 }
