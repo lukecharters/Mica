@@ -29,7 +29,7 @@ struct ExtractCommand: ParsableCommand {
     )
     var outputPath: String?
 
-    @Option(name: [.short, .long], help: "Icon size in pixels")
+    @Option(name: [.short, .long], help: "Icon size in pixels (\(IconExtractor.sizeRange.lowerBound) to \(IconExtractor.sizeRange.upperBound))")
     var size: Int = 512
 
     @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x", valueName: "scale"))
@@ -51,8 +51,8 @@ struct ExtractCommand: ParsableCommand {
     var output: OutputOptions
 
     mutating func validate() throws {
-        guard size > 0 else {
-            throw ValidationError("Size must be greater than 0. You provided: \(size)")
+        guard IconExtractor.sizeRange.contains(size) else {
+            throw ValidationError("Size must be between \(IconExtractor.sizeRange.lowerBound) and \(IconExtractor.sizeRange.upperBound). You provided: \(size)")
         }
 
         if let depth {
@@ -90,7 +90,7 @@ struct ExtractCommand: ParsableCommand {
         throw ExitCode.failure
     }
 
-    private func runExtraction(reporter: OutputReporter) throws -> [OutputFileJSON] {
+    func runExtraction(reporter: OutputReporter) throws -> [OutputFileJSON] {
         let fm = FileManager.default
         let resolvedInputPath = (inputPath as NSString).expandingTildeInPath
 
@@ -118,6 +118,7 @@ struct ExtractCommand: ParsableCommand {
     private func exportSingleItem(at path: String, to outputDirectory: URL, reporter: OutputReporter) throws -> [OutputFileJSON] {
         let filename = OutputResolver.suggestedIconFilename(forItemAt: path, size: size, scaleFactor: scale.factor)
         let destination = outputDirectory.appendingPathComponent(filename)
+        try refuseExistingDestinations([destination])
         try IconExtractor.saveIcon(
             forBundleAt: path,
             size: size,
@@ -143,13 +144,21 @@ struct ExtractCommand: ParsableCommand {
             return []
         }
 
-        var outputs: [OutputFileJSON] = []
+        // Every destination is resolved before the first write, so a run that is
+        // going to be refused is refused whole rather than part-way through.
         var usedDestinations = Set<String>()
+        var planned: [(item: URL, destination: URL)] = []
         for item in filteredItems {
             let destination = Self.deduplicated(
                 try destinationURL(for: item, rootDirectory: rootURL, outputDirectory: outputDirectory),
                 used: &usedDestinations
             )
+            planned.append((item, destination))
+        }
+        try refuseExistingDestinations(planned.map(\.destination))
+
+        var outputs: [OutputFileJSON] = []
+        for (item, destination) in planned {
             try IconExtractor.saveIcon(
                 forBundleAt: item.path,
                 size: size,
@@ -165,6 +174,14 @@ struct ExtractCommand: ParsableCommand {
         let count = outputs.count
         reporter.status("Exported \(count) icon\(count == 1 ? "" : "s") to \(outputDirectory.path)")
         return outputs
+    }
+
+    /// Refuse to write over a file that is already there unless `--force` was passed.
+    private func refuseExistingDestinations(_ destinations: [URL]) throws {
+        guard !output.force else { return }
+        if let existing = destinations.first(where: { FileManager.default.fileExists(atPath: $0.path) }) {
+            throw CLIError.fileSystem("Output file already exists: \(existing.path). Pass --force to replace it.")
+        }
     }
 
     /// Build a JSON descriptor for a saved icon file.

@@ -191,6 +191,7 @@ HAPPY_CASES=(
 NEGATIVE_CASES=(
     # ---- generate ----
     "size-too-large|Size must be between|star.fill|--size|9999"
+    "output-exists|already exists|star.fill|-o|\$SYMBOL_FIXTURE"
     "size-non-numeric|whole number|star.fill|--size|abc"
     "scale-invalid|is invalid for '--scale|star.fill|--scale|3x"
     "color-space-invalid|is invalid for '--color-space|star.fill|--color-space|BGR"
@@ -268,6 +269,7 @@ NEGATIVE_CASES=(
     "extract-depth-without-recursive|--depth requires --recursive|extract|/System/Applications|--depth|2"
     "extract-path-not-found|Bundle not found|extract|/nonexistent/path.app"
     "extract-dir-without-recursive|Pass --recursive|extract|/System/Applications"
+    "extract-size-too-large|Size must be between|extract|/System/Applications/Calculator.app|--size|9999"
 )
 
 # `generate --config` cases. These need their own runner because a configuration

@@ -5,6 +5,12 @@ import ImageIO
 import UniformTypeIdentifiers
 
 enum IconExtractor {
+    /// Wider than `ExportSpec`'s 16–1024 because an extracted icon is a copy of
+    /// something macOS already drew at up to 1024pt and the 2x scale doubles it.
+    /// Bounded at all because the pixel size feeds a bitmap allocation and a row
+    /// stride, and neither survives an arbitrary value.
+    static let sizeRange = 16...2048
+
     static func saveIcon(
         forBundleAt bundlePath: String,
         size: Int,
@@ -12,8 +18,8 @@ enum IconExtractor {
         colorSpace: ExportColorSpace,
         destination: URL
     ) throws {
-        guard size > 0 else {
-            throw CLIError.invalidArgument("Size must be greater than 0 (received \(size))")
+        guard sizeRange.contains(size) else {
+            throw CLIError.invalidArgument("Size must be between \(sizeRange.lowerBound) and \(sizeRange.upperBound) (received \(size))")
         }
 
         guard scaleFactor == 1 || scaleFactor == 2 else {

@@ -64,7 +64,7 @@ done <<< "$KEYS"
 VALID_FLAGS="$(
     {
         printf '%s\n' "$KEYS"
-        printf '%s\n' icon-symbol badge-symbol output config json quiet verbose
+        printf '%s\n' icon-symbol badge-symbol output config json quiet verbose force
         # Real flags with no configuration key. A configuration carries the values
         # of a preset rather than its name, so the file stays self-contained.
         # Keep this comment free of apostrophes: it sits inside a $( ) and bash

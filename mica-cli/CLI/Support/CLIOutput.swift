@@ -45,6 +45,9 @@ struct OutputOptions: ParsableArguments {
     @Flag(name: [.customShort("v"), .customLong("verbose")], help: "Show per-phase progress and detail on stderr")
     var verbose: Bool = false
 
+    @Flag(name: .long, help: "Replace an output file that already exists")
+    var force: Bool = false
+
     /// Resolved verbosity. `--quiet` wins over the normal default; `--verbose`
     /// raises it. `--quiet` and `--verbose` together are rejected in `validate()`.
     var verbosity: Verbosity {

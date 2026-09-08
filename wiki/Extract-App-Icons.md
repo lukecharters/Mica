@@ -11,6 +11,8 @@ mica-cli extract /Applications/Safari.app --output extracted-icons
 
 **Result:** `extracted-icons/Safari.png` contains Safari's assigned icon.
 
+Mica does not replace an existing file. Add `--force` to replace it.
+
 ## Extract a whole directory
 
 ```shell

@@ -48,6 +48,14 @@ class IconGenerationRunner {
         // not exist has to fail the same way whichever supplied it.
         try validateResolvedSymbols(settings)
 
+        // The destination is settled before the render so a refused write costs
+        // nothing. An existing file is replaced only on --force.
+        let basename = command.defaultOutputBasename(in: context)
+        let outputURL = try resolveOutputPath(basename: basename, userPath: command.export.outputPath)
+        guard command.output.force || !FileManager.default.fileExists(atPath: outputURL.path) else {
+            throw CLIError.fileSystem("Output file already exists: \(outputURL.path). Pass --force to replace it.")
+        }
+
         // Phase 3: Render
         let image: NSImage
 
@@ -71,8 +79,6 @@ class IconGenerationRunner {
         }
 
         // Phase 4: Save
-        let basename = command.defaultOutputBasename(in: context)
-        let outputURL = try resolveOutputPath(basename: basename, userPath: command.export.outputPath)
         reporter.detail("Saving to \(outputURL.path)…")
         let pixelSize = try await saveImageWithValidation(image, to: outputURL, settings: settings)
 

@@ -12,6 +12,8 @@ done
 ```
 **Result:** The `icons` folder contains three blue icons.
 
+Mica does not replace an existing file. Add `--force` to run the loop again.
+
 ## Read names, symbols, and colours from CSV
 
 ```shell

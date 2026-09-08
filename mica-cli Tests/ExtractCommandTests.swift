@@ -66,14 +66,24 @@ import ArgumentParser
 
     @Test func rejectsZeroSize() throws {
         #expect(try parseFailureMessage(["/some/path", "--size", "0"])
-            .contains("Size must be greater than 0"))
+            .contains("Size must be between"))
     }
 
     @Test func rejectsNegativeSize() throws {
         // "--size=-10" (not "--size -10"): a bare "-10" reads as a flag and
         // fails with missingValueForOption before validation ever runs.
         #expect(try parseFailureMessage(["/some/path", "--size=-10"])
-            .contains("Size must be greater than 0"))
+            .contains("Size must be between"))
+    }
+
+    @Test func rejectsOversizedSize() throws {
+        #expect(try parseFailureMessage(["/some/path", "--size", "9999"])
+            .contains("Size must be between"))
+    }
+
+    @Test func parsesForceFlag() throws {
+        #expect(try ExtractCommand.parse(["/some/path"]).output.force == false)
+        #expect(try ExtractCommand.parse(["/some/path", "--force"]).output.force == true)
     }
 
     @Test func rejectsInvalidScale() {
@@ -183,5 +193,40 @@ import ArgumentParser
         // Valid PNG signature: 89 50 4E 47 0D 0A 1A 0A
         let pngSignature: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
         #expect(Array(data.prefix(8)) == pngSignature)
+    }
+
+    @Test func saveIconRefusesASizeOutsideTheRange() {
+        // The size is multiplied by the scale and again by four for the row
+        // stride. Unbounded, `Int.max` overflowed and 200000 asked for a 160 GB bitmap.
+        let destination = URL.temporaryDirectory.appending(path: "never-written-\(UUID().uuidString).png")
+        #expect(throws: (any Error).self) {
+            try IconExtractor.saveIcon(forBundleAt: "/System", size: Int.max, scaleFactor: 2, colorSpace: .sRGB, destination: destination)
+        }
+        #expect(throws: (any Error).self) {
+            try IconExtractor.saveIcon(forBundleAt: "/System", size: 200_000, scaleFactor: 1, colorSpace: .sRGB, destination: destination)
+        }
+        #expect(!FileManager.default.fileExists(atPath: destination.path))
+    }
+
+    @Test(.enabled(if: FileManager.default.fileExists(atPath: "/System/Applications/Calculator.app")))
+    func refusesAnExistingDestinationWithoutForce() throws {
+        let fm = FileManager.default
+        let outputDir = URL.temporaryDirectory.appending(path: "geticon-test-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: outputDir) }
+        let calculator = "/System/Applications/Calculator.app"
+
+        let first = try ExtractCommand.parse([calculator, "-o", outputDir.path, "--size", "64", "-q"])
+        let written = try first.runExtraction(reporter: first.output.reporter)
+        #expect(written.count == 1)
+
+        let error = try #require(#expect(throws: CLIError.self) {
+            _ = try first.runExtraction(reporter: first.output.reporter)
+        })
+        #expect(error.localizedDescription.contains("already exists"))
+        #expect(error.localizedDescription.contains(written[0].path))
+
+        let forced = try ExtractCommand.parse([calculator, "-o", outputDir.path, "--size", "64", "-q", "--force"])
+        let replaced = try forced.runExtraction(reporter: forced.output.reporter)
+        #expect(replaced.map(\.path) == written.map(\.path))
     }
 }

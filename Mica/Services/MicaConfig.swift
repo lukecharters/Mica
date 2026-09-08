@@ -136,7 +136,7 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
 
     /// The `generate` flags that are deliberately not configuration keys, with
     /// the message an attempt to use one gets.
-    static let processLevelNames: Set<String> = ["output", "o", "json", "quiet", "q", "verbose", "v", "config"]
+    static let processLevelNames: Set<String> = ["output", "o", "json", "quiet", "q", "verbose", "v", "force", "config"]
 
     /// `generate` flags that are shorthand for a key rather than a key themselves,
     /// with the key each one abbreviates.

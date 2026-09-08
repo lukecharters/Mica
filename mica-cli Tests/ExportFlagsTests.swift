@@ -29,6 +29,12 @@ struct ExportFlagsTests {
     // would keep every other test in this file green while silently making a
     // document's stored export values impossible to preserve.
 
+    @Test("--force is off unless passed")
+    func forceFlag() throws {
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).output.force == false)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--force"]).output.force == true)
+    }
+
     @Test("Omitted export flags parse as nil, so a config document can supply them")
     func omittedExportFlagsAreNil() throws {
         let command = try parseCommand(["--icon-symbol", "star.fill"])

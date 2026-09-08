@@ -146,12 +146,15 @@ They are not icon settings.
 | `--json` | None | Writes one result object to standard output. |
 | `--quiet` | `-q` | Hides diagnostics and keeps errors. |
 | `--verbose` | `-v` | Writes progress details to standard error. |
+| `--force` | None | Replaces an output file that already exists. |
 
 Command-line settings override values from `--config`.
 You cannot combine `--quiet` and `--verbose`.
 
 Without `--output`, Mica saves into the working directory.
 It names the file from the symbol or imported image.
+
+Mica does not replace an existing file. Add `--force` to replace it.
 
 See [Configuration File Reference](Configuration-File-Reference) for the JSON format.
 
@@ -188,7 +191,7 @@ mica-cli extract <path> [options]
 |---|---|---|
 | `<path>` | None | A file or directory to inspect. |
 | `--output PATH` | `-o` | Destination directory. |
-| `--size PIXELS` | `-s` | Icon size. Default: `512`. |
+| `--size PIXELS` | `-s` | Icon size, `16` to `2048`. Default: `512`. |
 | `--scale SCALE` | None | `1x` or `2x`. Default: `1x`. |
 | `--recursive` | `-r` | Processes directory contents. |
 | `--depth NUMBER` | None | Limits nested depth. Requires `--recursive`. |
@@ -196,6 +199,7 @@ mica-cli extract <path> [options]
 | `--json` | None | Writes one result object. |
 | `--quiet` | `-q` | Hides diagnostics and keeps errors. |
 | `--verbose` | `-v` | Writes progress details. |
+| `--force` | None | Replaces files that already exist. |
 
 Depth `0` includes direct children only.
 Depth must be zero or greater.
