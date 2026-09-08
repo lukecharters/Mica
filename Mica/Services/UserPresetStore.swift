@@ -193,8 +193,8 @@ enum UserPresetStore {
     /// a display name may contain `/` or `:`, which a filename may not.
     ///
     /// The slug is not the identity — `$name` is — so two presets whose names
-    /// slugify alike would collide on disk. `uniqueName(_:in:)` prevents that by
-    /// rejecting the duplicate *name* first, which is the check a user can see.
+    /// slugify alike would collide on disk. `uniqueName(_:in:existing:)` prevents
+    /// that by uniquing on the slug as well as the name.
     static func fileURL(for preset: MicaPreset, in directory: URL = directoryURL) -> URL {
         directory.appendingPathComponent("\(preset.scope.rawValue)-\(slug(preset.name)).json")
     }
@@ -229,9 +229,25 @@ enum UserPresetStore {
 
     /// Delete a user preset. Deleting a built-in is not expressible — they are not
     /// files — so this takes the preset and asserts nothing.
+    ///
+    /// The file removed is the one that *decodes to* this preset, not the one its
+    /// name would be saved under: any `*.json` in the folder loads, whatever it is
+    /// called, so the two can differ — and the slug path might be another preset's.
     static func delete(_ preset: MicaPreset, in directory: URL = directoryURL) throws {
         guard !preset.isBuiltIn else { return }
-        try FileManager.default.removeItem(at: fileURL(for: preset, in: directory))
+        try FileManager.default.removeItem(at: fileURL(ofLoaded: preset, in: directory))
+    }
+
+    /// The file in `directory` that holds this preset, by identity.
+    static func fileURL(ofLoaded preset: MicaPreset, in directory: URL) throws -> URL {
+        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
+        for file in files.sorted(by: { $0.lastPathComponent < $1.lastPathComponent })
+        where file.pathExtension.lowercased() == "json" {
+            if case .success(let loaded) = decode(fileAt: file), loaded.id == preset.id {
+                return file
+            }
+        }
+        throw Problem("\"\(preset.name)\" is not saved in \(directory.path)")
     }
 
     // MARK: - Naming
@@ -242,16 +258,23 @@ enum UserPresetStore {
     /// called "Installer" would sit in the same section as the built-in one, and two
     /// identically-labelled rows a click apart is the confusion this avoids. The
     /// suffix is the Finder's convention for the same problem.
+    ///
+    /// Compared by slug as well, because the slug is the filename: "Restart Required"
+    /// and "Restart, Required!" are two names and one file, and saving the second
+    /// would silently replace the first.
     static func uniqueName(_ proposed: String, in scope: PresetScope, existing: [MicaPreset]) -> String {
         let trimmed = proposed.trimmingCharacters(in: .whitespacesAndNewlines)
         let base = trimmed.isEmpty ? "Preset" : trimmed
-        let taken = Set(
-            existing.filter { $0.scope == scope }.map { $0.name.lowercased() }
-        )
-        guard taken.contains(base.lowercased()) else { return base }
+        let inScope = existing.filter { $0.scope == scope }
+        let takenNames = Set(inScope.map { $0.name.lowercased() })
+        let takenSlugs = Set(inScope.map { slug($0.name) })
+        func isTaken(_ candidate: String) -> Bool {
+            takenNames.contains(candidate.lowercased()) || takenSlugs.contains(slug(candidate))
+        }
+        guard isTaken(base) else { return base }
 
         var suffix = 2
-        while taken.contains("\(base.lowercased()) \(suffix)") { suffix += 1 }
+        while isTaken("\(base) \(suffix)") { suffix += 1 }
         return "\(base) \(suffix)"
     }
 

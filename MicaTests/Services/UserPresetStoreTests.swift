@@ -117,6 +117,38 @@ struct UserPresetStoreTests {
         #expect(UserPresetStore.load(from: [directory]).presets.isEmpty)
     }
 
+    @Test("Deleting removes the file the preset came from, whatever it is called")
+    func deleteFindsTheFileByIdentity() throws {
+        let directory = try temporaryDirectory()
+        try write(#"{"$name": "Odd", "$scope": "icon", "icon-bg-color": "blue"}"#, named: "dropped-in.json", in: directory)
+        let preset = try #require(UserPresetStore.load(from: [directory]).presets.first)
+
+        try UserPresetStore.delete(preset, in: directory)
+        #expect(UserPresetStore.load(from: [directory]).presets.isEmpty)
+    }
+
+    @Test("Deleting never removes another preset's file")
+    func deleteLeavesOtherFilesAlone() throws {
+        // Two files, each named with the other's slug: the slug path of the preset
+        // being deleted is exactly the file that has to survive.
+        let directory = try temporaryDirectory()
+        try write(#"{"$name": "A", "$scope": "icon", "icon-bg-color": "blue"}"#, named: "icon-b.json", in: directory)
+        try write(#"{"$name": "B", "$scope": "icon", "icon-bg-color": "red"}"#, named: "icon-a.json", in: directory)
+        let a = try #require(UserPresetStore.load(from: [directory]).presets.first { $0.name == "A" })
+
+        try UserPresetStore.delete(a, in: directory)
+        #expect(UserPresetStore.load(from: [directory]).presets.map(\.name) == ["B"])
+        #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("icon-a.json").path))
+    }
+
+    @Test("Deleting a preset with no file says so rather than removing the slug path")
+    func deleteOfUnsavedPresetThrows() throws {
+        let directory = try temporaryDirectory()
+        #expect(throws: UserPresetStore.Problem.self) {
+            try UserPresetStore.delete(MicaPreset(name: "Ghost", scope: .icon, keys: [:]), in: directory)
+        }
+    }
+
     @Test("Deleting a built-in does nothing rather than throwing")
     func deleteBuiltInIsANoOp() throws {
         let directory = try temporaryDirectory()
@@ -253,6 +285,14 @@ struct UserPresetStoreTests {
         MicaPreset(name: "Taken", scope: .icon, keys: [:], isBuiltIn: true),
         MicaPreset(name: "Spoken For", scope: .badge, keys: [:], isBuiltIn: true),
     ]
+
+    @Test("A name whose slug is taken gains a suffix, even when the name itself is free")
+    func uniqueName_slugTaken() {
+        let existing = [MicaPreset(name: "Restart Required", scope: .icon, keys: [:])]
+        let name = UserPresetStore.uniqueName("Restart, Required!", in: .icon, existing: existing)
+        #expect(name == "Restart, Required! 2")
+        #expect(UserPresetStore.slug(name) != UserPresetStore.slug("Restart Required"))
+    }
 
     @Test("A free name is returned unchanged")
     func uniqueName_free() {
