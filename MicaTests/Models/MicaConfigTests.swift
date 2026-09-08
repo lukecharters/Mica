@@ -834,6 +834,16 @@ struct MicaConfigTests {
 
     // MARK: - Warnings
 
+    @Test("an empty colour string warns and keeps the default")
+    func emptyColourWarns() throws {
+        // A key left blank in a hand-edited file. The codec's `string()` reader
+        // passes "" through, so the colour parser is what has to refuse it.
+        let result = try Self.decode(["icon-bg-color": "", "icon-symbol-color": ":"])
+        #expect(result.warnings.map(\.key).sorted() == ["icon-bg-color", "icon-symbol-color"])
+        #expect(result.settings.icon.background.color == IconSettings().icon.background.color)
+        #expect(result.settings.icon.foreground.color == IconSettings().icon.foreground.color)
+    }
+
     @Test("an unknown key warns and changes nothing")
     func unknownKeyWarns() throws {
         let result = try Self.decode(["render-quality": "high"])

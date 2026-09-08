@@ -156,6 +156,20 @@ import SwiftUI
         #expect(throws: (any Error).self) { try entry.parse(input) }
     }
 
+    // MARK: - Nothing at all
+
+    /// An empty string, or a separator with nothing around it. Each is one
+    /// keystroke from a real value — `--icon-bg-color ""` in a script, a
+    /// configuration key left blank — and an entry point that indexes into the
+    /// split instead of refusing traps rather than throws.
+    private static let empty = ["", "   ", ":", "::", " : ", ":0.5", "blue:"]
+
+    @Test("an empty or separator-only string is refused at every entry point",
+          arguments: empty, EntryPoint.allCases)
+    func emptyFormIsRefused(_ input: String, _ entry: EntryPoint) {
+        #expect(throws: (any Error).self) { try entry.parse(input) }
+    }
+
     // MARK: - The drops did not take a live form with them
 
     /// `srgb:` has to actually replace the bare triple, or the drop is a

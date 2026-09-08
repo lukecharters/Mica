@@ -68,9 +68,14 @@ struct ColorParser {
             return components.color
         }
 
-        // Handle opacity notation with colon separator
-        let components = trimmed.split(separator: ":")
-        let colorString = String(components[0])
+        guard !trimmed.isEmpty else {
+            throw ColorParseError.emptyInput("Color string cannot be empty")
+        }
+
+        // Handle opacity notation with colon separator. Empty subsequences are
+        // kept so `:0.5` is refused as a missing colour rather than read as one.
+        let components = trimmed.split(separator: ":", omittingEmptySubsequences: false)
+        let colorString = String(components.first ?? "")
         
         let baseColor = try parse(colorString)
         

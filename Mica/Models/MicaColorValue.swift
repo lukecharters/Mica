@@ -142,7 +142,7 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
         // A token, optionally with an opacity suffix. Checked against the table
         // rather than against `ColorParser`, so a name the table does not hold
         // cannot be stored as a `.token` nothing else in Mica understands.
-        let parts = trimmed.split(separator: ":", maxSplits: 1)
+        let parts = trimmed.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
         let base = String(parts.first ?? "")
         if let token = ColorTokenTable.token(named: base) {
             if parts.count == 2 {
