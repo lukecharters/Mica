@@ -81,11 +81,29 @@ struct MicaColorValueTests {
         "extended-gray:1,1,1",          // 3 components
         "extended-srgb:",
         "extended-srgb:nan,0,0,1",
+        "extended-srgb:1e304,0,0,1",
+        "extended-srgb:0,0,-1000000.5,1",
+        "extended-gray:1,1e7",
     ])
     func throwsForMalformedComponents(_ input: String) {
         #expect(throws: ColorParseError.self) {
             try ColorParser.ExtendedComponents(parsing: input)
         }
+    }
+
+    @Test("a component at the magnitude limit parses")
+    func parsesAtComponentLimit() throws {
+        let parsed = try #require(
+            try ColorParser.ExtendedComponents(parsing: "extended-srgb:1000000,-1000000,0,1")
+        )
+        #expect(parsed == .srgb(r: 1_000_000, g: -1_000_000, b: 0, a: 1))
+    }
+
+    @Test("rounding a component too large to scale leaves it finite")
+    func roundingKeepsHugeComponentsFinite() throws {
+        let rounded = ColorParser.ExtendedComponents.srgb(r: 1e304, g: 0, b: 0, a: 1).rounded(to: 5)
+        let c = try srgbComponents(rounded)
+        #expect(c.r == 1e304)
     }
 
     @Test("whitespace and case in the space name are tolerated")

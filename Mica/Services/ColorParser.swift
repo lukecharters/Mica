@@ -501,6 +501,10 @@ extension ColorParser {
         static let srgbSpaceName = "extended-srgb"
         static let graySpaceName = "extended-gray"
 
+        /// Larger magnitudes overflow to infinity when `rounded(to:)` scales them,
+        /// and `extended-srgb:inf,…` does not parse back.
+        static let componentLimit = 1_000_000.0
+
         // MARK: Parsing
 
         /// Parse the extended-component form.
@@ -523,10 +527,10 @@ extension ColorParser {
 
             var values: [Double] = []
             for part in parts {
-                guard let value = Double(part), value.isFinite else {
+                guard let value = Double(part), value.isFinite, abs(value) <= Self.componentLimit else {
                     throw ColorParseError.invalidExtendedComponents(
                         trimmed,
-                        "Components must be finite numbers, e.g. \"\(Self.srgbSpaceName):0.00000,0.47843,1.00000,1.00000\""
+                        "Components must be finite numbers between -1000000 and 1000000, e.g. \"\(Self.srgbSpaceName):0.00000,0.47843,1.00000,1.00000\""
                     )
                 }
                 values.append(value)
@@ -577,8 +581,9 @@ extension ColorParser {
         func rounded(to places: Int) -> ExtendedComponents {
             let scale = pow(10.0, Double(places))
             func round(_ value: Double) -> Double {
-                guard value.isFinite else { return value }
-                return (value * scale).rounded() / scale
+                let scaled = value * scale
+                guard scaled.isFinite else { return value }
+                return scaled.rounded() / scale
             }
             switch self {
             case .srgb(let r, let g, let b, let a):
