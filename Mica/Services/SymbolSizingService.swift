@@ -40,26 +40,14 @@ struct SymbolSizingService {
         let calibrationData = calibration ?? Self.calibrationData
         // 1. Per-symbol calibration
         if let entry = calibrationData.symbols[symbolName], entry.status == "calibrated" {
-            return ResolvedSymbolSizing(
-                multiplier: entry.multiplier,
-                xOffset: entry.xOffset,
-                yOffset: entry.yOffset,
-                weight: fontWeight(from: entry.weight),
-                source: .symbolCalibration
-            )
+            return calibrated(entry, source: .symbolCalibration)
         }
 
         // 2. Container calibration (container keyword in any dot-component)
         if let containerType = detectContainerType(symbolName),
            let entry = calibrationData.containers[containerType.containerKey],
            entry.status == "calibrated" {
-            return ResolvedSymbolSizing(
-                multiplier: entry.multiplier,
-                xOffset: entry.xOffset,
-                yOffset: entry.yOffset,
-                weight: fontWeight(from: entry.weight),
-                source: .containerCalibration
-            )
+            return calibrated(entry, source: .containerCalibration)
         }
 
         // 3. Box-fit prediction from measured tight bounds. Offsets stay
@@ -85,7 +73,26 @@ struct SymbolSizingService {
         )
     }
 
+    /// The bounds a calibration entry is clamped to. The shipped file sits well
+    /// inside them; they exist for a hand-edited Application Support override.
+    static let multiplierRange: ClosedRange<Double> = 0.05...5
+    static let offsetRange: ClosedRange<Double> = -1...1
+
     // MARK: - Private
+
+    private static func calibrated(_ entry: SymbolCalibrationEntry, source: SizingSource) -> ResolvedSymbolSizing {
+        ResolvedSymbolSizing(
+            multiplier: clamp(entry.multiplier, to: multiplierRange),
+            xOffset: clamp(entry.xOffset, to: offsetRange),
+            yOffset: clamp(entry.yOffset, to: offsetRange),
+            weight: fontWeight(from: entry.weight),
+            source: source
+        )
+    }
+
+    private static func clamp(_ value: Double, to range: ClosedRange<Double>) -> Double {
+        min(max(value, range.lowerBound), range.upperBound)
+    }
 
     /// The bundled symbol-calibration.json, ignoring any user override.
     /// Internal (not private) so tests can pin assertions to shipped values

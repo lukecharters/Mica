@@ -145,6 +145,26 @@ struct SymbolSizingServiceTests {
         #expect(abs(r.xOffset - (-0.03)) < 0.001)
     }
 
+    // MARK: - Out-of-range calibration
+
+    @Test("A calibration entry outside the bounds is clamped, in both calibrated tiers",
+          arguments: [(1e300, 1e300), (-1e300, -1e300), (0, 0)])
+    func calibratedEntry_isClamped(_ multiplier: Double, _ offset: Double) {
+        let entry = SymbolCalibrationEntry(
+            multiplier: multiplier, xOffset: offset, yOffset: offset,
+            weight: "regular", status: "calibrated")
+        let calibration = SymbolCalibration(
+            symbols: ["star.fill": entry],
+            containers: [ContainerType.circle.containerKey: entry])
+
+        for name in ["star.fill", "made_up_xyz.circle"] {
+            let r = SymbolSizingService.resolve(for: name, calibration: calibration)
+            #expect(SymbolSizingService.multiplierRange.contains(r.multiplier), "\(name): \(r.multiplier)")
+            #expect(SymbolSizingService.offsetRange.contains(r.xOffset), "\(name): \(r.xOffset)")
+            #expect(SymbolSizingService.offsetRange.contains(r.yOffset), "\(name): \(r.yOffset)")
+        }
+    }
+
     // MARK: - ResolvedSymbolSizing basic properties
 
     @Test("Resolved multiplier is positive and weight is auto/regular/medium for any input",
