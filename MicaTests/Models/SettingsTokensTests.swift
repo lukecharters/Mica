@@ -201,4 +201,31 @@ struct SettingsTokensTests {
         #expect(splitColorList("red,blue,green", expecting: 2) == .wrongCount(3))
         #expect(splitColorList("red,", expecting: 2) == .emptyComponent)
     }
+
+    @Test("splitColorList keeps a comma inside parentheses with its colour")
+    func splitColorListRespectsParentheses() {
+        #expect(splitColorList("rgb(0,136,255), hsl(209,100%,50%,0.5)", expecting: 2)
+            == .ok(["rgb(0,136,255)", "hsl(209,100%,50%,0.5)"]))
+        #expect(splitColorList("rgb(0,136,255):0.5,blue,#08F", expecting: 3)
+            == .ok(["rgb(0,136,255):0.5", "blue", "#08F"]))
+        #expect(splitColorList("rgb(0,136,255,blue", expecting: 2) == .wrongCount(1))
+    }
+
+    @Test("splitColorList names a space-prefixed form its commas cut through")
+    func splitColorListRefusesSpacePrefixedForms() {
+        #expect(splitColorList("srgb:1,0,0,blue", expecting: 2) == .spacePrefixedForm("srgb:1"))
+        #expect(splitColorList("red, Display-P3:1,0,0", expecting: 3) == .spacePrefixedForm("Display-P3:1"))
+        #expect(splitColorList("red,extended-gray:0.5,1", expecting: 3) == .spacePrefixedForm("extended-gray:0.5"))
+    }
+
+    @Test("several values are one colour each and are never split")
+    func splitColorListValues() {
+        #expect(splitColorList(["srgb:1,0,0", " rgb(0,136,255) "], expecting: 2)
+            == .ok(["srgb:1,0,0", "rgb(0,136,255)"]))
+        #expect(splitColorList(["red,blue"], expecting: 2) == .ok(["red", "blue"]))
+        #expect(splitColorList(["srgb:1,0,0"], expecting: 3) == .spacePrefixedForm("srgb:1"))
+        #expect(splitColorList(["red,green", "blue"], expecting: 3) == .wrongCount(2))
+        #expect(splitColorList(["red", "green", "blue"], expecting: 2) == .wrongCount(3))
+        #expect(splitColorList(["red", " "], expecting: 2) == .emptyComponent)
+    }
 }

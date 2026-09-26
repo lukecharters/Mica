@@ -40,6 +40,7 @@ import Testing
 import Foundation
 import SwiftUI
 import AppKit
+import ArgumentParser
 
 /// The fixture tables, deliberately **outside** the `@MainActor` suite: `@Test`'s
 /// `arguments:` are evaluated before the test body and therefore outside the actor,
@@ -51,9 +52,9 @@ enum ColorFormFixtures {
     /// One way of writing a colour, from §4.3's table.
     struct ColorForm: Sendable, CustomStringConvertible {
         let text: String
-        /// Whether the text contains a comma, and so cannot be used in the four
-        /// options that split their value on commas.
-        var hasComma: Bool { text.contains(",") }
+        /// Whether the form can sit in a comma-joined list. A space-prefixed form's
+        /// commas are its own components, so it has to be a value of its own.
+        var survivesCommaJoin: Bool { !ColorParser.isSpacePrefixed(text) }
         var description: String { text }
 
         init(_ text: String) { self.text = text }
@@ -346,58 +347,138 @@ struct ColorSurfaceAgreementTests {
         #expect(srgb.greenComponent < 0.06 && srgb.blueComponent < 0.06, "\(srgb)")
     }
 
-    // MARK: - 5. The comma-splitting asymmetry, stated as a test
+    // MARK: - 5. The multi-colour options
 
-    /// The four multi-colour options split their value on `,`, so a comma-containing
-    /// form cannot be written as a flag at all. A configuration **can** carry one, as
-    /// a JSON array. That asymmetry is deliberate and documented, and it is the only
-    /// place a colour is expressible on one surface and not the other — so it is
-    /// pinned here rather than left to be discovered.
-    @Test("a comma-containing form works in a configuration array and not as a flag")
-    func commaFormsAreArrayOnly() throws {
-        let arrayConfig: [String: Any] = [
-            "icon-fg": "symbol:star.fill",
-            "icon-bg": "custom-gradient",
-            "icon-bg-gradient-colors": ["display-p3:1,0.2,0", "srgb:0,0.53,1"],
-        ]
-        let decoded = try Self.decode(arrayConfig)
-        #expect(decoded.warnings.isEmpty, "\(decoded.warnings)")
-        #expect(decoded.settings.icon.background.gradientStartColor
-            != decoded.settings.icon.background.gradientEndColor,
-                "both gradient stops resolved alike, so neither actually parsed")
-
-        // The same value as a flag cannot work: the comma is the separator.
-        #expect(throws: (any Error).self) {
-            let command = try parseCommand([
-                "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
-                "--icon-bg-gradient-colors", "display-p3:1,0.2,0",
-            ])
-            try command.performValidationForTesting()
-        }
-    }
-
-    /// Comma-free forms must agree across both surfaces in those options too — that
-    /// is the majority of real use and has no excuse to differ.
-    @Test("comma-free forms agree in the gradient options",
-          arguments: ColorFormFixtures.forms.filter { !$0.hasComma })
-    func commaFreeFormsAgreeInGradients(_ form: ColorForm) throws {
+    /// A multi-colour option given one value per colour never splits, so every form
+    /// works in it — the same set a configuration array takes.
+    @Test("every form works as a separate value and agrees with a configuration array",
+          arguments: ColorFormFixtures.forms)
+    func separateValuesAgreeWithArrays(_ form: ColorForm) throws {
         let config: [String: Any] = [
             "icon-fg": "symbol:star.fill",
             "icon-bg": "custom-gradient",
             "icon-bg-gradient-colors": [form.text, "white"],
         ]
         let decoded = try Self.decode(config)
-        let built = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand([
-                "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
-                "--icon-bg-gradient-colors", "\(form.text),white",
-            ]),
-            onto: IconSettings()
-        )
+        #expect(decoded.warnings.isEmpty, "\(form): \(decoded.warnings)")
+
+        let command = try parseCommand([
+            "--icon-bg", "custom-gradient",
+            "--icon-bg-gradient-colors", form.text, "white",
+            "--icon-symbol", "star.fill",
+        ])
+        try command.performValidationForTesting()
+        let built = try IconGenerationRunner().buildTestSettings(from: command, onto: IconSettings())
+
         let fromConfig = decoded.settings.icon.background.gradientStartColor
         let fromFlag = built.icon.background.gradientStartColor
         #expect(fromConfig == fromFlag,
                 "\(form): configuration stored \(fromConfig.stringValue), flag stored \(fromFlag.stringValue)")
+        #expect(built.icon.background.gradientEndColor == .white)
+    }
+
+    /// One comma-joined value, on the flag and in a configuration string, takes every
+    /// form but the space-prefixed set — `rgb()` and `hsl()` included.
+    @Test("comma-joined forms agree across the flag, a configuration string and an array",
+          arguments: ColorFormFixtures.forms.filter(\.survivesCommaJoin))
+    func commaJoinedFormsAgree(_ form: ColorForm) throws {
+        func config(_ colors: Any) -> [String: Any] {
+            ["icon-fg": "symbol:star.fill", "icon-bg": "custom-gradient", "icon-bg-gradient-colors": colors]
+        }
+        let viaArray = try Self.decode(config([form.text, "white"]))
+        let viaString = try Self.decode(config("\(form.text),white"))
+        #expect(viaString.warnings.isEmpty, "\(form): \(viaString.warnings)")
+        #expect(viaString.settings == viaArray.settings, "\(form)")
+
+        let command = try parseCommand([
+            "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
+            "--icon-bg-gradient-colors", "\(form.text),white",
+        ])
+        try command.performValidationForTesting()
+        let built = try IconGenerationRunner().buildTestSettings(from: command, onto: IconSettings())
+        let fromConfig = viaArray.settings.icon.background.gradientStartColor
+        let fromFlag = built.icon.background.gradientStartColor
+        #expect(fromConfig == fromFlag,
+                "\(form): configuration stored \(fromConfig.stringValue), flag stored \(fromFlag.stringValue)")
+    }
+
+    /// A space-prefixed form inside one comma-joined value is cut through by the
+    /// split. Both surfaces refuse it and name the way out.
+    @Test("a space-prefixed form in one comma-joined value is refused on both surfaces",
+          arguments: ColorFormFixtures.forms.filter { !$0.survivesCommaJoin })
+    func commaJoinedSpacePrefixedFormIsRefused(_ form: ColorForm) throws {
+        let decoded = try Self.decode([
+            "icon-fg": "symbol:star.fill",
+            "icon-bg": "custom-gradient",
+            "icon-bg-gradient-colors": "\(form.text),white",
+        ])
+        #expect(decoded.warnings.contains { $0.key == "icon-bg-gradient-colors" && $0.message.contains("array") },
+                "\(form): \(decoded.warnings)")
+
+        let command = try parseCommand([
+            "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
+            "--icon-bg-gradient-colors", "\(form.text),white",
+        ])
+        let error = try #require(throws: ValidationError.self) {
+            try command.performValidationForTesting()
+        }
+        #expect(error.message.contains("own value"), "\(form): \(error.message)")
+    }
+
+    /// The palettes and the badge gradient take separate values the same way, and a
+    /// following option ends the list.
+    @Test("every multi-colour option takes separate values")
+    func allFourOptionsTakeSeparateValues() throws {
+        let icon = ["srgb:1,0,0", "rgb(0,136,255)", "extended-gray:0.5,1"]
+        let badge = ["display-p3:0,0.5,1", "hsl(209,100%,50%)", "blue:0.5"]
+        let gradient = ["extended-srgb:1.09300,-0.22670,-0.15010,1.00000", "srgb:0,0.53,1,0.5"]
+        let decoded = try Self.decode([
+            "icon-fg": "symbol:star.fill",
+            "icon-symbol-rendering": "palette",
+            "icon-symbol-palette": icon,
+            "badge-fg": "symbol:plus",
+            "badge-symbol-rendering": "palette",
+            "badge-symbol-palette": badge,
+            "badge-bg": "custom-gradient",
+            "badge-bg-gradient-colors": gradient,
+        ])
+        #expect(decoded.warnings.isEmpty, "\(decoded.warnings)")
+
+        let command = try parseCommand(
+            ["--icon-symbol-palette"] + icon
+            + ["--badge-symbol-palette"] + badge
+            + ["--badge-bg-gradient-colors"] + gradient
+            + ["--icon-symbol", "star.fill", "--icon-symbol-rendering", "palette",
+               "--badge-symbol", "plus", "--badge-symbol-rendering", "palette",
+               "--badge-bg", "custom-gradient"]
+        )
+        #expect(command.iconForeground.symbolPalette == icon)
+        #expect(command.badge.symbolPalette == badge)
+        #expect(command.badge.backgroundGradientColors == gradient)
+        try command.performValidationForTesting()
+        let built = try IconGenerationRunner().buildTestSettings(from: command, onto: IconSettings())
+
+        let config = decoded.settings
+        #expect(built.icon.foreground.palettePrimaryColor == config.icon.foreground.palettePrimaryColor)
+        #expect(built.icon.foreground.paletteSecondaryColor == config.icon.foreground.paletteSecondaryColor)
+        #expect(built.icon.foreground.paletteTertiaryColor == config.icon.foreground.paletteTertiaryColor)
+        #expect(built.badge.foreground.palettePrimaryColor == config.badge.foreground.palettePrimaryColor)
+        #expect(built.badge.foreground.paletteSecondaryColor == config.badge.foreground.paletteSecondaryColor)
+        #expect(built.badge.foreground.paletteTertiaryColor == config.badge.foreground.paletteTertiaryColor)
+        #expect(built.badge.background.gradientStartColor == config.badge.background.gradientStartColor)
+        #expect(built.badge.background.gradientEndColor == config.badge.background.gradientEndColor)
+    }
+
+    @Test("several values that are not one per colour are refused, not split")
+    func mixedValuesAreRefused() throws {
+        let command = try parseCommand([
+            "--icon-symbol", "star.fill", "--icon-symbol-rendering", "palette",
+            "--icon-symbol-palette", "red,green", "blue",
+        ])
+        let error = try #require(throws: ValidationError.self) {
+            try command.performValidationForTesting()
+        }
+        #expect(error.message.contains("You provided 2"), "\(error.message)")
     }
 
     // MARK: - Helpers

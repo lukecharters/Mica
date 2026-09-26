@@ -240,13 +240,13 @@ class IconGenerationRunner {
     
     private func validateRenderingModeConsistency(_ command: GenerateCommand, context: GenerationContext) throws {
         if command.iconForeground.symbolRendering == "palette",
-           let palette = command.iconForeground.symbolPalette {
+           !command.iconForeground.symbolPalette.isEmpty {
             // Enforce exactly three palette components.
-            _ = try splitPalette(palette, role: "--icon-symbol-palette")
+            _ = try splitPalette(command.iconForeground.symbolPalette, role: "--icon-symbol-palette")
         }
         if command.badgeIsActive(in: context), command.badge.symbolRendering == "palette",
-           let palette = command.badge.symbolPalette {
-            _ = try splitPalette(palette, role: "--badge-symbol-palette")
+           !command.badge.symbolPalette.isEmpty {
+            _ = try splitPalette(command.badge.symbolPalette, role: "--badge-symbol-palette")
         }
     }
     
@@ -363,8 +363,8 @@ class IconGenerationRunner {
             case .customGradient:
                 settings.icon.background.source = .color
                 settings.icon.background.usesCustomGradient = true
-                if let gradientColors = command.background.gradientColors {
-                    let parts = try splitGradientColors(gradientColors)
+                if !command.background.gradientColors.isEmpty {
+                    let parts = try splitGradientColors(command.background.gradientColors)
                     settings.icon.background.gradientStartColor = try MicaColorValue(strictlyParsing: parts[0])
                     settings.icon.background.gradientEndColor = try MicaColorValue(strictlyParsing: parts[1])
                 }
@@ -428,8 +428,8 @@ class IconGenerationRunner {
             // Palette colours, assigned only when passed — like every other flag.
             // An absent flag leaves `ForegroundSpec.defaultPalette` on a flags-only
             // run, or a configuration's own palette under `--config`.
-            if let palette = command.iconForeground.symbolPalette {
-                let parts = try splitPalette(palette, role: "--icon-symbol-palette")
+            if !command.iconForeground.symbolPalette.isEmpty {
+                let parts = try splitPalette(command.iconForeground.symbolPalette, role: "--icon-symbol-palette")
                 settings.icon.foreground.palettePrimaryColor = try MicaColorValue(strictlyParsing: parts[0])
                 settings.icon.foreground.paletteSecondaryColor = try MicaColorValue(strictlyParsing: parts[1])
                 settings.icon.foreground.paletteTertiaryColor = try MicaColorValue(strictlyParsing: parts[2])
@@ -541,8 +541,8 @@ class IconGenerationRunner {
                 case .customGradient:
                     settings.badge.background.source = .color
                     settings.badge.background.usesCustomGradient = true
-                    if let gradientColors = command.badge.backgroundGradientColors {
-                        let parts = try splitGradientColors(gradientColors, role: "--badge-bg-gradient-colors")
+                    if !command.badge.backgroundGradientColors.isEmpty {
+                        let parts = try splitGradientColors(command.badge.backgroundGradientColors, role: "--badge-bg-gradient-colors")
                         settings.badge.background.gradientStartColor = try MicaColorValue(strictlyParsing: parts[0])
                         settings.badge.background.gradientEndColor = try MicaColorValue(strictlyParsing: parts[1])
                     }
@@ -598,8 +598,8 @@ class IconGenerationRunner {
                 }
 
                 // Badge palette — assigned only when passed, as with the icon's.
-                if let badgePalette = command.badge.symbolPalette {
-                    let parts = try splitPalette(badgePalette, role: "--badge-symbol-palette")
+                if !command.badge.symbolPalette.isEmpty {
+                    let parts = try splitPalette(command.badge.symbolPalette, role: "--badge-symbol-palette")
                     settings.badge.foreground.palettePrimaryColor = try MicaColorValue(strictlyParsing: parts[0])
                     settings.badge.foreground.paletteSecondaryColor = try MicaColorValue(strictlyParsing: parts[1])
                     settings.badge.foreground.paletteTertiaryColor = try MicaColorValue(strictlyParsing: parts[2])

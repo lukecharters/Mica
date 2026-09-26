@@ -14,8 +14,8 @@
 //   than being one; use `"icon-fg": "symbol:star.fill"`.
 // - **Decode is liberal**: toggles take JSON booleans or `"on"`/`"off"`; numbers
 //   take JSON numbers or numeric strings; the four multi-colour keys take a
-//   JSON array of colour strings or the CLI's comma-joined form (the array form
-//   is what finally admits comma-containing colours like `extended-srgb:`);
+//   JSON array of colour strings or one comma-joined string (only the array
+//   carries the space-prefixed forms like `extended-srgb:`);
 //   British `-colour` spellings are accepted and the American key wins a tie.
 // - **Encode is minimal above an identity set, and gated by applicability.**
 //   The keys that say *what the icon is* are always written, even at their
@@ -465,9 +465,8 @@ private struct ConfigReader {
         return number
     }
 
-    /// A multi-colour key: a JSON array of colour strings, or the CLI's
-    /// comma-joined form. The array form admits comma-containing colours
-    /// (`extended-srgb:`), which the flag never could.
+    /// A multi-colour key: a JSON array of colour strings, or one comma-joined
+    /// string. Only the array carries the space-prefixed forms (`extended-srgb:`).
     mutating func colorList(_ key: MicaConfigKey, expecting count: Int) -> [String]? {
         guard let value = values[key] else { return nil }
         if let array = value as? [Any] {
@@ -487,6 +486,9 @@ private struct ConfigReader {
                 return nil
             case .emptyComponent:
                 warn(key.rawValue, "colours cannot be empty")
+                return nil
+            case .spacePrefixedForm(let piece):
+                warn(key.rawValue, "\"\(piece)\" is cut short by the comma split; write the colours as an array")
                 return nil
             }
         }

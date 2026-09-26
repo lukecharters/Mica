@@ -102,6 +102,9 @@ HAPPY_CASES=(
     "icon-bg-gradient-off|star.fill|--icon-bg-gradient|off"
     "icon-bg-custom-gradient|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|#FF6B35,#F7931E"
     "icon-bg-gradient-colors-opacity|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|red:0.8,orange:0.4"
+    # One value per colour is never split, so the space-prefixed forms work too.
+    "icon-bg-gradient-colors-separate-values|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|srgb:1,0.4,0|rgb(0,136,255)"
+    "icon-bg-gradient-colors-functions-joined|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|rgb(255,107,53),hsl(33,93%,54%)"
     "icon-bg-image|star.fill|--icon-bg|\$BACKGROUND_FIXTURE"
     "icon-bg-image-scale|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-scale|1.3"
     "icon-bg-image-padding-on|star.fill|--icon-bg|\$BACKGROUND_FIXTURE|--icon-bg-padding|on"
@@ -122,6 +125,7 @@ HAPPY_CASES=(
     "icon-symbol-rendering-multicolor|star.fill|--icon-symbol-rendering|multicolor"
     "icon-symbol-rendering-palette|person.3.sequence.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|blue,white:0.5,white:0.26"
     # Opacity on the FIRST palette slot: rejected until 2026-07-29.
+    "icon-symbol-palette-separate-values|person.3.sequence.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|display-p3:0,0.5,1|extended-gray:1,1|srgb:1,1,1,0.26"
     "icon-symbol-palette-primary-opacity|person.3.sequence.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|blue:0.8,white:0.5,white:0.26"
     "icon-symbol-color-yellow|star.fill|--icon-symbol-color|yellow"
     "icon-symbol-weight-bold|star.fill|--icon-symbol-weight|bold"
@@ -156,6 +160,8 @@ HAPPY_CASES=(
     "badge-bg-color-red|star.fill|--badge-fg|symbol:plus.circle|--badge-bg-color|red"
     "badge-bg-gradient-off|star.fill|--badge-fg|symbol:plus.circle|--badge-bg-gradient|off"
     "badge-bg-custom-gradient|star.fill|--badge-fg|symbol:gearshape.fill|--badge-bg|custom-gradient|--badge-bg-gradient-colors|red,orange"
+    "badge-bg-gradient-colors-separate-values|star.fill|--badge-fg|symbol:gearshape.fill|--badge-bg|custom-gradient|--badge-bg-gradient-colors|srgb:1,0,0|display-p3:1,0.5,0"
+    "badge-symbol-palette-separate-values|star.fill|--badge-fg|symbol:person.3.sequence.fill|--badge-symbol-rendering|palette|--badge-symbol-palette|srgb:1,0,0|rgb(0,0,255):0.5|extended-gray:0.2,1"
     "badge-bg-image|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE"
     "badge-bg-image-scale|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE|--badge-bg-scale|1.2"
     "badge-bg-image-padding-on|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|\$BACKGROUND_FIXTURE|--badge-bg-padding|on"
@@ -243,6 +249,8 @@ NEGATIVE_CASES=(
     "icon-symbol-color-label-retired|Invalid color format for --icon-symbol-color|star.fill|--icon-symbol-color|label"
     "icon-bg-color-grayscale-dropped|Invalid color format for --icon-bg-color|star.fill|--icon-bg-color|0.5"
     "icon-bg-custom-gradient-missing-colors|--icon-bg custom-gradient requires|star.fill|--icon-bg|custom-gradient"
+    "icon-bg-gradient-colors-space-form-joined|as its own value|star.fill|--icon-bg|custom-gradient|--icon-bg-gradient-colors|srgb:1,0,0,blue"
+    "icon-symbol-palette-mixed-values|requires exactly three colors|star.fill|--icon-symbol-rendering|palette|--icon-symbol-palette|red,green|blue"
     # Retired 2026-08-16. The point of the case is *which* error: the keyword has no
     # case left in IconBackgroundValue, so an unscreened value parses as an image path
     # and would fail as "File not found" for a file nobody named.

@@ -52,7 +52,7 @@ struct SpellingAliasTests {
             "--icon-symbol", "star.fill", "--icon-bg", "custom-gradient",
             "--icon-bg-gradient-colours", "red,blue",
         ])
-        #expect(command.background.gradientColors == "red,blue")
+        #expect(command.background.gradientColors == ["red,blue"])
     }
 
     @Test("--badge-symbol-colour is an alias for --badge-symbol-color")
@@ -80,7 +80,7 @@ struct SpellingAliasTests {
             "--badge-bg", "custom-gradient",
             "--badge-bg-gradient-colours", "red,orange",
         ])
-        #expect(command.badge.backgroundGradientColors == "red,orange")
+        #expect(command.badge.backgroundGradientColors == ["red,orange"])
     }
 
     // MARK: - Rendering-mode value spelling

@@ -292,22 +292,56 @@ enum BadgeBackgroundValue: Equatable, Sendable {
 
 // MARK: - Multi-colour values
 
-/// The outcome of splitting a comma-joined colour list. The two failure cases
-/// are distinct because the CLI reports them differently.
+/// The outcome of splitting a colour list. The failure cases are distinct
+/// because the CLI reports them differently.
 enum ColorListSplit: Equatable, Sendable {
     case ok([String])
     case wrongCount(Int)
     case emptyComponent
+    /// A comma-joined list held a space-prefixed form (`srgb:`, `extended-gray:`, …),
+    /// whose own commas the split cut through. Carries the first broken piece.
+    case spacePrefixedForm(String)
 }
 
 /// Split a comma-joined colour list into exactly `count` trimmed components.
+/// A comma inside `( … )` belongs to its colour, so `rgb()` and `hsl()` survive.
 /// The caller owns the error/warning wording — the CLI turns failures into
 /// `ValidationError`s, the configuration codec into warnings.
 func splitColorList(_ raw: String, expecting count: Int) -> ColorListSplit {
-    let parts = raw
-        .split(separator: ",", omittingEmptySubsequences: false)
-        .map { $0.trimmingCharacters(in: .whitespaces) }
+    let parts = splitOutsideParentheses(raw).map { $0.trimmingCharacters(in: .whitespaces) }
+    if let broken = parts.first(where: ColorParser.isSpacePrefixed) {
+        return .spacePrefixedForm(broken)
+    }
+    return checked(parts, expecting: count)
+}
+
+/// Split a multi-value CLI option: one value is a comma-joined list, several
+/// values are one colour each and are never split.
+func splitColorList(_ values: [String], expecting count: Int) -> ColorListSplit {
+    if values.count == 1 { return splitColorList(values[0], expecting: count) }
+    return checked(values.map { $0.trimmingCharacters(in: .whitespaces) }, expecting: count)
+}
+
+private func checked(_ parts: [String], expecting count: Int) -> ColorListSplit {
     guard parts.count == count else { return .wrongCount(parts.count) }
     guard parts.allSatisfy({ !$0.isEmpty }) else { return .emptyComponent }
     return .ok(parts)
+}
+
+private func splitOutsideParentheses(_ raw: String) -> [Substring] {
+    var parts: [Substring] = []
+    var depth = 0
+    var start = raw.startIndex
+    for index in raw.indices {
+        switch raw[index] {
+        case "(": depth += 1
+        case ")": depth = max(0, depth - 1)
+        case "," where depth == 0:
+            parts.append(raw[start..<index])
+            start = raw.index(after: index)
+        default: break
+        }
+    }
+    parts.append(raw[start...])
+    return parts
 }

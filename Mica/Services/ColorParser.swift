@@ -172,6 +172,20 @@ struct ColorParser {
         }
     }
 
+    /// Whether `input` names one of the four spaces `spacePrefixedComponents`
+    /// reads, whatever follows the colon.
+    static func isSpacePrefixed(_ input: String) -> Bool {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let separator = trimmed.firstIndex(of: ":") else { return false }
+        switch trimmed[trimmed.startIndex..<separator].lowercased() {
+        case ExtendedComponents.srgbSpaceName, ExtendedComponents.graySpaceName,
+             srgbSpaceName, displayP3SpaceName:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// `srgb:r,g,b(,a)` or `display-p3:r,g,b(,a)`, every component in 0–1.
     private static func boundedComponents(
         space: String,

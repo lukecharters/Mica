@@ -785,6 +785,24 @@ struct MicaConfigTests {
         #expect(viaString.settings == viaArray.settings)
     }
 
+    @Test("a comma-joined string keeps rgb() and hsl() whole")
+    func stringFormTakesFunctionColors() throws {
+        let viaString = try Self.decode(["icon-symbol-palette": "rgb(255,0,0), hsl(120,100%,50%), blue"])
+        let viaArray = try Self.decode(["icon-symbol-palette": ["rgb(255,0,0)", "hsl(120,100%,50%)", "blue"]])
+        #expect(viaString.warnings.isEmpty, "\(viaString.warnings)")
+        #expect(viaString.settings == viaArray.settings)
+    }
+
+    @Test("a space-prefixed form in a comma-joined string warns toward the array")
+    func stringFormRefusesSpacePrefixedColors() throws {
+        let result = try Self.decode(["icon-bg": "custom-gradient", "icon-bg-gradient-colors": "srgb:1,0,0,blue"])
+        #expect(result.settings.icon.background.gradientStartColor == IconSettings().icon.background.gradientStartColor)
+        #expect(result.warnings.count == 1)
+        let warning = try #require(result.warnings.first)
+        #expect(warning.key == "icon-bg-gradient-colors")
+        #expect(warning.message.contains("array"), "\(warning.message)")
+    }
+
     @Test("the array form admits comma-containing colour strings")
     func arrayFormTakesExtendedColors() throws {
         let extended = "extended-srgb:0.20000,0.60000,0.90196,1.00000"

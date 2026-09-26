@@ -373,16 +373,16 @@ struct IconForegroundOptions: ParsableArguments {
     )
     var symbolColor: String?
 
-    // Folds --palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`,
-    // all three slots accepting the same forms. Validated/parsed in the builder.
+    // Folds --palette-primary/secondary/tertiary. Validated/parsed in the builder.
     @Option(
         name: .customLong("icon-symbol-palette"),
+        parsing: .upToNextOption,
         help: ArgumentHelp(
-            "Three palette colors \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
-            valueName: "c1,c2,c3"
+            "Three palette colors, as three values or one comma-joined value \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
+            valueName: "color"
         )
     )
-    var symbolPalette: String?
+    var symbolPalette: [String] = []
 
     @Option(
         name: .customLong("icon-symbol-weight"),
@@ -449,7 +449,7 @@ struct IconForegroundOptions: ParsableArguments {
             || offsetY != nil
             || symbolRendering != nil
             || symbolColor != nil
-            || symbolPalette != nil
+            || !symbolPalette.isEmpty
             || symbolWeight != nil
             || symbolGradient != nil
             || shadow != nil
@@ -488,12 +488,13 @@ struct IconBackgroundOptions: ParsableArguments {
     // Folds --use-custom-colors + --custom-primary + --custom-secondary.
     @Option(
         name: [.customLong("icon-bg-gradient-colors"), .customLong("icon-bg-gradient-colours")],
+        parsing: .upToNextOption,
         help: ArgumentHelp(
-            "Two background gradient colors, top then bottom",
-            valueName: "c1,c2"
+            "Two background gradient colors, top then bottom, as two values or one comma-joined value",
+            valueName: "color"
         )
     )
-    var gradientColors: String?
+    var gradientColors: [String] = []
 
     // Was --no-gradient. Flat vs derived gradient on a standard background.
     @Option(
@@ -713,16 +714,16 @@ struct BadgeOptions: ParsableArguments {
     )
     var symbolColor: String?
 
-    // Folds --badge-palette-primary/secondary/tertiary. Comma-separated `c1,c2,c3`,
-    // all three slots accepting the same forms. Validated/parsed in the builder.
+    // Folds --badge-palette-primary/secondary/tertiary. Validated/parsed in the builder.
     @Option(
         name: .customLong("badge-symbol-palette"),
+        parsing: .upToNextOption,
         help: ArgumentHelp(
-            "Three badge palette colors \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
-            valueName: "c1,c2,c3"
+            "Three badge palette colors, as three values or one comma-joined value \(defaultNote(ForegroundSpec.defaultPaletteCLIValue))",
+            valueName: "color"
         )
     )
-    var symbolPalette: String?
+    var symbolPalette: [String] = []
 
     @Option(
         name: .customLong("badge-symbol-weight"),
@@ -793,12 +794,13 @@ struct BadgeOptions: ParsableArguments {
     // Folds --badge-use-custom + --badge-primary + --badge-secondary.
     @Option(
         name: [.customLong("badge-bg-gradient-colors"), .customLong("badge-bg-gradient-colours")],
+        parsing: .upToNextOption,
         help: ArgumentHelp(
-            "Two badge gradient colors, top then bottom",
-            valueName: "c1,c2"
+            "Two badge gradient colors, top then bottom, as two values or one comma-joined value",
+            valueName: "color"
         )
     )
-    var backgroundGradientColors: String?
+    var backgroundGradientColors: [String] = []
 
     // Was --badge-no-gradient.
     @Option(
@@ -926,7 +928,7 @@ struct BadgeOptions: ParsableArguments {
             || foregroundOffsetY != nil
             || symbolRendering != nil
             || symbolColor != nil
-            || symbolPalette != nil
+            || !symbolPalette.isEmpty
             || symbolWeight != nil
             || symbolGradient != nil
             || foregroundShadow != nil
@@ -958,6 +960,7 @@ struct GenerateCommand: AsyncParsableCommand {
               mica-cli --icon-bg ~/artwork.png
               mica-cli --icon-symbol star.fill --badge-symbol plus.circle.fill
               mica-cli --icon-symbol star.fill --badge-symbol plus --badge-offset-y=-0.15
+              mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors srgb:1,0.4,0 "rgb(0,136,255)"
 
             Badge source or visibility options activate the badge.
 
@@ -987,8 +990,8 @@ struct GenerateCommand: AsyncParsableCommand {
     //
     // Deliberately not in an OptionGroup: every other flag *is* a setting, while
     // this one says where the settings come from. It is also the reason all of
-    // them are Optional — a flag has to be able to read as "not passed" so that a
-    // configuration's value survives it.
+    // them are Optional, or an empty array — a flag has to be able to read as
+    // "not passed" so that a configuration's value survives it.
     @Option(
         name: .customLong("config"),
         help: ArgumentHelp(
@@ -1393,12 +1396,12 @@ struct GenerateCommand: AsyncParsableCommand {
         // Only a flags-only `generate` has to be given the gradient colours: a
         // configuration already carries a pair, so `--icon-bg custom-gradient`
         // alone legitimately means "use those".
-        if context.base == nil, case .customGradient = resolvedBackground(), background.gradientColors == nil {
+        if context.base == nil, case .customGradient = resolvedBackground(), background.gradientColors.isEmpty {
             throw ValidationError("--icon-bg custom-gradient requires --icon-bg-gradient-colors <c1,c2>.")
         }
-        if iconForeground.symbolRendering == "palette", let palette = iconForeground.symbolPalette {
+        if iconForeground.symbolRendering == "palette", !iconForeground.symbolPalette.isEmpty {
             // Validate the count up front; format is checked in validateColorFormats.
-            _ = try splitPalette(palette, role: "--icon-symbol-palette")
+            _ = try splitPalette(iconForeground.symbolPalette, role: "--icon-symbol-palette")
         }
     }
 
@@ -1431,13 +1434,13 @@ struct GenerateCommand: AsyncParsableCommand {
     /// or from a configuration.
     private func validateBadgeBackgroundDependencies(in context: GenerationContext) throws {
         // As with the icon: a configuration already carries a gradient pair.
-        if context.base == nil, case .customGradient = resolvedBadgeBackground(), badge.backgroundGradientColors == nil {
+        if context.base == nil, case .customGradient = resolvedBadgeBackground(), badge.backgroundGradientColors.isEmpty {
             throw ValidationError("--badge-bg custom-gradient requires --badge-bg-gradient-colors <c1,c2>.")
         }
 
-        if badge.symbolRendering == "palette", let palette = badge.symbolPalette {
+        if badge.symbolRendering == "palette", !badge.symbolPalette.isEmpty {
             // Validate the count up front; format is checked in validateColorFormats.
-            _ = try splitPalette(palette, role: "--badge-symbol-palette")
+            _ = try splitPalette(badge.symbolPalette, role: "--badge-symbol-palette")
         }
     }
 
@@ -1517,8 +1520,8 @@ struct GenerateCommand: AsyncParsableCommand {
         // Palette colours (mica only). All three slots take the same forms,
         // including a `:opacity` suffix — the primary used to reject one for no
         // reason the GUI shares.
-        if let palette = iconForeground.symbolPalette {
-            for part in try splitPalette(palette, role: "--icon-symbol-palette") {
+        if !iconForeground.symbolPalette.isEmpty {
+            for part in try splitPalette(iconForeground.symbolPalette, role: "--icon-symbol-palette") {
                 do {
                     _ = try ColorParser.parseWithOpacity(part)
                 } catch {
@@ -1542,8 +1545,8 @@ struct GenerateCommand: AsyncParsableCommand {
         }
 
         // --icon-bg-gradient-colors (custom-gradient): exactly two colours.
-        if let gradientColors = background.gradientColors {
-            for part in try splitGradientColors(gradientColors) {
+        if !background.gradientColors.isEmpty {
+            for part in try splitGradientColors(background.gradientColors) {
                 do {
                     _ = try ColorParser.parseWithOpacity(part)
                 } catch {
@@ -1571,8 +1574,8 @@ struct GenerateCommand: AsyncParsableCommand {
             }
 
             // Badge palette (mica only). All three slots take the same forms.
-            if let badgePalette = badge.symbolPalette {
-                for part in try splitPalette(badgePalette, role: "--badge-symbol-palette") {
+            if !badge.symbolPalette.isEmpty {
+                for part in try splitPalette(badge.symbolPalette, role: "--badge-symbol-palette") {
                     do {
                         _ = try ColorParser.parseWithOpacity(part)
                     } catch {
@@ -1594,8 +1597,8 @@ struct GenerateCommand: AsyncParsableCommand {
             }
 
             // --badge-bg-gradient-colors (custom-gradient): exactly two colours.
-            if let badgeGradientColors = badge.backgroundGradientColors {
-                for part in try splitGradientColors(badgeGradientColors, role: "--badge-bg-gradient-colors") {
+            if !badge.backgroundGradientColors.isEmpty {
+                for part in try splitGradientColors(badge.backgroundGradientColors, role: "--badge-bg-gradient-colors") {
                     do {
                         _ = try ColorParser.parseWithOpacity(part)
                     } catch {
@@ -1607,30 +1610,29 @@ struct GenerateCommand: AsyncParsableCommand {
     }
 }
 
-/// Split a gradient-colors value into exactly two component strings.
-/// Throws a `ValidationError` if the count isn't two or any part is empty.
-/// The splitting itself is `splitColorList`, shared with the configuration codec.
-func splitGradientColors(_ raw: String, role: String = "--icon-bg-gradient-colors") throws -> [String] {
-    switch splitColorList(raw, expecting: 2) {
-    case .ok(let parts):
-        return parts
-    case .wrongCount(let count):
-        throw ValidationError("\(role) requires exactly two comma-separated colors 'c1,c2'. You provided \(count).")
-    case .emptyComponent:
-        throw ValidationError("\(role) colors cannot be empty. Use 'c1,c2'.")
-    }
+/// Split a gradient-colors value into exactly two colours. Throws a
+/// `ValidationError` naming `role` if it cannot.
+func splitGradientColors(_ values: [String], role: String = "--icon-bg-gradient-colors") throws -> [String] {
+    try splitColorValues(values, expecting: 2, countWord: "two", role: role)
 }
 
-/// Split a `--icon-symbol-palette` value into exactly three component strings.
-/// Throws a `ValidationError` if the count isn't three or any part is empty.
-/// The splitting itself is `splitColorList`, shared with the configuration codec.
-func splitPalette(_ raw: String, role: String) throws -> [String] {
-    switch splitColorList(raw, expecting: 3) {
+/// Split a palette value into exactly three colours. Throws a
+/// `ValidationError` naming `role` if it cannot.
+func splitPalette(_ values: [String], role: String) throws -> [String] {
+    try splitColorValues(values, expecting: 3, countWord: "three", role: role)
+}
+
+/// The CLI face of `splitColorList`, which the configuration codec shares.
+private func splitColorValues(_ values: [String], expecting count: Int, countWord: String, role: String) throws -> [String] {
+    let example = (1...count).map { "c\($0)" }
+    switch splitColorList(values, expecting: count) {
     case .ok(let parts):
         return parts
-    case .wrongCount(let count):
-        throw ValidationError("\(role) requires exactly three comma-separated colors 'c1,c2,c3'. You provided \(count).")
+    case .wrongCount(let got):
+        throw ValidationError("\(role) requires exactly \(countWord) colors, as '\(example.joined(separator: " "))' or '\(example.joined(separator: ","))'. You provided \(got).")
     case .emptyComponent:
-        throw ValidationError("\(role) colors cannot be empty. Use 'c1,c2,c3'.")
+        throw ValidationError("\(role) colors cannot be empty.")
+    case .spacePrefixedForm(let piece):
+        throw ValidationError("\(role) split '\(piece)' at its commas. Give each color as its own value: \(role) \(example.joined(separator: " ")).")
     }
 }
