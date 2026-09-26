@@ -596,6 +596,19 @@ extension ColorParser {
             }
         }
 
+        /// Every component clamped to 0–1, which is the nearest sRGB colour by
+        /// channel. Only for a surface that cannot hold anything wider — the rest
+        /// of Mica keeps wide-gamut components intact.
+        func clampedToSRGB() -> ExtendedComponents {
+            func clamp(_ value: Double) -> Double { min(max(value, 0), 1) }
+            switch self {
+            case .srgb(let r, let g, let b, let a):
+                return .srgb(r: clamp(r), g: clamp(g), b: clamp(b), a: clamp(a))
+            case .gray(let white, let alpha):
+                return .gray(white: clamp(white), alpha: clamp(alpha))
+            }
+        }
+
         /// The same colour with its alpha scaled — how `MicaColorValue` folds an
         /// opacity modifier into a components source, so `alpha` is only ever a
         /// modifier on a *token*.

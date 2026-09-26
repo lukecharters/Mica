@@ -204,6 +204,13 @@ struct MicaColorValue: Equatable, Hashable, Sendable {
         (try? resolvedColor()) ?? .clear
     }
 
+    /// Components clamped to sRGB; a token is returned unchanged, because the OS
+    /// resolves it and there is nothing here to clamp.
+    func clampedToSRGB() -> MicaColorValue {
+        guard case .components(let components) = source else { return self }
+        return .components(components.clampedToSRGB())
+    }
+
     /// Whether this names a token the table holds.
     var isToken: Bool {
         if case .token(let name) = source { return ColorTokenTable.token(named: name) != nil }

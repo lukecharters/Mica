@@ -27,29 +27,36 @@ struct AppexColorPickerRow: View {
     var body: some View {
         ColorPickerWithDropdown(
             label: label,
-            value: colorValueBinding,
+            value: Self.colorValueBinding(for: $selection),
             presets: ColorTokenTable.appexNative,
             supportsOpacity: role.honoursAlpha
         )
     }
 
-    private var colorValueBinding: Binding<MicaColorValue> {
+    /// Custom colours are clamped to sRGB on the way in: the appex plist refuses
+    /// anything wider, and the colour panel cannot be limited to sRGB. A value
+    /// that arrives from a configuration or the CLI is left alone, so it still
+    /// reaches `AppexColorError.outOfSRGBGamut`.
+    static func colorValueBinding(for selection: Binding<AppexColor>) -> Binding<MicaColorValue> {
         Binding(
             get: {
-                selection.isCustom ? selection.customColor : .token(selection.preset.rawValue)
+                let current = selection.wrappedValue
+                return current.isCustom ? current.customColor : .token(current.preset.rawValue)
             },
             set: { newValue in
                 // Only an appex-native token can stay a preset — the pipeline
                 // accepts no other name, and anything else has to be resolved to
                 // components (§4.4 of the colour-resolution plan).
+                var updated = selection.wrappedValue
                 if let name = newValue.tokenName,
                    let preset = AppexNamedColor(rawValue: name) {
-                    selection.preset = preset
-                    selection.isCustom = false
+                    updated.preset = preset
+                    updated.isCustom = false
                 } else {
-                    selection.customColor = newValue
-                    selection.isCustom = true
+                    updated.customColor = newValue.clampedToSRGB()
+                    updated.isCustom = true
                 }
+                selection.wrappedValue = updated
             }
         )
     }

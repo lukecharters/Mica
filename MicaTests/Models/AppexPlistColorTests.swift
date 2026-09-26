@@ -188,6 +188,52 @@ import AppKit
         #expect(message.contains(role.noun), "should name the \(role.noun) role: \(message)")
     }
 
+    // MARK: - A colour-well pick is clamped before it is stored
+
+    private static func wellPick(_ input: String, into selection: inout AppexColor) throws {
+        var stored = selection
+        let binding = Binding(get: { stored }, set: { stored = $0 })
+        AppexColorPickerRow.colorValueBinding(for: binding).asColor.wrappedValue =
+            try MicaColorValue(strictlyParsing: input).resolved
+        selection = stored
+    }
+
+    @Test("a wide-gamut colour-well pick is stored as sRGB and projects, for either key", arguments: [
+        "display-p3:1,0,0", "display-p3:0,1,0", "extended-srgb:1.09300,-0.22670,-0.15010,1.00000",
+        "extended-srgb:1.2,0,0,1", "extended-srgb:1.2,1.2,1.2,1",
+    ])
+    @MainActor
+    func wideGamutWellPickIsClamped(_ input: String) throws {
+        var selection = AppexColor.blue
+        try Self.wellPick(input, into: &selection)
+
+        #expect(selection.isCustom)
+        guard case .components(.srgb(let r, let g, let b, _)) = selection.customColor.source else {
+            Issue.record("expected sRGB components, got \(selection.customColor.stringValue)")
+            return
+        }
+        for component in [r, g, b] {
+            #expect((0...1).contains(component), "\(selection.customColor.stringValue)")
+        }
+        for role in AppexPlistColor.Role.allCases {
+            #expect(throws: Never.self) { try AppexPlistColor(projecting: selection, role: role) }
+        }
+    }
+
+    @Test("an in-gamut colour-well pick is stored unchanged")
+    @MainActor
+    func inGamutWellPickIsUnchanged() throws {
+        var selection = AppexColor.blue
+        try Self.wellPick("srgb:0.2,0.4,0.6", into: &selection)
+        let expected = try MicaColorValue(strictlyParsing: "srgb:0.2,0.4,0.6")
+        #expect(selection.customColor == expected)
+    }
+
+    @Test("clamping leaves a token alone")
+    func clampingLeavesATokenAlone() {
+        #expect(MicaColorValue.token("primary", alpha: 0.5).clampedToSRGB() == .token("primary", alpha: 0.5))
+    }
+
     // MARK: - Presets keep Apple's curated rendering
 
     /// A named token is not interchangeable with its own components: a named `red`
