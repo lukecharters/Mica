@@ -155,6 +155,8 @@ import AppKit
     /// desaturate it with nothing said, which is what D2 rules out.
     @Test("a wide-gamut colour is refused, for either key", arguments: [
         "display-p3:1,0,0", "display-p3:0,1,0", "extended-srgb:1.09300,-0.22670,-0.15010,1.00000",
+        // On the 1/255 grid, where an 8-bit NSColor would wrap back inside the gamut.
+        "extended-srgb:1.2,0,0,1", "extended-srgb:2,0,0,1", "extended-srgb:0,1.2,0,1", "extended-srgb:1.2,1.2,1.2,1",
     ])
     func wideGamutIsRefused(_ input: String) throws {
         let color = AppexColor.custom(try MicaColorValue(strictlyParsing: input))

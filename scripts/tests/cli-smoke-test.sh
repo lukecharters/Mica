@@ -270,6 +270,9 @@ NEGATIVE_CASES=(
     "system-badge-bg-opacity-refused|opacity|star.fill|--badge-fg|symbol:plus|--badge-generation-mode|system|--badge-bg-color|blue:0.5"
     "system-bg-wide-gamut-refused|outside sRGB|star.fill|--icon-generation-mode|system|--icon-bg-color|display-p3:1,0,0"
     "system-symbol-wide-gamut-refused|outside sRGB|star.fill|--icon-generation-mode|system|--icon-symbol-color|display-p3:0,1,0"
+    # On the 1/255 grid, where an 8-bit NSColor would wrap the value back inside sRGB.
+    "system-bg-on-grid-extended-refused|outside sRGB|star.fill|--icon-generation-mode|system|--icon-bg-color|extended-srgb:1.2,0,0,1"
+    "system-symbol-on-grid-extended-refused|outside sRGB|star.fill|--icon-generation-mode|system|--icon-symbol-color|extended-srgb:0,1.2,0,1"
     "quiet-verbose-conflict|--quiet and --verbose cannot be used together|star.fill|--quiet|--verbose"
 
     # ---- extract subcommand ----

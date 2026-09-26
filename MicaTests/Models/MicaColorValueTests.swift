@@ -452,6 +452,39 @@ struct MicaColorValueTests {
         }
     }
 
+    // MARK: - Out-of-range components on the 1/255 grid
+
+    private static let onGridOutOfRange: [[Double]] = [
+        [1.2, 0, 0, 1], [2, 0, 0, 1], [0, 1.2, 0, 1], [0, 0, 1.2, 1], [1.2, 1.2, 1.2, 1], [0.2, 0.4, 0.6, 1],
+    ]
+
+    @Test("on-grid components survive the NSColor bridge unchanged", arguments: onGridOutOfRange)
+    func onGridComponentsSurviveTheBridge(_ v: [Double]) throws {
+        let components = ColorParser.ExtendedComponents.srgb(r: v[0], g: v[1], b: v[2], a: v[3])
+        let resolved = ColorParser.ExtendedComponents.resolving(components.color)
+        guard case .srgb(let r, let g, let b, let a) = resolved else {
+            Issue.record("resolved to \(resolved)")
+            return
+        }
+        for (got, want) in zip([r, g, b, a], v) {
+            #expect(abs(got - want) < 0.0001, "\(v) read back as \([r, g, b, a])")
+        }
+    }
+
+    @Test("an on-grid red above 1 renders as full red, not a wrapped maroon")
+    @MainActor
+    func onGridRedAboveOneRendersRed() throws {
+        let color = try MicaColorValue(strictlyParsing: "extended-srgb:1.2,0,0,1").resolved
+        let image = try #require(ImageRenderer(content: Rectangle().fill(color).frame(width: 4, height: 4)).cgImage)
+        let context = try #require(CGContext(
+            data: nil, width: 4, height: 4, bitsPerComponent: 8, bytesPerRow: 16,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 4, height: 4))
+        let pixel = try #require(context.data).assumingMemoryBound(to: UInt8.self)
+        #expect(pixel[0] == 255 && pixel[1] == 0 && pixel[2] == 0, "rendered (\(pixel[0]),\(pixel[1]),\(pixel[2]))")
+    }
+
     // MARK: - ColorParser integration
 
     @Test("ColorParser.parse accepts the extended form")

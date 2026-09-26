@@ -665,11 +665,14 @@ extension ColorParser {
         var color: Color {
             switch self {
             case .srgb(let r, let g, let b, let a):
-                return Color(nsColor: NSColor(
-                    colorSpace: .extendedSRGB,
-                    components: [CGFloat(r), CGFloat(g), CGFloat(b), CGFloat(a)],
-                    count: 4
-                ))
+                // Not NSColor(colorSpace:components:): on the 1/255 grid it packs an 8-bit tagged pointer that wraps outside 0–1.
+                let components = [CGFloat(r), CGFloat(g), CGFloat(b), CGFloat(a)]
+                guard let space = CGColorSpace(name: CGColorSpace.extendedSRGB),
+                      let cgColor = CGColor(colorSpace: space, components: components),
+                      let nsColor = NSColor(cgColor: cgColor) else {
+                    return Color(.sRGB, red: r, green: g, blue: b, opacity: a)
+                }
+                return Color(nsColor: nsColor)
             case .gray(let white, let alpha):
                 return Color(nsColor: NSColor(
                     colorSpace: .extendedGenericGamma22Gray,
