@@ -244,7 +244,7 @@ Sets the primary, secondary, and tertiary colours for palette rendering.
 | | |
 |---|---|
 | **In the app** | Icon ▸ Foreground ▸ Appearance ▸ **Primary**, **Secondary**, and **Tertiary** |
-| **Command line** | `--icon-symbol-palette COLOR,COLOR,COLOR` |
+| **Command line** | `--icon-symbol-palette COLOR COLOR COLOR` or `--icon-symbol-palette COLOR,COLOR,COLOR` |
 | **Config key** | `"icon-symbol-palette"` |
 | **Default** | `white,green,yellow` |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Rendering is Palette. |
@@ -415,7 +415,7 @@ Sets the top and bottom colours for a custom gradient.
 | | |
 |---|---|
 | **In the app** | Icon ▸ Background ▸ Appearance ▸ **Primary** and **Secondary** |
-| **Command line** | `--icon-bg-gradient-colors COLOR,COLOR` |
+| **Command line** | `--icon-bg-gradient-colors COLOR COLOR` or `--icon-bg-gradient-colors COLOR,COLOR` |
 | **Config key** | `"icon-bg-gradient-colors"` |
 | **Default** | None. Required with `custom-gradient`. |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Custom Gradient is on. |

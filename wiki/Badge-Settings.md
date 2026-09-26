@@ -350,7 +350,7 @@ Sets three colours for palette rendering on the badge symbol.
 | | |
 |---|---|
 | **In the app** | Badge ▸ Foreground ▸ Appearance ▸ **Primary**, **Secondary**, and **Tertiary** |
-| **Command line** | `--badge-symbol-palette COLOR,COLOR,COLOR` |
+| **Command line** | `--badge-symbol-palette COLOR COLOR COLOR` or `--badge-symbol-palette COLOR,COLOR,COLOR` |
 | **Config key** | `"badge-symbol-palette"` |
 | **Default** | `white,green,yellow` |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Rendering is Palette. |
@@ -508,7 +508,7 @@ Sets the top and bottom colours for a custom badge gradient.
 | | |
 |---|---|
 | **In the app** | Badge ▸ Background ▸ Appearance ▸ **Primary** and **Secondary** |
-| **Command line** | `--badge-bg-gradient-colors COLOR,COLOR` |
+| **Command line** | `--badge-bg-gradient-colors COLOR COLOR` or `--badge-bg-gradient-colors COLOR,COLOR` |
 | **Config key** | `"badge-bg-gradient-colors"` |
 | **Default** | None. Required with `custom-gradient`. |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Custom Gradient is on. |

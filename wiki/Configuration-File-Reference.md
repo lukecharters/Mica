@@ -76,7 +76,10 @@ Four multi-colour keys also accept a JSON array.
 | `"icon-symbol-palette"` | 3 |
 | `"badge-symbol-palette"` | 3 |
 
-Arrays allow colours that contain commas.
+Arrays accept every colour form.
+A single string with commas between the colours also works.
+A string cannot hold component forms such as `srgb:`.
+Use an array for those.
 
 ```json
 {

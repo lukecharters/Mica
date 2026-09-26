@@ -62,7 +62,7 @@ Use their alpha component instead.
 
 ## Multi-colour settings
 
-Four command-line flags split their values at commas.
+Four settings take more than one colour.
 
 | Flag | Required items |
 |---|---:|
@@ -71,11 +71,24 @@ Four command-line flags split their values at commas.
 | `--icon-symbol-palette` | 3 |
 | `--badge-symbol-palette` | 3 |
 
-Use tokens or hex values in these flags.
-Either form can include an opacity suffix.
-Component forms contain commas and cannot work inside these flags.
+On the command line, give each colour as its own value.
+Every colour form works this way.
 
-Configuration files can use an array instead.
+```shell
+mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors display-p3:1,0.2,0 "rgb(0,136,255)"
+```
+
+You can also give one value with commas between the colours.
+
+```shell
+mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "blue,rgb(255,107,53)"
+```
+
+One comma-separated value accepts every form except the component forms.
+A component form has its own commas.
+Give each component form as its own value.
+
+Configuration files use an array.
 
 ```json
 {
