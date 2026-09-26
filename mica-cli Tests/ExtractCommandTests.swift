@@ -254,6 +254,36 @@ import ArgumentParser
         #expect(sources.sorted() == ["folder", "nested.txt", "visible.txt"])
     }
 
+    /// a.txt, d1/b.txt, d1/d2/c.txt, d1/d2/d3/e.txt
+    private func makeNestedTree(at input: URL) throws {
+        let deepest = input.appending(path: "d1/d2/d3")
+        try FileManager.default.createDirectory(at: deepest, withIntermediateDirectories: true)
+        for file in ["a.txt", "d1/b.txt", "d1/d2/c.txt", "d1/d2/d3/e.txt"] {
+            try Data("x".utf8).write(to: input.appending(path: file))
+        }
+    }
+
+    @Test(arguments: [
+        ([], ["a.txt", "d1"]),
+        (["--depth", "0"], ["a.txt", "d1"]),
+        (["--depth", "1"], ["a.txt", "b.txt", "d1", "d2"]),
+        (["--depth", "2"], ["a.txt", "b.txt", "c.txt", "d1", "d2", "d3"]),
+    ])
+    func depthIncludesOneMoreNestedLevelPerStep(_ depthArgs: [String], _ expected: [String]) throws {
+        let fm = FileManager.default
+        let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let input = root.appending(path: "in")
+        try makeNestedTree(at: input)
+
+        let command = try ExtractCommand.parse(
+            [input.path, "-r", "-o", root.appending(path: "out").path, "--size", "64", "-q"] + depthArgs)
+        let written = try command.runExtraction(reporter: command.output.reporter)
+
+        let sources = written.compactMap(\.source).map { URL(fileURLWithPath: $0).lastPathComponent }
+        #expect(sources.sorted() == expected)
+    }
+
     @Test func runThatWritesNothingCreatesNoOutputDirectory() throws {
         let fm = FileManager.default
         let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")

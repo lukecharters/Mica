@@ -134,7 +134,7 @@ struct ExtractCommand: ParsableCommand {
 
     private func exportDirectory(at path: String, to outputDirectory: URL, reporter: OutputReporter) throws -> [OutputFileJSON] {
         let rootURL = URL(fileURLWithPath: path, isDirectory: true)
-        let maxDepth = depth ?? 1
+        let maxDepth = depth ?? 0
         let items = try collectItems(inDirectory: rootURL, maxDepth: maxDepth)
 
         let filteredItems = filterItems(items, excluding: outputDirectory, relativeTo: rootURL)
@@ -227,7 +227,7 @@ struct ExtractCommand: ParsableCommand {
                 let isDirectory = resourceValues?.isDirectory ?? false
                 let isPackage = resourceValues?.isPackage ?? false
 
-                if isDirectory && !isPackage && childDepth < maxDepth {
+                if isDirectory && !isPackage && childDepth <= maxDepth {
                     queue.append((child, childDepth))
                 }
             }
