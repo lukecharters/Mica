@@ -757,7 +757,7 @@ struct ContentView: View {
     private func writeExportedPNG(_ outcome: ExportPanel.Outcome) {
         do {
             let data = try pngExportDocument(export: outcome.export).pngData()
-            try data.write(to: outcome.url)
+            try data.write(to: outcome.url, options: .atomic)
         } catch {
             viewModel.report(.exportFailed(error))
         }
