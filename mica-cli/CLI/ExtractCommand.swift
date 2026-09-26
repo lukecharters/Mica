@@ -35,7 +35,7 @@ struct ExtractCommand: ParsableCommand {
     @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x", valueName: "scale"))
     var scale: ExportScale = .oneX
 
-    @Flag(name: [.short, .long], help: "Process directory contents recursively")
+    @Flag(name: [.short, .long], help: "Process directory contents recursively, skipping hidden items and symbolic links")
     var recursive: Bool = false
 
     @Option(name: [.customLong("depth")], help: "Maximum nested depth to process when input is a directory (0 includes only direct children)")
@@ -207,7 +207,7 @@ struct ExtractCommand: ParsableCommand {
                 childURLs = try fm.contentsOfDirectory(
                     at: currentURL,
                     includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey, .isSymbolicLinkKey],
-                    options: [.skipsPackageDescendants]
+                    options: [.skipsPackageDescendants, .skipsHiddenFiles]
                 )
             } catch {
                 throw CLIError.fileSystem("Failed to enumerate \(currentURL.path): \(error.localizedDescription)")
@@ -219,16 +219,15 @@ struct ExtractCommand: ParsableCommand {
 
             for child in sortedChildren {
                 let childDepth = currentDepth + 1
+                let resourceValues = try? child.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey, .isSymbolicLinkKey])
+                if resourceValues?.isSymbolicLink ?? false { continue }
+
                 results.append(child)
 
-                guard childDepth <= maxDepth else { continue }
-
-                let resourceValues = try? child.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey, .isSymbolicLinkKey])
                 let isDirectory = resourceValues?.isDirectory ?? false
                 let isPackage = resourceValues?.isPackage ?? false
-                let isSymbolicLink = resourceValues?.isSymbolicLink ?? false
 
-                if isDirectory && !isPackage && !isSymbolicLink && childDepth < maxDepth {
+                if isDirectory && !isPackage && childDepth < maxDepth {
                     queue.append((child, childDepth))
                 }
             }

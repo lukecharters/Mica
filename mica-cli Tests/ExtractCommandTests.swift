@@ -232,6 +232,28 @@ import ArgumentParser
 
     // MARK: - What a recursive run touches
 
+    @Test func recursiveSkipsHiddenItemsAndSymbolicLinks() throws {
+        let fm = FileManager.default
+        let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let input = root.appending(path: "in")
+        let folder = input.appending(path: "folder")
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: input.appending(path: "visible.txt"))
+        try Data("x".utf8).write(to: input.appending(path: ".hidden"))
+        try Data("x".utf8).write(to: folder.appending(path: "nested.txt"))
+        try fm.createSymbolicLink(at: input.appending(path: "file-link.txt"), withDestinationURL: input.appending(path: "visible.txt"))
+        try fm.createSymbolicLink(at: input.appending(path: "folder-link"), withDestinationURL: folder)
+
+        let command = try ExtractCommand.parse([
+            input.path, "-r", "--depth", "2", "-o", root.appending(path: "out").path, "--size", "64", "-q",
+        ])
+        let written = try command.runExtraction(reporter: command.output.reporter)
+
+        let sources = written.compactMap(\.source).map { URL(fileURLWithPath: $0).lastPathComponent }
+        #expect(sources.sorted() == ["folder", "nested.txt", "visible.txt"])
+    }
+
     @Test func runThatWritesNothingCreatesNoOutputDirectory() throws {
         let fm = FileManager.default
         let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")

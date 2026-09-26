@@ -193,7 +193,7 @@ mica-cli extract <path> [options]
 | `--output PATH` | `-o` | Destination directory. |
 | `--size PIXELS` | `-s` | Icon size, `16` to `2048`. Default: `512`. |
 | `--scale SCALE` | None | `1x` or `2x`. Default: `1x`. |
-| `--recursive` | `-r` | Processes directory contents. |
+| `--recursive` | `-r` | Processes directory contents. Skips hidden items and symbolic links. |
 | `--depth NUMBER` | None | Limits nested depth. Requires `--recursive`. |
 | `--color-space SPACE` | None | `sRGB` or `displayP3`. |
 | `--json` | None | Writes one result object. |
