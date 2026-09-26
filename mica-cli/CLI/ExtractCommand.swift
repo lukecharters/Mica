@@ -202,9 +202,9 @@ struct ExtractCommand: ParsableCommand {
             let (currentURL, currentDepth) = queue[index]
             index += 1
 
-            let childURLs: [URL]
+            let enumerated: [URL]
             do {
-                childURLs = try fm.contentsOfDirectory(
+                enumerated = try fm.contentsOfDirectory(
                     at: currentURL,
                     includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey, .isSymbolicLinkKey],
                     options: [.skipsPackageDescendants, .skipsHiddenFiles]
@@ -213,6 +213,8 @@ struct ExtractCommand: ParsableCommand {
                 throw CLIError.fileSystem("Failed to enumerate \(currentURL.path): \(error.localizedDescription)")
             }
 
+            // The enumerator returns /private/var for /var; destinationURL needs the root's own spelling.
+            let childURLs = enumerated.map { currentURL.appendingPathComponent($0.lastPathComponent) }
             let sortedChildren = childURLs.sorted { lhs, rhs in
                 lhs.lastPathComponent.localizedCaseInsensitiveCompare(rhs.lastPathComponent) == .orderedAscending
             }

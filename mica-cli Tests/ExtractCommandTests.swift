@@ -284,6 +284,24 @@ import ArgumentParser
         #expect(sources.sorted() == expected)
     }
 
+    @Test func outputMirrorsTheTreeUnderASymlinkedRoot() throws {
+        let fm = FileManager.default
+        let root = URL(fileURLWithPath: "/tmp/mica-extract-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let input = root.appending(path: "in")
+        let output = root.appending(path: "out")
+        try makeNestedTree(at: input)
+
+        let command = try ExtractCommand.parse([input.path, "-r", "--depth", "1", "-o", output.path, "--size", "64", "-q"])
+        let written = try command.runExtraction(reporter: command.output.reporter)
+
+        let expected = ["a-64.png", "d1-64.png", "d1/b-64.png", "d1/d2-64.png"].map { output.appending(path: $0).path }
+        #expect(written.map(\.path).sorted() == expected.sorted())
+        for path in expected {
+            #expect(fm.fileExists(atPath: path), "\(path)")
+        }
+    }
+
     @Test func runThatWritesNothingCreatesNoOutputDirectory() throws {
         let fm = FileManager.default
         let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")
