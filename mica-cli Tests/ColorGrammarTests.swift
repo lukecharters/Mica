@@ -170,6 +170,18 @@ import SwiftUI
         #expect(throws: (any Error).self) { try entry.parse(input) }
     }
 
+    // MARK: - More than one suffix
+
+    private static let trailingSegments = [
+        "blue:0.5:junk", "blue:0.5:0.5", "#FF0000:0.5:x", "rgb(255,0,0):0.5:",
+    ]
+
+    @Test("a second :suffix is refused at every entry point",
+          arguments: trailingSegments, EntryPoint.allCases)
+    func trailingSegmentIsRefused(_ input: String, _ entry: EntryPoint) {
+        #expect(throws: (any Error).self) { try entry.parse(input) }
+    }
+
     // MARK: - The drops did not take a live form with them
 
     /// `srgb:` has to actually replace the bare triple, or the drop is a

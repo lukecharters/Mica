@@ -75,6 +75,9 @@ struct ColorParser {
         // Handle opacity notation with colon separator. Empty subsequences are
         // kept so `:0.5` is refused as a missing colour rather than read as one.
         let components = trimmed.split(separator: ":", omittingEmptySubsequences: false)
+        guard components.count <= 2 else {
+            throw ColorParseError.invalidFormat(trimmed, "Use at most one :opacity suffix, e.g. blue:0.5")
+        }
         let colorString = String(components.first ?? "")
         
         let baseColor = try parse(colorString)
