@@ -35,6 +35,25 @@ struct ExportFlagsTests {
         #expect(try parseCommand(["--icon-symbol", "star.fill", "--force"]).output.force == true)
     }
 
+    @Test("A run refused by validation leaves no output directory behind")
+    func refusedRunCreatesNoOutputDirectory() throws {
+        let root = URL.temporaryDirectory.appending(path: "mica-outdir-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let command = try parseCommand([
+            "--icon-symbol", "star.fill", "-o", root.appending(path: "a/b/x.png").path, "--icon-bg-color", "nope",
+        ])
+        #expect(throws: (any Error).self) { try command.performValidationForTesting() }
+        #expect(!FileManager.default.fileExists(atPath: root.path))
+    }
+
+    @Test("An output path inside a file is refused")
+    func outputInsideAFileIsRefused() throws {
+        let file = try makeTempImageFile()
+        defer { try? FileManager.default.removeItem(at: file) }
+        let command = try parseCommand(["--icon-symbol", "star.fill", "-o", file.appending(path: "sub/x.png").path])
+        #expect(throws: (any Error).self) { try command.performValidationForTesting() }
+    }
+
     @Test("Omitted export flags parse as nil, so a config document can supply them")
     func omittedExportFlagsAreNil() throws {
         let command = try parseCommand(["--icon-symbol", "star.fill"])

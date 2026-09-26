@@ -1486,16 +1486,11 @@ struct GenerateCommand: AsyncParsableCommand {
 
     private func validateOutputPath() throws {
         if let path = export.outputPath {
-            // Expand ~ like the generator's resolveOutputPath does — otherwise
-            // this creates a literal ./~ parent directory at validation time.
+            // Expand ~ like the generator's resolveOutputPath does.
             let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
-            let parentDir = url.deletingLastPathComponent()
-            if !FileManager.default.fileExists(atPath: parentDir.path) {
-                do {
-                    try FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
-                } catch {
-                    throw ValidationError("Cannot create output directory: \(parentDir.path)")
-                }
+            let existing = OutputResolver.nearestExistingPath(to: url.deletingLastPathComponent().path)
+            guard existing.isDirectory else {
+                throw ValidationError("Output path is inside a file, not a directory: \(existing.path)")
             }
         }
     }

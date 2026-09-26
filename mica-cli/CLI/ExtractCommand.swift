@@ -280,12 +280,6 @@ struct ExtractCommand: ParsableCommand {
             destinationDirectory = destinationDirectory.appendingPathComponent(relativeParent)
         }
 
-        do {
-            try FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true, attributes: nil)
-        } catch {
-            throw CLIError.fileSystem("Failed to create directory \(destinationDirectory.path): \(error.localizedDescription)")
-        }
-
         let filename = OutputResolver.suggestedIconFilename(forItemAt: itemURL.path, size: size, scaleFactor: scale.factor)
         return destinationDirectory.appendingPathComponent(filename)
     }

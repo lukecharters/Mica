@@ -19,21 +19,33 @@ enum OutputResolver {
         }
 
         let url = URL(fileURLWithPath: resolvedPath, isDirectory: true)
-        var isDirectory = ObjCBool(false)
-
-        if fm.fileExists(atPath: url.path, isDirectory: &isDirectory) {
-            guard isDirectory.boolValue else {
-                throw CLIError.fileSystem("Output path is not a directory: \(url.path)")
-            }
-            return url
-        }
-
-        do {
-            try fm.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-        } catch {
-            throw CLIError.fileSystem("Failed to create output directory \(url.path): \(error.localizedDescription)")
+        let existing = nearestExistingPath(to: url.path)
+        guard existing.isDirectory else {
+            let message = existing.path == url.path
+                ? "Output path is not a directory: \(url.path)"
+                : "Output path is inside a file, not a directory: \(existing.path)"
+            throw CLIError.fileSystem(message)
         }
         return url
+    }
+
+    /// The deepest path at or above `path` that exists, found by trimming one
+    /// component at a time. Never creates anything: directories are made at the
+    /// write, so a run refused by validation leaves none behind.
+    static func nearestExistingPath(to path: String) -> (path: String, isDirectory: Bool) {
+        let fm = FileManager.default
+        var candidate = path
+        while true {
+            var isDirectory = ObjCBool(false)
+            if fm.fileExists(atPath: candidate, isDirectory: &isDirectory) {
+                return (candidate, isDirectory.boolValue)
+            }
+            let parent = (candidate as NSString).deletingLastPathComponent
+            guard !parent.isEmpty, parent != candidate else {
+                return (fm.currentDirectoryPath, true)
+            }
+            candidate = parent
+        }
     }
 
     static func suggestedIconFilename(forItemAt path: String, size: Int, scaleFactor: Int) -> String {

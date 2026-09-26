@@ -210,31 +210,17 @@ class IconGenerationRunner {
     }
     
     private func validateOutputPermissions(_ outputPath: String) throws {
-        // Expand ~ — must agree with resolveOutputPath, or this creates (and
-        // validates) a literal ./~ directory instead of the real destination.
+        // Expand ~ — must agree with resolveOutputPath, or this validates a
+        // literal ./~ directory instead of the real destination.
         let url = URL(fileURLWithPath: (outputPath as NSString).expandingTildeInPath)
-        let directory = url.deletingLastPathComponent()
-        
-        // Check if directory exists and is writable
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory)
-        
-        if exists && !isDirectory.boolValue {
-            throw CLIError.fileSystem("Output path parent is not a directory: \(directory.path)")
+        let existing = OutputResolver.nearestExistingPath(to: url.deletingLastPathComponent().path)
+
+        guard existing.isDirectory else {
+            throw CLIError.fileSystem("Output path parent is not a directory: \(existing.path)")
         }
-        
-        if !exists {
-            // Try to create directory
-            do {
-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            } catch {
-                throw CLIError.fileSystem("Cannot create output directory: \(directory.path) - \(error.localizedDescription)")
-            }
-        }
-        
-        // Check if we can write to the directory
-        if !FileManager.default.isWritableFile(atPath: directory.path) {
-            throw CLIError.fileSystem("No write permission for directory: \(directory.path)")
+
+        if !FileManager.default.isWritableFile(atPath: existing.path) {
+            throw CLIError.fileSystem("No write permission for directory: \(existing.path)")
         }
     }
     

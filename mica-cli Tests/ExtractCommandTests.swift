@@ -229,4 +229,34 @@ import ArgumentParser
         let replaced = try forced.runExtraction(reporter: forced.output.reporter)
         #expect(replaced.map(\.path) == written.map(\.path))
     }
+
+    // MARK: - What a recursive run touches
+
+    @Test func runThatWritesNothingCreatesNoOutputDirectory() throws {
+        let fm = FileManager.default
+        let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let input = root.appending(path: "empty")
+        try fm.createDirectory(at: input, withIntermediateDirectories: true)
+        let output = root.appending(path: "out/nested")
+
+        let command = try ExtractCommand.parse([input.path, "-r", "-o", output.path, "-q"])
+        #expect(try command.runExtraction(reporter: command.output.reporter).isEmpty)
+        #expect(!fm.fileExists(atPath: root.appending(path: "out").path))
+    }
+
+    @Test func outputDirectoryInsideAFileIsRefused() throws {
+        let fm = FileManager.default
+        let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        let file = root.appending(path: "plain.txt")
+        try Data("x".utf8).write(to: file)
+
+        let command = try ExtractCommand.parse([file.path, "-o", file.appending(path: "sub").path, "-q"])
+        let error = try #require(#expect(throws: CLIError.self) {
+            _ = try command.runExtraction(reporter: command.output.reporter)
+        })
+        #expect(error.localizedDescription.contains("not a directory"))
+    }
 }
