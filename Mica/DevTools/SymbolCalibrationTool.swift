@@ -19,15 +19,27 @@ class SymbolCalibrationStore {
     var familyOverrides: [String: String] = [:]
     private let fileURL: URL
 
-    /// The three container shapes, their key under `containers` in
-    /// symbol-calibration.json, and the representative dimensions shown in the
-    /// tool's family list. Key and label coincide — see `ContainerType.containerKey`.
-    static let containerDims: [(key: String, label: String, width: Double, height: Double)] = [
-        (ContainerType.circle.containerKey, "circle", 117, 114),
-        (ContainerType.square.containerKey, "square", 115, 104),
-        (ContainerType.rectangle.containerKey, "rectangle", 141, 104),
-    ]
+    /// The three container shapes and their key under `containers` in
+    /// symbol-calibration.json. Key and label coincide — see `ContainerType.containerKey`.
+    static let containerDims: [(key: String, label: String)] = ContainerType.allCases.map {
+        ($0.containerKey, $0.rawValue)
+    }
     static let containerKeys: Set<String> = Set(containerDims.map(\.key))
+
+    static func dimensionSignature(of metrics: SymbolMetrics) -> String {
+        String(format: "%.4f_%.4f", metrics.width, metrics.height)
+    }
+
+    /// Each container keyed by the measured size of its base symbol (`circle`,
+    /// `square`, `rectangle`) in `symbols`. Read from the file, not fixed: the sizes
+    /// differ between macOS releases.
+    static func containersBySignature(in symbols: [String: SymbolMetrics]) -> [String: ContainerType] {
+        Dictionary(
+            ContainerType.allCases.compactMap { type in
+                symbols[type.suffixComponent].map { (dimensionSignature(of: $0), type) }
+            },
+            uniquingKeysWith: { first, _ in first })
+    }
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -143,9 +155,9 @@ class SymbolCalibrationStore {
         do {
             let data = try Data(contentsOf: fileURL)
             let file = try JSONDecoder().decode(SymbolCalibration.self, from: data)
-            symbolEntries = file.symbols
+            symbolEntries = SymbolCatalog.bundled.rekeyedToCurrentNames(file.symbols)
             containerEntries = file.containers
-            familyOverrides = file.familyOverrides
+            familyOverrides = SymbolCatalog.bundled.rekeyedToCurrentNames(file.familyOverrides)
             print("SymbolCalibrationStore: loaded \(symbolEntries.count) symbols, \(containerEntries.count) containers, \(familyOverrides.count) overrides")
         } catch {
             print("SymbolCalibrationStore: failed to load — \(error)")
@@ -172,9 +184,9 @@ class SymbolCalibrationStore {
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
         else { return }
-        symbolEntries = file.symbols
+        symbolEntries = SymbolCatalog.bundled.rekeyedToCurrentNames(file.symbols)
         containerEntries = file.containers
-        familyOverrides = file.familyOverrides
+        familyOverrides = SymbolCatalog.bundled.rekeyedToCurrentNames(file.familyOverrides)
     }
 
     /// True while an Application Support copy exists — i.e. while
@@ -191,9 +203,9 @@ class SymbolCalibrationStore {
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
         else { return false }
-        symbolEntries = file.symbols
+        symbolEntries = SymbolCatalog.bundled.rekeyedToCurrentNames(file.symbols)
         containerEntries = file.containers
-        familyOverrides = file.familyOverrides
+        familyOverrides = SymbolCatalog.bundled.rekeyedToCurrentNames(file.familyOverrides)
         print("SymbolCalibrationStore: seeded \(symbolEntries.count) symbols from bundled calibration")
         save()
         return true
@@ -237,14 +249,15 @@ class SymbolCalibrationStore {
             for symbol in symbols { subgroupLookup[symbol] = subKey }
         }
         let overrides = dimFile.overrides ?? [:]
+        let containersBySignature = Self.containersBySignature(in: metricsFile.symbols)
 
         for (symbol, metrics) in metricsFile.symbols {
             // dim-calibration.json is keyed by dimension signature throughout —
             // it predates container-name keys — so every lookup below uses the
             // signature, and only the destination uses the new container key.
-            let signature = String(format: "%.4f_%.4f", metrics.width, metrics.height)
+            let signature = Self.dimensionSignature(of: metrics)
 
-            if let container = ContainerType.matching(dimensionSignature: signature) {
+            if let container = containersBySignature[signature] {
                 if containerEntries[container.containerKey] == nil,
                    let e = dimFile.calibrations[signature] {
                     containerEntries[container.containerKey] = SymbolCalibrationEntry(
@@ -576,7 +589,7 @@ struct SymbolCalibrationTool: View {
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
         else { return [:] }
-        return file.familyOverrides
+        return SymbolCatalog.bundled.rekeyedToCurrentNames(file.familyOverrides)
     }
 
     private static func buildFamilies(overrides: [String: String]? = nil) -> ([SymbolFamily], [String: String], [String: SymbolMetrics]) {
@@ -595,13 +608,10 @@ struct SymbolCalibrationTool: View {
 
         let familyOverrides = overrides ?? loadFamilyOverrides()
 
-        let orderedSymbols: [String]
-        if let txtURL = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
-           let contents = try? String(contentsOf: txtURL, encoding: .utf8) {
-            orderedSymbols = contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
-        } else {
-            orderedSymbols = Array(file.symbols.keys).sorted()
-        }
+        let catalogOrder = SymbolCatalog.bundled.currentNames(on: .running)
+        let orderedSymbols = catalogOrder.isEmpty ? Array(file.symbols.keys).sorted() : catalogOrder
+
+        let containersBySignature = SymbolCalibrationStore.containersBySignature(in: file.symbols)
 
         var containerMembers: [String: [String]] = [:]
         var familyMembers: [String: [String]] = [:]
@@ -612,9 +622,8 @@ struct SymbolCalibrationTool: View {
             // Recognise a container by its measured size, then key it by name —
             // the calibration file stores containers under "circle"/"square"/
             // "rectangle", not under the dimension signature.
-            let signature = String(format: "%.4f_%.4f", metrics.width, metrics.height)
-            let containerKey = ContainerType.matching(dimensionSignature: signature)?.containerKey
-                ?? signature
+            let signature = SymbolCalibrationStore.dimensionSignature(of: metrics)
+            let containerKey = containersBySignature[signature]?.containerKey ?? signature
             containerKeyLookup[symbol] = containerKey
 
             if SymbolCalibrationStore.containerKeys.contains(containerKey) {
@@ -636,10 +645,10 @@ struct SymbolCalibrationTool: View {
         }
 
         for info in SymbolCalibrationStore.containerDims {
-            if let members = containerMembers[info.key] {
+            if let members = containerMembers[info.key], let m = file.symbols[info.label] {
                 result.append(SymbolFamily(
                     id: "container.\(info.label)", members: members, isContainer: true,
-                    containerLabel: info.label, width: info.width, height: info.height))
+                    containerLabel: info.label, width: m.width, height: m.height))
             }
         }
 

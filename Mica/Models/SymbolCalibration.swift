@@ -28,32 +28,6 @@ enum ContainerType: String, CaseIterable {
     /// `circle` in `person.crop.circle`.
     var suffixComponent: String { rawValue }
 
-    /// Measured width and height at 100pt that identify this container shape.
-    var dimensions: (width: Double, height: Double) {
-        switch self {
-        case .circle:    return (117, 114)
-        case .square:    return (115, 104)
-        case .rectangle: return (141, 104)
-        }
-    }
-
-    /// The `"%.4f_%.4f"` signature the calibration tool derives from
-    /// symbol_metrics.json to recognise a container variant by its measured size.
-    ///
-    /// Distinct from `containerKey`: this identifies a container *from
-    /// measurements*, while `containerKey` is how it is *stored*. The two were a
-    /// single string before the 2026-07-28 rename, which is why the storage key
-    /// used to be a dimension string.
-    var dimensionSignature: String {
-        String(format: "%.4f_%.4f", dimensions.width, dimensions.height)
-    }
-
-    /// The container whose measured size matches `signature`, or nil for a
-    /// non-container symbol.
-    static func matching(dimensionSignature signature: String) -> ContainerType? {
-        allCases.first { $0.dimensionSignature == signature }
-    }
-
     static let allKeys: Set<String> = Set(allCases.map(\.containerKey))
 }
 

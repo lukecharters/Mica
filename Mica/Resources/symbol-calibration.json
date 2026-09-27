@@ -3601,14 +3601,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "australiandollarsign.bank.building": {
+    "australiandollarsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "australiandollarsign.bank.building.fill": {
+    "australiandollarsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -3657,14 +3657,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "australsign.bank.building": {
+    "australsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "australsign.bank.building.fill": {
+    "australsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -3993,14 +3993,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "bahtsign.bank.building": {
+    "bahtsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "bahtsign.bank.building.fill": {
+    "bahtsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -4771,14 +4771,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "bitcoinsign.bank.building": {
+    "bitcoinsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "bitcoinsign.bank.building.fill": {
+    "bitcoinsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -5275,14 +5275,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "brazilianrealsign.bank.building": {
+    "brazilianrealsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "brazilianrealsign.bank.building.fill": {
+    "brazilianrealsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -5499,14 +5499,14 @@
       "xOffset": 0.005,
       "yOffset": -0.01
     },
-    "building.columns": {
+    "building.classical.columns": {
       "multiplier": 0.62,
       "status": "calibrated",
       "weight": "medium",
       "xOffset": 0,
       "yOffset": -0.02500000000000001
     },
-    "building.columns.fill": {
+    "building.classical.columns.fill": {
       "multiplier": 0.535,
       "status": "calibrated",
       "weight": "regular",
@@ -7914,14 +7914,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "cedisign.bank.building": {
+    "cedisign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "cedisign.bank.building.fill": {
+    "cedisign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -7977,14 +7977,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "centsign.bank.building": {
+    "centsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "centsign.bank.building.fill": {
+    "centsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -8854,14 +8854,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "chineseyuanrenminbisign.bank.building": {
+    "chineseyuanrenminbisign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "chineseyuanrenminbisign.bank.building.fill": {
+    "chineseyuanrenminbisign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -9617,14 +9617,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "coloncurrencysign.bank.building": {
+    "coloncurrencysign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "coloncurrencysign.bank.building.fill": {
+    "coloncurrencysign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -10185,14 +10185,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "cruzeirosign.bank.building": {
+    "cruzeirosign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "cruzeirosign.bank.building.fill": {
+    "cruzeirosign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -10346,14 +10346,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "danishkronesign.bank.building": {
+    "danishkronesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "danishkronesign.bank.building.fill": {
+    "danishkronesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -11113,14 +11113,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "dollarsign.bank.building": {
+    "dollarsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "dollarsign.bank.building.fill": {
+    "dollarsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -11169,14 +11169,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "dongsign.bank.building": {
+    "dongsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "dongsign.bank.building.fill": {
+    "dongsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -12320,14 +12320,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "eurosign.bank.building": {
+    "eurosign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "eurosign.bank.building.fill": {
+    "eurosign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -12376,14 +12376,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "eurozonesign.bank.building": {
+    "eurozonesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "eurozonesign.bank.building.fill": {
+    "eurozonesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -14994,14 +14994,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "florinsign.bank.building": {
+    "florinsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "florinsign.bank.building.fill": {
+    "florinsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -15274,14 +15274,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "francsign.bank.building": {
+    "francsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "francsign.bank.building.fill": {
+    "francsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -15771,14 +15771,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "guaranisign.bank.building": {
+    "guaranisign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "guaranisign.bank.building.fill": {
+    "guaranisign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -17423,14 +17423,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "hryvniasign.bank.building": {
+    "hryvniasign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "hryvniasign.bank.building.fill": {
+    "hryvniasign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -17626,14 +17626,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "indianrupeesign.bank.building": {
+    "indianrupeesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "indianrupeesign.bank.building.fill": {
+    "indianrupeesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -17885,14 +17885,14 @@
       "xOffset": 0,
       "yOffset": 0
     },
-    "inset.filled.rectangle.and.person.filled": {
+    "inset.filled.rectangle.and.person": {
       "multiplier": 0.48,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0.015
     },
-    "inset.filled.rectangle.and.person.filled.slash": {
+    "inset.filled.rectangle.and.person.slash": {
       "multiplier": 0.51,
       "status": "calibrated",
       "weight": "regular",
@@ -18011,6 +18011,34 @@
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0
+    },
+    "interface.window.and.pointer.arrow": {
+      "multiplier": 0.59,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0.045
+    },
+    "interface.window.badge.plus": {
+      "multiplier": 0.56,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0.045
+    },
+    "interface.window.on.rectangle": {
+      "multiplier": 0.54,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "interface.window.stack": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0.025
     },
     "internaldrive": {
       "multiplier": 0.65,
@@ -19168,14 +19196,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "kipsign.bank.building": {
+    "kipsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "kipsign.bank.building.fill": {
+    "kipsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -19546,14 +19574,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "larisign.bank.building": {
+    "larisign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "larisign.bank.building.fill": {
+    "larisign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -20184,14 +20212,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "lirasign.bank.building": {
+    "lirasign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "lirasign.bank.building.fill": {
+    "lirasign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -21148,14 +21176,14 @@
       "xOffset": 0,
       "yOffset": -0.005
     },
-    "macpro.gen3.badge.ckeckmark": {
+    "macpro.gen3.badge.checkmark": {
       "multiplier": 0.55,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": -0.02,
       "yOffset": -0.025
     },
-    "macpro.gen3.badge.ckeckmark.fill": {
+    "macpro.gen3.badge.checkmark.fill": {
       "multiplier": 0.55,
       "status": "calibrated",
       "weight": "regular",
@@ -21203,34 +21231,6 @@
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
-    },
-    "macwindow.and.pointer.arrow": {
-      "multiplier": 0.59,
-      "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.045
-    },
-    "macwindow.badge.plus": {
-      "multiplier": 0.56,
-      "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.045
-    },
-    "macwindow.on.rectangle": {
-      "multiplier": 0.54,
-      "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0
-    },
-    "macwindow.stack": {
-      "multiplier": 0.65,
-      "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.025
     },
     "magazine": {
       "multiplier": 0.64,
@@ -21316,14 +21316,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "malaysianringgitsign.bank.building": {
+    "malaysianringgitsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "malaysianringgitsign.bank.building.fill": {
+    "malaysianringgitsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -21372,14 +21372,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "manatsign.bank.building": {
+    "manatsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "manatsign.bank.building.fill": {
+    "manatsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -21743,6 +21743,13 @@
       "xOffset": 0,
       "yOffset": -0.025
     },
+    "microphone.dynamic.on.stand": {
+      "multiplier": 0.64,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.005,
+      "yOffset": -0.03
+    },
     "microphone.fill": {
       "multiplier": 0.59,
       "status": "calibrated",
@@ -21792,14 +21799,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "millsign.bank.building": {
+    "millsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "millsign.bank.building.fill": {
+    "millsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -22289,13 +22296,6 @@
       "xOffset": 0,
       "yOffset": 0
     },
-    "music.microphone": {
-      "multiplier": 0.64,
-      "status": "calibrated",
-      "weight": "medium",
-      "xOffset": -0.005,
-      "yOffset": -0.03
-    },
     "music.note": {
       "multiplier": 0.64,
       "status": "calibrated",
@@ -22417,14 +22417,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "nairasign.bank.building": {
+    "nairasign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "nairasign.bank.building.fill": {
+    "nairasign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -22501,14 +22501,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "norwegiankronesign.bank.building": {
+    "norwegiankronesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "norwegiankronesign.bank.building.fill": {
+    "norwegiankronesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -22585,7 +22585,7 @@
       "xOffset": 0,
       "yOffset": 0
     },
-    "number": {
+    "number.sign": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -22599,7 +22599,7 @@
       "xOffset": -0.01,
       "yOffset": 0
     },
-    "numbersign": {
+    "numero.sign": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -23685,20 +23685,6 @@
       "xOffset": 0,
       "yOffset": 0
     },
-    "person.crop.badge.magnifyingglass": {
-      "multiplier": 0.61,
-      "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": 0.025
-    },
-    "person.crop.badge.magnifyingglass.fill": {
-      "multiplier": 0.61,
-      "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0.025,
-      "yOffset": 0.025
-    },
     "person.crop.circle.badge": {
       "multiplier": 0.62,
       "status": "calibrated",
@@ -23761,6 +23747,20 @@
       "weight": "regular",
       "xOffset": 0.04,
       "yOffset": 0.01
+    },
+    "person.crop.circle.badge.magnifyingglass": {
+      "multiplier": 0.61,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0.025,
+      "yOffset": 0.025
+    },
+    "person.crop.circle.badge.magnifyingglass.fill": {
+      "multiplier": 0.61,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0.025,
+      "yOffset": 0.025
     },
     "person.crop.circle.badge.minus": {
       "multiplier": 0.62,
@@ -24126,14 +24126,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "peruviansolessign.bank.building": {
+    "peruviansolessign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "peruviansolessign.bank.building.fill": {
+    "peruviansolessign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -24182,14 +24182,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "pesetasign.bank.building": {
+    "pesetasign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "pesetasign.bank.building.fill": {
+    "pesetasign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -24238,14 +24238,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "pesosign.bank.building": {
+    "pesosign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "pesosign.bank.building.fill": {
+    "pesosign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -25401,14 +25401,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "polishzlotysign.bank.building": {
+    "polishzlotysign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "polishzlotysign.bank.building.fill": {
+    "polishzlotysign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -27384,14 +27384,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "rublesign.bank.building": {
+    "rublesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "rublesign.bank.building.fill": {
+    "rublesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -27468,14 +27468,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "rupeesign.bank.building": {
+    "rupeesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "rupeesign.bank.building.fill": {
+    "rupeesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -27769,14 +27769,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "shekelsign.bank.building": {
+    "shekelsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "shekelsign.bank.building.fill": {
+    "shekelsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -28140,14 +28140,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "singaporedollarsign.bank.building": {
+    "singaporedollarsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "singaporedollarsign.bank.building.fill": {
+    "singaporedollarsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -29710,14 +29710,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "sterlingsign.bank.building": {
+    "sterlingsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "sterlingsign.bank.building.fill": {
+    "sterlingsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -30496,14 +30496,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "swedishkronasign.bank.building": {
+    "swedishkronasign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "swedishkronasign.bank.building.fill": {
+    "swedishkronasign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -30720,14 +30720,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "tengesign.bank.building": {
+    "tengesign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "tengesign.bank.building.fill": {
+    "tengesign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -32149,14 +32149,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "tugriksign.bank.building": {
+    "tugriksign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "tugriksign.bank.building.fill": {
+    "tugriksign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -32212,14 +32212,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "turkishlirasign.bank.building": {
+    "turkishlirasign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "turkishlirasign.bank.building.fill": {
+    "turkishlirasign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -32938,7 +32938,7 @@
       "xOffset": 0,
       "yOffset": 0
     },
-    "waveform.and.person.filled": {
+    "waveform.and.person": {
       "multiplier": 0.55,
       "status": "calibrated",
       "weight": "medium",
@@ -33442,14 +33442,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "wonsign.bank.building": {
+    "wonsign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "wonsign.bank.building.fill": {
+    "wonsign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
@@ -33694,14 +33694,14 @@
       "xOffset": 0,
       "yOffset": -0.001
     },
-    "yensign.bank.building": {
+    "yensign.building.classical": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
-    "yensign.bank.building.fill": {
+    "yensign.building.classical.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",

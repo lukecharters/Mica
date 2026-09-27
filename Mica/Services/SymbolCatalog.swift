@@ -208,6 +208,32 @@ struct SymbolCatalog: Sendable {
         }
     }
 
+    /// The current name of every symbol with a spelling on `os`, in gallery order. The
+    /// calibration data is keyed by these, so its keys are the same on every OS.
+    func currentNames(on os: MacOSVersion) -> [String] {
+        symbols.filter { renderName(for: $0.name, on: os) != nil }.map(\.name)
+    }
+
+    /// `entries` with each key the catalog knows under another spelling moved to the
+    /// current name. A value already under the current name wins; among other
+    /// spellings, the first in sorted order does.
+    func rekeyedToCurrentNames<Value>(_ entries: [String: Value]) -> [String: Value] {
+        var result: [String: Value] = [:]
+        var renamed: [(key: String, current: String)] = []
+        for (key, value) in entries {
+            let current = currentName(for: key) ?? key
+            if current == key {
+                result[key] = value
+            } else {
+                renamed.append((key, current))
+            }
+        }
+        for (key, current) in renamed.sorted(by: { $0.key < $1.key }) where result[current] == nil {
+            result[current] = entries[key]
+        }
+        return result
+    }
+
     /// The spelling the gallery on `os` shows for the symbol `name` belongs to, or
     /// `name` unchanged when the catalog does not know it.
     func galleryName(for name: String, on os: MacOSVersion) -> String {

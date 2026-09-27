@@ -169,6 +169,28 @@ struct SymbolCatalogTests {
         #expect(catalog.galleryName(for: "not.in.catalog", on: v27) == "not.in.catalog")
     }
 
+    @Test("Current names list every symbol with a spelling on the OS, under its current name")
+    func currentNamesOnOS() {
+        #expect(catalog.currentNames(on: v15) == ["star", "coin.building.classical", "trio.new", "ancient"])
+        #expect(catalog.currentNames(on: v27) == ["star", "coin.building.classical", "trio.new", "brandnew", "ancient"])
+    }
+
+    @Test("Rekeying moves old spellings to the current name and leaves other keys alone")
+    func rekeyMovesOldSpellings() {
+        let rekeyed = catalog.rekeyedToCurrentNames(["coin.bank.building": 1, "star": 2, "not.in.catalog": 3])
+        #expect(rekeyed == ["coin.building.classical": 1, "star": 2, "not.in.catalog": 3])
+    }
+
+    @Test("Rekeying keeps the value under the current name over an old spelling's")
+    func rekeyPrefersCurrent() {
+        #expect(catalog.rekeyedToCurrentNames(["trio.new": 1, "trio.old": 2]) == ["trio.new": 1])
+    }
+
+    @Test("Rekeying two old spellings of one symbol keeps the first in sorted order")
+    func rekeyTwoOldSpellings() {
+        #expect(catalog.rekeyedToCurrentNames(["trio.old": 1, "trio.mid": 2]) == ["trio.new": 2])
+    }
+
     @Test("Current name and aliases are found from any spelling")
     func lookup() {
         #expect(catalog.currentName(for: "trio.old") == "trio.new")

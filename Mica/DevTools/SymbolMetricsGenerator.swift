@@ -21,12 +21,13 @@ struct SymbolMetricsGenerator {
     static let referencePointSize: CGFloat = 100
 
     static func generateAll(progressHandler: @Sendable (String, Double) -> Void) async -> SymbolMetricsFile {
-        let symbols = loadSymbols()
+        let catalog = SymbolCatalog.bundled
+        let symbols = catalog.currentNames(on: .running)
         var results: [String: SymbolMetrics] = [:]
         let config = NSImage.SymbolConfiguration(pointSize: referencePointSize, weight: .regular)
 
         for (index, symbol) in symbols.enumerated() {
-            guard let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) else {
+            guard let image = NSImage(systemSymbolName: catalog.drawableName(for: symbol), accessibilityDescription: nil) else {
                 continue
             }
             let configured = image.withSymbolConfiguration(config) ?? image
@@ -67,12 +68,5 @@ struct SymbolMetricsGenerator {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("Mica", isDirectory: true)
         return dir.appendingPathComponent("symbol_metrics.json")
-    }
-
-    private static func loadSymbols() -> [String] {
-        guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
-              let contents = try? String(contentsOf: url, encoding: .utf8)
-        else { return [] }
-        return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
     }
 }

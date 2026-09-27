@@ -156,16 +156,18 @@ final class BoxFitReview {
 
     // MARK: Measuring
 
-    /// Measures every symbol in `sf-symbols.txt` and rewrites the cache.
+    /// Measures every symbol the running macOS has, keyed by current name, and
+    /// rewrites the cache.
     ///
     /// Detached because it is ~7k `NSImage` renders — on the main actor it would
     /// hang the window for the whole pass rather than showing the progress bar
     /// this reports to.
     func measureAll() {
         guard !isMeasuring else { return }
-        let symbols = Self.loadSymbolList()
+        let catalog = SymbolCatalog.bundled
+        let symbols = catalog.currentNames(on: .running)
         guard !symbols.isEmpty else {
-            errorMessage = "sf-symbols.txt not found in the bundle"
+            errorMessage = "symbol-catalog.json not found in the bundle"
             return
         }
 
@@ -178,7 +180,7 @@ final class BoxFitReview {
             var results: [String: SymbolTightBounds] = [:]
             results.reserveCapacity(symbols.count)
             for (index, symbol) in symbols.enumerated() {
-                if let bounds = SymbolAutoSizingService.measureTightBounds(symbol: symbol) {
+                if let bounds = SymbolAutoSizingService.measureTightBounds(symbol: catalog.drawableName(for: symbol)) {
                     results[symbol] = bounds
                 }
                 if index % 100 == 0 {
@@ -200,13 +202,6 @@ final class BoxFitReview {
         measuredCount = bounds.count
         progress = 1
         isMeasuring = false
-    }
-
-    private static func loadSymbolList() -> [String] {
-        guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
-              let contents = try? String(contentsOf: url, encoding: .utf8)
-        else { return [] }
-        return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
     }
 }
 
