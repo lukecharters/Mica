@@ -3,21 +3,21 @@
     "circle": {
       "multiplier": 0.65,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "rectangle": {
       "multiplier": 0.65,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "square": {
-      "multiplier": 0.65,
+      "multiplier": 0.655,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     }
@@ -71,16 +71,16 @@
   },
   "symbols": {
     "1.brakesignal": {
-      "multiplier": 0.57,
+      "multiplier": 0.565,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
     "1.calendar": {
       "multiplier": 0.65,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
@@ -598,9 +598,9 @@
       "yOffset": 0
     },
     "air.conditioner.horizontal": {
-      "multiplier": 0.63,
+      "multiplier": 0.61,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0.005,
       "yOffset": 0.025
     },
@@ -801,10 +801,10 @@
       "yOffset": 0
     },
     "airplay.audio.badge.exclamationmark": {
-      "multiplier": 0.59,
+      "multiplier": 0.585,
       "status": "calibrated",
       "weight": "medium",
-      "xOffset": 0.035,
+      "xOffset": 0.03,
       "yOffset": -0.02
     },
     "airplay.video": {
@@ -941,7 +941,7 @@
       "yOffset": 0.005
     },
     "airpods.max": {
-      "multiplier": 0.61,
+      "multiplier": 0.615,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
@@ -969,18 +969,88 @@
       "yOffset": 0
     },
     "airpods.pro.chargingcase.wireless.radiowaves.left.and.right": {
-      "multiplier": 0.41,
+      "multiplier": 0.395,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
     },
     "airpods.pro.chargingcase.wireless.radiowaves.left.and.right.fill": {
-      "multiplier": 0.41,
+      "multiplier": 0.395,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": 0
+    },
+    "airpods.pro.gen1": {
+      "multiplier": 0.56,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": -0.015
+    },
+    "airpods.pro.gen1.chargingcase.wireless": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen1.chargingcase.wireless.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen1.chargingcase.wireless.radiowaves.left.and.right": {
+      "multiplier": 0.395,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen1.chargingcase.wireless.radiowaves.left.and.right.fill": {
+      "multiplier": 0.395,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen3.chargingcase.wireless": {
+      "multiplier": 0.635,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen3.chargingcase.wireless.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen3.chargingcase.wireless.radiowaves.left.and.right": {
+      "multiplier": 0.395,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen3.chargingcase.wireless.radiowaves.left.and.right.fill": {
+      "multiplier": 0.395,
+      "status": "calibrated",
+      "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "airpods.pro.gen3.left": {
+      "multiplier": 0.6599999999999999,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0.0049999999999999906,
+      "yOffset": -0.010000000000000009
     },
     "airpods.pro.left": {
       "multiplier": 0.65,
@@ -1032,18 +1102,74 @@
       "yOffset": 0
     },
     "alarm": {
+      "multiplier": 0.655,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": -0.015
+    },
+    "alarm.badge.exclamationmark": {
+      "multiplier": 0.625,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.03
+    },
+    "alarm.badge.exclamationmark.fill": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.03
+      "yOffset": 0
+    },
+    "alarm.badge.minus": {
+      "multiplier": 0.625,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.03
+    },
+    "alarm.badge.minus.fill": {
+      "multiplier": 0.625,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.03
+    },
+    "alarm.badge.xmark": {
+      "multiplier": 0.625,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.03
+    },
+    "alarm.badge.xmark.fill": {
+      "multiplier": 0.625,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.03
     },
     "alarm.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.56,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
-      "yOffset": -0.03
+      "yOffset": -0.02500000000000001
+    },
+    "alarm.slash": {
+      "multiplier": 0.635,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0.0049999999999999906
+    },
+    "alarm.slash.fill": {
+      "multiplier": 0.635,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0.0049999999999999906
     },
     "alarm.waves.left.and.right": {
       "multiplier": 0.46,
@@ -1214,11 +1340,11 @@
       "yOffset": -0.045
     },
     "ant": {
-      "multiplier": 0.63,
+      "multiplier": 0.615,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.01
+      "yOffset": -0.015
     },
     "ant.fill": {
       "multiplier": 0.5700000000000001,
@@ -1232,19 +1358,19 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": -0.005
+      "yOffset": -0.0050000000000000044
     },
     "antenna.radiowaves.left.and.right.slash": {
-      "multiplier": 0.66,
+      "multiplier": 0.65,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
+      "weight": "medium",
+      "xOffset": -0.0050000000000000044,
       "yOffset": -0.035
     },
     "app": {
-      "multiplier": 0.65,
+      "multiplier": 0.655,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
@@ -1312,9 +1438,9 @@
       "yOffset": 0
     },
     "app.fill": {
-      "multiplier": 0.65,
+      "multiplier": 0.655,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
@@ -1339,10 +1465,87 @@
       "xOffset": 0,
       "yOffset": 0
     },
+    "app.grid.2x2": {
+      "multiplier": 0.655,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.bottom.dashed": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.bottom.dashed.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.topleading.dashed": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.topleading.dashed.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.topleading.filled": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.topleft.dashed.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.grid.2x2.topleft.filled": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
     "app.shadow": {
       "multiplier": 0.65,
       "status": "calibrated",
       "weight": "regular",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.slash": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": 0,
+      "yOffset": 0
+    },
+    "app.slash.fill": {
+      "multiplier": 0.65,
+      "status": "calibrated",
+      "weight": "medium",
       "xOffset": 0,
       "yOffset": 0
     },
@@ -1452,14 +1655,14 @@
       "yOffset": 0
     },
     "apple.intelligence": {
-      "multiplier": 0.61,
+      "multiplier": 0.62,
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.015
     },
     "apple.intelligence.badge.xmark": {
-      "multiplier": 0.61,
+      "multiplier": 0.605,
       "status": "calibrated",
       "weight": "medium",
       "xOffset": 0.024999999999999994,
@@ -1522,9 +1725,9 @@
       "yOffset": 0.02
     },
     "apple.writing.tools": {
-      "multiplier": 0.63,
+      "multiplier": 0.635,
       "status": "calibrated",
-      "weight": "regular",
+      "weight": "medium",
       "xOffset": -0.0050000000000000044,
       "yOffset": -0.010000000000000009
     },
@@ -1781,18 +1984,25 @@
       "yOffset": 0
     },
     "apps.ipad.badge.checkmark": {
-      "multiplier": 0.65,
+      "multiplier": 0.64,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.04
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.024999999999999994
+    },
+    "apps.ipad.badge.exclamationmark": {
+      "multiplier": 0.64,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.024999999999999994
     },
     "apps.ipad.badge.plus": {
-      "multiplier": 0.65,
+      "multiplier": 0.64,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.04
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.024999999999999994
     },
     "apps.ipad.on.rectangle.portrait.dashed": {
       "multiplier": 0.64,
@@ -1806,21 +2016,28 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.010000000000000009
     },
     "apps.iphone.badge.checkmark": {
-      "multiplier": 0.65,
+      "multiplier": 0.64,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.045
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.024999999999999994
+    },
+    "apps.iphone.badge.exclamationmark": {
+      "multiplier": 0.64,
+      "status": "calibrated",
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.024999999999999994
     },
     "apps.iphone.badge.plus": {
-      "multiplier": 0.65,
+      "multiplier": 0.64,
       "status": "calibrated",
-      "weight": "regular",
-      "xOffset": 0,
-      "yOffset": 0.045
+      "weight": "medium",
+      "xOffset": -0.020000000000000004,
+      "yOffset": 0.024999999999999994
     },
     "apps.iphone.landscape": {
       "multiplier": 0.65,
@@ -2411,8 +2628,8 @@
       "yOffset": 0
     },
     "arrow.trianglehead.2.clockwise.rotate.90.camera": {
-      "multiplier": 0.54,
-      "status": "needs-review",
+      "multiplier": 0.625,
+      "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
       "yOffset": -0.015
@@ -9506,17 +9723,17 @@
       "yOffset": 0
     },
     "cloud.rainbow.crop": {
-      "multiplier": 0.635,
+      "multiplier": 0.63,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": -0.02,
-      "yOffset": -0.025
+      "xOffset": -0.02500000000000001,
+      "yOffset": -0.02500000000000001
     },
     "cloud.rainbow.crop.fill": {
       "multiplier": 0.635,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": -0.02,
+      "xOffset": -0.02500000000000001,
       "yOffset": -0.025
     },
     "cloud.sleet": {
@@ -26204,7 +26421,7 @@
       "status": "calibrated",
       "weight": "regular",
       "xOffset": 0,
-      "yOffset": 0
+      "yOffset": -0.020000000000000004
     },
     "rays": {
       "multiplier": 0.65,
@@ -27588,10 +27805,10 @@
       "yOffset": 0
     },
     "screwdriver": {
-      "multiplier": 0.6,
+      "multiplier": 0.61,
       "status": "calibrated",
       "weight": "regular",
-      "xOffset": 0,
+      "xOffset": -0.0050000000000000044,
       "yOffset": 0
     },
     "screwdriver.fill": {
