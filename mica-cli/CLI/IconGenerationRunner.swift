@@ -124,6 +124,7 @@ class IconGenerationRunner {
             scaleFactor: scaleFactor,
             colorSpace: settings.export.colorSpace
         )
+        try requireResolvedAppexRender(appexImage, symbolName: foregroundSymbol, settings: settings)
 
         // If badge is present, composite via renderAppexWithBadge
         if settings.badge.isVisible {
@@ -157,7 +158,7 @@ class IconGenerationRunner {
     /// mode cannot express has already been reported and nothing was written.
     private func renderAppexIcon(symbolName: String, enclosureColor: AppexPlistColor, symbolColor: AppexPlistColor, settings: IconSettings) throws -> NSImage {
         let scaleFactor = settings.export.isRetina ? 2 : 1
-        return try AppexReferenceService.renderForExport(
+        let image = try AppexReferenceService.renderForExport(
             symbolName: symbolName,
             enclosureColor: enclosureColor,
             symbolColor: symbolColor,
@@ -165,6 +166,8 @@ class IconGenerationRunner {
             scaleFactor: scaleFactor,
             colorSpace: settings.export.colorSpace
         )
+        try requireResolvedAppexRender(image, symbolName: symbolName, settings: settings)
+        return image
     }
 
     // MARK: - Enhanced Validation
@@ -189,24 +192,52 @@ class IconGenerationRunner {
     }
 
     /// Both symbols the settings will actually render, whatever supplied them.
-    private func validateResolvedSymbols(_ settings: IconSettings) throws {
-        // `.image` foregrounds keep a cosmetic `symbolName` (the file's stem),
-        // which is not a symbol and must not be looked up. `.system` is the appex
-        // raster of a real SF Symbol, so it is checked like `.symbol`.
-        if settings.icon.foreground.source != .image {
-            try validateSFSymbolExists(settings.icon.foreground.symbolName)
+    /// `.image` foregrounds keep a cosmetic `symbolName` (the file's stem), which is
+    /// not a symbol and is not looked up. A System-mode layer is decided by its
+    /// render instead (`requireResolvedAppexRender`), so here the catalog can only
+    /// refuse it for needing a newer macOS.
+    func validateResolvedSymbols(
+        _ settings: IconSettings,
+        catalog: SymbolCatalog = .bundled,
+        os: MacOSVersion = .running
+    ) throws {
+        var layers = [(foreground: settings.icon.foreground, isSystem: settings.icon.mode == .system)]
+        if settings.badge.isVisible {
+            layers.append((settings.badge.foreground, settings.badge.foreground.source == .system))
         }
-        if settings.badge.isVisible, settings.badge.foreground.source != .image {
-            try validateSFSymbolExists(settings.badge.foreground.symbolName)
+        for (foreground, isSystem) in layers where foreground.source != .image {
+            let status = isSystem
+                ? catalog.status(of: foreground.symbolName, on: os, systemResolves: { _ in true })
+                : catalog.status(of: foreground.symbolName, on: os)
+            switch status {
+            case .available:
+                break
+            case .needsNewerMacOS(let version):
+                throw CLIError.invalidSymbol(Self.needsNewerMacOSMessage(foreground.symbolName, version: version, os: os))
+            case .unknown:
+                throw CLIError.invalidSymbol(Self.unknownSymbolMessage(foreground.symbolName, os: os))
+            }
         }
     }
 
-    private func validateSFSymbolExists(_ symbolName: String) throws {
-        // Check if symbol exists by attempting to create UIImage
-        let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
-        if image == nil {
-            throw CLIError.invalidSymbol("SF Symbol '\(symbolName)' does not exist. Verify the symbol name in Apple's SF Symbols app.")
+    /// Refuses an appex render that is IconServices' stand-in for a name it could not resolve.
+    private func requireResolvedAppexRender(_ image: NSImage, symbolName: String, settings: IconSettings) throws {
+        if AppexReferenceService.isUnresolvedSymbolRender(
+            image,
+            pointSize: settings.export.size,
+            scaleFactor: settings.export.isRetina ? 2 : 1,
+            colorSpace: settings.export.colorSpace
+        ) {
+            throw CLIError.invalidSymbol(Self.unknownSymbolMessage(symbolName, os: .running))
         }
+    }
+
+    static func unknownSymbolMessage(_ name: String, os: MacOSVersion) -> String {
+        "SF Symbol '\(name)' isn't available on this Mac (macOS \(os)). Check the spelling, or whether it needs a newer macOS."
+    }
+
+    static func needsNewerMacOSMessage(_ name: String, version: MacOSVersion, os: MacOSVersion) -> String {
+        "SF Symbol '\(name)' requires macOS \(version) or later; this Mac is running macOS \(os)."
     }
     
     private func validateOutputPermissions(_ outputPath: String) throws {
@@ -851,8 +882,8 @@ enum CLIError: LocalizedError {
         switch self {
         case .imageConversion(let message):
             return "Image conversion error: \(message)"
-        case .invalidSymbol(let symbol):
-            return "Invalid SF Symbol: \(symbol)"
+        case .invalidSymbol(let message):
+            return message
         case .fileSystem(let message):
             return "File system error: \(message)"
         case .invalidColorFormat(let message):

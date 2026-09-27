@@ -6,6 +6,7 @@
 
 import AppKit
 import Foundation
+import Synchronization
 
 @MainActor
 @Observable
@@ -24,6 +25,11 @@ class AppexReferenceService {
     }
 
     // MARK: - Public API
+
+    /// The settings `referenceIcon` renders at.
+    nonisolated static let previewPointSize: CGFloat = 512
+    nonisolated static let previewScaleFactor = 2
+    nonisolated static let previewColorSpace = ExportColorSpace.displayP3
 
     /// Generate or return cached reference icon at 512pt @2x.
     ///
@@ -85,9 +91,9 @@ class AppexReferenceService {
         enclosureColor: AppexPlistColor,
         symbolColor: AppexPlistColor,
         sourceBundlePath: String,
-        pointSize: CGFloat = 512,
-        scaleFactor: Int = 2,
-        colorSpace: ExportColorSpace = .displayP3
+        pointSize: CGFloat = previewPointSize,
+        scaleFactor: Int = previewScaleFactor,
+        colorSpace: ExportColorSpace = previewColorSpace
     ) throws -> NSImage {
         let sourceURL = URL(fileURLWithPath: sourceBundlePath)
         guard FileManager.default.fileExists(atPath: sourceBundlePath) else {
@@ -127,6 +133,84 @@ class AppexReferenceService {
             scaleFactor: scaleFactor,
             colorSpace: colorSpace
         )
+    }
+
+    // MARK: - Unresolved Symbols
+
+    /// IconServices draws the generic extension icon, not an error, for an
+    /// `ISSymbolName` it cannot resolve; that image is the same for every colour
+    /// and appearance, so one reference per size, scale and colour space decides it.
+    nonisolated static let unresolvableSymbolName = "mica.unresolvable.reference"
+
+    private struct ReferenceKey: Hashable {
+        let pointSize: CGFloat
+        let scaleFactor: Int
+        let colorSpace: ExportColorSpace
+    }
+
+    private nonisolated static let unresolvedReferences = Mutex<[ReferenceKey: [UInt8]]>([:])
+
+    /// Whether `image`, an appex render at these settings, is IconServices' stand-in
+    /// for a symbol name it could not resolve.
+    nonisolated static func isUnresolvedSymbolRender(
+        _ image: NSImage,
+        pointSize: CGFloat,
+        scaleFactor: Int,
+        colorSpace: ExportColorSpace
+    ) -> Bool {
+        let key = ReferenceKey(pointSize: pointSize, scaleFactor: scaleFactor, colorSpace: colorSpace)
+        let pixelSize = Int(pointSize) * scaleFactor
+        let cached = unresolvedReferences.withLock { $0[key] }
+        let reference: [UInt8]
+        if let cached {
+            reference = cached
+        } else {
+            guard let render = try? generateIconSync(
+                symbolName: unresolvableSymbolName,
+                enclosureColor: .defaultEnclosure,
+                symbolColor: .defaultSymbol,
+                sourceBundlePath: "/System/Library/ExtensionKit/Extensions/Storage.appex",
+                pointSize: pointSize,
+                scaleFactor: scaleFactor,
+                colorSpace: colorSpace
+            ), let pixels = rgbaPixels(of: render, pixelSize: pixelSize) else { return false }
+            unresolvedReferences.withLock { $0[key] = pixels }
+            reference = pixels
+        }
+        guard let pixels = rgbaPixels(of: image, pixelSize: pixelSize) else { return false }
+        return pixelsMatch(pixels, reference)
+    }
+
+    /// Two RGBA buffers match when under 0.5% of pixels differ by more than 8 in any
+    /// channel. A real symbol differs from the stand-in in roughly half its pixels.
+    nonisolated static func pixelsMatch(_ a: [UInt8], _ b: [UInt8]) -> Bool {
+        guard a.count == b.count, !a.isEmpty, a.count % 4 == 0 else { return false }
+        var differing = 0
+        for pixel in stride(from: 0, to: a.count, by: 4) {
+            for channel in pixel..<(pixel + 4) where abs(Int(a[channel]) - Int(b[channel])) > 8 {
+                differing += 1
+                break
+            }
+        }
+        return Double(differing) < Double(a.count / 4) * 0.005
+    }
+
+    private nonisolated static func rgbaPixels(of image: NSImage, pixelSize: Int) -> [UInt8]? {
+        var rect = CGRect(origin: .zero, size: image.size)
+        guard pixelSize > 0,
+              let cgImage = image.cgImage(forProposedRect: &rect, context: nil, hints: nil),
+              let context = CGContext(
+                data: nil,
+                width: pixelSize,
+                height: pixelSize,
+                bitsPerComponent: 8,
+                bytesPerRow: pixelSize * 4,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue
+              ) else { return nil }
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: pixelSize, height: pixelSize))
+        guard let data = context.data else { return nil }
+        return Array(UnsafeBufferPointer(start: data.assumingMemoryBound(to: UInt8.self), count: pixelSize * pixelSize * 4))
     }
 
     // MARK: - Plist Configuration

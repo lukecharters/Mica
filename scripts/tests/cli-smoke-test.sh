@@ -205,6 +205,11 @@ NEGATIVE_CASES=(
     "icon-symbol-weight-invalid|Symbol weight must be one of|star.fill|--icon-symbol-weight|notaweight"
     "icon-fg-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--icon-fg-scale|5.0"
     "icon-fg-symbol-empty|requires a symbol name||--icon-fg|symbol:"
+    # An unknown name fails in both modes. System mode can only tell from the
+    # render, so these two reach the appex before they fail.
+    "icon-symbol-unknown|isn't available on this Mac|zz.not.a.symbol"
+    "icon-system-symbol-unknown|isn't available on this Mac|zz.not.a.symbol|--icon-generation-mode|system"
+    "badge-system-symbol-unknown|isn't available on this Mac|star.fill|--badge-fg|symbol:zz.not.a.symbol|--badge-generation-mode|system"
     # An unknown preset is fatal, and the message lists what is available — presets
     # are the one part of the CLI's vocabulary that `--help` does not carry, so a
     # bare "unknown preset" would leave the user with nowhere to look.
