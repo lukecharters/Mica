@@ -19,6 +19,17 @@ struct ExportOptionsAccessory: View {
 
     var body: some View {
         Form {
+            ForEach(model.symbolWarnings, id: \.self) { warning in
+                Label {
+                    Text(verbatim: warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .symbolRenderingMode(.multicolor)
+                }
+                .font(.callout)
+            }
+
             Picker("Size", selection: $model.options.spec.size) {
                 // `verbatim:` matters — see `ExportPanelOptions.pixelDescription`.
                 ForEach(model.options.sizeChoices, id: \.self) { size in
@@ -81,6 +92,13 @@ struct ExportOptionsAccessory: View {
 
 #Preview("Export options accessory") {
     ExportOptionsAccessory(model: ExportPanelModel(options: ExportPanelOptions(seed: ExportSpec())))
+}
+
+#Preview("Symbol warning") {
+    ExportOptionsAccessory(model: ExportPanelModel(
+        options: ExportPanelOptions(seed: ExportSpec()),
+        symbolWarnings: ["Icon: \u{201C}zz.not.a.symbol\u{201D} isn\u{2019}t an SF Symbol available on this Mac."]
+    ))
 }
 
 #Preview("Overridden") {

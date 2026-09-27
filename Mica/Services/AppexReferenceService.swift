@@ -12,6 +12,7 @@ import Synchronization
 @Observable
 class AppexReferenceService {
     private var cache: [CacheKey: NSImage] = [:]
+    private var unresolvedNames: Set<String> = []
     var isGenerating = false
 
     private let sourceBundlePath = "/System/Library/ExtensionKit/Extensions/Storage.appex"
@@ -48,9 +49,16 @@ class AppexReferenceService {
         isGenerating = true
         defer { isGenerating = false }
 
-        let icon = try await generateIcon(for: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
+        let (icon, isUnresolved) = try await generateIcon(for: symbolName, enclosureColor: enclosureColor, symbolColor: symbolColor)
         cache[key] = icon
+        if isUnresolved { unresolvedNames.insert(symbolName) } else { unresolvedNames.remove(symbolName) }
         return icon
+    }
+
+    /// Whether the last `referenceIcon` render of `symbolName` was IconServices'
+    /// stand-in for a name it could not resolve. False for a name not yet rendered.
+    func renderIsUnresolved(for symbolName: String) -> Bool {
+        unresolvedNames.contains(symbolName)
     }
 
     /// Pre-fetch next N symbols in background
@@ -73,15 +81,22 @@ class AppexReferenceService {
     /// Copy .appex to a unique temp path, configure, render, and clean up.
     /// Each render gets its own UUID-named bundle so LaunchServices never serves a stale icon.
     /// Blocking file I/O is dispatched to a background thread via Task.detached.
-    private func generateIcon(for symbolName: String, enclosureColor: AppexPlistColor, symbolColor: AppexPlistColor) async throws -> NSImage {
+    private func generateIcon(for symbolName: String, enclosureColor: AppexPlistColor, symbolColor: AppexPlistColor) async throws -> (NSImage, Bool) {
         let sourceBundlePath = self.sourceBundlePath
         let task = Task.detached(priority: .userInitiated) {
-            try AppexReferenceService.generateIconSync(
+            let image = try AppexReferenceService.generateIconSync(
                 symbolName: symbolName,
                 enclosureColor: enclosureColor,
                 symbolColor: symbolColor,
                 sourceBundlePath: sourceBundlePath
             )
+            let isUnresolved = AppexReferenceService.isUnresolvedSymbolRender(
+                image,
+                pointSize: AppexReferenceService.previewPointSize,
+                scaleFactor: AppexReferenceService.previewScaleFactor,
+                colorSpace: AppexReferenceService.previewColorSpace
+            )
+            return (image, isUnresolved)
         }
         return try await task.value
     }

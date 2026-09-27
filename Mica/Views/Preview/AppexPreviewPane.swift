@@ -162,6 +162,14 @@ struct AppexPreviewPane: View {
             .accessibilityLabel(IconAccessibilityDescription.previewLabel)
             .accessibilityValue(IconAccessibilityDescription.value(for: viewModel.iconSettings))
             .overlay {
+                UnresolvedSymbolMarker(
+                    settings: viewModel.iconSettings,
+                    displaySize: size,
+                    layers: SymbolAvailability.markedLayers(
+                        viewModel.iconSettings,
+                        renders: viewModel.unresolvedSystemRenders
+                    )
+                )
                 PreviewOutlineOverlay(
                     settings: viewModel.iconSettings,
                     displaySize: size,

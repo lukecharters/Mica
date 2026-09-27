@@ -65,7 +65,9 @@ struct BadgeForegroundSourceSection: View {
     private var symbolField: some View {
         SymbolNameField(
             symbolName: $iconSettings.badge.foreground.symbolName,
-            help: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)"
+            help: "Enter an SF Symbol name for the badge (e.g., 1.circle.fill, plus, checkmark)",
+            group: .badge,
+            isSystem: isSystem
         )
     }
 }

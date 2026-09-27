@@ -154,6 +154,7 @@ private struct ExportPanelPresenter: ViewModifier {
     @Binding var isPresented: Bool
     let seed: ExportSpec
     let defaultBaseName: String
+    let symbolWarnings: [String]
     let perform: (ExportPanel.Outcome) -> Void
 
     func body(content: Content) -> some View {
@@ -162,9 +163,10 @@ private struct ExportPanelPresenter: ViewModifier {
             isPresented = false
             let seed = seed
             let baseName = defaultBaseName
+            let warnings = symbolWarnings
             let perform = perform
             DispatchQueue.main.async {
-                guard let outcome = ExportPanel.run(seed: seed, defaultBaseName: baseName) else { return }
+                guard let outcome = ExportPanel.run(seed: seed, defaultBaseName: baseName, symbolWarnings: warnings) else { return }
                 perform(outcome)
             }
         }
@@ -439,8 +441,13 @@ struct ContentView: View {
             isPresented: $viewModel.showExportDialog,
             seed: viewModel.iconSettings.export,
             defaultBaseName: viewModel.iconSettings.exportBaseName,
+            symbolWarnings: SymbolAvailability.exportWarnings(
+                viewModel.iconSettings,
+                renders: viewModel.unresolvedSystemRenders
+            ),
             perform: writeExportedPNG
         ))
+        .environment(\.unresolvedSystemRenders, viewModel.unresolvedSystemRenders)
         // The configuration export, deliberately hosted on its own view.
         //
         // **A view gets one `fileExporter`.** Stacking a second directly on this one
@@ -1015,7 +1022,11 @@ struct ContentView: View {
                     hovered: hoveredPreviewSelection,
                     pointerIsInside: pointerIsInside,
                     outlineWake: outlineWake,
-                    contextActions: previewContextActions
+                    contextActions: previewContextActions,
+                    unresolvedLayers: SymbolAvailability.markedLayers(
+                        viewModel.iconSettings,
+                        renders: viewModel.unresolvedSystemRenders
+                    )
                 )
                 .frame(
                     minWidth: viewport.size.width,

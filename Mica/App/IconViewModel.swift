@@ -92,6 +92,8 @@ final class IconViewModel: ObservableObject {
     @Published var badgeAppexEnclosureColor: AppexColor = .blue
     @Published var badgeAppexSymbolColor: AppexColor = .white
     @Published var badgeAppexRenderedImage: NSImage? = nil
+    /// Which System-mode symbol names last rendered as IconServices' stand-in.
+    @Published var unresolvedSystemRenders = UnresolvedSystemRenders()
     @Published var badgeAppexIsGenerating: Bool = false
     @Published var badgeAppexError: String? = nil
 
@@ -153,10 +155,13 @@ final class IconViewModel: ObservableObject {
             // superseding task owns the isGenerating flag from here.
             guard !Task.isCancelled else { return }
             appexRenderedImage = image
+            let name = iconSettings.icon.foreground.symbolName
+            unresolvedSystemRenders.icon = service.renderIsUnresolved(for: name) ? name : nil
         } catch {
             guard !Task.isCancelled else { return }
             appexError = error.localizedDescription
             appexRenderedImage = nil
+            unresolvedSystemRenders.icon = nil
         }
         appexIsGenerating = false
     }
@@ -191,10 +196,13 @@ final class IconViewModel: ObservableObject {
             // Same late-completion guard as generateAppexIcon — see comment there.
             guard !Task.isCancelled else { return }
             badgeAppexRenderedImage = image
+            let name = iconSettings.badge.foreground.symbolName
+            unresolvedSystemRenders.badge = service.renderIsUnresolved(for: name) ? name : nil
         } catch {
             guard !Task.isCancelled else { return }
             badgeAppexError = error.localizedDescription
             badgeAppexRenderedImage = nil
+            unresolvedSystemRenders.badge = nil
         }
         badgeAppexIsGenerating = false
     }

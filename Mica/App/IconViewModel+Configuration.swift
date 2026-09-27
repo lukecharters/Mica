@@ -125,7 +125,9 @@ extension IconViewModel {
         // Reported before the early return below: a configuration whose settings match
         // what is already on screen still has to account for what it dropped on the way,
         // and "nothing changed" is the case where an unread warning matters most.
-        report(.configurationImportWarnings(warnings))
+        report(.configurationImportWarnings(
+            warnings + SymbolAvailability.loadWarnings(importing: settings, over: iconSettings)
+        ))
 
         let previousSettings = iconSettings
         let previousColors = micaAppexColors

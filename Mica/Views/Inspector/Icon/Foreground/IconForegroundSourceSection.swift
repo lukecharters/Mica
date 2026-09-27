@@ -63,7 +63,11 @@ struct IconForegroundSourceSection: View {
     }
 
     private var symbolField: some View {
-        SymbolNameField(symbolName: $iconSettings.icon.foreground.symbolName)
+        SymbolNameField(
+            symbolName: $iconSettings.icon.foreground.symbolName,
+            group: .icon,
+            isSystem: isSystem
+        )
     }
 }
 

@@ -26,9 +26,13 @@ import UniformTypeIdentifiers
 @MainActor
 final class ExportPanelModel: ObservableObject {
     @Published var options: ExportPanelOptions
+    /// Layers whose symbol will not draw, one line each. Fixed for the panel's life:
+    /// nothing in the panel can change a symbol.
+    let symbolWarnings: [String]
 
-    init(options: ExportPanelOptions) {
+    init(options: ExportPanelOptions, symbolWarnings: [String] = []) {
         self.options = options
+        self.symbolWarnings = symbolWarnings
     }
 }
 
@@ -47,8 +51,8 @@ enum ExportPanel {
     /// - Parameters:
     ///   - seed: the window's current export settings, which the accessory opens on.
     ///   - defaultBaseName: the filename without its extension — `IconSettings.exportBaseName`.
-    static func run(seed: ExportSpec, defaultBaseName: String) -> Outcome? {
-        let model = ExportPanelModel(options: ExportPanelOptions(seed: seed))
+    static func run(seed: ExportSpec, defaultBaseName: String, symbolWarnings: [String] = []) -> Outcome? {
+        let model = ExportPanelModel(options: ExportPanelOptions(seed: seed), symbolWarnings: symbolWarnings)
 
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png]

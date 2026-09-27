@@ -25,7 +25,7 @@ struct SimpleSourceSection: View {
             get: { !isVisible },
             set: { isVisible = !$0 }
         ))
-        SymbolNameField(symbolName: $symbolName, help: symbolHelp)
+        SymbolNameField(symbolName: $symbolName, help: symbolHelp, group: group)
     }
 }
 
