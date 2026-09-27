@@ -23,7 +23,7 @@ struct SymbolNameField: View {
                 Label("Symbol", systemImage: labelSymbol)
             }
             .textFieldStyle(RoundedBorderTextFieldStyle())
-            .help(SymbolAvailability.problem(with: symbolName, status: status) ?? help ?? "")
+            .help(help ?? "")
 
             Button(action: { showSymbolPicker = true }) {
                 Image(systemName: "square.grid.2x2.fill")
@@ -32,6 +32,18 @@ struct SymbolNameField: View {
         }
         .sheet(isPresented: $showSymbolPicker) {
             SymbolPickerView(selectedSymbol: $symbolName)
+        }
+
+        // A row of its own, so a Form lays it out under the field rather than beside it.
+        if let problem = SymbolAvailability.problem(with: symbolName, status: status) {
+            Label {
+                Text(verbatim: problem)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .symbolRenderingMode(.multicolor)
+            }
+            .font(.callout)
         }
     }
 

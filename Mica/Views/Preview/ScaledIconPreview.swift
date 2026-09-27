@@ -49,8 +49,6 @@ struct ScaledIconPreview: View {
     /// the export document and the pasteboard, which are view-model state this view
     /// never sees.
     var contextActions: PreviewContextActions = .unavailable
-    /// Layers whose symbol will not draw; see `UnresolvedSymbolMarker`.
-    var unresolvedLayers: [PreviewSelection] = []
 
     /// So a badge drag is one undo step rather than one per frame.
     @Environment(\.continuousEdit) private var continuousEdit
@@ -115,10 +113,6 @@ struct ScaledIconPreview: View {
                 )
                 .offset(BadgeGeometry.offset(for: settings, enclosureSize: enclosureSize))
                 .allowsHitTesting(false)
-            }
-
-            if !unresolvedLayers.isEmpty {
-                UnresolvedSymbolMarker(settings: settings, displaySize: displaySize, layers: unresolvedLayers)
             }
 
             // The outlines sit above the icon but below the badge overlay so they

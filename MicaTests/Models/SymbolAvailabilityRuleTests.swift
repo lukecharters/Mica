@@ -1,7 +1,7 @@
 // SymbolAvailabilityRuleTests.swift
-// Which layers the app reports as not drawing, and where it says so.
+// Which layers the app reports as not drawing, and what it says.
 //
-// The name field, the canvas marker, the export panel and the load warnings all read
+// The name field's warning, the export panel and the load warnings all read
 // `SymbolAvailability`, so these rules are the whole of what decides them. A
 // System-mode layer is only ever reported from its own render's result, for the name
 // that was rendered — never from NSImage, and never while a render is pending.
@@ -32,45 +32,54 @@ struct SymbolAvailabilityRuleTests {
         return settings
     }
 
-    // MARK: - Marked layers
+    // MARK: - Which layers report a problem
 
-    @Test("A Mica-mode symbol nothing knows is marked; a real one is not")
-    func micaModeForeground() {
-        #expect(SymbolAvailability.markedLayers(settings(icon: Self.bogus), renders: .init()) == [.iconForeground])
-        #expect(SymbolAvailability.markedLayers(settings(), renders: .init()).isEmpty)
+    private func reports(_ settings: IconSettings, renders: UnresolvedSystemRenders = .init()) -> (icon: Bool, badge: Bool) {
+        (
+            SymbolAvailability.problem(with: settings.icon.foreground.symbolName,
+                                       status: SymbolAvailability.iconStatus(settings, renders: renders)) != nil,
+            SymbolAvailability.problem(with: settings.badge.foreground.symbolName,
+                                       status: SymbolAvailability.badgeStatus(settings, renders: renders)) != nil
+        )
     }
 
-    @Test("A System-mode name is not marked until its own render says so")
+    @Test("A Mica-mode symbol nothing knows reports a problem; a real one does not")
+    func micaModeForeground() {
+        #expect(reports(settings(icon: Self.bogus)).icon)
+        #expect(!reports(settings()).icon)
+    }
+
+    @Test("A System-mode name reports nothing until its own render says so")
     func systemModeWaitsForTheRender() {
         var s = settings(icon: Self.bogus)
         s.icon.mode = .system
-        #expect(SymbolAvailability.markedLayers(s, renders: .init()).isEmpty)
-        #expect(SymbolAvailability.markedLayers(s, renders: .init(icon: Self.bogus)) == [.icon])
+        #expect(!reports(s).icon)
+        #expect(reports(s, renders: .init(icon: Self.bogus)).icon)
     }
 
     @Test("A render of a previous name says nothing about the current one")
     func staleRenderIsIgnored() {
         var s = settings(icon: "circle.fill")
         s.icon.mode = .system
-        #expect(SymbolAvailability.markedLayers(s, renders: .init(icon: "circle")).isEmpty)
+        #expect(!reports(s, renders: .init(icon: "circle")).icon)
     }
 
-    @Test("The badge is marked as a foreground in Mica mode and as a whole in System mode")
-    func badgeMarking() {
-        #expect(SymbolAvailability.markedLayers(settings(badge: Self.bogus), renders: .init()) == [.badgeForeground])
+    @Test("The badge follows the same rules in both modes")
+    func badgeReporting() {
+        #expect(reports(settings(badge: Self.bogus)).badge)
 
         var system = settings(badge: Self.bogus)
         system.badge.foreground.source = .system
-        #expect(SymbolAvailability.markedLayers(system, renders: .init()).isEmpty)
-        #expect(SymbolAvailability.markedLayers(system, renders: .init(badge: Self.bogus)) == [.badge])
+        #expect(!reports(system).badge)
+        #expect(reports(system, renders: .init(badge: Self.bogus)).badge)
     }
 
-    @Test("A hidden badge and an image foreground are never marked")
-    func notMarked() {
+    @Test("A hidden badge and an image foreground never report a problem")
+    func notReported() {
         var hidden = settings()
         hidden.badge.isVisible = false
         hidden.badge.foreground.symbolName = Self.bogus
-        #expect(SymbolAvailability.markedLayers(hidden, renders: .init()).isEmpty)
+        #expect(!reports(hidden).badge)
 
         var image = settings(icon: "stem-of-an-image-file")
         image.icon.foreground.source = .image

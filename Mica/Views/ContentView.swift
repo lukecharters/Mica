@@ -1022,11 +1022,7 @@ struct ContentView: View {
                     hovered: hoveredPreviewSelection,
                     pointerIsInside: pointerIsInside,
                     outlineWake: outlineWake,
-                    contextActions: previewContextActions,
-                    unresolvedLayers: SymbolAvailability.markedLayers(
-                        viewModel.iconSettings,
-                        renders: viewModel.unresolvedSystemRenders
-                    )
+                    contextActions: previewContextActions
                 )
                 .frame(
                     minWidth: viewport.size.width,

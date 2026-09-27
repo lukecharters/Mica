@@ -1,7 +1,7 @@
 // App/SymbolAvailability.swift
 //
-// Whether each layer's symbol can be drawn, for the four places the app says so:
-// the name field, the canvas marker, the export panel and the load warnings.
+// Whether each layer's symbol can be drawn, for the three places the app says so:
+// the name field's warning, the export panel and the load warnings.
 //
 // A Mica-mode layer is decided by the catalog and then NSImage. A System-mode layer
 // is decided by the catalog for the names it knows and by its last appex render for
@@ -69,19 +69,6 @@ enum SymbolAvailability {
         )
     }
 
-    /// The layers the preview marks as not drawing: the foreground in Mica mode, the
-    /// whole group in System mode, where the appex image is one layer.
-    static func markedLayers(_ settings: IconSettings, renders: UnresolvedSystemRenders) -> [PreviewSelection] {
-        var layers: [PreviewSelection] = []
-        if problem(with: settings.icon.foreground.symbolName, status: iconStatus(settings, renders: renders)) != nil {
-            layers.append(settings.icon.mode == .system ? .icon : .iconForeground)
-        }
-        if problem(with: settings.badge.foreground.symbolName, status: badgeStatus(settings, renders: renders)) != nil {
-            layers.append(settings.badge.foreground.source == .system ? .badge : .badgeForeground)
-        }
-        return layers
-    }
-
     /// What is wrong with `name`, or nil when `status` is `.available`.
     static func problem(with name: String, status: SymbolCatalog.Status?) -> String? {
         switch status {
@@ -108,7 +95,7 @@ enum SymbolAvailability {
     ///
     /// Only a name that differs from what `current` already has is checked, so a
     /// preset that leaves the foreground alone does not re-report it. System-mode
-    /// layers are left to their render, which the canvas and the field report.
+    /// layers are left to their render, which the name field reports.
     static func loadWarnings(
         importing imported: IconSettings,
         over current: IconSettings,
