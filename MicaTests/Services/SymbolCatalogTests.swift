@@ -141,6 +141,34 @@ struct SymbolCatalogTests {
         #expect(catalog.galleryNames(on: v27) == ["star", "coin.building.classical", "trio.new", "brandnew", "ancient"])
     }
 
+    @Test("A search matches any spelling and returns the one that works")
+    func searchMatchesAliases() {
+        #expect(catalog.galleryNames(on: v27, matching: "bank") == ["coin.building.classical"])
+        #expect(catalog.galleryNames(on: v15, matching: "classical") == ["coin.bank.building"])
+        #expect(catalog.galleryNames(on: v27, matching: "TRIO.OLD") == ["trio.new"])
+        #expect(catalog.galleryNames(on: v27, matching: "legacy") == ["ancient"])
+    }
+
+    @Test("A search leaves out symbols with no spelling on the OS and retired ones")
+    func searchKeepsGalleryRules() {
+        #expect(catalog.galleryNames(on: v15, matching: "brandnew").isEmpty)
+        #expect(catalog.galleryNames(on: v27, matching: "gone").isEmpty)
+    }
+
+    @Test("An empty or blank search is the whole gallery", arguments: ["", "  "])
+    func blankSearch(query: String) {
+        #expect(catalog.galleryNames(on: v15, matching: query) == catalog.galleryNames(on: v15))
+    }
+
+    @Test("A stored name finds its gallery cell under any spelling")
+    func galleryCellForStoredName() {
+        #expect(catalog.galleryName(for: "trio.old", on: v27) == "trio.new")
+        #expect(catalog.galleryName(for: "trio.new", on: v14) == "trio.mid")
+        #expect(catalog.galleryName(for: "coin.bank.building", on: v27) == "coin.building.classical")
+        #expect(catalog.galleryName(for: "star", on: v15) == "star")
+        #expect(catalog.galleryName(for: "not.in.catalog", on: v27) == "not.in.catalog")
+    }
+
     @Test("Current name and aliases are found from any spelling")
     func lookup() {
         #expect(catalog.currentName(for: "trio.old") == "trio.new")

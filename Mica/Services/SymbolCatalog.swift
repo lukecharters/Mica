@@ -195,4 +195,22 @@ struct SymbolCatalog: Sendable {
     func galleryNames(on os: MacOSVersion) -> [String] {
         symbols.compactMap { renderName(for: $0.name, on: os) }
     }
+
+    /// `galleryNames(on:)` narrowed to symbols with a spelling, current or alias, that
+    /// contains `query`, ignoring case. An empty query narrows nothing.
+    func galleryNames(on os: MacOSVersion, matching query: String) -> [String] {
+        let query = query.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return galleryNames(on: os) }
+        return symbols.compactMap { entry in
+            guard let name = renderName(for: entry.name, on: os) else { return nil }
+            let spellings = [entry.name] + entry.aliases.map(\.name)
+            return spellings.contains { $0.localizedCaseInsensitiveContains(query) } ? name : nil
+        }
+    }
+
+    /// The spelling the gallery on `os` shows for the symbol `name` belongs to, or
+    /// `name` unchanged when the catalog does not know it.
+    func galleryName(for name: String, on os: MacOSVersion) -> String {
+        currentName(for: name).flatMap { renderName(for: $0, on: os) } ?? name
+    }
 }

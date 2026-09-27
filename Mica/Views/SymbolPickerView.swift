@@ -24,18 +24,17 @@ struct SymbolPickerView: View {
     @AppStorage(SymbolPickerPreview.shadedBackgroundKey)
     private var usesShadedBackground = false
 
-    /// Every SF Symbol shipped in `sf-symbols.txt`, loaded once and cached.
-    private static let allSymbols: [String] = {
-        guard let url = Bundle.main.url(forResource: "sf-symbols", withExtension: "txt"),
-              let contents = try? String(contentsOf: url, encoding: .utf8)
-        else { return [] }
-        return contents.components(separatedBy: .newlines).filter { !$0.isEmpty }
-    }()
+    private static let allSymbols = SymbolCatalog.bundled.galleryNames(on: .running)
 
     private var filteredSymbols: [String] {
-        let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return Self.allSymbols }
-        return Self.allSymbols.filter { $0.localizedCaseInsensitiveContains(query) }
+        guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return Self.allSymbols }
+        return SymbolCatalog.bundled.galleryNames(on: .running, matching: searchText)
+    }
+
+    /// The cell for `selectedSymbol`, which may be stored under a spelling the grid
+    /// does not show.
+    private var selectedCell: String {
+        SymbolCatalog.bundled.galleryName(for: selectedSymbol, on: .running)
     }
 
     private let columns = Array(
@@ -53,7 +52,7 @@ struct SymbolPickerView: View {
         // symbol name on one or two lines. The column count is fixed because the
         // arrow keys need it — see `SymbolGridNavigation`.
         .frame(width: 900, height: 640)
-        .onAppear { cursor = selectedSymbol }
+        .onAppear { cursor = selectedCell }
         .onChange(of: searchText) { _, _ in reseatCursor() }
         .background(WindowKeyMonitor(handler: handleKeyDown))
     }
@@ -139,7 +138,7 @@ struct SymbolPickerView: View {
     private func symbolCell(_ symbol: String) -> some View {
         // Two states, because there are two: the symbol the icon is using, and the one
         // the keyboard is on. They coincide when the sheet opens.
-        let isSelected = symbol == selectedSymbol
+        let isSelected = symbol == selectedCell
         let isCursor = symbol == cursor
         VStack(spacing: 8) {
             renderedSymbol(symbol)
