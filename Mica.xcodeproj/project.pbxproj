@@ -125,6 +125,7 @@
 				Services/Rendering/ResolvedShadow.swift,
 				Services/SettingsTokens.swift,
 				Services/SymbolAutoSizingService.swift,
+				Services/SymbolCatalog.swift,
 				Services/SymbolSizingService.swift,
 				Services/UserPresetStore.swift,
 			);
@@ -178,6 +179,7 @@
 				Services/Rendering/ResolvedShadow.swift,
 				Services/SettingsTokens.swift,
 				Services/SymbolAutoSizingService.swift,
+				Services/SymbolCatalog.swift,
 				Services/SymbolSizingService.swift,
 				Services/UserPresetStore.swift,
 			);
