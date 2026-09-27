@@ -165,6 +165,52 @@ struct SymbolSizingServiceTests {
         }
     }
 
+    // MARK: - Renamed symbols
+
+    /// `fixture.renamed` is new in 27; on older systems it is drawn as `star`.
+    private static let renamingCatalog = try! SymbolCatalog(data: Data(#"""
+    {"formatVersion": 1, "symbols": [
+      {"name": "fixture.renamed", "macOS": "27.0", "aliases": [{"name": "star", "macOS": "11.0"}]}
+    ]}
+    """#.utf8))
+
+    private func calibration(_ entries: [String: Double]) -> SymbolCalibration {
+        SymbolCalibration(symbols: entries.mapValues {
+            SymbolCalibrationEntry(multiplier: $0, xOffset: 0, yOffset: 0, weight: "regular", status: "calibrated")
+        })
+    }
+
+    private func resolveRenamed(_ name: String, calibration: SymbolCalibration, os: MacOSVersion = MacOSVersion(27)) -> ResolvedSymbolSizing {
+        SymbolSizingService.resolve(for: name, calibration: calibration, catalog: Self.renamingCatalog, os: os)
+    }
+
+    @Test("A new name finds the calibration stored under its old name")
+    func calibrationFoundThroughAlias() {
+        let r = resolveRenamed("fixture.renamed", calibration: calibration(["star": 0.61]))
+        #expect(r.source == .symbolCalibration)
+        #expect(abs(r.multiplier - 0.61) < 0.001)
+    }
+
+    @Test("An old name finds the calibration stored under its new name")
+    func calibrationFoundThroughCurrentName() {
+        let r = resolveRenamed("star", calibration: calibration(["fixture.renamed": 0.62]))
+        #expect(r.source == .symbolCalibration)
+        #expect(abs(r.multiplier - 0.62) < 0.001)
+    }
+
+    @Test("The name asked about wins over its other spellings")
+    func exactNameWins() {
+        let r = resolveRenamed("fixture.renamed", calibration: calibration(["star": 0.61, "fixture.renamed": 0.63]))
+        #expect(abs(r.multiplier - 0.63) < 0.001)
+    }
+
+    @Test("Box-fit measures the spelling that exists on the OS")
+    func boxFitMeasuresTheDrawnSpelling() {
+        let empty = SymbolCalibration()
+        #expect(resolveRenamed("fixture.renamed", calibration: empty, os: MacOSVersion(15)).source == .autoBoxFit)
+        #expect(resolveRenamed("fixture.renamed", calibration: empty, os: MacOSVersion(27)).source == .defaultFallback)
+    }
+
     // MARK: - ResolvedSymbolSizing basic properties
 
     @Test("Resolved multiplier is positive and weight is auto/regular/medium for any input",

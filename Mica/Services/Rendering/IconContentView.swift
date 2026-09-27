@@ -51,6 +51,10 @@ struct IconContentView: View {
         iconSize - (2 * backgroundInset)
     }
 
+    private var drawnSymbolName: String {
+        SymbolCatalog.bundled.drawableName(for: settings.icon.foreground.symbolName)
+    }
+
     /// Resolved sizing from family calibration data (always used as baseline)
     private var resolvedSizing: ResolvedSymbolSizing {
         SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
@@ -258,7 +262,7 @@ struct IconContentView: View {
         case .symbol:
             applySymbolColorRenderingMode(
                 to: applySymbolColor(
-                    to: Image(systemName: settings.icon.foreground.symbolName)
+                    to: Image(systemName: drawnSymbolName)
                         .font(.system(size: symbolSize, weight: symbolFontWeight))
                 )
                 .symbolRenderingMode(settings.icon.foreground.renderingStyle.symbolRenderingMode)

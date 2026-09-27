@@ -25,10 +25,10 @@ struct MacOSVersion: Comparable, Hashable, Sendable, CustomStringConvertible {
         self.init(major, minor)
     }
 
-    static var running: MacOSVersion {
+    static let running: MacOSVersion = {
         let version = ProcessInfo.processInfo.operatingSystemVersion
         return MacOSVersion(version.majorVersion, version.minorVersion)
-    }
+    }()
 
     static func < (lhs: MacOSVersion, rhs: MacOSVersion) -> Bool {
         (lhs.major, lhs.minor) < (rhs.major, rhs.minor)
@@ -163,6 +163,13 @@ struct SymbolCatalog: Sendable {
             .filter { $0.macOS.map { $0 <= os } ?? false }
             .max { $0.macOS! < $1.macOS! }?
             .name
+    }
+
+    /// `renderName`, or `name` unchanged when the catalog has no spelling for it. What
+    /// every drawing site uses, so a name the catalog does not know still reaches the
+    /// system as typed.
+    func drawableName(for name: String, on os: MacOSVersion = .running) -> String {
+        renderName(for: name, on: os) ?? name
     }
 
     /// Whether `name` can be drawn on `os`, and under which spelling. A name the catalog

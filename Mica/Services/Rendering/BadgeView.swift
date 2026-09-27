@@ -19,6 +19,10 @@ struct BadgeView: View {
         shadowOverride ?? .preset(for: settings.icon.background.shadowStyle)
     }
 
+    private var drawnSymbolName: String {
+        SymbolCatalog.bundled.drawableName(for: settings.badge.foreground.symbolName)
+    }
+
     private var resolvedBadgeSizing: ResolvedSymbolSizing {
         SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
     }
@@ -148,22 +152,22 @@ struct BadgeView: View {
                 to: Group {
                     switch settings.badge.foreground.renderingStyle {
                     case .monochrome:
-                        Image(systemName: settings.badge.foreground.symbolName)
+                        Image(systemName: drawnSymbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundColor(settings.badge.foreground.color.resolved)
                             .symbolRenderingMode(.monochrome)
                     case .hierarchical:
-                        Image(systemName: settings.badge.foreground.symbolName)
+                        Image(systemName: drawnSymbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundStyle(settings.badge.foreground.hierarchicalColor.resolved)
                             .symbolRenderingMode(.hierarchical)
                     case .multicolor:
-                        Image(systemName: settings.badge.foreground.symbolName)
+                        Image(systemName: drawnSymbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundColor(settings.badge.foreground.color.resolved)
                             .symbolRenderingMode(.multicolor)
                     case .palette:
-                        Image(systemName: settings.badge.foreground.symbolName)
+                        Image(systemName: drawnSymbolName)
                             .font(.system(size: badgeSymbolSize, weight: badgeSymbolWeight))
                             .foregroundStyle(
                                 settings.badge.foreground.palettePrimaryColor.resolved,

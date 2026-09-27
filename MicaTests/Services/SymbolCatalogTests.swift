@@ -80,6 +80,13 @@ struct SymbolCatalogTests {
         #expect(status("ancient.legacy", on: v15) == .available(renderName: "ancient"))
     }
 
+    @Test("The drawable name is the render name, or the name unchanged when the catalog has none")
+    func drawableName() {
+        #expect(catalog.drawableName(for: "coin.building.classical", on: v15) == "coin.bank.building")
+        #expect(catalog.drawableName(for: "brandnew", on: v15) == "brandnew")
+        #expect(catalog.drawableName(for: "not.in.catalog", on: v15) == "not.in.catalog")
+    }
+
     // MARK: - Status
 
     @Test("A symbol that exists only on 27 needs 27 on 15")

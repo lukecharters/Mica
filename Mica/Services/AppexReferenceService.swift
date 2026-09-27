@@ -152,7 +152,7 @@ class AppexReferenceService {
             throw AppexError.invalidPlistStructure
         }
 
-        graphicConfig["ISSymbolName"] = symbolName
+        graphicConfig["ISSymbolName"] = SymbolCatalog.bundled.drawableName(for: symbolName)
         graphicConfig[AppexPlistColor.Role.enclosure.rawValue] = enclosureColor.stringValue
         graphicConfig[AppexPlistColor.Role.symbol.rawValue] = symbolColor.stringValue
 

@@ -35,11 +35,14 @@ struct SymbolSizingService {
     /// prefers a user-writable Application Support override.
     static func resolve(
         for symbolName: String,
-        calibration: SymbolCalibration? = nil
+        calibration: SymbolCalibration? = nil,
+        catalog: SymbolCatalog = .bundled,
+        os: MacOSVersion = .running
     ) -> ResolvedSymbolSizing {
         let calibrationData = calibration ?? Self.calibrationData
-        // 1. Per-symbol calibration
-        if let entry = calibrationData.symbols[symbolName], entry.status == "calibrated" {
+        let drawableName = catalog.drawableName(for: symbolName, on: os)
+        // 1. Per-symbol calibration, under any spelling of the symbol
+        if let entry = calibrationEntry(for: symbolName, drawableName: drawableName, in: calibrationData, catalog: catalog) {
             return calibrated(entry, source: .symbolCalibration)
         }
 
@@ -53,7 +56,7 @@ struct SymbolSizingService {
         // 3. Box-fit prediction from measured tight bounds. Offsets stay
         // zero: xOffset is optical and yOffset only partially predictable,
         // so predictions are multiplier-only.
-        if let multiplier = boxFitMultiplier(for: symbolName) {
+        if let multiplier = boxFitMultiplier(for: drawableName) {
             return ResolvedSymbolSizing(
                 multiplier: multiplier,
                 xOffset: 0,
@@ -79,6 +82,22 @@ struct SymbolSizingService {
     static let offsetRange: ClosedRange<Double> = -1...1
 
     // MARK: - Private
+
+    /// The name asked about wins, then the spelling drawn, then the current name and
+    /// the aliases, so a symbol renamed after it was calibrated keeps its calibration.
+    private static func calibrationEntry(
+        for symbolName: String,
+        drawableName: String,
+        in calibration: SymbolCalibration,
+        catalog: SymbolCatalog
+    ) -> SymbolCalibrationEntry? {
+        var candidates = [symbolName, drawableName]
+        if let current = catalog.currentName(for: symbolName) { candidates.append(current) }
+        candidates += catalog.aliases(of: symbolName)
+        return candidates.lazy
+            .compactMap { calibration.symbols[$0] }
+            .first { $0.status == "calibrated" }
+    }
 
     private static func calibrated(_ entry: SymbolCalibrationEntry, source: SizingSource) -> ResolvedSymbolSizing {
         ResolvedSymbolSizing(
