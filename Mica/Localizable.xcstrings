@@ -13,6 +13,19 @@
     "... +%lld more" : {
 
     },
+    "“%@” isn’t an SF Symbol available on this Mac." : {
+
+    },
+    "“%@” needs macOS %@ or later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%1$@” needs macOS %2$@ or later."
+          }
+        }
+      }
+    },
     "%.0f × %.0f px" : {
       "localizations" : {
         "en" : {
@@ -312,6 +325,9 @@
 
     },
     "Badge Presets" : {
+
+    },
+    "Badge: %@" : {
 
     },
     "Baseline Y Correction" : {
@@ -1445,9 +1461,6 @@
     "Family Actions" : {
 
     },
-    "Filter" : {
-
-    },
     "Filter by symbol name or family..." : {
 
     },
@@ -1577,6 +1590,9 @@
 
     },
     "Icon Presets" : {
+
+    },
+    "Icon: %@" : {
 
     },
     "Image" : {
