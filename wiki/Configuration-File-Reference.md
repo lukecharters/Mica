@@ -114,6 +114,11 @@ An unknown key produces a warning.
 An unusable value also produces a warning.
 Mica still loads the remaining valid keys.
 
+In the app, a Mica-mode symbol this Mac cannot draw also produces a warning.
+Mica still loads that symbol name.
+The command line stops with an error instead.
+See [Symbol errors](CLI-Reference#symbol-errors).
+
 Malformed JSON stops the import.
 A missing image also prevents that image from loading.
 

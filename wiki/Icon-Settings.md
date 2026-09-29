@@ -98,6 +98,20 @@ mica-cli --icon-fg logo.png --size 256
 Do not use the `symbol:` prefix with `--icon-symbol`.
 Giving both foreground flags is an error.
 
+A symbol name must exist on the Mac that renders the icon.
+
+| The name | In the app | On the command line |
+|---|---|---|
+| Needs a newer macOS | A warning under the field names the version. | The command stops with an error. |
+| Does not exist | A warning under the field. | The command stops with an error. |
+
+The app still exports the icon without that symbol.
+The export panel shows the same warning.
+See [Symbol errors](CLI-Reference#symbol-errors) for the command-line messages.
+
+An older name for a symbol still works on every macOS.
+On macOS 26 and earlier, Mica draws a newer name with its older spelling, if it has one.
+
 ### Foreground Visibility
 
 Shows or hides the icon foreground.

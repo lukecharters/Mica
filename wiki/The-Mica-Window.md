@@ -60,6 +60,9 @@ Put the pointer on the part of the icon you want to inspect.
 ## Symbol browser
 Click the grid button beside a Symbol field to open the symbol browser.
 Type in Search to filter the grid.
+Search also finds a symbol by its older names.
+The grid shows only the symbols this Mac can draw.
+Each symbol appears under the name that works on this Mac.
 Use the Rendering menu to change how the grid draws each symbol.
 Tick Shaded Background to draw the symbols on a shaded fill.
 White and light symbols are hard to see without it, especially in Multicolor.

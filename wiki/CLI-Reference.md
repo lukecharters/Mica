@@ -179,6 +179,19 @@ This split keeps pipelines clean.
 `--json` writes one JSON result object.
 Failures still return a non-zero status.
 
+### Symbol errors
+
+`generate` checks every symbol name before it renders.
+A name this Mac cannot draw stops the command with a non-zero status.
+
+| Cause | Message |
+|---|---|
+| The symbol needs a newer macOS | `SF Symbol 'NAME' requires macOS 27.0 or later; this Mac is running macOS 15.7.` |
+| The name does not exist | `SF Symbol 'NAME' isn't available on this Mac (macOS 15.7). Check the spelling, or whether it needs a newer macOS.` |
+
+The versions in the message come from the symbol and from this Mac.
+In System mode, the check happens after the render.
+
 ## Extract
 
 `extract` exports the icon assigned by macOS.

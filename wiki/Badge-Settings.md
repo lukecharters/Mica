@@ -202,6 +202,9 @@ mica-cli --icon-symbol star.fill --size 512 --badge-fg logo.png --badge-scale 2.
 Do not use the `symbol:` prefix with `--badge-symbol`.
 Giving both foreground flags is an error.
 
+A badge symbol follows the same rules as the icon symbol.
+See [Icon foreground source](Icon-Settings#foreground-source).
+
 ### Foreground Visibility
 
 Shows or hides the badge foreground.
