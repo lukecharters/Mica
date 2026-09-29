@@ -83,6 +83,24 @@ struct PresetCatalogTests {
         }
     }
 
+    @Test("Every built-in's symbol exists on the deployment floor")
+    func symbolsExistOnTheDeploymentFloor() throws {
+        // A catalog miss counts as a failure: the NSImage fallback would answer for the
+        // Mac running the tests, not for the floor.
+        let floorText = try #require(Bundle.main.object(forInfoDictionaryKey: "LSMinimumSystemVersion") as? String)
+        let floor = try #require(MacOSVersion(floorText))
+        for preset in PresetCatalog.builtIn {
+            let settings = PresetApplication.previewSettings(for: preset)
+            let foreground = preset.scope == .icon ? settings.icon.foreground : settings.badge.foreground
+            guard foreground.source == .symbol else { continue }
+            let status = SymbolCatalog.bundled.status(of: foreground.symbolName, on: floor) { _ in false }
+            guard case .available = status else {
+                Issue.record("\(preset.name): '\(foreground.symbolName)' is \(status) on macOS \(floor)")
+                continue
+            }
+        }
+    }
+
     // MARK: - The advanced-controls indicator
 
     @Test("Exactly the presets that need advanced controls are flagged")
