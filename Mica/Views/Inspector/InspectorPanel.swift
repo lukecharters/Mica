@@ -27,7 +27,9 @@ struct InspectorPanel: View {
     var body: some View {
         // Hosted by a native `.inspector` in `ContentView`, which owns the
         // trailing column's material, width, and resize.
-        Group {
+        // A real container, not `Group`: the inspector's toolbar is attached to this view,
+        // and on macOS 15 a `Group` branch swap removes those toolbar items for good.
+        VStack(spacing: 0) {
             switch tab {
             case .controls:
                 InspectorControls(
