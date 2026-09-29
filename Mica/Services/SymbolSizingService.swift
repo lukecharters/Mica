@@ -46,8 +46,8 @@ struct SymbolSizingService {
             return calibrated(entry, source: .symbolCalibration)
         }
 
-        // 2. Container calibration (container keyword in any dot-component)
-        if let containerType = detectContainerType(symbolName),
+        // 2. Container calibration (container keyword in any dot-component of any spelling)
+        if let containerType = containerType(for: symbolName, catalog: catalog),
            let entry = calibrationData.containers[containerType.containerKey],
            entry.status == "calibrated" {
             return calibrated(entry, source: .containerCalibration)
@@ -173,6 +173,12 @@ struct SymbolSizingService {
                 for: $0, isBadge: SymbolAutoSizingService.isBadgeVariant(symbolName)) }
         boxFitCache.withLock { $0[symbolName] = multiplier }
         return multiplier
+    }
+
+    /// Checks the current name, then the aliases, so every spelling of a symbol gets the same answer.
+    private static func containerType(for symbolName: String, catalog: SymbolCatalog) -> ContainerType? {
+        let spellings = catalog.currentName(for: symbolName).map { [$0] + catalog.aliases(of: $0) } ?? [symbolName]
+        return spellings.lazy.compactMap(detectContainerType).first
     }
 
     private static func detectContainerType(_ symbolName: String) -> ContainerType? {

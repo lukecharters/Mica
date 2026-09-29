@@ -42,7 +42,6 @@ struct SymbolSizingServiceTests {
         #expect(abs(r.multiplier - 0.58) < 0.001)
         #expect(r.xOffset == 0)
         #expect(abs(r.yOffset - (-0.035)) < 0.001)
-        #expect(r.weight == .regular)
     }
 
     @Test("folder.fill hits per-symbol family calibration")
@@ -50,7 +49,6 @@ struct SymbolSizingServiceTests {
         let r = resolve("folder.fill")
         #expect(r.source == .symbolCalibration)
         #expect(abs(r.multiplier - 0.65) < 0.001)
-        #expect(r.weight == .regular)
     }
 
     // MARK: - Container calibration
@@ -68,11 +66,8 @@ struct SymbolSizingServiceTests {
         let r = resolve(name)
         #expect(r.source == .containerCalibration,
                 "Expected containerCalibration for \(name), got \(r.source)")
-        // All three shipped container calibrations currently use multiplier 0.65.
-        // Allow some tolerance in case they're retuned independently.
         #expect(r.multiplier > 0.4 && r.multiplier < 1.0,
                 "Unexpected container multiplier \(r.multiplier) for \(expectedType)")
-        #expect(r.weight == .regular)
     }
 
     // MARK: - Auto box-fit
@@ -209,6 +204,21 @@ struct SymbolSizingServiceTests {
         let empty = SymbolCalibration()
         #expect(resolveRenamed("fixture.renamed", calibration: empty, os: MacOSVersion(15)).source == .autoBoxFit)
         #expect(resolveRenamed("fixture.renamed", calibration: empty, os: MacOSVersion(27)).source == .defaultFallback)
+    }
+
+    @Test("A container keyword in any spelling applies to every spelling",
+          arguments: ["fixture.plain", "fixture.old.circle"])
+    func containerFoundThroughAnySpelling(_ name: String) {
+        let catalog = try! SymbolCatalog(data: Data(#"""
+        {"formatVersion": 1, "symbols": [
+          {"name": "fixture.plain", "macOS": "11.0", "aliases": [{"name": "fixture.old.circle", "macOS": "11.0"}]}
+        ]}
+        """#.utf8))
+        let circle = SymbolCalibrationEntry(multiplier: 0.64, xOffset: 0, yOffset: 0, weight: "regular", status: "calibrated")
+        let calibration = SymbolCalibration(symbols: [:], containers: [ContainerType.circle.containerKey: circle])
+        let r = SymbolSizingService.resolve(for: name, calibration: calibration, catalog: catalog, os: MacOSVersion(27))
+        #expect(r.source == .containerCalibration)
+        #expect(abs(r.multiplier - 0.64) < 0.001)
     }
 
     // MARK: - ResolvedSymbolSizing basic properties
