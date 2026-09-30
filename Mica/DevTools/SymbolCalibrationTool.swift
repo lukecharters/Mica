@@ -449,6 +449,37 @@ struct SymbolBaselineData {
     }
 }
 
+// MARK: - Advance
+
+/// Where Space, Tab and Escape land once the current symbol is written.
+///
+/// The write can drop the current family out of a live filter (the last
+/// uncalibrated member of an Uncalibrated family), shifting every later family
+/// up one. So the next family is chosen by id from the list as it stood before
+/// the write, and located in the list after it.
+enum CalibrationAdvance: Equatable {
+    case stay
+    case member(Int)
+    case family(Int)
+
+    static func next(
+        familyID: String, memberIndex: Int, memberCount: Int, isContainer: Bool,
+        before: [String], after: [String]
+    ) -> CalibrationAdvance {
+        let stillShown = after.contains(familyID)
+        if stillShown, !isContainer, memberIndex < memberCount - 1 {
+            return .member(memberIndex + 1)
+        }
+        if let position = before.firstIndex(of: familyID),
+           before.indices.contains(position + 1),
+           let next = after.firstIndex(of: before[position + 1]) {
+            return .family(next)
+        }
+        if stillShown || after.isEmpty { return .stay }
+        return .family(after.count - 1)
+    }
+}
+
 // MARK: - Main Tool
 
 struct SymbolCalibrationTool: View {
@@ -458,6 +489,8 @@ struct SymbolCalibrationTool: View {
     @State private var families: [SymbolFamily] = []
     @State private var selectedIndex = 0
     @State private var memberIndex = 0
+    /// What Tab applies: the entry last written with Space or Tab.
+    @State private var lastCommittedEntry: SymbolCalibrationEntry?
 
     @State private var multiplier = 0.65
     @State private var xOffset = 0.0
@@ -2765,46 +2798,58 @@ struct SymbolCalibrationTool: View {
         memberIndex += 1
     }
 
-    /// Advance to next member within family, or next family if at end.
-    private func advanceToNextMember() {
-        guard let family = currentFamily else { return }
-        if family.isContainer || memberIndex >= family.count - 1 {
-            // Move to next family
-            if selectedIndex < filteredFamilies.count - 1 {
-                selectedIndex += 1
-            }
-        } else {
-            memberIndex += 1
+    /// Writes `entry` to the current symbol, then moves to the next member or family.
+    private func commitAndAdvance(_ entry: SymbolCalibrationEntry) {
+        guard let symbol = currentSymbol, let family = currentFamily else { return }
+        let before = filteredFamilies.map(\.id)
+        store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
+        let step = CalibrationAdvance.next(
+            familyID: family.id, memberIndex: memberIndex, memberCount: family.count,
+            isContainer: family.isContainer,
+            before: before, after: filteredFamilies.map(\.id))
+        switch step {
+        case .stay:
+            break
+        case .member(let index):
+            memberIndex = index
+        case .family(let index) where index == selectedIndex:
+            // Same index, different family: onChange(of: selectedIndex) will not fire.
+            memberIndex = firstRelevantMemberIndex()
             loadCurrentMember()
+        case .family(let index):
+            selectedIndex = index
         }
     }
 
-    private func markCalibratedAndAdvance() {
-        guard let symbol = currentSymbol else { return }
-        let entry = SymbolCalibrationEntry(
+    private func currentEntry(status: String) -> SymbolCalibrationEntry {
+        SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: weight == .medium ? "medium" : "regular",
-            status: "calibrated"
+            status: status
         )
-        store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
-        advanceToNextMember()
+    }
+
+    private func markCalibratedAndAdvance() {
+        let entry = currentEntry(status: "calibrated")
+        lastCommittedEntry = entry
+        commitAndAdvance(entry)
     }
 
     private func markSkippedAndAdvance() {
-        guard let symbol = currentSymbol else { return }
-        let entry = SymbolCalibrationEntry(
-            multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
-            weight: weight == .medium ? "medium" : "regular",
-            status: "skipped"
-        )
-        store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
-        advanceToNextMember()
+        commitAndAdvance(currentEntry(status: "skipped"))
     }
 
-    /// Copy current slider values to current symbol as calibrated, then advance.
-    /// Since sliders retain values from the previous member, this effectively copies them.
+    /// Writes the last Space/Tab entry to the current symbol, whatever its sliders
+    /// show: arriving on a symbol loads its own entry, or the defaults.
     private func copyPreviousAndAdvance() {
-        markCalibratedAndAdvance()
+        guard var entry = lastCommittedEntry else {
+            NSSound.beep()
+            return
+        }
+        entry.status = "calibrated"
+        entry.source = nil
+        lastCommittedEntry = entry
+        commitAndAdvance(entry)
     }
 
     // MARK: - Load / Save
