@@ -85,7 +85,7 @@ struct SymbolSizingServiceTests {
         #expect(r.multiplier <= SymbolAutoSizingService.maxMultiplier)
         #expect(r.xOffset == 0, "Box-fit predictions are multiplier-only")
         #expect(r.yOffset == 0, "Box-fit predictions are multiplier-only")
-        #expect(r.weight == .regular)
+        #expect(r.weight == .medium)
     }
 
     @Test("Box-fit resolution is stable across repeated calls (cache consistency)")
@@ -114,7 +114,7 @@ struct SymbolSizingServiceTests {
         #expect(r.multiplier == 0.55)
         #expect(r.xOffset == 0)
         #expect(r.yOffset == 0)
-        #expect(r.weight == .regular)
+        #expect(r.weight == .medium)
     }
 
     @Test("An empty string falls through to default fallback")

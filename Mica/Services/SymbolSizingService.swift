@@ -61,7 +61,7 @@ struct SymbolSizingService {
                 multiplier: multiplier,
                 xOffset: 0,
                 yOffset: 0,
-                weight: .regular,
+                weight: SymbolCalibrationEntry.defaultWeight,
                 source: .autoBoxFit
             )
         }
@@ -71,7 +71,7 @@ struct SymbolSizingService {
             multiplier: 0.55,
             xOffset: 0,
             yOffset: 0,
-            weight: .regular,
+            weight: SymbolCalibrationEntry.defaultWeight,
             source: .defaultFallback
         )
     }

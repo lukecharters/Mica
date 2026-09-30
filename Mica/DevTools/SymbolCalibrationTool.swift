@@ -495,7 +495,7 @@ struct SymbolCalibrationTool: View {
     @State private var multiplier = 0.65
     @State private var xOffset = 0.0
     @State private var yOffset = 0.0
-    @State private var weight: Font.Weight = .regular
+    @State private var weight: Font.Weight = SymbolCalibrationEntry.defaultWeight
     @State private var comparisonMode: FamilyComparisonMode = .overlay
     @State private var overlayOpacity = 0.5
     @State private var searchText = ""
@@ -1204,7 +1204,7 @@ struct SymbolCalibrationTool: View {
                     multiplier = 0.65
                     xOffset = 0.0
                     yOffset = 0.0
-                    weight = .regular
+                    weight = SymbolCalibrationEntry.defaultWeight
                     autoSave()
                 }
                 .buttonStyle(.borderless)
@@ -1536,7 +1536,7 @@ struct SymbolCalibrationTool: View {
             yOffset: appliesSuggestedYOffset
                 ? round3(prediction.suggestedYOffset)
                 : existing?.yOffset ?? 0,
-            weight: existing?.weight ?? "regular",
+            weight: existing?.weight ?? SymbolCalibrationEntry.weightToken(for: SymbolCalibrationEntry.defaultWeight),
             status: "calibrated",
             source: "auto-boxfit")
     }
@@ -1562,7 +1562,7 @@ struct SymbolCalibrationTool: View {
             } else if let prediction = boxFit.predictions[symbol] {
                 store.symbolEntries[symbol] = SymbolCalibrationEntry(
                     multiplier: round3(prediction.multiplier),
-                    xOffset: 0, yOffset: 0, weight: "regular",
+                    xOffset: 0, yOffset: 0, weight: SymbolCalibrationEntry.weightToken(for: SymbolCalibrationEntry.defaultWeight),
                     status: "needs-review", source: "auto-boxfit")
             }
         }
@@ -2046,7 +2046,7 @@ struct SymbolCalibrationTool: View {
             }
             return off
         }()
-        let w: Font.Weight = cal?.fontWeight ?? .regular
+        let w: Font.Weight = cal?.fontWeight ?? SymbolCalibrationEntry.defaultWeight
         let status = cal?.status ?? "uncalibrated"
         let isSelected = allIconsSelection.contains(symbol)
 
@@ -2417,7 +2417,7 @@ struct SymbolCalibrationTool: View {
             let cal = store.entry(forSymbol: symbol, containerKey: dk)
             mul = cal?.multiplier ?? 0.65
             xOff = cal?.xOffset ?? 0.0
-            w = cal?.fontWeight ?? .regular
+            w = cal?.fontWeight ?? SymbolCalibrationEntry.defaultWeight
             var off = cal?.yOffset ?? 0.0
             if useBaselineYOffset, let data = baselineData {
                 off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
@@ -2870,7 +2870,7 @@ struct SymbolCalibrationTool: View {
             multiplier = 0.65
             xOffset = 0.0
             yOffset = 0.0
-            weight = .regular
+            weight = SymbolCalibrationEntry.defaultWeight
         }
 
         loadReferenceImage()

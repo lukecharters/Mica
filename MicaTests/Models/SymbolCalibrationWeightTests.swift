@@ -21,8 +21,8 @@ struct SymbolCalibrationWeightTests {
         #expect(Set(tokens).count == tokens.count)
     }
 
-    @Test func anUnknownTokenReadsAsRegular() {
-        #expect(SymbolCalibrationEntry.fontWeight(fromToken: "heavy-ish") == .regular)
+    @Test func anUnknownTokenReadsAsTheDefault() {
+        #expect(SymbolCalibrationEntry.fontWeight(fromToken: "heavy-ish") == SymbolCalibrationEntry.defaultWeight)
     }
 
     @Test("The resolver renders a stored weight rather than collapsing it",

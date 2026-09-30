@@ -43,17 +43,20 @@ struct SymbolCalibrationEntry: Codable, Equatable {
     /// entries accepted from the Auto Calibration playground's predicted rule.
     var source: String? = nil
 
-    /// The weights the calibration tool offers. An unknown token reads as regular.
+    /// The weight of a symbol with no calibration entry, and of an unknown token.
+    static let defaultWeight: Font.Weight = .medium
+
+    /// The weights the calibration tool offers.
     static let weightTokens: [(token: String, weight: Font.Weight)] = [
         ("regular", .regular), ("medium", .medium), ("semibold", .semibold), ("bold", .bold),
     ]
 
     static func weightToken(for weight: Font.Weight) -> String {
-        weightTokens.first { $0.weight == weight }?.token ?? "regular"
+        weightTokens.first { $0.weight == weight }?.token ?? "medium"
     }
 
     static func fontWeight(fromToken token: String) -> Font.Weight {
-        weightTokens.first { $0.token == token }?.weight ?? .regular
+        weightTokens.first { $0.token == token }?.weight ?? defaultWeight
     }
 
     var fontWeight: Font.Weight { Self.fontWeight(fromToken: weight) }
