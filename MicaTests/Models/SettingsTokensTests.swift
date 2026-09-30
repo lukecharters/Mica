@@ -88,7 +88,7 @@ struct SettingsTokensTests {
     func supersededTokensAreNeverOffered() {
         #expect(!BackgroundShadowStyle.allCLITokens.contains("macos11"))
         #expect(!IconCornerRadiusStyle.allCLITokens.contains("macos11"))
-        #expect(BackgroundShadowStyle.allCLITokens == ["off", "macos15", "macos26"])
+        #expect(BackgroundShadowStyle.allCLITokens == ["off", "macos15", "macos26", "macos27"])
         #expect(IconCornerRadiusStyle.allCLITokens == ["off", "macos15", "macos26"])
     }
 

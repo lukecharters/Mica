@@ -116,6 +116,17 @@ struct IconBackgroundFlagsTests {
         #expect(shadow.icon.background.shadowStyle == .macOS15)
     }
 
+    @Test("--icon-bg-shadow takes every style, and a symbol icon defaults to macOS 27")
+    func shadowStyles() throws {
+        for style in BackgroundShadowStyle.allCases {
+            let settings = try IconGenerationRunner()
+                .buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-shadow", style.cliToken]))
+            #expect(settings.icon.background.shadowStyle == style)
+        }
+        let defaulted = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"]))
+        #expect(defaulted.icon.background.shadowStyle == .macOS27)
+    }
+
     @Test("--icon-bg-visibility off hides the background")
     func visibilityToggle() throws {
         #expect(try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"])).icon.background.isHidden == false)

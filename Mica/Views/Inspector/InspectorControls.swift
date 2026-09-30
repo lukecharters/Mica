@@ -348,7 +348,7 @@ struct InspectorControls: View {
     private var backgroundShadowEnabled: Binding<Bool> {
         Binding(
             get: { iconSettings.icon.background.shadowStyle != .off },
-            set: { iconSettings.icon.background.shadowStyle = $0 ? .macOS26 : .off }
+            set: { iconSettings.icon.background.shadowStyle = $0 ? IconBackgroundSpec().shadowStyle : .off }
         )
     }
 

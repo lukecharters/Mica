@@ -49,6 +49,13 @@ struct ResolvedShadow: Equatable {
         badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
     )
 
+    static let macOS27 = ResolvedShadow(
+        background: CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255),
+        symbol: CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11),
+        badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
+        badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
+    )
+
     static let macOS15 = ResolvedShadow(
         background: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.31),
         symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.23),
@@ -62,13 +69,15 @@ struct ResolvedShadow: Equatable {
     static func preset(for style: BackgroundShadowStyle) -> ResolvedShadow {
         switch style {
         case .off:
-            var style = ResolvedShadow.macOS26
+            var style = ResolvedShadow.macOS27
             style.background = .none
             return style
         case .macOS15:
             return .macOS15
         case .macOS26:
             return .macOS26
+        case .macOS27:
+            return .macOS27
         }
     }
 }

@@ -391,7 +391,7 @@ struct IconBackgroundSpec: Equatable {
     var gradientStartColor: MicaColorValue = .blue
     var gradientEndColor: MicaColorValue = .purple
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
-    var shadowStyle: BackgroundShadowStyle = .macOS26
+    var shadowStyle: BackgroundShadowStyle = .macOS27
     var image: ImportedImage? = nil
     var imageScale: Double = 1.0
     var compensatesForPadding: Bool = false
@@ -588,10 +588,6 @@ enum BadgePosition: String, CaseIterable, Identifiable {
 /// deliberately unclipped. On a colour background `.off` gives a square chiclet:
 /// an option nobody is obliged to pick.
 ///
-/// Deliberately the same three-case shape as `BackgroundShadowStyle`, which
-/// already reads `off / macOS 15 / macOS 26` and is already auto-set to `off`
-/// on import.
-///
 /// `.macOS15` names the design Apple shipped from macOS 11 through 15. It was
 /// `.macOS11` here and `.sequoia` on `BackgroundShadowStyle` — one design with
 /// three spellings across the code, the UI and the CLI — until 2026-08-08.
@@ -607,6 +603,7 @@ enum BackgroundShadowStyle: String, CaseIterable, Identifiable {
     case off = "Off"
     case macOS15 = "macOS 15"
     case macOS26 = "macOS 26"
+    case macOS27 = "macOS 27"
 
     var id: String { rawValue }
 }

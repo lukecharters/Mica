@@ -23,6 +23,7 @@ struct IconSettingsTests {
         #expect(s.icon.foreground.fillStyle == .flat)
         #expect(s.icon.background.source == .color)
         #expect(s.icon.background.cornerRadiusStyle == .macOS26)
+        #expect(s.icon.background.shadowStyle == .macOS27)
         #expect(s.export.colorSpace == .sRGB)
         #expect(s.icon.background.usesGradient == true)
         #expect(s.icon.background.usesCustomGradient == false)

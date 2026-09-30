@@ -417,6 +417,7 @@ generate_icon_background() {
     emit icon-bg-shadow off     "${B[@]}" --icon-bg-shadow off
     emit icon-bg-shadow macos15 "${B[@]}" --icon-bg-shadow macos15
     emit icon-bg-shadow macos26 "${B[@]}" --icon-bg-shadow macos26
+    emit icon-bg-shadow macos27 "${B[@]}" --icon-bg-shadow macos27
 
     # Padding only means anything over an imported image, and the padding is at
     # the artwork's edges — exactly what a glyph drawn on top would sit over.

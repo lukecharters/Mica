@@ -496,17 +496,17 @@ Sets the shadow style behind the icon background.
 | | |
 |---|---|
 | **In the app** | Icon ▸ Background ▸ Appearance ▸ **Shadow** |
-| **Command line** | `--icon-bg-shadow off\|macos15\|macos26` |
+| **Command line** | `--icon-bg-shadow off\|macos15\|macos26\|macos27` |
 | **Config key** | `"icon-bg-shadow"` |
-| **Default** | `off` for images, `macos26` otherwise |
+| **Default** | `off` for images, `macos27` otherwise |
 | **Shown when** | Mica mode. |
 
-<img src="images/icon-bg-shadow-off.png" width="128" alt="Background shadow off"> <img src="images/icon-bg-shadow-macos15.png" width="128" alt="macOS 15 background shadow"> <img src="images/icon-bg-shadow-macos26.png" width="128" alt="macOS 26 background shadow">
+<img src="images/icon-bg-shadow-off.png" width="128" alt="Background shadow off"> <img src="images/icon-bg-shadow-macos15.png" width="128" alt="macOS 15 background shadow"> <img src="images/icon-bg-shadow-macos26.png" width="128" alt="macOS 26 background shadow"> <img src="images/icon-bg-shadow-macos27.png" width="128" alt="macOS 27 background shadow">
 
-From left: `off`, `macos15`, `macos26`.
+From left: `off`, `macos15`, `macos26`, `macos27`.
 
 ```shell
-mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos26
+mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos27
 ```
 
 > **System mode ignores this.**

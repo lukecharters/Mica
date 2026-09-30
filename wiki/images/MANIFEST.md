@@ -57,6 +57,7 @@ one, so the page and the picture cannot disagree.
 | `icon-bg-shadow-off.png` | `icon-bg-shadow` | `off` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow off` |
 | `icon-bg-shadow-macos15.png` | `icon-bg-shadow` | `macos15` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos15` |
 | `icon-bg-shadow-macos26.png` | `icon-bg-shadow` | `macos26` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos26` |
+| `icon-bg-shadow-macos27.png` | `icon-bg-shadow` | `macos27` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos27` |
 | `icon-bg-padding-on.png` | `icon-bg-padding` | `on` | `mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding on` |
 | `icon-bg-padding-off.png` | `icon-bg-padding` | `off` | `mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding off` |
 | `icon-bg-image-foreground-hidden.png` | `icon-bg-image-foreground` | `hidden` | `mica-cli --size 256 --icon-bg artwork.png` |

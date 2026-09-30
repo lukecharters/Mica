@@ -112,6 +112,8 @@ HAPPY_CASES=(
     "icon-bg-corner-radius-macos15|star.fill|--icon-bg-corner-radius|macos15"
     "icon-bg-shadow-off|star.fill|--icon-bg-shadow|off"
     "icon-bg-shadow-macos15|star.fill|--icon-bg-shadow|macos15"
+    "icon-bg-shadow-macos26|star.fill|--icon-bg-shadow|macos26"
+    "icon-bg-shadow-macos27|star.fill|--icon-bg-shadow|macos27"
     "icon-bg-visibility-off|star.fill|--icon-bg-visibility|off"
 
     # ---- Icon foreground ----
@@ -743,6 +745,8 @@ IMPORT_CASES=(
     # import no artwork, so nothing else would supply one.
     "superseded-corner-radius-token|same|--icon-symbol|star.fill|--icon-bg-corner-radius|macos11|--|--icon-symbol|star.fill|--icon-bg-corner-radius|macos15"
     "superseded-shadow-token|same|--icon-symbol|star.fill|--icon-bg-shadow|macos11|--|--icon-symbol|star.fill|--icon-bg-shadow|macos15"
+    "shadow-defaults-to-macos27|same|--icon-symbol|star.fill|--|--icon-symbol|star.fill|--icon-bg-shadow|macos27"
+    "shadow-macos27-differs-from-macos26|differ|--icon-symbol|star.fill|--icon-bg-shadow|macos26|--|--icon-symbol|star.fill|--icon-bg-shadow|macos27"
 
     # ---- presets ----
     #

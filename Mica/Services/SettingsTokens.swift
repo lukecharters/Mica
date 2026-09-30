@@ -113,15 +113,16 @@ extension BackgroundShadowStyle: SettingsTokenConvertible {
         case .off: return "off"
         case .macOS15: return "macos15"
         case .macOS26: return "macos26"
+        case .macOS27: return "macos27"
         }
     }
 
-    /// Same supersession as `IconCornerRadiusStyle` — the two flags always took
-    /// the same vocabulary and must keep doing so.
+    /// Same supersession as `IconCornerRadiusStyle`. The shadow vocabulary has a
+    /// `macos27` the corner radius lacks, because the macOS 26 and 27 corners are identical.
     var supersededCLITokens: [String] {
         switch self {
         case .macOS15: return ["macos11"]
-        case .off, .macOS26: return []
+        case .off, .macOS26, .macOS27: return []
         }
     }
 }

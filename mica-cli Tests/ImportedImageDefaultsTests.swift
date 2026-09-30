@@ -13,9 +13,9 @@ struct ImportedImageDefaultsTests {
 
     // MARK: - Resolved defaults on the parsed options (no file needed)
 
-    @Test("Background shadow defaults off for image backgrounds, macOS 26 otherwise")
+    @Test("Background shadow defaults off for image backgrounds, macOS 27 otherwise")
     func effectiveShadowStyle_imageAware() throws {
-        #expect(try parseCommand(["--icon-symbol", "star.fill"]).background.effectiveShadowStyle == "macos26")
+        #expect(try parseCommand(["--icon-symbol", "star.fill"]).background.effectiveShadowStyle == "macos27")
         #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "/tmp/bg.png"]).background.effectiveShadowStyle == "off")
     }
 

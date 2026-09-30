@@ -24,7 +24,7 @@ struct ReferenceComparisonTool: View {
     @State private var renderSize: CGFloat = 256
 
     // Tunable shadow override — drives the real IconContentView/BadgeView.
-    @State private var shadow: ResolvedShadow = .macOS26
+    @State private var shadow: ResolvedShadow = .macOS27
     // Background shadow has no per-settings enable flag (only the style enum),
     // so the on/off toggle is tool-local. The other three toggles bind
     // to the real gates in IconSettings.
@@ -261,6 +261,7 @@ struct ReferenceComparisonTool: View {
                     .controlSize(.small)
             }
             HStack {
+                Button("Load macOS 27") { shadow = .macOS27 }
                 Button("Load macOS 26") { shadow = .macOS26 }
                 Button("Load macOS 15") { shadow = .macOS15 }
             }

@@ -529,13 +529,18 @@ struct IconBackgroundOptions: ParsableArguments {
     var scale: Double?
 
     // nil = unspecified, so image backgrounds default to no shadow and generated
-    // backgrounds to macOS 26.
+    // backgrounds to `IconBackgroundSpec`'s default.
     @Option(
         name: .customLong("icon-bg-shadow"),
-        help: ArgumentHelp("Icon background shadow: off, macos15, macos26", valueName: "style"),
+        help: ArgumentHelp(
+            "Icon background shadow: \(BackgroundShadowStyle.allCLITokens.joined(separator: ", ")) \(defaultNote(IconBackgroundSpec().shadowStyle.cliToken))",
+            valueName: "style"
+        ),
         transform: { style in
             guard BackgroundShadowStyle.from(cliToken: style) != nil else {
-                throw ValidationError("Background shadow must be 'off', 'macos15', or 'macos26'")
+                throw ValidationError(
+                    "Background shadow must be one of: \(BackgroundShadowStyle.allCLITokens.joined(separator: ", "))"
+                )
             }
             return style.lowercased()
         }
@@ -573,10 +578,10 @@ struct IconBackgroundOptions: ParsableArguments {
 
     /// Resolved background shadow style: an explicit `--icon-bg-shadow` wins;
     /// otherwise image backgrounds default to no shadow and everything else to
-    /// macOS 26.
+    /// `IconBackgroundSpec`'s default.
     var effectiveShadowStyle: String {
         if let shadow { return shadow }
-        return isImageBackground ? "off" : "macos26"
+        return isImageBackground ? "off" : IconBackgroundSpec().shadowStyle.cliToken
     }
 
     /// Resolved padding compensation. The user-facing `--icon-bg-padding` flag

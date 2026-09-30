@@ -23,6 +23,15 @@ struct ResolvedShadowTests {
         #expect(style.badgeSymbol == ResolvedShadow.BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15))
     }
 
+    @Test("macOS27 preset matches its shipped constants")
+    func macOS27_matchesShippedConstants() {
+        let style = ResolvedShadow.macOS27
+        #expect(style.background == ResolvedShadow.CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255))
+        #expect(style.symbol == ResolvedShadow.CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11))
+        #expect(style.badgeBackground == ResolvedShadow.macOS26.badgeBackground)
+        #expect(style.badgeSymbol == ResolvedShadow.macOS26.badgeSymbol)
+    }
+
     @Test("macOS15 preset matches its shipped constants")
     func macOS15_matchesShippedConstants() {
         let style = ResolvedShadow.macOS15
@@ -40,6 +49,7 @@ struct ResolvedShadowTests {
 
     @Test("preset(for:) maps the settings styles to their presets")
     func preset_mapsStyles() {
+        #expect(ResolvedShadow.preset(for: .macOS27) == .macOS27)
         #expect(ResolvedShadow.preset(for: .macOS26) == .macOS26)
         #expect(ResolvedShadow.preset(for: .macOS15) == .macOS15)
     }
@@ -50,8 +60,8 @@ struct ResolvedShadowTests {
         #expect(style.background == .none)
         // Symbol and badge shadows stay live — they are gated solely by
         // their own enable flags, matching the pre-refactor behavior.
-        #expect(style.symbol == ResolvedShadow.macOS26.symbol)
-        #expect(style.badgeBackground == ResolvedShadow.macOS26.badgeBackground)
-        #expect(style.badgeSymbol == ResolvedShadow.macOS26.badgeSymbol)
+        #expect(style.symbol == ResolvedShadow.macOS27.symbol)
+        #expect(style.badgeBackground == ResolvedShadow.macOS27.badgeBackground)
+        #expect(style.badgeSymbol == ResolvedShadow.macOS27.badgeSymbol)
     }
 }
