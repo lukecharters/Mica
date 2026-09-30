@@ -2046,7 +2046,7 @@ struct SymbolCalibrationTool: View {
             }
             return off
         }()
-        let w: Font.Weight = cal?.weight == "medium" ? .medium : .regular
+        let w: Font.Weight = cal?.fontWeight ?? .regular
         let status = cal?.status ?? "uncalibrated"
         let isSelected = allIconsSelection.contains(symbol)
 
@@ -2417,7 +2417,7 @@ struct SymbolCalibrationTool: View {
             let cal = store.entry(forSymbol: symbol, containerKey: dk)
             mul = cal?.multiplier ?? 0.65
             xOff = cal?.xOffset ?? 0.0
-            w = cal?.weight == "medium" ? .medium : .regular
+            w = cal?.fontWeight ?? .regular
             var off = cal?.yOffset ?? 0.0
             if useBaselineYOffset, let data = baselineData {
                 off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
@@ -2824,7 +2824,7 @@ struct SymbolCalibrationTool: View {
     private func currentEntry(status: String) -> SymbolCalibrationEntry {
         SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
-            weight: weight == .medium ? "medium" : "regular",
+            weight: SymbolCalibrationEntry.weightToken(for: weight),
             status: status
         )
     }
@@ -2865,7 +2865,7 @@ struct SymbolCalibrationTool: View {
             multiplier = existing.multiplier
             xOffset = existing.xOffset
             yOffset = existing.yOffset
-            weight = existing.weight == "medium" ? .medium : .regular
+            weight = existing.fontWeight
         } else {
             multiplier = 0.65
             xOffset = 0.0
@@ -2945,7 +2945,7 @@ struct SymbolCalibrationTool: View {
         guard let existingStatus = store.entry(forSymbol: symbol, containerKey: currentContainerKey)?.status else { return }
         let entry = SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
-            weight: weight == .medium ? "medium" : "regular",
+            weight: SymbolCalibrationEntry.weightToken(for: weight),
             status: existingStatus
         )
         store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)

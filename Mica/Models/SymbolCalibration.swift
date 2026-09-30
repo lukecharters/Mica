@@ -37,11 +37,26 @@ struct SymbolCalibrationEntry: Codable, Equatable {
     var multiplier: Double
     var xOffset: Double
     var yOffset: Double
-    var weight: String   // "regular" or "medium"
+    var weight: String   // a `weightTokens` key
     var status: String   // "calibrated", "skipped", "needs-review"
     /// Provenance marker; nil for hand-calibrated entries, "auto-boxfit" for
     /// entries accepted from the Auto Calibration playground's predicted rule.
     var source: String? = nil
+
+    /// The weights the calibration tool offers. An unknown token reads as regular.
+    static let weightTokens: [(token: String, weight: Font.Weight)] = [
+        ("regular", .regular), ("medium", .medium), ("semibold", .semibold), ("bold", .bold),
+    ]
+
+    static func weightToken(for weight: Font.Weight) -> String {
+        weightTokens.first { $0.weight == weight }?.token ?? "regular"
+    }
+
+    static func fontWeight(fromToken token: String) -> Font.Weight {
+        weightTokens.first { $0.token == token }?.weight ?? .regular
+    }
+
+    var fontWeight: Font.Weight { Self.fontWeight(fromToken: weight) }
 }
 
 // MARK: - Calibration File

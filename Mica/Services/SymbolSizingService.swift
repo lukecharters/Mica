@@ -104,7 +104,7 @@ struct SymbolSizingService {
             multiplier: clamp(entry.multiplier, to: multiplierRange),
             xOffset: clamp(entry.xOffset, to: offsetRange),
             yOffset: clamp(entry.yOffset, to: offsetRange),
-            weight: fontWeight(from: entry.weight),
+            weight: entry.fontWeight,
             source: source
         )
     }
@@ -190,9 +190,5 @@ struct SymbolSizingService {
             }
         }
         return nil
-    }
-
-    private static func fontWeight(from string: String) -> Font.Weight {
-        string == "medium" ? .medium : .regular
     }
 }
