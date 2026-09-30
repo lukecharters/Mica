@@ -428,13 +428,13 @@ struct ReferenceComparisonTool: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Comparison")
                 .font(.headline)
-            Picker("", selection: $comparisonMode) {
+            Picker("Mode", selection: $comparisonMode) {
                 ForEach(ComparisonMode.allCases, id: \.self) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            .pickerStyle(.menu)
+            .fixedSize()
 
             if comparisonMode == .split {
                 Toggle("Show Wiper", isOn: $showWiper)
