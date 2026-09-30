@@ -13,8 +13,7 @@ struct BadgeView: View {
     var shadowOverride: ResolvedShadow? = nil
 
     // Badge shadow values are identical across all presets today, so resolving
-    // through `settings.icon.background.shadowStyle` is behavior-neutral here; a
-    // future `.macOS27` preset is where badge shadows would start to differ.
+    // through `settings.icon.background.shadowStyle` is behavior-neutral here.
     private var resolvedShadow: ResolvedShadow {
         shadowOverride ?? .preset(for: settings.icon.background.shadowStyle)
     }
