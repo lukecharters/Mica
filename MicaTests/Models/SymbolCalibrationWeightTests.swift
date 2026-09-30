@@ -3,6 +3,7 @@
 
 import Testing
 import SwiftUI
+import AppKit
 @testable import Mica
 
 @Suite(.tags(.unit))
@@ -23,6 +24,19 @@ struct SymbolCalibrationWeightTests {
 
     @Test func anUnknownTokenReadsAsTheDefault() {
         #expect(SymbolCalibrationEntry.fontWeight(fromToken: "heavy-ish") == SymbolCalibrationEntry.defaultWeight)
+    }
+
+    @Test func defaultWeightIsOneRowOfTheTable() {
+        let row = SymbolCalibrationEntry.weightTokens.first { $0.weight == SymbolCalibrationEntry.defaultWeight }
+        #expect(row?.measurementWeight == SymbolCalibrationEntry.defaultMeasurementWeight)
+    }
+
+    @Test func boxFitMeasuresAtTheDefaultWeight() throws {
+        let byDefault = try #require(SymbolAutoSizingService.measureTightBounds(symbol: "star.fill"))
+        let medium = try #require(SymbolAutoSizingService.measureTightBounds(symbol: "star.fill", weight: .medium))
+        let regular = try #require(SymbolAutoSizingService.measureTightBounds(symbol: "star.fill", weight: .regular))
+        #expect(byDefault == medium)
+        #expect(byDefault != regular)
     }
 
     @Test("The resolver renders a stored weight rather than collapsing it",

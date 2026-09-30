@@ -29,7 +29,9 @@ import SwiftUI
 // MARK: - Measurement Cache
 
 private struct TightBoundsCacheFile: Codable {
-    var version: Int = 1
+    /// Bump when the measurement changes; a file of another version is remeasured.
+    static let currentVersion = 2
+    var version: Int = currentVersion
     var generatedAt: String
     var bounds: [String: SymbolTightBounds]
 }
@@ -48,6 +50,7 @@ enum TightBoundsCache {
     static func load() -> [String: SymbolTightBounds]? {
         guard let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(TightBoundsCacheFile.self, from: data),
+              file.version == TightBoundsCacheFile.currentVersion,
               !file.bounds.isEmpty
         else { return nil }
         return file.bounds

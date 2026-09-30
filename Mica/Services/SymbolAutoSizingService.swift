@@ -54,7 +54,7 @@ struct AutoSizingPrediction: Sendable {
 // MARK: - Service
 
 enum SymbolAutoSizingService {
-    // Box-fit rule constants (fitted against symbol-calibration ground truth).
+    // Box-fit rule constants (fitted against symbol-calibration ground truth, on bounds measured at regular weight).
     static let heightFactor = 0.77
     static let widthFactor = 0.79
     // Badge-composite refit (see header note).
@@ -102,7 +102,7 @@ enum SymbolAutoSizingService {
     }
 
     /// Measures a symbol's tight content bounds and returns the full prediction.
-    static func prediction(forSymbol name: String, weight: NSFont.Weight = .regular) -> AutoSizingPrediction? {
+    static func prediction(forSymbol name: String, weight: NSFont.Weight = SymbolCalibrationEntry.defaultMeasurementWeight) -> AutoSizingPrediction? {
         guard let bounds = measureTightBounds(symbol: name, weight: weight) else { return nil }
         return prediction(for: bounds, isBadge: isBadgeVariant(name))
     }
@@ -114,7 +114,7 @@ enum SymbolAutoSizingService {
     ///
     /// Note: symbol images silently render nothing into an alpha-only
     /// CGContext — an RGBA context with alpha-channel scanning is required.
-    static func measureTightBounds(symbol name: String, weight: NSFont.Weight = .regular) -> SymbolTightBounds? {
+    static func measureTightBounds(symbol name: String, weight: NSFont.Weight = SymbolCalibrationEntry.defaultMeasurementWeight) -> SymbolTightBounds? {
         let config = NSImage.SymbolConfiguration(
             pointSize: SymbolTightBounds.referencePointSize, weight: weight)
         guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?

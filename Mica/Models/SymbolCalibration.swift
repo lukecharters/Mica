@@ -45,10 +45,13 @@ struct SymbolCalibrationEntry: Codable, Equatable {
 
     /// The weight of a symbol with no calibration entry, and of an unknown token.
     static let defaultWeight: Font.Weight = .medium
+    /// `defaultWeight` as AppKit spells it, for box-fit's tight-bounds measurement.
+    static let defaultMeasurementWeight: NSFont.Weight = .medium
 
     /// The weights the calibration tool offers.
-    static let weightTokens: [(token: String, weight: Font.Weight)] = [
-        ("regular", .regular), ("medium", .medium), ("semibold", .semibold), ("bold", .bold),
+    static let weightTokens: [(token: String, weight: Font.Weight, measurementWeight: NSFont.Weight)] = [
+        ("regular", .regular, .regular), ("medium", .medium, .medium),
+        ("semibold", .semibold, .semibold), ("bold", .bold, .bold),
     ]
 
     static func weightToken(for weight: Font.Weight) -> String {
