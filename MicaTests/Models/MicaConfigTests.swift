@@ -139,7 +139,7 @@ struct MicaConfigTests {
         ("icon-symbol-palette", ["red", "green", "blue"], [:]),
         ("icon-symbol-weight", "bold", [:]),
         ("icon-symbol-gradient", true, [:]),
-        ("icon-fg-shadow", false, [:]),
+        ("icon-fg-shadow", "macos15", [:]),
         ("icon-fg-visibility", false, [:]),
         ("icon-bg", "custom-gradient", [:]),
         ("icon-bg-color", "red", [:]),
@@ -159,7 +159,7 @@ struct MicaConfigTests {
         ("badge-symbol-palette", ["red", "green", "blue"], ["badge-fg": "symbol:plus"]),
         ("badge-symbol-weight", "bold", ["badge-fg": "symbol:plus"]),
         ("badge-symbol-gradient", true, ["badge-fg": "symbol:plus"]),
-        ("badge-fg-shadow", false, ["badge-fg": "symbol:plus"]),
+        ("badge-fg-shadow", "off", ["badge-fg": "symbol:plus"]),
         ("badge-fg-visibility", false, ["badge-fg": "symbol:plus"]),
         ("badge-bg", "custom-gradient", ["badge-fg": "symbol:plus"]),
         ("badge-bg-color", "purple", ["badge-fg": "symbol:plus"]),
@@ -476,7 +476,7 @@ struct MicaConfigTests {
         settings.icon.foreground.renderingStyle = .hierarchical
         settings.icon.foreground.fillStyle = .gradient
         settings.icon.foreground.symbolWeight = .bold
-        settings.icon.foreground.drawsShadow = false
+        settings.icon.foreground.shadowStyle = .off
         // No palette here: the rendering style above is `.hierarchical`, and the
         // encoder writes the palette only under `.palette` rendering because
         // that is the only style that draws it. `paletteRoundTripsUnderPalette`
@@ -501,7 +501,7 @@ struct MicaConfigTests {
         settings.badge.foreground.offsetY = 0.3
         settings.badge.foreground.color = .yellow
         settings.badge.foreground.hierarchicalColor = .yellow
-        settings.badge.foreground.drawsShadow = false
+        settings.badge.foreground.shadowStyle = .off
         settings.badge.background.color = .purple
         settings.badge.background.usesGradient = false
         settings.badge.background.drawsShadow = false
@@ -1156,5 +1156,51 @@ struct MicaConfigTests {
         let red = try ImportedImage.pngData(fill: .systemRed)
         let blue = try ImportedImage.pngData(fill: .systemBlue)
         #expect(red != blue)
+    }
+
+    // MARK: - Foreground shadow styles
+
+    @Test("every foreground shadow style round-trips on both groups",
+          arguments: DropShadowStyle.allCases)
+    func foregroundShadowStyleRoundTrips(_ style: DropShadowStyle) throws {
+        var settings = IconSettings()
+        settings.icon.foreground.shadowStyle = style
+        settings.badge.foreground.symbolName = "plus"
+        settings.badge.foreground.isHidden = false
+        settings.badge.foreground.shadowStyle = style
+        let decoded = try Self.roundTrip(settings).settings
+        #expect(decoded.icon.foreground.shadowStyle == style)
+        #expect(decoded.badge.foreground.shadowStyle == style)
+    }
+
+    @Test("a foreground shadow is written as a style token")
+    func foregroundShadowEncodesAsToken() throws {
+        var settings = IconSettings()
+        settings.icon.foreground.shadowStyle = .macOS15
+        #expect(try Self.encoded(settings)["icon-fg-shadow"] as? String == "macos15")
+    }
+
+    @Test("the toggle forms of a foreground shadow still decode")
+    func foregroundShadowToggleFormsDecode() throws {
+        let forms: [(value: Any, expected: DropShadowStyle)] = [
+            (true, .macOS27), (false, .off), ("on", .macOS27), ("off", .off),
+        ]
+        for form in forms {
+            let contents = try Self.decode([
+                "icon-fg-shadow": form.value,
+                "badge-fg": "symbol:plus",
+                "badge-fg-shadow": form.value,
+            ])
+            #expect(contents.settings.icon.foreground.shadowStyle == form.expected, "\(form.value)")
+            #expect(contents.settings.badge.foreground.shadowStyle == form.expected, "\(form.value)")
+            #expect(contents.warnings.isEmpty, "\(form.value)")
+        }
+    }
+
+    @Test("an unknown foreground shadow style warns and keeps the default")
+    func foregroundShadowUnknownWarns() throws {
+        let contents = try Self.decode(["icon-fg-shadow": "macos14"])
+        #expect(contents.settings.icon.foreground.shadowStyle == ForegroundSpec.iconDefault.shadowStyle)
+        #expect(contents.warnings.map(\.key) == ["icon-fg-shadow"])
     }
 }

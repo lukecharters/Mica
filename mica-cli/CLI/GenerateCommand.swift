@@ -52,6 +52,14 @@ private func validateScale(_ scale: String, name: String) throws -> Double {
     return value
 }
 
+/// Parses a foreground shadow style, accepting the superseded `on` as well.
+private func validateShadowStyle(_ style: String, name: String) throws -> DropShadowStyle {
+    guard let value = DropShadowStyle.from(cliToken: style) else {
+        throw ValidationError("\(name) must be one of: \(DropShadowStyle.allCLITokens.joined(separator: ", "))")
+    }
+    return value
+}
+
 /// Validates an offset against the range it belongs to. The range is a parameter
 /// because the two families differ: a badge is nudged from a corner and may cross
 /// the icon (`BadgeSpec.offsetRange`), while a foreground starts centred in its own
@@ -407,12 +415,16 @@ struct IconForegroundOptions: ParsableArguments {
     var symbolGradient: ToggleState?
 
     // nil = unspecified, so the effective value can default based on the source
-    // (off for imported images, on for SF Symbols).
+    // (off for imported images, the spec's style for SF Symbols).
     @Option(
         name: .customLong("icon-fg-shadow"),
-        help: ArgumentHelp("Icon foreground shadow: on or off", valueName: "on|off")
+        help: ArgumentHelp(
+            "Icon foreground shadow: \(DropShadowStyle.allCLITokens.joined(separator: ", ")) \(defaultNote(ForegroundSpec.iconDefault.shadowStyle.cliToken))",
+            valueName: "style"
+        ),
+        transform: { try validateShadowStyle($0, name: "Icon foreground shadow") }
     )
-    var shadow: ToggleState?
+    var shadow: DropShadowStyle?
 
     @Option(
         name: .customLong("icon-fg-visibility"),
@@ -533,13 +545,13 @@ struct IconBackgroundOptions: ParsableArguments {
     @Option(
         name: .customLong("icon-bg-shadow"),
         help: ArgumentHelp(
-            "Icon background shadow: \(BackgroundShadowStyle.allCLITokens.joined(separator: ", ")) \(defaultNote(IconBackgroundSpec().shadowStyle.cliToken))",
+            "Icon background shadow: \(DropShadowStyle.allCLITokens.joined(separator: ", ")) \(defaultNote(IconBackgroundSpec().shadowStyle.cliToken))",
             valueName: "style"
         ),
         transform: { style in
-            guard BackgroundShadowStyle.from(cliToken: style) != nil else {
+            guard DropShadowStyle.from(cliToken: style) != nil else {
                 throw ValidationError(
-                    "Background shadow must be one of: \(BackgroundShadowStyle.allCLITokens.joined(separator: ", "))"
+                    "Background shadow must be one of: \(DropShadowStyle.allCLITokens.joined(separator: ", "))"
                 )
             }
             return style.lowercased()
@@ -753,12 +765,16 @@ struct BadgeOptions: ParsableArguments {
     var symbolGradient: ToggleState?
 
     // nil = unspecified, so the effective value can default based on the source
-    // (off for imported images, on for SF Symbols).
+    // (off for imported images, the spec's style for SF Symbols).
     @Option(
         name: .customLong("badge-fg-shadow"),
-        help: ArgumentHelp("Badge foreground shadow: on or off", valueName: "on|off")
+        help: ArgumentHelp(
+            "Badge foreground shadow: \(DropShadowStyle.allCLITokens.joined(separator: ", ")) \(defaultNote(ForegroundSpec.badgeDefault.shadowStyle.cliToken))",
+            valueName: "style"
+        ),
+        transform: { try validateShadowStyle($0, name: "Badge foreground shadow") }
     )
-    var foregroundShadow: ToggleState?
+    var foregroundShadow: DropShadowStyle?
 
     // No `defaultNote` on either badge visibility flag: their default is not a
     // spec value but the *activation* rule — supplying --badge-fg means "show the

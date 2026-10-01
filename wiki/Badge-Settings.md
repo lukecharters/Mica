@@ -414,22 +414,26 @@ mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-sc
 
 ### Foreground Shadow
 
-Shows or hides the shadow behind the badge foreground.
+Sets the shadow style behind the badge foreground.
+`off` hides it.
 
 | | |
 |---|---|
 | **In the app** | Badge ▸ Foreground ▸ Appearance ▸ **Shadow** |
-| **Command line** | `--badge-fg-shadow on\|off` |
+| **Command line** | `--badge-fg-shadow off\|macos15\|macos26\|macos27` |
 | **Config key** | `"badge-fg-shadow"` |
-| **Default** | `on` for SF Symbols, `off` for images |
+| **Default** | `off` for images, `macos27` otherwise |
 | **Shown when** | Mica mode. |
 
-<img src="images/badge-fg-shadow-on.png" width="128" alt="Badge foreground shadow on"> <img src="images/badge-fg-shadow-off.png" width="128" alt="Badge foreground shadow off">
+With advanced controls off, the app shows an on/off switch. On gives `macos27`.
 
-Left: `on`. Right: `off`.
+<img src="images/badge-fg-shadow-off.png" width="128" alt="Badge foreground shadow off"> <img src="images/badge-fg-shadow-macos27.png" width="128" alt="Badge foreground shadow macOS 27">
+
+Left: `off`. Right: `macos27`.
+On the badge, `macos15`, `macos26` and `macos27` look the same.
 
 ```shell
-mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-fg-shadow off
+mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-fg-shadow macos27
 ```
 
 > **System mode ignores this.**

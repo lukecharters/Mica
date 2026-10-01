@@ -223,7 +223,7 @@ enum PresetCatalog {
                 "badge-fg-scale": .number(0.3),
                 "badge-symbol-color": .string("white"),
                 "badge-bg-color": .string("red"),
-                "badge-fg-shadow": .bool(false),
+                "badge-fg-shadow": .string("off"),
                 "badge-bg-gradient": .bool(false),
                 "badge-position": .string("top-right"),
             ],
@@ -263,7 +263,7 @@ enum PresetCatalog {
                 "badge-symbol-color": .string("white"),
                 "badge-symbol-weight": .string("light"),
                 "badge-bg-color": .string("red"),
-                "badge-fg-shadow": .bool(false),
+                "badge-fg-shadow": .string("off"),
                 "badge-bg-gradient": .bool(false),
             ],
             isBuiltIn: true

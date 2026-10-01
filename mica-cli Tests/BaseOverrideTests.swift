@@ -37,7 +37,7 @@ struct BaseOverrideTests {
         settings.icon.foreground.renderingStyle = .hierarchical
         settings.icon.foreground.fillStyle = .gradient
         settings.icon.foreground.symbolWeight = .bold
-        settings.icon.foreground.drawsShadow = false
+        settings.icon.foreground.shadowStyle = .off
         settings.icon.foreground.palettePrimaryColor = .red
         settings.icon.foreground.paletteSecondaryColor = .green
         settings.icon.foreground.paletteTertiaryColor = .blue
@@ -57,7 +57,7 @@ struct BaseOverrideTests {
         settings.badge.foreground.symbolName = "bell.fill"
         settings.badge.foreground.symbolScale = 0.8
         settings.badge.foreground.color = .yellow
-        settings.badge.foreground.drawsShadow = false
+        settings.badge.foreground.shadowStyle = .off
         settings.badge.foreground.palettePrimaryColor = .cyan
         settings.badge.foreground.paletteSecondaryColor = .indigo
         settings.badge.foreground.paletteTertiaryColor = .mint
@@ -133,7 +133,7 @@ struct BaseOverrideTests {
     @Test("An absent --icon-fg-shadow keeps the base's symbol shadow")
     func absentForegroundShadow_keepsTheBaseSetting() throws {
         let result = try Self.build([], onto: Self.distinctiveBase())
-        #expect(result.icon.foreground.drawsShadow == false)
+        #expect(result.icon.foreground.shadowStyle == .off)
     }
 
     @Test("An absent --icon-generation-mode keeps a base in system mode")

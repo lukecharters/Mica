@@ -1,6 +1,6 @@
 // ShadowOverrideNeutralityTests.swift
 // Proves the shadowOverride plumbing is behavior-neutral: for every
-// BackgroundShadowStyle, rendering with shadowOverride: nil (production
+// DropShadowStyle, rendering with shadowOverride: nil (production
 // paths) must match rendering with the matching preset injected
 // explicitly. Compared pixel-wise with a ±1 channel tolerance —
 // ImageRenderer output is not byte-deterministic (gradient dithering
@@ -27,11 +27,13 @@ struct ShadowOverrideNeutralityTests {
     }
 
     @Test("nil override renders identically to the injected preset",
-          arguments: BackgroundShadowStyle.allCases)
-    func nilOverride_matchesInjectedPreset(_ style: BackgroundShadowStyle) throws {
+          arguments: DropShadowStyle.allCases)
+    func nilOverride_matchesInjectedPreset(_ style: DropShadowStyle) throws {
         var settings = IconSettings()
         settings.icon.foreground.symbolName = "folder.fill"
         settings.icon.background.shadowStyle = style
+        settings.icon.foreground.shadowStyle = style
+        settings.badge.foreground.shadowStyle = style
         settings.badge.isVisible = true // exercise BadgeView's override path too
 
         let baseline = try render(settings, override: nil)

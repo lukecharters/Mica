@@ -42,10 +42,10 @@ struct SettingsTokensTests {
         }
     }
 
-    @Test("Every BackgroundShadowStyle case round-trips its token")
+    @Test("Every DropShadowStyle case round-trips its token")
     func shadowStyleRoundTrips() {
-        for style in BackgroundShadowStyle.allCases {
-            #expect(BackgroundShadowStyle.from(cliToken: style.cliToken) == style)
+        for style in DropShadowStyle.allCases {
+            #expect(DropShadowStyle.from(cliToken: style.cliToken) == style)
         }
     }
 
@@ -67,7 +67,7 @@ struct SettingsTokensTests {
 
     @Test("The macOS 11-15 design spells as macos15 on both flags")
     func macOS15SpellsAsMacOS15() {
-        #expect(BackgroundShadowStyle.macOS15.cliToken == "macos15")
+        #expect(DropShadowStyle.macOS15.cliToken == "macos15")
         #expect(IconCornerRadiusStyle.macOS15.cliToken == "macos15")
     }
 
@@ -79,22 +79,30 @@ struct SettingsTokensTests {
 
     @Test("macos11 still decodes to the macOS 15 style")
     func supersededTokenStillDecodes() {
-        #expect(BackgroundShadowStyle.from(cliToken: "macos11") == .macOS15)
+        #expect(DropShadowStyle.from(cliToken: "macos11") == .macOS15)
         #expect(IconCornerRadiusStyle.from(cliToken: "macos11") == .macOS15)
-        #expect(BackgroundShadowStyle.from(cliToken: "MacOS11") == .macOS15, "matched case-insensitively too")
+        #expect(DropShadowStyle.from(cliToken: "MacOS11") == .macOS15, "matched case-insensitively too")
     }
 
     @Test("A superseded token is never offered as a valid one")
     func supersededTokensAreNeverOffered() {
-        #expect(!BackgroundShadowStyle.allCLITokens.contains("macos11"))
+        #expect(!DropShadowStyle.allCLITokens.contains("macos11"))
         #expect(!IconCornerRadiusStyle.allCLITokens.contains("macos11"))
-        #expect(BackgroundShadowStyle.allCLITokens == ["off", "macos15", "macos26", "macos27"])
+        #expect(DropShadowStyle.allCLITokens == ["off", "macos15", "macos26", "macos27"])
         #expect(IconCornerRadiusStyle.allCLITokens == ["off", "macos15", "macos26"])
+    }
+
+    @Test("on decodes to the macOS 27 shadow and is never offered")
+    func onIsASupersededShadowToken() throws {
+        #expect(DropShadowStyle.from(cliToken: "on") == .macOS27)
+        #expect(DropShadowStyle.from(cliToken: "ON") == .macOS27, "matched case-insensitively too")
+        #expect(!DropShadowStyle.allCLITokens.contains("on"))
+        #expect(try #require(DropShadowStyle.from(cliToken: "on")).cliToken == "macos27")
     }
 
     @Test("A superseded token normalises to the canonical spelling")
     func supersededTokenNormalises() throws {
-        let style = try #require(BackgroundShadowStyle.from(cliToken: "macos11"))
+        let style = try #require(DropShadowStyle.from(cliToken: "macos11"))
         #expect(style.cliToken == "macos15", "re-encoding a decoded macos11 writes macos15")
     }
 
@@ -111,8 +119,8 @@ struct SettingsTokensTests {
     func canonicalTokensWinOverSuperseded() {
         // Guards the lookup order in `from(cliToken:)`: every canonical token
         // must still resolve to its own case, whatever any superseded list says.
-        for style in BackgroundShadowStyle.allCases {
-            #expect(BackgroundShadowStyle.from(cliToken: style.cliToken) == style)
+        for style in DropShadowStyle.allCases {
+            #expect(DropShadowStyle.from(cliToken: style.cliToken) == style)
         }
         for style in IconCornerRadiusStyle.allCases {
             #expect(IconCornerRadiusStyle.from(cliToken: style.cliToken) == style)
@@ -130,7 +138,7 @@ struct SettingsTokensTests {
     func unknownTokenIsNil() {
         #expect(SymbolRenderingStyle.from(cliToken: "vibrant") == nil)
         #expect(BadgePosition.from(cliToken: "centre") == nil)
-        #expect(BackgroundShadowStyle.from(cliToken: "sequoia") == nil, "the old case name was never a token, and supersession did not make it one")
+        #expect(DropShadowStyle.from(cliToken: "sequoia") == nil, "the old case name was never a token, and supersession did not make it one")
     }
 
     // MARK: - Overloaded source values

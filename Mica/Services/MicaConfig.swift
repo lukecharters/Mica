@@ -442,6 +442,14 @@ private struct ConfigReader {
         return nil
     }
 
+    /// A foreground shadow style: a style token, or a JSON boolean, which older
+    /// files carry (`true` reads as `macos27`, as the token `on` does).
+    mutating func shadowStyle(_ key: MicaConfigKey) -> DropShadowStyle? {
+        guard let value = values[key] else { return nil }
+        if isBool(value), let bool = value as? Bool { return bool ? .macOS27 : .off }
+        return token(key, as: DropShadowStyle.self)
+    }
+
     mutating func number(_ key: MicaConfigKey, in range: ClosedRange<Double>) -> Double? {
         guard let value = values[key] else { return nil }
         let parsed: Double?
@@ -714,7 +722,7 @@ private struct ConfigReader {
         }
         // An explicit shadow wins; otherwise only a freshly imported background
         // forces the shadow off (mirroring `IconBackgroundSpec.apply(_:)`).
-        if let shadow = token(.iconBGShadow, as: BackgroundShadowStyle.self) {
+        if let shadow = token(.iconBGShadow, as: DropShadowStyle.self) {
             settings.icon.background.shadowStyle = shadow
         } else if importedBackground {
             settings.icon.background.shadowStyle = .off
@@ -748,10 +756,10 @@ private struct ConfigReader {
                 settings.icon.foreground.paletteTertiaryColor = tertiary
             }
         }
-        if let shadow = toggle(.iconFGShadow) {
-            settings.icon.foreground.drawsShadow = shadow
+        if let shadow = shadowStyle(.iconFGShadow) {
+            settings.icon.foreground.shadowStyle = shadow
         } else if importedForeground {
-            settings.icon.foreground.drawsShadow = false
+            settings.icon.foreground.shadowStyle = .off
         }
         if let weight = token(.iconSymbolWeight, as: SymbolWeight.self) {
             settings.icon.foreground.symbolWeight = weight
@@ -954,10 +962,10 @@ private struct ConfigReader {
         if let gradient = toggle(.badgeSymbolGradient) {
             settings.badge.foreground.fillStyle = gradient ? .gradient : .flat
         }
-        if let shadow = toggle(.badgeFGShadow) {
-            settings.badge.foreground.drawsShadow = shadow
+        if let shadow = shadowStyle(.badgeFGShadow) {
+            settings.badge.foreground.shadowStyle = shadow
         } else if importedBadgeForeground {
-            settings.badge.foreground.drawsShadow = false
+            settings.badge.foreground.shadowStyle = .off
         }
         if let badgeMode {
             settings.badge.mode = badgeMode
@@ -1208,8 +1216,8 @@ private struct ConfigWriter {
         // Baseline mirrors decode's fresh-import rule: an imported foreground's
         // shadow defaults off.
         if iconFGDraws,
-           iconFG.drawsShadow != (iconFGIsImage ? false : defaults.icon.foreground.drawsShadow) {
-            put(.iconFGShadow, iconFG.drawsShadow)
+           iconFG.shadowStyle != (iconFGIsImage ? .off : defaults.icon.foreground.shadowStyle) {
+            put(.iconFGShadow, iconFG.shadowStyle.cliToken)
         }
         // Visibility is never gated — it is what did the hiding — but its baseline is
         // conditional, mirroring decode's foreground rule: over an imported background,
@@ -1393,8 +1401,8 @@ private struct ConfigWriter {
         if badgeSymbolStyling, badgeFG.fillStyle != badgeDefault.fillStyle {
             put(.badgeSymbolGradient, badgeFG.fillStyle == .gradient)
         }
-        if badgeFGDraws, badgeFG.drawsShadow != (badgeFGIsImage ? false : badgeDefault.drawsShadow) {
-            put(.badgeFGShadow, badgeFG.drawsShadow)
+        if badgeFGDraws, badgeFG.shadowStyle != (badgeFGIsImage ? .off : badgeDefault.shadowStyle) {
+            put(.badgeFGShadow, badgeFG.shadowStyle.cliToken)
         }
         // Never gated — these are what switch the badge's layers off at all — but the
         // foreground's baseline is now *two* conditions composed, so it is written out

@@ -170,7 +170,7 @@ struct BadgeShadowExtentTests {
     func shadowlessBadge_hasNoAllowance() throws {
         var settings = Self.cornerBadge(scale: 1.0)
         settings.badge.background.drawsShadow = false
-        settings.badge.foreground.drawsShadow = false
+        settings.badge.foreground.shadowStyle = .off
         let side = settings.export.pixelSize
 
         let image = IconRenderer.renderIconSafely(settings: settings)

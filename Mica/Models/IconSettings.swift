@@ -346,7 +346,7 @@ struct ForegroundSpec: Equatable {
     var palettePrimaryColor: MicaColorValue = ForegroundSpec.defaultPalette[0]
     var paletteSecondaryColor: MicaColorValue = ForegroundSpec.defaultPalette[1]
     var paletteTertiaryColor: MicaColorValue = ForegroundSpec.defaultPalette[2]
-    var drawsShadow: Bool = true
+    var shadowStyle: DropShadowStyle = .macOS27
     var isHidden: Bool
 
     static let iconDefault = ForegroundSpec(symbolName: "command", isHidden: false)
@@ -359,7 +359,7 @@ struct ForegroundSpec: Equatable {
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
-        drawsShadow = false
+        shadowStyle = .off
     }
 
     /// Drop imported artwork and go back to drawing the symbol.
@@ -376,7 +376,7 @@ struct ForegroundSpec: Equatable {
         let fresh = ForegroundSpec(symbolName: symbolName, isHidden: isHidden)
         image = nil
         source = fresh.source
-        drawsShadow = fresh.drawsShadow
+        shadowStyle = fresh.shadowStyle
     }
 }
 
@@ -391,7 +391,7 @@ struct IconBackgroundSpec: Equatable {
     var gradientStartColor: MicaColorValue = .blue
     var gradientEndColor: MicaColorValue = .purple
     var cornerRadiusStyle: IconCornerRadiusStyle = .macOS26
-    var shadowStyle: BackgroundShadowStyle = .macOS27
+    var shadowStyle: DropShadowStyle = .macOS27
     var image: ImportedImage? = nil
     var imageScale: Double = 1.0
     var compensatesForPadding: Bool = false
@@ -588,9 +588,7 @@ enum BadgePosition: String, CaseIterable, Identifiable {
 /// deliberately unclipped. On a colour background `.off` gives a square chiclet:
 /// an option nobody is obliged to pick.
 ///
-/// `.macOS15` names the design Apple shipped from macOS 11 through 15. It was
-/// `.macOS11` here and `.sequoia` on `BackgroundShadowStyle` — one design with
-/// three spellings across the code, the UI and the CLI — until 2026-08-08.
+/// `.macOS15` names the design Apple shipped from macOS 11 through 15.
 enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
     case off = "Off"
     case macOS15 = "macOS 15"
@@ -599,7 +597,7 @@ enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-enum BackgroundShadowStyle: String, CaseIterable, Identifiable {
+enum DropShadowStyle: String, CaseIterable, Identifiable {
     case off = "Off"
     case macOS15 = "macOS 15"
     case macOS26 = "macOS 26"

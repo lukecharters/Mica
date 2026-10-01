@@ -39,8 +39,9 @@ one, so the page and the picture cannot disagree.
 | `icon-symbol-weight-black.png` | `icon-symbol-weight` | `black` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-weight black` |
 | `icon-symbol-gradient-on.png` | `icon-symbol-gradient` | `on` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-gradient on` |
 | `icon-symbol-gradient-off.png` | `icon-symbol-gradient` | `off` | `mica-cli --icon-symbol star.fill --size 256 --icon-symbol-gradient off` |
-| `icon-fg-shadow-on.png` | `icon-fg-shadow` | `on` | `mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow on` |
 | `icon-fg-shadow-off.png` | `icon-fg-shadow` | `off` | `mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow off` |
+| `icon-fg-shadow-macos15.png` | `icon-fg-shadow` | `macos15` | `mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow macos15` |
+| `icon-fg-shadow-macos27.png` | `icon-fg-shadow` | `macos27` | `mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow macos27` |
 | `icon-bg-standard.png` | `icon-bg` | `standard` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg standard` |
 | `icon-bg-custom-gradient.png` | `icon-bg` | `custom-gradient` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg custom-gradient --icon-bg-gradient-colors '#FF6B35,#F7931E'` |
 | `icon-bg-image.png` | `icon-bg` | `image` | `mica-cli --size 256 --icon-bg artwork.png` |
@@ -56,7 +57,6 @@ one, so the page and the picture cannot disagree.
 | `icon-bg-corner-radius-macos26.png` | `icon-bg-corner-radius` | `macos26` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-corner-radius macos26` |
 | `icon-bg-shadow-off.png` | `icon-bg-shadow` | `off` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow off` |
 | `icon-bg-shadow-macos15.png` | `icon-bg-shadow` | `macos15` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos15` |
-| `icon-bg-shadow-macos26.png` | `icon-bg-shadow` | `macos26` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos26` |
 | `icon-bg-shadow-macos27.png` | `icon-bg-shadow` | `macos27` | `mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos27` |
 | `icon-bg-padding-on.png` | `icon-bg-padding` | `on` | `mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding on` |
 | `icon-bg-padding-off.png` | `icon-bg-padding` | `off` | `mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding off` |
@@ -108,8 +108,8 @@ one, so the page and the picture cannot disagree.
 | `badge-symbol-weight-black.png` | `badge-symbol-weight` | `black` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-symbol-weight black` |
 | `badge-symbol-gradient-on.png` | `badge-symbol-gradient` | `on` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-symbol-gradient on` |
 | `badge-symbol-gradient-off.png` | `badge-symbol-gradient` | `off` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-symbol-gradient off` |
-| `badge-fg-shadow-on.png` | `badge-fg-shadow` | `on` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-fg-shadow on` |
 | `badge-fg-shadow-off.png` | `badge-fg-shadow` | `off` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-fg-shadow off` |
+| `badge-fg-shadow-macos27.png` | `badge-fg-shadow` | `macos27` | `mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-fg-shadow macos27` |
 | `badge-bg-standard.png` | `badge-bg` | `standard` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-bg standard` |
 | `badge-bg-custom-gradient.png` | `badge-bg` | `custom-gradient` | `mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-bg custom-gradient --badge-bg-gradient-colors '#FF6B35,#F7931E'` |
 | `badge-bg-image.png` | `badge-bg` | `image` | `mica-cli --icon-symbol star.fill --size 512 --badge-bg artwork.png` |

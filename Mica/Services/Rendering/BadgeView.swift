@@ -12,10 +12,15 @@ struct BadgeView: View {
     /// Debug-playground hook — see `IconContentView.shadowOverride`.
     var shadowOverride: ResolvedShadow? = nil
 
-    // Badge shadow values are identical across all presets today, so resolving
-    // through `settings.icon.background.shadowStyle` is behavior-neutral here.
+    /// The badge background's shadow follows the icon background's style.
     private var resolvedShadow: ResolvedShadow {
         shadowOverride ?? .preset(for: settings.icon.background.shadowStyle)
+    }
+
+    private var symbolShadow: ResolvedShadow.BadgeShadow {
+        let style = settings.badge.foreground.shadowStyle
+        guard style != .off else { return .none }
+        return shadowOverride?.badgeSymbol ?? ResolvedShadow.badgeSymbol(for: style)
     }
 
     private var drawnSymbolName: String {
@@ -128,9 +133,9 @@ struct BadgeView: View {
                 if !settings.badge.foreground.isHidden {
                     badgeContent
                         .shadow(
-                            color: settings.badge.foreground.drawsShadow ? Color.black.opacity(resolvedShadow.badgeSymbol.opacity) : Color.clear,
-                            radius: settings.badge.foreground.drawsShadow ? badgeSize * resolvedShadow.badgeSymbol.radiusMultiplier : 0,
-                            y: settings.badge.foreground.drawsShadow ? badgeSize * resolvedShadow.badgeSymbol.offsetYMultiplier : 0
+                            color: Color.black.opacity(symbolShadow.opacity),
+                            radius: badgeSize * symbolShadow.radiusMultiplier,
+                            y: badgeSize * symbolShadow.offsetYMultiplier
                         )
                         // Outside the shadow, so it travels with the glyph. Inside
                         // the ZStack, whose frame stays the badge diameter — the

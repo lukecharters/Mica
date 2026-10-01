@@ -187,8 +187,8 @@ extension SettingsChange {
                          base.appending(path: \.paletteSecondaryColor)),
             SettingField("\(prefix).paletteTertiaryColor", "Change \(subject) Palette Tertiary Color",
                          base.appending(path: \.paletteTertiaryColor)),
-            SettingField("\(prefix).drawsShadow", "Change \(subject) Symbol Shadow",
-                         base.appending(path: \.drawsShadow)),
+            SettingField("\(prefix).shadowStyle", "Change \(subject) Symbol Shadow",
+                         base.appending(path: \.shadowStyle)),
             SettingField("\(prefix).isHidden", visibilityOf: "\(subject) Foreground",
                          base.appending(path: \.isHidden)),
         ]

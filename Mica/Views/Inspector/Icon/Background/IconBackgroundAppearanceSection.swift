@@ -21,23 +21,11 @@ struct IconBackgroundAppearanceSection: View {
         shadowControl
     }
 
-    /// Advanced mode exposes all shadow styles; simple mode is a plain on/off
-    /// toggle that maps "on" to the modern macOS 26 style.
-    @ViewBuilder
     private var shadowControl: some View {
-        if advancedControlsEnabled {
-            Picker("Shadow", systemImage: "app.shadow", selection: $iconSettings.icon.background.shadowStyle) {
-                ForEach(BackgroundShadowStyle.allCases) { style in
-                    Text(style.rawValue).tag(style)
-                }
-            }
-            .pickerStyle(.segmented)
-        } else {
-            Toggle("Shadow", systemImage: "app.shadow", isOn: Binding(
-                get: { iconSettings.icon.background.shadowStyle != .off },
-                set: { iconSettings.icon.background.shadowStyle = $0 ? IconBackgroundSpec().shadowStyle : .off }
-            ))
-        }
+        ShadowStyleControl(
+            style: $iconSettings.icon.background.shadowStyle,
+            defaultStyle: IconBackgroundSpec().shadowStyle
+        )
     }
 
     @ViewBuilder

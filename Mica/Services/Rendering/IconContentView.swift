@@ -13,8 +13,9 @@ struct IconContentView: View {
     let settings: IconSettings
     let displaySize: CGFloat
     var badgeAppexImage: NSImage? = nil
-    /// Debug-playground hook: when non-nil, replaces the preset derived from
-    /// `settings.icon.background.shadowStyle`. Production paths leave this nil.
+    /// Debug-playground hook: when non-nil, replaces the presets derived from
+    /// each layer's `shadowStyle`. A layer whose style is `.off` stays unshadowed.
+    /// Production paths leave this nil.
     var shadowOverride: ResolvedShadow? = nil
     /// Debug-playground hook: when true, the custom-colour icon background is
     /// filled with SwiftUI's automatic `Color.gradient` (top-light → bottom-dark),
@@ -97,8 +98,12 @@ struct IconContentView: View {
     private var backgroundShadowRadius: CGFloat { resolvedShadow.background.radius * scaleFactor }
     private var backgroundShadowOffset: CGFloat { resolvedShadow.background.offsetY * scaleFactor }
     private var backgroundShadowOpacity: CGFloat { resolvedShadow.background.opacity }
-    private var symbolShadowRadius: CGFloat { resolvedShadow.symbol.radius * scaleFactor }
-    private var symbolShadowOffset: CGFloat { resolvedShadow.symbol.offsetY * scaleFactor }
+
+    private var symbolShadow: ResolvedShadow.CanvasShadow {
+        let style = settings.icon.foreground.shadowStyle
+        guard style != .off else { return .none }
+        return shadowOverride?.symbol ?? ResolvedShadow.symbol(for: style)
+    }
 
     // Badge scaled values — all derived from enclosure size
     private var badgeSize: CGFloat {
@@ -123,9 +128,9 @@ struct IconContentView: View {
             if !settings.icon.foreground.isHidden {
                 iconContent
                     .shadow(
-                        color: settings.icon.foreground.drawsShadow ? Color.black.opacity(resolvedShadow.symbol.opacity) : Color.clear,
-                        radius: settings.icon.foreground.drawsShadow ? symbolShadowRadius : 0,
-                        y: settings.icon.foreground.drawsShadow ? symbolShadowOffset : 0
+                        color: Color.black.opacity(symbolShadow.opacity),
+                        radius: symbolShadow.radius * scaleFactor,
+                        y: symbolShadow.offsetY * scaleFactor
                     )
                     // Outside the shadow, so the shadow travels with the layer
                     // rather than staying behind where it used to be. Deliberately

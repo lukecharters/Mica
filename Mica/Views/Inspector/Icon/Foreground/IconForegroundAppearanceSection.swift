@@ -61,14 +61,14 @@ struct IconForegroundAppearanceSection: View {
             }
         }
 
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.icon.foreground.drawsShadow)
+        shadowControl
     }
 
     /// Imported image: only shadow applies
     @ViewBuilder
     private var importedControls: some View {
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.icon.foreground.drawsShadow)
-            .help("Toggle the drop shadow behind the imported image")
+        shadowControl
+            .help("The drop shadow behind the imported image")
     }
 
     @ViewBuilder
@@ -98,6 +98,13 @@ struct IconForegroundAppearanceSection: View {
                 value: $iconSettings.icon.foreground.paletteTertiaryColor
             )
         }
+    }
+
+    private var shadowControl: some View {
+        ShadowStyleControl(
+            style: $iconSettings.icon.foreground.shadowStyle,
+            defaultStyle: ForegroundSpec.iconDefault.shadowStyle
+        )
     }
 }
 

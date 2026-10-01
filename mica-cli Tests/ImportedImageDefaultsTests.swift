@@ -43,11 +43,29 @@ struct ImportedImageDefaultsTests {
         #expect(try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:gear", "--badge-bg-padding", "on"]).badge.effectiveBackgroundPaddingCompensation == false)
     }
 
-    @Test("--icon-fg-shadow parses to an on|off toggle, unspecified is nil")
-    func iconForegroundShadowFlag_toggle() throws {
+    @Test("--icon-fg-shadow parses to a shadow style, unspecified is nil")
+    func iconForegroundShadowFlag_style() throws {
         #expect(try parseCommand(["--icon-symbol", "star.fill"]).iconForeground.shadow == nil)
         #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "off"]).iconForeground.shadow == .off)
-        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "on"]).iconForeground.shadow == .on)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "macos15"]).iconForeground.shadow == .macOS15)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "macos26"]).iconForeground.shadow == .macOS26)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "macos27"]).iconForeground.shadow == .macOS27)
+    }
+
+    @Test("--icon-fg-shadow and --badge-fg-shadow still take on, as macos27")
+    func foregroundShadowFlags_acceptOn() throws {
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "on"]).iconForeground.shadow == .macOS27)
+        #expect(try parseCommand(["--icon-symbol", "star.fill", "--badge-symbol", "plus", "--badge-fg-shadow", "on"]).badge.foregroundShadow == .macOS27)
+    }
+
+    @Test("An unknown foreground shadow style is refused")
+    func foregroundShadowFlags_refuseUnknown() {
+        #expect(throws: (any Error).self) {
+            try parseCommand(["--icon-symbol", "star.fill", "--icon-fg-shadow", "macos14"])
+        }
+        #expect(throws: (any Error).self) {
+            try parseCommand(["--icon-symbol", "star.fill", "--badge-symbol", "plus", "--badge-fg-shadow", "yes"])
+        }
     }
 
     // MARK: - End-to-end through buildIconSettings
@@ -58,13 +76,13 @@ struct ImportedImageDefaultsTests {
         let command = try parseCommand(["--icon-fg", path])
         let settings = try IconGenerationRunner().buildTestSettings(from: command)
         #expect(settings.icon.foreground.source == .image)
-        #expect(settings.icon.foreground.drawsShadow == false)
+        #expect(settings.icon.foreground.shadowStyle == .off)
     }
 
     @Test("SF Symbol icon keeps its shadow on")
     func iconSymbol_shadowOn() throws {
         let settings = try IconGenerationRunner().buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill"]))
-        #expect(settings.icon.foreground.drawsShadow == true)
+        #expect(settings.icon.foreground.shadowStyle == .macOS27)
     }
 
     @Test("--icon-fg-shadow on forces the shadow back on for an imported image")
@@ -72,7 +90,7 @@ struct ImportedImageDefaultsTests {
         let path = try makeTempImageFile().path
         let command = try parseCommand(["--icon-fg", path, "--icon-fg-shadow", "on"])
         let settings = try IconGenerationRunner().buildTestSettings(from: command)
-        #expect(settings.icon.foreground.drawsShadow == true)
+        #expect(settings.icon.foreground.shadowStyle == .macOS27)
     }
 
     @Test("Image icon background (--icon-bg <path>) fills the frame and drops its shadow")
@@ -143,7 +161,7 @@ struct ImportedImageDefaultsTests {
         let command = try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", path])
         let settings = try IconGenerationRunner().buildTestSettings(from: command)
         #expect(settings.badge.foreground.source == .image)
-        #expect(settings.badge.foreground.drawsShadow == false)
+        #expect(settings.badge.foreground.shadowStyle == .off)
     }
 
     @Test("Image badge background (--badge-bg <path>) fills the frame and drops its shadow")

@@ -455,9 +455,9 @@ class IconGenerationRunner {
             // Symbol style. As with the background shadow, only a fresh import
             // forces the shadow off (mirroring `ForegroundSpec.apply(_:)`).
             if let shadow = command.iconForeground.shadow {
-                settings.icon.foreground.drawsShadow = shadow.isOn
+                settings.icon.foreground.shadowStyle = shadow
             } else if commandImportedForeground {
-                settings.icon.foreground.drawsShadow = false
+                settings.icon.foreground.shadowStyle = .off
             }
             if let symbolWeight = command.iconForeground.symbolWeight {
                 settings.icon.foreground.symbolWeight = try parseSymbolWeight(symbolWeight)
@@ -631,9 +631,9 @@ class IconGenerationRunner {
 
                 // Badge foreground shadow — off only for a fresh import.
                 if let foregroundShadow = command.badge.foregroundShadow {
-                    settings.badge.foreground.drawsShadow = foregroundShadow.isOn
+                    settings.badge.foreground.shadowStyle = foregroundShadow
                 } else if commandImportedBadgeForeground {
-                    settings.badge.foreground.drawsShadow = false
+                    settings.badge.foreground.shadowStyle = .off
                 }
 
                 // Badge generation mode (system → appex pipeline).
@@ -825,9 +825,9 @@ class IconGenerationRunner {
         return style
     }
 
-    private func parseShadowStyle(_ input: String) throws -> BackgroundShadowStyle {
-        guard let style = BackgroundShadowStyle.from(cliToken: input) else {
-            throw CLIError.invalidArgument("Invalid shadow style: \(input). Must be one of: \(BackgroundShadowStyle.allCLITokens.joined(separator: ", "))")
+    private func parseShadowStyle(_ input: String) throws -> DropShadowStyle {
+        guard let style = DropShadowStyle.from(cliToken: input) else {
+            throw CLIError.invalidArgument("Invalid shadow style: \(input). Must be one of: \(DropShadowStyle.allCLITokens.joined(separator: ", "))")
         }
         return style
     }

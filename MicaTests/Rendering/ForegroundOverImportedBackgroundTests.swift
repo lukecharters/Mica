@@ -39,7 +39,7 @@ struct ForegroundOverImportedBackgroundTests {
         settings.export.isRetina = false
         settings.icon.foreground.symbolName = "star.fill"
         settings.icon.foreground.color = .init(resolving: .black)
-        settings.icon.foreground.drawsShadow = false
+        settings.icon.foreground.shadowStyle = .off
         settings.icon.applyBackgroundImage(
             try ImportedImage.testFixture(width: 64, height: 64, fill: artwork))
         settings.icon.background.compensatesForPadding = false
@@ -71,7 +71,7 @@ struct ForegroundOverImportedBackgroundTests {
         settings.badge.scale = 1.0
         settings.badge.foreground.symbolName = "plus"
         settings.badge.foreground.color = .init(resolving: .black)
-        settings.badge.foreground.drawsShadow = false
+        settings.badge.foreground.shadowStyle = .off
         settings.badge.applyBackgroundImage(
             try ImportedImage.testFixture(width: 64, height: 64, fill: artwork))
         settings.badge.background.compensatesForPadding = false

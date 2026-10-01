@@ -10,9 +10,8 @@ import SwiftUI
 /// where there is nothing to confuse it with.
 ///
 /// Group-agnostic: the caller supplies the bindings, so the icon and badge share
-/// one implementation. `backgroundShadow` is a `Bool` for both — the icon's
-/// multi-style `BackgroundShadowStyle` is mapped to on/off at the call site,
-/// which is what the advanced-off shadow toggle has always done.
+/// one implementation. Both shadows are a `Bool` here: every `DropShadowStyle` is
+/// mapped to on/off at the call site, the same mapping `ShadowStyleControl` uses.
 struct SimpleAppearanceSection: View {
     @Binding var symbolColor: MicaColorValue
     @Binding var symbolShadow: Bool

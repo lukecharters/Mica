@@ -133,6 +133,9 @@ HAPPY_CASES=(
     "icon-symbol-weight-bold|star.fill|--icon-symbol-weight|bold"
     "icon-symbol-gradient-on|star.fill|--icon-symbol-gradient|on"
     "icon-fg-shadow-off|star.fill|--icon-fg-shadow|off"
+    "icon-fg-shadow-macos15|star.fill|--icon-fg-shadow|macos15"
+    "icon-fg-shadow-macos26|star.fill|--icon-fg-shadow|macos26"
+    "icon-fg-shadow-macos27|star.fill|--icon-fg-shadow|macos27"
     "icon-fg-visibility-off|star.fill|--icon-fg-visibility|off"
     # Group visibility: one flag writing both layers, and a layer flag beating it.
     "icon-visibility-off|star.fill|--icon-visibility|off"
@@ -156,6 +159,7 @@ HAPPY_CASES=(
     "badge-symbol-weight-bold|star.fill|--badge-fg|symbol:plus.circle|--badge-symbol-weight|bold"
     "badge-symbol-gradient-on|star.fill|--badge-fg|symbol:plus.circle|--badge-symbol-gradient|on"
     "badge-fg-shadow-off|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-shadow|off"
+    "badge-fg-shadow-macos15|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-shadow|macos15"
     "badge-fg-visibility-off|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-visibility|off"
 
     # ---- Badge background ----
@@ -206,6 +210,8 @@ NEGATIVE_CASES=(
     "icon-symbol-rendering-invalid|Symbol rendering mode must be one of|star.fill|--icon-symbol-rendering|invalid"
     "icon-symbol-weight-invalid|Symbol weight must be one of|star.fill|--icon-symbol-weight|notaweight"
     "icon-fg-scale-out-of-range|must be between 0.3 and 2.0|star.fill|--icon-fg-scale|5.0"
+    "icon-fg-shadow-invalid|Icon foreground shadow must be one of|star.fill|--icon-fg-shadow|macos14"
+    "badge-fg-shadow-invalid|Badge foreground shadow must be one of|star.fill|--badge-fg|symbol:plus|--badge-fg-shadow|yes"
     "icon-fg-symbol-empty|requires a symbol name||--icon-fg|symbol:"
     # An unknown name fails in both modes. System mode can only tell from the
     # render, so these two reach the appex before they fail.
@@ -746,7 +752,12 @@ IMPORT_CASES=(
     "superseded-corner-radius-token|same|--icon-symbol|star.fill|--icon-bg-corner-radius|macos11|--|--icon-symbol|star.fill|--icon-bg-corner-radius|macos15"
     "superseded-shadow-token|same|--icon-symbol|star.fill|--icon-bg-shadow|macos11|--|--icon-symbol|star.fill|--icon-bg-shadow|macos15"
     "shadow-defaults-to-macos27|same|--icon-symbol|star.fill|--|--icon-symbol|star.fill|--icon-bg-shadow|macos27"
-    "shadow-macos27-differs-from-macos26|differ|--icon-symbol|star.fill|--icon-bg-shadow|macos26|--|--icon-symbol|star.fill|--icon-bg-shadow|macos27"
+    "shadow-macos27-differs-from-macos15|differ|--icon-symbol|star.fill|--icon-bg-shadow|macos15|--|--icon-symbol|star.fill|--icon-bg-shadow|macos27"
+    # The foreground shadow is its own setting: `on` reads as the default, and its
+    # style moves the render whatever the background's style is.
+    "fg-shadow-on-is-macos27|same|--icon-symbol|star.fill|--icon-fg-shadow|on|--|--icon-symbol|star.fill|--icon-fg-shadow|macos27"
+    "fg-shadow-macos15-differs-from-macos27|differ|--icon-symbol|star.fill|--icon-fg-shadow|macos15|--|--icon-symbol|star.fill|--icon-fg-shadow|macos27"
+    "fg-shadow-survives-bg-shadow-off|differ|--icon-symbol|star.fill|--icon-bg-shadow|off|--icon-fg-shadow|off|--|--icon-symbol|star.fill|--icon-bg-shadow|off|--icon-fg-shadow|macos27"
 
     # ---- presets ----
     #

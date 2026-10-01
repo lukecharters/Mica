@@ -59,14 +59,14 @@ struct BadgeForegroundAppearanceSection: View {
             }
         }
 
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.foreground.drawsShadow)
+        shadowControl
     }
 
     /// Imported image: only shadow applies
     @ViewBuilder
     private var importedControls: some View {
-        Toggle("Shadow", systemImage: "app.shadow", isOn: $iconSettings.badge.foreground.drawsShadow)
-            .help("Toggle the drop shadow behind the badge image")
+        shadowControl
+            .help("The drop shadow behind the badge image")
     }
 
     @ViewBuilder
@@ -96,6 +96,13 @@ struct BadgeForegroundAppearanceSection: View {
                 value: $iconSettings.badge.foreground.paletteTertiaryColor
             )
         }
+    }
+
+    private var shadowControl: some View {
+        ShadowStyleControl(
+            style: $iconSettings.badge.foreground.shadowStyle,
+            defaultStyle: ForegroundSpec.badgeDefault.shadowStyle
+        )
     }
 }
 

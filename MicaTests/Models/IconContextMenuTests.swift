@@ -439,7 +439,7 @@ struct RemoveBackgroundImageTests {
         s.icon.foreground.symbolScale = 1.4
         s.icon.foreground.apply(try .testFixture())
         #expect(s.icon.foreground.source == .image)
-        #expect(s.icon.foreground.drawsShadow == false)
+        #expect(s.icon.foreground.shadowStyle == .off)
 
         s.icon.foreground.removeImage()
 
@@ -448,7 +448,7 @@ struct RemoveBackgroundImageTests {
         #expect(s.icon.foreground.symbolName == "bolt.fill")
         #expect(s.icon.foreground.source == .symbol)
         #expect(s.icon.foreground.image == nil)
-        #expect(s.icon.foreground.drawsShadow == true)
+        #expect(s.icon.foreground.shadowStyle == .macOS27)
         // Untouched by either direction — it is not one of the import's guesses.
         #expect(s.icon.foreground.symbolScale == 1.4)
     }

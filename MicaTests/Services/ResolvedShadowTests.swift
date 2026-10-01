@@ -52,10 +52,23 @@ struct ResolvedShadowTests {
     func preset_offZeroesOnlyBackground() {
         let style = ResolvedShadow.preset(for: .off)
         #expect(style.background == .none)
-        // Symbol and badge shadows stay live — they are gated solely by
-        // their own enable flags, matching the pre-refactor behavior.
         #expect(style.symbol == ResolvedShadow.macOS27.symbol)
         #expect(style.badgeBackground == ResolvedShadow.macOS27.badgeBackground)
         #expect(style.badgeSymbol == ResolvedShadow.macOS27.badgeSymbol)
+    }
+
+    // MARK: - Foreground styles
+
+    @Test("a foreground style resolves to its own preset's symbol shadows",
+          arguments: [DropShadowStyle.macOS15, .macOS26, .macOS27])
+    func foregroundStyle_resolvesItsPreset(_ style: DropShadowStyle) {
+        #expect(ResolvedShadow.symbol(for: style) == ResolvedShadow.preset(for: style).symbol)
+        #expect(ResolvedShadow.badgeSymbol(for: style) == ResolvedShadow.preset(for: style).badgeSymbol)
+    }
+
+    @Test("a foreground style of .off draws no shadow")
+    func foregroundStyle_offIsNone() {
+        #expect(ResolvedShadow.symbol(for: .off) == .none)
+        #expect(ResolvedShadow.badgeSymbol(for: .off) == .none)
     }
 }

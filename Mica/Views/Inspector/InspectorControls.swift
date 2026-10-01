@@ -287,9 +287,9 @@ struct InspectorControls: View {
                 Section("Appearance", isExpanded: $iconAppearanceExpanded) {
                     SimpleAppearanceSection(
                         symbolColor: $iconSettings.icon.foreground.color,
-                        symbolShadow: $iconSettings.icon.foreground.drawsShadow,
+                        symbolShadow: $iconSettings.icon.foreground.shadowStyle.isOn(defaultStyle: ForegroundSpec.iconDefault.shadowStyle),
                         backgroundColor: $iconSettings.icon.background.color,
-                        backgroundShadow: backgroundShadowEnabled
+                        backgroundShadow: $iconSettings.icon.background.shadowStyle.isOn(defaultStyle: IconBackgroundSpec().shadowStyle)
                     )
                     .padding(4)
                 }
@@ -320,7 +320,7 @@ struct InspectorControls: View {
                 Section("Appearance", isExpanded: $badgeAppearanceExpanded) {
                     SimpleAppearanceSection(
                         symbolColor: $iconSettings.badge.foreground.color,
-                        symbolShadow: $iconSettings.badge.foreground.drawsShadow,
+                        symbolShadow: $iconSettings.badge.foreground.shadowStyle.isOn(defaultStyle: ForegroundSpec.badgeDefault.shadowStyle),
                         backgroundColor: $iconSettings.badge.background.color,
                         backgroundShadow: $iconSettings.badge.background.drawsShadow
                     )
@@ -339,16 +339,6 @@ struct InspectorControls: View {
         Binding(
             get: { iconSettings.isGroupFullyVisible(group) },
             set: { iconSettings.setGroupVisible($0, for: group) }
-        )
-    }
-
-    /// The icon's background shadow as a plain on/off, mapping "on" to the modern
-    /// macOS 26 style — the same mapping `IconBackgroundAppearanceSection` uses when
-    /// the advanced style picker is hidden.
-    private var backgroundShadowEnabled: Binding<Bool> {
-        Binding(
-            get: { iconSettings.icon.background.shadowStyle != .off },
-            set: { iconSettings.icon.background.shadowStyle = $0 ? IconBackgroundSpec().shadowStyle : .off }
         )
     }
 

@@ -145,9 +145,9 @@ struct IconSettingsTests {
         #expect(rt == style)
     }
 
-    @Test("BackgroundShadowStyle raw-value round-trips", arguments: BackgroundShadowStyle.allCases)
-    func backgroundShadowStyle_roundTrip(_ style: BackgroundShadowStyle) throws {
-        let rt = try #require(BackgroundShadowStyle(rawValue: style.rawValue))
+    @Test("DropShadowStyle raw-value round-trips", arguments: DropShadowStyle.allCases)
+    func backgroundShadowStyle_roundTrip(_ style: DropShadowStyle) throws {
+        let rt = try #require(DropShadowStyle(rawValue: style.rawValue))
         #expect(rt == style)
     }
 

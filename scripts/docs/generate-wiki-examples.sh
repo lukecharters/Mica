@@ -379,8 +379,10 @@ generate_icon_foreground() {
         skip_group "icon-symbol-gradient" "needs macOS 26, this Mac is ${OS_MAJOR}"
     fi
 
-    emit icon-fg-shadow on  "${B[@]}" --icon-fg-shadow on
-    emit icon-fg-shadow off "${B[@]}" --icon-fg-shadow off
+    # macos26 is left out: its measured shadow is too faint to tell from off here.
+    emit icon-fg-shadow off     "${B[@]}" --icon-fg-shadow off
+    emit icon-fg-shadow macos15 "${B[@]}" --icon-fg-shadow macos15
+    emit icon-fg-shadow macos27 "${B[@]}" --icon-fg-shadow macos27
 }
 
 generate_icon_background() {
@@ -414,9 +416,9 @@ generate_icon_background() {
     emit icon-bg-corner-radius macos15  "${B[@]}" --icon-bg-corner-radius macos15
     emit icon-bg-corner-radius macos26  "${B[@]}" --icon-bg-corner-radius macos26
 
+    # macos26 is left out: its measured background shadow is the same as macos27's.
     emit icon-bg-shadow off     "${B[@]}" --icon-bg-shadow off
     emit icon-bg-shadow macos15 "${B[@]}" --icon-bg-shadow macos15
-    emit icon-bg-shadow macos26 "${B[@]}" --icon-bg-shadow macos26
     emit icon-bg-shadow macos27 "${B[@]}" --icon-bg-shadow macos27
 
     # Padding only means anything over an imported image, and the padding is at
@@ -555,8 +557,9 @@ generate_badge_foreground() {
         skip_group "badge-symbol-gradient" "needs macOS 26, this Mac is ${OS_MAJOR}"
     fi
 
-    emit badge-fg-shadow on  "${G[@]}" --badge-fg-shadow on
-    emit badge-fg-shadow off "${G[@]}" --badge-fg-shadow off
+    # The badge's three styles draw the same shadow, so only off and the default differ.
+    emit badge-fg-shadow off     "${G[@]}" --badge-fg-shadow off
+    emit badge-fg-shadow macos27 "${G[@]}" --badge-fg-shadow macos27
 }
 
 generate_badge_background() {

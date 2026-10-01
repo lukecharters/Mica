@@ -1,6 +1,6 @@
 // ResolvedShadow.swift - Shadow presets resolved to numbers
 //
-// The numeric form of the `BackgroundShadowStyle` preset a user picks. Separate
+// The numeric form of the `DropShadowStyle` preset a user picks. Separate
 // from the views that apply it so the preset table can be read without reading
 // the render code.
 import CoreGraphics
@@ -8,14 +8,13 @@ import CoreGraphics
 /// Drop-shadow parameter set for the full render pipeline. Canvas shadows
 /// (background chiclet, symbol) are base-256pt values scaled by
 /// `displaySize / 256`; badge shadows are multipliers of the badge diameter.
-/// `IconContentView`/`BadgeView` resolve their style from
-/// `settings.icon.background.shadowStyle` unless an explicit override is injected
-/// (Debug playgrounds only).
+/// Each layer picks its own `DropShadowStyle`: the icon background from
+/// `icon.background.shadowStyle`, each foreground from its own
+/// `foreground.shadowStyle`. The badge background follows the icon background's
+/// style. An injected override replaces every value (Debug playgrounds only).
 ///
-/// Named `ResolvedShadow` rather than `ShadowStyle` for two reasons: it shadowed
-/// `SwiftUI.ShadowStyle`, which forced a `typealias` workaround in the tests, and
-/// it sat one letter away from `BackgroundShadowStyle` — the *enum of presets a
-/// user picks*, which this type is the resolved numeric form of.
+/// Named `ResolvedShadow` rather than `ShadowStyle` because it shadowed
+/// `SwiftUI.ShadowStyle`, which forced a `typealias` workaround in the tests.
 struct ResolvedShadow: Equatable {
     struct CanvasShadow: Equatable {
         /// Blur radius at the 256pt reference size.
@@ -33,6 +32,8 @@ struct ResolvedShadow: Equatable {
         /// Vertical offset as a fraction of the badge diameter.
         var offsetYMultiplier: CGFloat
         var opacity: CGFloat
+
+        static let none = BadgeShadow(radiusMultiplier: 0, offsetYMultiplier: 0, opacity: 0)
     }
 
     var background: CanvasShadow
@@ -63,9 +64,9 @@ struct ResolvedShadow: Equatable {
     )
 
     /// The preset matching a settings-level shadow style. `.off` disables only
-    /// the background shadow — symbol and badge shadows remain gated solely by
-    /// their own `enable…Shadow` flags.
-    static func preset(for style: BackgroundShadowStyle) -> ResolvedShadow {
+    /// the background shadow; read a foreground's shadow through `symbol(for:)` or
+    /// `badgeSymbol(for:)`, which do honour `.off`.
+    static func preset(for style: DropShadowStyle) -> ResolvedShadow {
         switch style {
         case .off:
             var style = ResolvedShadow.macOS27
@@ -78,5 +79,15 @@ struct ResolvedShadow: Equatable {
         case .macOS27:
             return .macOS27
         }
+    }
+
+    /// The icon symbol shadow a foreground's own style draws.
+    static func symbol(for style: DropShadowStyle) -> CanvasShadow {
+        style == .off ? .none : preset(for: style).symbol
+    }
+
+    /// The badge symbol shadow a foreground's own style draws.
+    static func badgeSymbol(for style: DropShadowStyle) -> BadgeShadow {
+        style == .off ? .none : preset(for: style).badgeSymbol
     }
 }

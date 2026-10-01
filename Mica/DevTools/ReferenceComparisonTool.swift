@@ -274,7 +274,7 @@ struct ReferenceComparisonTool: View {
             )
             canvasShadowSection(
                 title: "Symbol Shadow",
-                enabled: $settings.icon.foreground.drawsShadow,
+                enabled: $settings.icon.foreground.shadowStyle.isOn(defaultStyle: ForegroundSpec.iconDefault.shadowStyle),
                 shadow: $shadow.symbol
             )
             badgeShadowSection(
@@ -284,7 +284,7 @@ struct ReferenceComparisonTool: View {
             )
             badgeShadowSection(
                 title: "Badge Symbol Shadow",
-                enabled: $settings.badge.foreground.drawsShadow,
+                enabled: $settings.badge.foreground.shadowStyle.isOn(defaultStyle: ForegroundSpec.badgeDefault.shadowStyle),
                 shadow: $shadow.badgeSymbol
             )
         }

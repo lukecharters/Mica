@@ -28,7 +28,7 @@ struct ForegroundOffsetTests {
         settings.export.size = size
         settings.export.isRetina = false
         settings.icon.foreground.symbolName = "star.fill"
-        settings.icon.foreground.drawsShadow = false
+        settings.icon.foreground.shadowStyle = .off
         settings.icon.background.isHidden = true
         return settings
     }
@@ -41,7 +41,7 @@ struct ForegroundOffsetTests {
         settings.icon.foreground.isHidden = true
         settings.icon.background.isHidden = true
         settings.badge.foreground.isHidden = false
-        settings.badge.foreground.drawsShadow = false
+        settings.badge.foreground.shadowStyle = .off
         settings.badge.background.isHidden = true
         return settings
     }

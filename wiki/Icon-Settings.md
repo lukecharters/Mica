@@ -319,22 +319,26 @@ mica-cli --icon-symbol star.fill --size 256 --icon-symbol-gradient off
 
 ### Foreground Shadow
 
-Shows or hides the shadow behind the foreground.
+Sets the shadow style behind the foreground.
+`off` hides it.
 
 | | |
 |---|---|
 | **In the app** | Icon ▸ Foreground ▸ Appearance ▸ **Shadow** |
-| **Command line** | `--icon-fg-shadow on\|off` |
+| **Command line** | `--icon-fg-shadow off\|macos15\|macos26\|macos27` |
 | **Config key** | `"icon-fg-shadow"` |
-| **Default** | `on` for SF Symbols, `off` for images |
+| **Default** | `off` for images, `macos27` otherwise |
 | **Shown when** | Mica mode. |
 
-<img src="images/icon-fg-shadow-on.png" width="128" alt="Foreground shadow on"> <img src="images/icon-fg-shadow-off.png" width="128" alt="Foreground shadow off">
+With advanced controls off, the app shows an on/off switch. On gives `macos27`.
 
-Left: `on`. Right: `off`.
+<img src="images/icon-fg-shadow-off.png" width="128" alt="Foreground shadow off"> <img src="images/icon-fg-shadow-macos15.png" width="128" alt="macOS 15 foreground shadow"> <img src="images/icon-fg-shadow-macos27.png" width="128" alt="macOS 27 foreground shadow">
+
+From left: `off`, `macos15`, `macos27`.
+The `macos26` shadow is very faint, so it is not shown.
 
 ```shell
-mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow off
+mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow macos27
 ```
 
 > **System mode ignores this.**
@@ -501,9 +505,10 @@ Sets the shadow style behind the icon background.
 | **Default** | `off` for images, `macos27` otherwise |
 | **Shown when** | Mica mode. |
 
-<img src="images/icon-bg-shadow-off.png" width="128" alt="Background shadow off"> <img src="images/icon-bg-shadow-macos15.png" width="128" alt="macOS 15 background shadow"> <img src="images/icon-bg-shadow-macos26.png" width="128" alt="macOS 26 background shadow"> <img src="images/icon-bg-shadow-macos27.png" width="128" alt="macOS 27 background shadow">
+<img src="images/icon-bg-shadow-off.png" width="128" alt="Background shadow off"> <img src="images/icon-bg-shadow-macos15.png" width="128" alt="macOS 15 background shadow"> <img src="images/icon-bg-shadow-macos27.png" width="128" alt="macOS 27 background shadow">
 
-From left: `off`, `macos15`, `macos26`, `macos27`.
+From left: `off`, `macos15`, `macos27`.
+The `macos26` shadow looks the same as `macos27`.
 
 ```shell
 mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos27

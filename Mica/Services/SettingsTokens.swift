@@ -107,7 +107,7 @@ extension IconCornerRadiusStyle: SettingsTokenConvertible {
     }
 }
 
-extension BackgroundShadowStyle: SettingsTokenConvertible {
+extension DropShadowStyle: SettingsTokenConvertible {
     var cliToken: String {
         switch self {
         case .off: return "off"
@@ -119,10 +119,13 @@ extension BackgroundShadowStyle: SettingsTokenConvertible {
 
     /// Same supersession as `IconCornerRadiusStyle`. The shadow vocabulary has a
     /// `macos27` the corner radius lacks, because the macOS 26 and 27 corners are identical.
+    /// `on` is accepted for the foreground shadow so older configurations, presets and
+    /// scripts keep loading; `off` is canonical already.
     var supersededCLITokens: [String] {
         switch self {
         case .macOS15: return ["macos11"]
-        case .off, .macOS26, .macOS27: return []
+        case .macOS27: return ["on"]
+        case .off, .macOS26: return []
         }
     }
 }
@@ -141,7 +144,7 @@ extension ExportColorSpace: SettingsTokenConvertible {
 
 /// A two-state `on|off` toggle taken as an option value (rather than a boolean
 /// flag) so the `mica-cli` surface reads consistently, e.g.
-/// `--icon-fg-shadow on` / `--icon-symbol-gradient off`. Shared by every
+/// `--icon-bg-gradient on` / `--icon-symbol-gradient off`. Shared by every
 /// foreground/background/badge toggle across `generate` and by the JSON
 /// configuration codec (which also accepts JSON booleans).
 enum ToggleState: String, CaseIterable, Sendable {

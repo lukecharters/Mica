@@ -118,7 +118,7 @@ struct IconBackgroundFlagsTests {
 
     @Test("--icon-bg-shadow takes every style, and a symbol icon defaults to macOS 27")
     func shadowStyles() throws {
-        for style in BackgroundShadowStyle.allCases {
+        for style in DropShadowStyle.allCases {
             let settings = try IconGenerationRunner()
                 .buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg-shadow", style.cliToken]))
             #expect(settings.icon.background.shadowStyle == style)

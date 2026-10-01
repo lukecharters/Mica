@@ -22,14 +22,14 @@ struct IconSettingsImportDefaultsTests {
     @Test("Importing an icon foreground sets the source, image, and turns shadow off")
     func iconForeground_appliesDefaults() {
         var settings = IconSettings()
-        settings.icon.foreground.drawsShadow = true // explicit on, mirrors struct default
+        settings.icon.foreground.shadowStyle = .macOS27
         let image = makeImage()
 
         settings.icon.foreground.apply(image)
 
         #expect(settings.icon.foreground.source == .image)
         #expect(settings.icon.foreground.image == image)
-        #expect(settings.icon.foreground.drawsShadow == false)
+        #expect(settings.icon.foreground.shadowStyle == .off)
     }
 
     // MARK: - Icon background
@@ -61,14 +61,14 @@ struct IconSettingsImportDefaultsTests {
     @Test("Importing a badge foreground sets the source, image, and turns shadow off")
     func badgeForeground_appliesDefaults() {
         var settings = IconSettings()
-        settings.badge.foreground.drawsShadow = true
+        settings.badge.foreground.shadowStyle = .macOS27
         let image = makeImage()
 
         settings.badge.foreground.apply(image)
 
         #expect(settings.badge.foreground.source == .image)
         #expect(settings.badge.foreground.image == image)
-        #expect(settings.badge.foreground.drawsShadow == false)
+        #expect(settings.badge.foreground.shadowStyle == .off)
     }
 
     // MARK: - Badge background
@@ -94,11 +94,11 @@ struct IconSettingsImportDefaultsTests {
     func helpersDoNotAffectUnrelatedShadows() {
         var settings = IconSettings()
         // A default settings struct keeps symbol shadows on.
-        #expect(settings.icon.foreground.drawsShadow == true)
-        #expect(settings.badge.foreground.drawsShadow == true)
+        #expect(settings.icon.foreground.shadowStyle == .macOS27)
+        #expect(settings.badge.foreground.shadowStyle == .macOS27)
 
         // Importing an icon background must not flip the foreground symbol shadow.
         settings.icon.background.apply(makeImage())
-        #expect(settings.icon.foreground.drawsShadow == true)
+        #expect(settings.icon.foreground.shadowStyle == .macOS27)
     }
 }

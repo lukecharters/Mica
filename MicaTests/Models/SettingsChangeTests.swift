@@ -131,7 +131,7 @@ struct SettingsChangeTests {
         case "palettePrimaryColor": spec.palettePrimaryColor = .brown
         case "paletteSecondaryColor": spec.paletteSecondaryColor = .brown
         case "paletteTertiaryColor": spec.paletteTertiaryColor = .brown
-        case "drawsShadow": spec.drawsShadow.toggle()
+        case "shadowStyle": spec.shadowStyle = .macOS15
         case "isHidden": spec.isHidden.toggle()
         default: Issue.record("no mutation for foreground leaf \(leaf)")
         }
@@ -249,7 +249,7 @@ struct SettingsChangeTests {
         #expect(SettingsChange.between(IconSettings(), typed)?.isTextFieldEdit == true)
 
         var toggled = IconSettings()
-        toggled.icon.foreground.drawsShadow.toggle()
+        toggled.icon.foreground.shadowStyle = .off
         #expect(SettingsChange.between(IconSettings(), toggled)?.isTextFieldEdit == false)
     }
 }
