@@ -40,11 +40,10 @@ struct ResolvedShadow: Equatable {
     var badgeBackground: BadgeShadow
     var badgeSymbol: BadgeShadow
 
-    // Badge shadows are identical across presets; the canvas background and
-    // symbol shadows differ — macOS 26 lightened both relative to macOS 15.
+    // Badge shadows are identical across presets.
     static let macOS26 = ResolvedShadow(
-        background: CanvasShadow(radius: 3.6, offsetY: 2.5, opacity: 0.23),
-        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.15),
+        background: CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255),
+        symbol: CanvasShadow(radius: 5, offsetY: 3.5, opacity: 0.03),
         badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
         badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
     )
@@ -58,7 +57,7 @@ struct ResolvedShadow: Equatable {
 
     static let macOS15 = ResolvedShadow(
         background: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.31),
-        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.23),
+        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.21),
         badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
         badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
     )
