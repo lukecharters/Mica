@@ -1699,6 +1699,9 @@
     "Load macOS 26" : {
 
     },
+    "Load macOS 27" : {
+
+    },
     "Loading references: %lld/%lld" : {
       "localizations" : {
         "en" : {
@@ -2412,6 +2415,12 @@
         }
       }
     },
+    "The drop shadow behind the badge image" : {
+
+    },
+    "The drop shadow behind the imported image" : {
+
+    },
     "The icon’s size in points. Settings ▸ Export sets what a new window opens at." : {
 
     },
@@ -2441,12 +2450,6 @@
 
     },
     "Tint Overlay" : {
-
-    },
-    "Toggle the drop shadow behind the badge image" : {
-
-    },
-    "Toggle the drop shadow behind the imported image" : {
 
     },
     "Total symbols:" : {

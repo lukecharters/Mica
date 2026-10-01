@@ -591,17 +591,17 @@ enum BadgePosition: String, CaseIterable, Identifiable {
 /// `.macOS15` names the design Apple shipped from macOS 11 through 15.
 enum IconCornerRadiusStyle: String, CaseIterable, Identifiable {
     case off = "Off"
-    case macOS15 = "macOS 15"
-    case macOS26 = "macOS 26"
+    case macOS15 = "15"
+    case macOS26 = "26+"
 
     var id: String { rawValue }
 }
 
 enum DropShadowStyle: String, CaseIterable, Identifiable {
     case off = "Off"
-    case macOS15 = "macOS 15"
-    case macOS26 = "macOS 26"
-    case macOS27 = "macOS 27"
+    case macOS15 = "15"
+    case macOS26 = "26"
+    case macOS27 = "27"
 
     var id: String { rawValue }
 }
