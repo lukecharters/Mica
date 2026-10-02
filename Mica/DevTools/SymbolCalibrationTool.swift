@@ -12,12 +12,40 @@ import SwiftUI
 
 // MARK: - Calibration Store
 
+/// Which calibration file the tool shows and edits.
+enum CalibrationSet: String, CaseIterable {
+    /// `symbol-calibration.json`: the hand calibration, and the production override.
+    case stored
+    /// `symbol-calibration-fitted.json`: `PixelFitter`'s output. Nothing renders from it.
+    case fitted
+
+    var fileName: String {
+        switch self {
+        case .stored: "symbol-calibration.json"
+        case .fitted: "symbol-calibration-fitted.json"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .stored: "Stored"
+        case .fitted: "Fitted"
+        }
+    }
+}
+
 @Observable
 class SymbolCalibrationStore {
     var symbolEntries: [String: SymbolCalibrationEntry] = [:]
     var containerEntries: [String: SymbolCalibrationEntry] = [:]
     var familyOverrides: [String: String] = [:]
-    private let fileURL: URL
+    private(set) var activeSet: CalibrationSet = .stored
+    private let directory: URL
+    private var fileURL: URL { url(of: activeSet) }
+
+    func url(of set: CalibrationSet) -> URL {
+        directory.appendingPathComponent(set.fileName)
+    }
 
     /// The three container shapes and their key under `containers` in
     /// symbol-calibration.json. Key and label coincide — see `ContainerType.containerKey`.
@@ -41,12 +69,49 @@ class SymbolCalibrationStore {
             uniquingKeysWith: { first, _ in first })
     }
 
-    init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("Mica", isDirectory: true)
+    /// `directory` defaults to Application Support/Mica; tests pass a temporary one.
+    init(directory: URL? = nil) {
+        let dir = directory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Mica", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        self.fileURL = dir.appendingPathComponent("symbol-calibration.json")
+        self.directory = dir
         load()
+    }
+
+    /// Switches the tool to `set`. A fitted set that does not exist yet starts with no
+    /// symbols and the stored set's containers and family overrides.
+    func activate(_ set: CalibrationSet) {
+        guard set != activeSet else { return }
+        let carried = (containerEntries, familyOverrides)
+        activeSet = set
+        symbolEntries = [:]
+        if set == .fitted && !FileManager.default.fileExists(atPath: fileURL.path) {
+            (containerEntries, familyOverrides) = carried
+            save()
+        } else {
+            containerEntries = [:]
+            familyOverrides = [:]
+            load()
+        }
+    }
+
+    /// The stored set as it is on disk (or as Mica ships it), whichever set is active:
+    /// where a fit starts from.
+    func storedCalibration() -> SymbolCalibration? {
+        let url = FileManager.default.fileExists(atPath: url(of: .stored).path)
+            ? url(of: .stored)
+            : Bundle.main.url(forResource: "symbol-calibration", withExtension: "json")
+        guard let url, let data = try? Data(contentsOf: url),
+              var file = try? JSONDecoder().decode(SymbolCalibration.self, from: data) else { return nil }
+        file.symbols = SymbolCatalog.bundled.rekeyedToCurrentNames(file.symbols)
+        return file
+    }
+
+    /// A container variant shares its shape's entry in the stored set. The fitted set
+    /// holds one per symbol, which tier 1 of `SymbolSizingService` prefers anyway.
+    private func usesContainerEntry(_ containerKey: String?) -> Bool {
+        guard activeSet == .stored, let containerKey else { return false }
+        return Self.containerKeys.contains(containerKey)
     }
 
     static func isContainer(containerKey: String) -> Bool {
@@ -54,14 +119,14 @@ class SymbolCalibrationStore {
     }
 
     func entry(forSymbol symbol: String, containerKey: String?) -> SymbolCalibrationEntry? {
-        if let dk = containerKey, Self.containerKeys.contains(dk) {
+        if usesContainerEntry(containerKey), let dk = containerKey {
             return containerEntries[dk]
         }
         return symbolEntries[symbol]
     }
 
     func setEntry(_ entry: SymbolCalibrationEntry, forSymbol symbol: String, containerKey: String?) {
-        if let dk = containerKey, Self.containerKeys.contains(dk) {
+        if usesContainerEntry(containerKey), let dk = containerKey {
             containerEntries[dk] = entry
         } else {
             symbolEntries[symbol] = entry
@@ -147,6 +212,7 @@ class SymbolCalibrationStore {
 
     private func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            guard activeSet == .stored else { return }
             if !seedFromBundledCalibration() {
                 migrateFromDimCalibration()
             }
@@ -174,6 +240,7 @@ class SymbolCalibrationStore {
     /// whenever the developer tools are on. It keeps the `.backup.json` copy, so
     /// a Restore is recoverable too.
     func restoreBundledCalibration() {
+        activate(.stored)
         let backupURL = fileURL.deletingPathExtension().appendingPathExtension("backup.json")
         if FileManager.default.fileExists(atPath: fileURL.path) {
             try? FileManager.default.removeItem(at: backupURL)
@@ -192,7 +259,7 @@ class SymbolCalibrationStore {
     /// True while an Application Support copy exists — i.e. while
     /// `SymbolSizingService` would prefer it over the bundled one.
     var hasOverride: Bool {
-        FileManager.default.fileExists(atPath: fileURL.path)
+        FileManager.default.fileExists(atPath: url(of: .stored).path)
     }
 
     /// Seeds the working copy from the bundled symbol-calibration.json
@@ -214,8 +281,7 @@ class SymbolCalibrationStore {
     // MARK: - Migration from dim-calibration.json
 
     private func migrateFromDimCalibration() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("Mica", isDirectory: true)
+        let dir = directory
         let dimCalURL = dir.appendingPathComponent("dim-calibration.json")
         let metricsURL = dir.appendingPathComponent("symbol_metrics.json")
 
@@ -297,14 +363,10 @@ private struct DimIconView: View {
     let weight: Font.Weight
     let symbolOnly: Bool
 
-    private let baseSize: CGFloat = 256
-    private let baseCornerRadiusLG: CGFloat = 53
-    private let baseBackgroundInset: CGFloat = 25
-
-    private var scale: CGFloat { displaySize / baseSize }
-    private var backgroundInset: CGFloat { baseBackgroundInset * scale }
-    private var cornerRadius: CGFloat { baseCornerRadiusLG * scale }
-    var enclosureSize: CGFloat { displaySize - (2 * backgroundInset) }
+    private var scale: CGFloat { displaySize / CalibrationIconGeometry.baseSize }
+    private var backgroundInset: CGFloat { CalibrationIconGeometry.baseInset * scale }
+    private var cornerRadius: CGFloat { CalibrationIconGeometry.baseCornerRadius * scale }
+    var enclosureSize: CGFloat { CalibrationIconGeometry.enclosure(forDisplaySize: displaySize) }
 
     private var fontSize: CGFloat { enclosureSize * multiplier }
     private var xPx: CGFloat { enclosureSize * xOffset }
@@ -522,6 +584,8 @@ struct SymbolCalibrationTool: View {
     /// reviewing an outlier and fixing it were two tools apart. Drives the
     /// Outliers filter. See `DevTools/BoxFitPredictions.swift`.
     @State private var boxFit = BoxFitReview()
+    @State private var pixelFit = PixelFitRun()
+    @AppStorage("pixelFitThreshold") private var pixelFitThreshold = 0.85
 
     /// Whether accepting a prediction also writes its advisory content-centring
     /// Y offset. Off by default: the multiplier is the rule's output, the offset
@@ -866,6 +930,9 @@ struct SymbolCalibrationTool: View {
             if !measuring { rebuildOutlierSnapshot() }
         }
         .onChange(of: boxFit.threshold) { _, _ in rebuildOutlierSnapshot() }
+        .onChange(of: pixelFit.isRunning) { _, running in
+            if !running { loadCurrentMember() }
+        }
         .onChange(of: selectedIndex) { _, _ in
             memberIndex = firstRelevantMemberIndex()
             loadCurrentMember()
@@ -973,6 +1040,8 @@ struct SymbolCalibrationTool: View {
                 }
                 Divider()
                 progressInfo
+                Divider()
+                pixelFitSection
                 Divider()
                 boxFitSection
                 Divider()
@@ -1408,6 +1477,166 @@ struct SymbolCalibrationTool: View {
                 }
             }
         }
+    }
+
+    // MARK: - Pixel Fit
+
+    private var calibrationSetBinding: Binding<CalibrationSet> {
+        Binding(
+            get: { store.activeSet },
+            set: { set in
+                store.activate(set)
+                rebuildFamilies()
+            })
+    }
+
+    /// Fits symbols to Apple's macOS rendering, writing into the fitted set, and switches
+    /// between that and the stored set for comparison.
+    private var pixelFitSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Pixel Fit")
+                    .font(.headline)
+                Spacer()
+                Picker("Calibration", selection: calibrationSetBinding) {
+                    ForEach(CalibrationSet.allCases, id: \.self) { set in
+                        Text(set.label).tag(set)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 260)
+                .disabled(pixelFit.isRunning)
+            }
+
+            if store.activeSet == .stored {
+                Text("Fits each symbol's size, offset and weight to Apple's rendering on this Mac. "
+                     + "Switch to Fitted to run it; the stored calibration is left alone.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                pixelFitControls
+            }
+
+            if PixelFitRun.systemIsDark {
+                Label("The Mac is in dark mode, which changes Apple's rendering. Switch to light mode to fit.",
+                      systemImage: "moon.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+            if let message = pixelFit.message {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pixelFitControls: some View {
+        let catalog = SymbolCatalog.bundled.currentNames(on: .running)
+        let fitted = store.symbolEntries.values.filter { $0.source == PixelFitter.source }
+        let remaining = catalog.filter { store.symbolEntries[$0] == nil }
+
+        Text("Nothing renders from the fitted set. \(fitted.count) of \(catalog.count) symbols fitted, "
+             + "\(fitted.filter { $0.status == "needs-review" }.count) flagged for review.")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+
+        if pixelFit.isRunning {
+            VStack(alignment: .leading, spacing: 2) {
+                ProgressView(value: pixelFit.progress)
+                Text(pixelFitProgressText)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        HStack(spacing: 8) {
+            if pixelFit.isRunning {
+                Button("Stop") { pixelFit.cancel() }
+                    .controlSize(.small)
+            } else {
+                Button(remaining.count == catalog.count ? "Fit Catalog" : "Fit Remaining \(remaining.count)") {
+                    runPixelFit(on: remaining)
+                }
+                .controlSize(.small)
+                .disabled(remaining.isEmpty)
+
+                Button("Refit This Symbol") {
+                    if let symbol = currentSymbol { runPixelFit(on: [symbol]) }
+                }
+                .controlSize(.small)
+                .disabled(currentSymbol == nil)
+            }
+            Spacer()
+            Button("Show in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting([store.url(of: .fitted)])
+            }
+            .controlSize(.small)
+        }
+
+        HStack(spacing: 10) {
+            Text("Review below")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Slider(value: $pixelFitThreshold, in: 0.5...0.99, step: 0.01)
+                .frame(width: 130)
+            Text(verbatim: String(format: "%.2f", pixelFitThreshold))
+                .font(.caption.monospacedDigit())
+            Button("Re-flag") { reflagFittedEntries() }
+                .controlSize(.small)
+                .disabled(pixelFit.isRunning)
+                .help("Mark fitted entries scoring below the threshold as needs-review, and the rest calibrated")
+        }
+
+        if let symbol = currentSymbol, let entry = store.entry(forSymbol: symbol, containerKey: currentContainerKey) {
+            if let score = entry.fitScore, entry.source == PixelFitter.source {
+                Text(verbatim: String(format: "This symbol: score %.3f, %@", score, entry.status))
+                    .font(.caption.monospacedDigit())
+            } else {
+                Text("This symbol: hand-edited in the fitted set")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var pixelFitProgressText: String {
+        var text = "\(pixelFit.processed) / \(pixelFit.total)"
+        if let symbol = pixelFit.currentSymbol { text += "  \(symbol)" }
+        if let remaining = pixelFit.estimatedRemaining {
+            text += "  ~" + Duration.seconds(remaining).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+        }
+        if pixelFit.flagged + pixelFit.unresolved + pixelFit.failed > 0 {
+            text += "  flagged \(pixelFit.flagged), unresolved \(pixelFit.unresolved), failed \(pixelFit.failed)"
+        }
+        return text
+    }
+
+    private func runPixelFit(on symbols: [String]) {
+        let stored = store.storedCalibration()
+        let containerKeys = symbolContainerKeys
+        pixelFit.start(
+            symbols: symbols,
+            threshold: pixelFitThreshold,
+            start: { symbol in
+                let entry = stored?.symbols[symbol]
+                    ?? containerKeys[symbol].flatMap { stored?.containers[$0] }
+                return PixelFitter.Values(
+                    multiplier: entry?.multiplier ?? 0.65, xOffset: entry?.xOffset ?? 0,
+                    yOffset: entry?.yOffset ?? 0, weight: entry?.weight ?? "regular")
+            },
+            write: { symbol, entry in store.symbolEntries[symbol] = entry },
+            checkpoint: { store.save() })
+    }
+
+    private func reflagFittedEntries() {
+        for (symbol, entry) in store.symbolEntries {
+            guard entry.source == PixelFitter.source, let score = entry.fitScore else { continue }
+            store.symbolEntries[symbol]?.status = PixelFitter.status(forScore: score, threshold: pixelFitThreshold)
+        }
+        store.save()
+        loadCurrentMember()
     }
 
     // MARK: - Box-Fit Review
@@ -2942,12 +3171,15 @@ struct SymbolCalibrationTool: View {
 
     private func saveCurrentValues() {
         guard let symbol = currentSymbol else { return }
-        guard let existingStatus = store.entry(forSymbol: symbol, containerKey: currentContainerKey)?.status else { return }
+        guard let existing = store.entry(forSymbol: symbol, containerKey: currentContainerKey) else { return }
         let entry = SymbolCalibrationEntry(
             multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
             weight: SymbolCalibrationEntry.weightToken(for: weight),
-            status: existingStatus
+            status: existing.status
         )
+        // Loading a symbol sets every slider, and each one's onChange lands here: only a
+        // changed value is an edit, or viewing an entry would strip its source and score.
+        guard !entry.hasSameValues(as: existing) else { return }
         store.setEntry(entry, forSymbol: symbol, containerKey: currentContainerKey)
     }
 
