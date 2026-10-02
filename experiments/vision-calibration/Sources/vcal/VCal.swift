@@ -7,6 +7,8 @@ private let usage = """
       vcal render <symbol> [m x y w]     write Apple's reference, Mica's render and the model's views
       vcal perceive [options]            can the model tell which way a known error runs?
       vcal calibrate [options]           one-shot, iterative and pixel-matching runs against hand values
+      vcal review [--count N | --symbols a,b] [--colours blue+white]
+                                         per-symbol sheets: Apple's icon beside the fitted weight and the stored one
       vcal precision [--colours blue+white,black+white] [--methods threshold,normalised] [--size 1024]
                                          how precisely the pixel fit lands: synthetic known answers, colour consistency
 
@@ -64,6 +66,17 @@ struct VCal {
                                                       appearance: positional.count > 3 && positional[3] == "dark" ? .darkAqua : .aqua,
                                                       cacheDirectory: packageDirectory.appendingPathComponent(".cache/refs"))
                 print("\(image.width)x\(image.height)")
+            case "review":
+                let samples = try GroundTruth.sample(from: calibrationFile, count: Int(options["count"] ?? "") ?? 12,
+                                                     seed: UInt64(options["seed"] ?? "") ?? 1,
+                                                     only: options["symbols"]?.split(separator: ",").map(String.init) ?? [])
+                let colours = (options["colours"] ?? "blue+white").split(separator: "+").map(String.init)
+                let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "")
+                let out = packageDirectory.appendingPathComponent("runs/review-\(stamp)")
+                try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+                try Review.run(samples: samples, enclosure: colours[0], symbolColour: colours.count > 1 ? colours[1] : "white",
+                               cacheDirectory: packageDirectory.appendingPathComponent(".cache/refs"), outputDirectory: out)
+                print(out.appendingPathComponent("index.html").path)
             case "precision":
                 try precision(options: options)
             case "perceive", "calibrate":

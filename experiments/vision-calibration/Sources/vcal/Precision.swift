@@ -284,7 +284,8 @@ enum CoverageFit {
         guard let targetBox = target.box else { return Result(params: start, iou: 0, renders: 0) }
         var best = Result(params: start, iou: -1, renders: 0)
         for weightIndex in weights ?? Array(IconParams.weightTokens.indices) {
-            var p = start.withWeight(index: weightIndex)
+            let unaligned = start.withWeight(index: weightIndex)
+            var p = unaligned
             if let b = render(p)?.box {
                 let ratioH = Double(targetBox.maxY - targetBox.minY + 1) / Double(b.maxY - b.minY + 1)
                 let ratioW = Double(targetBox.maxX - targetBox.minX + 1) / Double(b.maxX - b.minX + 1)
@@ -295,6 +296,9 @@ enum CoverageFit {
                 p.yOffset += (Double(targetBox.minY + targetBox.maxY) - Double(b.minY + b.maxY)) / 2 / target.enclosurePixels
             }
             var current = score(p)
+            // Box alignment misleads on a translucent layer, which sits either side of the 0.5 cut.
+            let unalignedScore = score(unaligned)
+            if unalignedScore > current { p = unaligned; current = unalignedScore }
             var steps = [0.01, 0.005, 0.005]
             while steps.max()! > 0.00025 {
                 var improved = false
