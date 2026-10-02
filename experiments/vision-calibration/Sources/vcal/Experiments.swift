@@ -348,14 +348,14 @@ enum Calibration {
 
     /// No model: line up the glyph masks' bounding boxes, then coordinate-descend on IoU, once per weight.
     @MainActor
-    static func pixelFit(_ h: Harness, _ sample: Sample, reference: GlyphMask, start: IconParams) -> (IconParams, Int) {
+    static func pixelFit(_ h: Harness, _ sample: Sample, reference: GlyphMask, start: IconParams, weights: [Int]? = nil) -> (IconParams, Int) {
         var renders = 0
         func score(_ p: IconParams) -> Double {
             renders += 1
             return h.candidate(sample.symbol, p)?.1.iou(reference) ?? 0
         }
         var best = start, bestScore = -1.0
-        for weightIndex in IconParams.weightTokens.indices {
+        for weightIndex in weights ?? Array(IconParams.weightTokens.indices) {
             var p = start.withWeight(index: weightIndex)
             if let m = h.candidate(sample.symbol, p)?.1 {
                 renders += 1

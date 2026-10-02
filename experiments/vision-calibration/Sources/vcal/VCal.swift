@@ -7,6 +7,8 @@ private let usage = """
       vcal render <symbol> [m x y w]     write Apple's reference, Mica's render and the model's views
       vcal perceive [options]            can the model tell which way a known error runs?
       vcal calibrate [options]           one-shot, iterative and pixel-matching runs against hand values
+      vcal precision [--colours blue+white,black+white] [--methods threshold,normalised] [--size 1024]
+                                         how precisely the pixel fit lands: synthetic known answers, colour consistency
 
     options:
       --model ondevice|pcc        (ondevice)
@@ -56,6 +58,14 @@ struct VCal {
                 print(await ModelRunner.textCheck())
             case "render":
                 try render(positional)
+            case "reference":
+                guard positional.count >= 3 else { throw HarnessError("reference <symbol> <enclosure> <symbol colour> [light|dark]") }
+                let image = try AppexReference.render(positional[0], enclosure: positional[1], symbolColour: positional[2],
+                                                      appearance: positional.count > 3 && positional[3] == "dark" ? .darkAqua : .aqua,
+                                                      cacheDirectory: packageDirectory.appendingPathComponent(".cache/refs"))
+                print("\(image.width)x\(image.height)")
+            case "precision":
+                try precision(options: options)
             case "perceive", "calibrate":
                 try await experiment(command, options: options, flags: flags)
             default:
@@ -83,6 +93,30 @@ struct VCal {
         try PNG.write(Composite.pair(reference: reference, candidate: candidate), to: out.appendingPathComponent("pair.png"))
         print("\(params.short)  IoU \(f3(rm.iou(cm)))  reference box \(rm.width)×\(rm.height) at (\(rm.boxCentreX), \(rm.boxCentreY))  mica box \(cm.width)×\(cm.height) at (\(cm.boxCentreX), \(cm.boxCentreY))")
         print(out.path)
+    }
+
+    @MainActor
+    static func precision(options: [String: String]) throws {
+        let samples = try GroundTruth.sample(from: calibrationFile, count: Int(options["count"] ?? "") ?? 8,
+                                             seed: UInt64(options["seed"] ?? "") ?? 1,
+                                             only: options["symbols"]?.split(separator: ",").map(String.init) ?? [])
+        let combos = (options["colours"] ?? "blue+white,black+white").split(separator: ",").map { pair -> (String, String) in
+            let parts = pair.split(separator: "+").map(String.init)
+            return (parts[0], parts.count > 1 ? parts[1] : "white")
+        }
+        let methods = (options["methods"] ?? "threshold,normalised").split(separator: ",").compactMap { FitMethod(rawValue: String($0)) }
+        let size = Int(options["size"] ?? "") ?? 1024
+        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "")
+        let out = packageDirectory.appendingPathComponent("runs/precision-\(size)-\(stamp)")
+        try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        print("precision: \(samples.count) symbols, \(combos.count) colour combinations, size \(size) → \(out.path)")
+        let began = Date()
+        var report = "# precision\n\nsize \(size), symbols: \(samples.map(\.symbol).joined(separator: ", "))\n\n"
+        report += try PrecisionExperiment.run(samples: samples, combos: combos, methods: methods, size: size,
+                                              cacheDirectory: packageDirectory.appendingPathComponent(".cache/refs"), outputDirectory: out)
+        report += "\nWall time \(String(format: "%.0f", Date().timeIntervalSince(began)))s.\n"
+        try report.write(to: out.appendingPathComponent("summary.md"), atomically: true, encoding: .utf8)
+        print("\n" + report)
     }
 
     @MainActor

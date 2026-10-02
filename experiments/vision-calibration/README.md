@@ -28,7 +28,13 @@ swift build
 .build/debug/vcal render figure.tennis 0.65 0 0 regular   # eyeball the inputs
 .build/debug/vcal perceive --reference mica  # can it tell which way an error runs?
 .build/debug/vcal calibrate                  # one-shot vs iterative vs pixel fit
+swift build -c release && .build/release/vcal precision --colours blue+white,black+white,white+black,white+blue
 ```
+
+**References follow the system appearance.** In dark mode IconServices draws the dark variant (a
+near-black enclosure with the glyph in the enclosure colour), and neither the drawing appearance
+nor `NSApp.appearance` changes that. References are cached under `.cache/refs/light/` or `dark/`,
+and a render is refused when the system is not in the mode asked for. Every result below is light mode.
 
 Each run writes `runs/<name>/summary.md`, `results.json`, and the model's input images for
 the first few symbols.
@@ -94,3 +100,40 @@ are stale on 27. It is weak on weight: it prefers medium where the hand values s
 (Apple's 27 strokes measure closer to medium), and the IoU difference is small enough that a person
 should decide. If calibration is automated, this is the place to start, with a vision model
 at most as a second opinion on weight once a larger one is reachable.
+
+## Pixel fit precision, 2026-10-02
+
+`vcal precision`, 8 symbols. Mica's side is the glyph's exact alpha at 1024 px; two ways of
+reading Apple's side:
+
+- `threshold`: one global cut halfway between enclosure and glyph level, then binary IoU.
+- `normalised`: each pixel unmixed between the darkest and brightest values within ~10 px,
+  so a gradient across the glyph cancels; soft IoU.
+
+**Synthetic references with known answers** (Mica's glyph shaded top to bottom, up to
+255 → 140, optionally blurred): both methods recover the multiplier to a median 0.0001 and the
+offsets to about 0.0004 (0.3 px at 1024), with the weight right every time. The gradient does
+not move the fitted edge.
+
+**Apple's renders in four colour combinations** (blue+white, black+white, white+black,
+white+blue). The glyph's geometry should not depend on colour, so disagreement between
+combinations is error the method adds:
+
+| method | median spread, m | max spread, m | median spread, x / y | same weight in every combination | s per fit |
+|---|---|---|---|---|---|
+| threshold | 0.0016 | 0.0038 | 0.0005 / 0.0003 | 88% | 3.4 |
+| normalised | 0.0008 | 0.0025 | 0.0003 / 0.0005 | 100% | 0.5 |
+
+The two methods land within 0.0005 of each other in every combination.
+
+So **higher contrast colours do not help, and the liquid glass gradient needs no special
+compensation.** Every combination gives the same answer to about a tenth of the hand
+calibration's 0.005–0.01 grain. What mattered was how the first harness cut the mask: a fixed
+`min(r,g,b) > 175` rule at 512 px, applied differently to each side. `normalised` is a little
+tighter and much faster, so it is the one to keep.
+
+**Open: weight.** The fits pick medium, semibold or bold for five of the eight symbols where
+the hand values say regular, and they pick the same heavier weight in every colour combination.
+Synthetic tests recover the weight every time, so the method can tell weights apart; whether
+Apple draws these glyphs heavier, or a heavier weight at a slightly different size just overlaps
+better, is not yet settled.

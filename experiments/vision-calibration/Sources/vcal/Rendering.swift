@@ -81,9 +81,18 @@ enum MicaRenderer {
 enum AppexReference {
     static let sourceBundle = URL(fileURLWithPath: "/System/Library/ExtensionKit/Extensions/Storage.appex")
 
-    static func render(_ symbol: String, cacheDirectory: URL) throws -> CGImage {
-        let cached = cacheDirectory.appendingPathComponent("\(symbol).png")
+    /// IconServices draws the variant for the *system* appearance: in dark mode a blue enclosure
+    /// becomes a dark one with a blue glyph. Neither the drawing appearance nor the process's
+    /// `NSApp.appearance` changes that, so a render is refused when the system does not match.
+    static func render(_ symbol: String, enclosure: String = "blue", symbolColour: String = "white",
+                       appearance: NSAppearance.Name = .aqua, cacheDirectory: URL) throws -> CGImage {
+        let mode = appearance == .darkAqua ? "dark" : "light"
+        let cached = cacheDirectory.appendingPathComponent("\(mode)/\(symbol)@\(enclosure)+\(symbolColour).png")
         if let image = PNG.read(cached) { return image }
+        let systemMode = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark" ? "dark" : "light"
+        guard systemMode == mode else {
+            throw HarnessError("asked for a \(mode) reference but the system is in \(systemMode) mode; switch it in System Settings ▸ Appearance")
+        }
 
         let workspace = FileManager.default.temporaryDirectory
             .appendingPathComponent("vcal-" + UUID().uuidString).appendingPathExtension("appex")
@@ -97,8 +106,8 @@ enum AppexReference {
               var config = icons["ISGraphicIconConfiguration"] as? [String: Any]
         else { throw HarnessError("Storage.appex Info.plist has no ISGraphicIconConfiguration") }
         config["ISSymbolName"] = symbol
-        config["ISEnclosureColor"] = "blue"
-        config["ISSymbolColor"] = "white"
+        config["ISEnclosureColor"] = enclosure
+        config["ISSymbolColor"] = symbolColour
         icons["ISGraphicIconConfiguration"] = config
         plist["CFBundleIcons"] = icons
         try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: plistURL)
