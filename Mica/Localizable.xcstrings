@@ -351,6 +351,9 @@
     "Calibrated:" : {
 
     },
+    "Calibration" : {
+
+    },
     "Cancel" : {
 
     },
@@ -1464,6 +1467,12 @@
     "Filter by symbol name or family..." : {
 
     },
+    "Fit Catalog" : {
+
+    },
+    "Fit Remaining %lld" : {
+
+    },
     "Font size: %@ pt (enclosure: %@ pt)" : {
       "localizations" : {
         "en" : {
@@ -1715,6 +1724,9 @@
     "Mark calibrated + advance member" : {
 
     },
+    "Mark fitted entries scoring below the threshold as needs-review, and the rest calibrated" : {
+
+    },
     "Mark Shown as Needs Review" : {
 
     },
@@ -1961,6 +1973,9 @@
     "Pinch to zoom, drag to pan, double-click to reset" : {
 
     },
+    "Pixel Fit" : {
+
+    },
     "Position" : {
 
     },
@@ -1995,6 +2010,9 @@
 
     },
     "Progress" : {
+
+    },
+    "Re-flag" : {
 
     },
     "Recenter" : {
@@ -2050,6 +2068,9 @@
     "Reference Comparison" : {
 
     },
+    "Refit This Symbol" : {
+
+    },
     "Regular" : {
 
     },
@@ -2096,6 +2117,9 @@
 
     },
     "Reveal in Finder" : {
+
+    },
+    "Review below" : {
 
     },
     "Right-click member" : {
@@ -2183,6 +2207,9 @@
 
     },
     "Show All Presets…" : {
+
+    },
+    "Show in Finder" : {
 
     },
     "Show Inspector" : {
@@ -2289,6 +2316,9 @@
       }
     },
     "Stay: %lld" : {
+
+    },
+    "Stop" : {
 
     },
     "Symbol" : {
@@ -2424,6 +2454,9 @@
     "The icon’s size in points. Settings ▸ Export sets what a new window opens at." : {
 
     },
+    "The Mac is in dark mode, which changes Apple's rendering. Switch to light mode to fit." : {
+
+    },
     "The rule hit its clamp, so it had less confidence for this shape" : {
 
     },
@@ -2444,6 +2477,9 @@
       }
     },
     "This export only — the window’s settings are unchanged." : {
+
+    },
+    "This symbol: hand-edited in the fitted set" : {
 
     },
     "Tight bounds:" : {
