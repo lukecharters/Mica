@@ -161,10 +161,15 @@ by smearing over them. `vcal pieces` tests a second pass:
 | allergens | bold 0.718 | medium 0.914 (bold 0.767) |
 | allergens.fill | bold 0.864 | medium 0.961 (bold 0.909) |
 
-Sweep: the 125 symbols below 0.85 plus 1,500 random (seed 7), 1,520 in all. 52 were flagged at
+Sweep: the 24 fitted symbols below 0.85 plus 1,500 random (seed 7), 1,520 in all. 52 were flagged at
 step 2; step 4 kept the first pass for 50 of them, so **only the two `allergens` symbols changed**.
 Without step 4 the 50 drifted slightly, except `iphone.gen2`, whose frame merges with another part
 at bold: the refit masked the whole frame and visibly grew the symbol.
+
+The first full fit had flagged 125 below 0.85, not 24. Between the two, the user accepted most of
+them in the calibration tool, and accepting a symbol then rewrote it as a hand edit with no
+`fitScore`, which `--low` does not select. About 100 of the 125 were therefore left out of the
+sweep. Accepting now keeps the score and sets `reviewed`.
 
 Two shapes that must not count as misplaced, both seen: a translucent layer that Mica's alpha
 leaves under the 0.5 cut (no overlapping piece, so missing rather than misplaced:
