@@ -1587,7 +1587,7 @@ struct SymbolCalibrationTool: View {
             Button("Re-flag") { reflagFittedEntries() }
                 .controlSize(.small)
                 .disabled(pixelFit.isRunning)
-                .help("Mark fitted entries scoring below the threshold as needs-review, and the rest calibrated")
+                .help("Mark fitted entries scoring below the threshold as needs-review, and the rest calibrated. Entries you have marked yourself keep their status.")
         }
 
         if let symbol = currentSymbol, let entry = store.entry(forSymbol: symbol, containerKey: currentContainerKey) {
@@ -1632,10 +1632,7 @@ struct SymbolCalibrationTool: View {
     }
 
     private func reflagFittedEntries() {
-        for (symbol, entry) in store.symbolEntries {
-            guard entry.source == PixelFitter.source, let score = entry.fitScore else { continue }
-            store.symbolEntries[symbol]?.status = PixelFitter.status(forScore: score, threshold: pixelFitThreshold)
-        }
+        store.symbolEntries = PixelFitter.reflagged(store.symbolEntries, threshold: pixelFitThreshold)
         store.save()
         loadCurrentMember()
     }
@@ -3062,11 +3059,16 @@ struct SymbolCalibrationTool: View {
     private func markCalibratedAndAdvance() {
         let entry = currentEntry(status: "calibrated")
         lastCommittedEntry = entry
-        commitAndAdvance(entry)
+        commitAndAdvance(markedOverCurrent(entry))
     }
 
     private func markSkippedAndAdvance() {
-        commitAndAdvance(currentEntry(status: "skipped"))
+        commitAndAdvance(markedOverCurrent(currentEntry(status: "skipped")))
+    }
+
+    private func markedOverCurrent(_ entry: SymbolCalibrationEntry) -> SymbolCalibrationEntry {
+        guard let symbol = currentSymbol else { return entry }
+        return PixelFitter.marked(entry, over: store.entry(forSymbol: symbol, containerKey: currentContainerKey))
     }
 
     /// Writes the last Space/Tab entry to the current symbol, whatever its sliders

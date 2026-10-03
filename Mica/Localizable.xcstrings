@@ -1724,7 +1724,7 @@
     "Mark calibrated + advance member" : {
 
     },
-    "Mark fitted entries scoring below the threshold as needs-review, and the rest calibrated" : {
+    "Mark fitted entries scoring below the threshold as needs-review, and the rest calibrated. Entries you have marked yourself keep their status." : {
 
     },
     "Mark Shown as Needs Review" : {

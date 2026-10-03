@@ -364,6 +364,26 @@ enum PixelFitter {
         score >= threshold ? "calibrated" : "needs-review"
     }
 
+    /// Every unreviewed `pixel-fit` entry's status set from its score; everything else as it was.
+    static func reflagged(_ entries: [String: SymbolCalibrationEntry],
+                          threshold: Double) -> [String: SymbolCalibrationEntry] {
+        entries.mapValues { entry in
+            guard entry.source == source, entry.reviewed != true, let score = entry.fitScore else { return entry }
+            var flagged = entry
+            flagged.status = status(forScore: score, threshold: threshold)
+            return flagged
+        }
+    }
+
+    /// What marking a symbol writes: a `pixel-fit` entry whose values the edit leaves unchanged
+    /// keeps its source and score and is marked reviewed; anything else is a hand edit.
+    static func marked(_ edited: SymbolCalibrationEntry, over existing: SymbolCalibrationEntry?) -> SymbolCalibrationEntry {
+        guard var kept = existing, kept.source == source, kept.hasSameValues(as: edited) else { return edited }
+        kept.status = edited.status
+        kept.reviewed = true
+        return kept
+    }
+
     static func entry(for result: Result, threshold: Double) -> SymbolCalibrationEntry {
         SymbolCalibrationEntry(
             multiplier: result.values.multiplier, xOffset: result.values.xOffset, yOffset: result.values.yOffset,

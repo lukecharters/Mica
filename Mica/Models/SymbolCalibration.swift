@@ -46,6 +46,9 @@ struct SymbolCalibrationEntry: Codable, Equatable {
     /// Soft IoU of a `pixel-fit` entry against Apple's rendering when it was fitted;
     /// nil for every other source.
     var fitScore: Double? = nil
+    /// True when a person set a `pixel-fit` entry's status, which Re-flag then leaves alone;
+    /// nil otherwise.
+    var reviewed: Bool? = nil
 
     /// The weight of a symbol with no calibration entry, and of an unknown token.
     static let defaultWeight: Font.Weight = .medium

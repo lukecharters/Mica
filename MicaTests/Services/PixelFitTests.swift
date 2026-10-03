@@ -177,6 +177,55 @@ struct PixelFitPartsTests {
 }
 
 @Suite(.tags(.unit))
+@MainActor
+struct PixelFitReviewTests {
+    static let fitted = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0.01, yOffset: 0, weight: "medium",
+                                               status: "needs-review", source: PixelFitter.source, fitScore: 0.7)
+
+    @Test func markingAFittedEntryUnchangedKeepsItsScoreAndMarksItReviewed() {
+        let edited = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0.01, yOffset: 0, weight: "medium", status: "calibrated")
+        let marked = PixelFitter.marked(edited, over: Self.fitted)
+        #expect(marked.status == "calibrated")
+        #expect(marked.source == PixelFitter.source)
+        #expect(marked.fitScore == 0.7)
+        #expect(marked.reviewed == true)
+    }
+
+    @Test func markingAFittedEntryWithChangedValuesIsAHandEdit() {
+        let edited = SymbolCalibrationEntry(multiplier: 0.62, xOffset: 0.01, yOffset: 0, weight: "medium", status: "calibrated")
+        #expect(PixelFitter.marked(edited, over: Self.fitted) == edited)
+    }
+
+    @Test func markingAHandEntryIsAHandEdit() {
+        let hand = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0.01, yOffset: 0, weight: "medium", status: "needs-review")
+        let edited = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0.01, yOffset: 0, weight: "medium", status: "calibrated")
+        #expect(PixelFitter.marked(edited, over: hand) == edited)
+        #expect(PixelFitter.marked(edited, over: nil) == edited)
+    }
+
+    @Test func reflagSetsUnreviewedFittedEntriesFromTheirScore() {
+        var accepted = Self.fitted
+        accepted.status = "calibrated"
+        let hand = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0, yOffset: 0, weight: "medium", status: "skipped")
+        let result = PixelFitter.reflagged(["low": accepted, "hand": hand], threshold: 0.85)
+        #expect(result["low"]?.status == "needs-review")
+        #expect(result["hand"] == hand)
+    }
+
+    @Test func reflagLeavesReviewedEntriesAlone() {
+        var reviewed = Self.fitted
+        reviewed.status = "calibrated"
+        reviewed.reviewed = true
+        #expect(PixelFitter.reflagged(["s": reviewed], threshold: 0.85)["s"] == reviewed)
+    }
+
+    @Test func anUnreviewedEntryLeavesTheFlagOutOfTheFile() throws {
+        let json = try #require(String(data: JSONEncoder().encode(Self.fitted), encoding: .utf8))
+        #expect(!json.contains("reviewed"))
+    }
+}
+
+@Suite(.tags(.unit))
 struct SymbolCalibrationEntryFitScoreTests {
     @Test func anEntryWithoutAScoreDecodesAsNil() throws {
         let json = #"{"multiplier":0.6,"xOffset":0,"yOffset":0,"weight":"regular","status":"calibrated"}"#
