@@ -502,41 +502,6 @@ private enum CalibrationConfirmation: Identifiable {
     }
 }
 
-// MARK: - Symbol Baseline Data
-
-struct SymbolBaselineData {
-    let capline: Double
-    let referencePointSize: Double
-    let baselines: [String: Double]
-
-    static func load() -> SymbolBaselineData? {
-        guard let url = Bundle.main.url(forResource: "symbol_baselines", withExtension: "json"),
-              let data = try? Data(contentsOf: url)
-        else { return nil }
-
-        struct File: Decodable {
-            let capline: Double
-            let referencePointSize: Double
-            let baselines: [String: Double]
-        }
-
-        guard let file = try? JSONDecoder().decode(File.self, from: data) else { return nil }
-        return SymbolBaselineData(
-            capline: file.capline,
-            referencePointSize: file.referencePointSize,
-            baselines: file.baselines
-        )
-    }
-
-    func yOffsetCorrection(for symbol: String, multiplier: Double) -> Double? {
-        guard let baseline = baselines[symbol] else { return nil }
-        let glyphCenter = (baseline + capline) / 2
-        let emCenter = referencePointSize / 2
-        let offsetInEmUnits = emCenter - glyphCenter
-        return offsetInEmUnits * multiplier / referencePointSize
-    }
-}
-
 // MARK: - Advance
 
 /// Where Space, Tab and Escape land once the current symbol is written.
@@ -592,8 +557,6 @@ struct SymbolCalibrationTool: View {
     @State private var referenceImage: NSImage?
     @State private var isLoadingReference = false
     @State private var errorMessage: String?
-    @State private var baselineData: SymbolBaselineData?
-    @State private var useBaselineYOffset = false
     @State private var galleryThumbSize: CGFloat = 96
     @State private var galleryTintOverlay = false
     @State private var galleryReferenceImages: [String: NSImage] = [:]
@@ -842,19 +805,6 @@ struct SymbolCalibrationTool: View {
         return symbolContainerKeys[symbol]
     }
 
-    private var effectiveYOffset: CGFloat {
-        var offset = yOffset
-        if useBaselineYOffset, let symbol = currentSymbol, let data = baselineData {
-            offset += data.yOffsetCorrection(for: symbol, multiplier: multiplier) ?? 0
-        }
-        return offset
-    }
-
-    private var baselineCorrection: Double? {
-        guard let symbol = currentSymbol, let data = baselineData else { return nil }
-        return data.yOffsetCorrection(for: symbol, multiplier: multiplier)
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -867,7 +817,6 @@ struct SymbolCalibrationTool: View {
             }
         }
         .onAppear {
-            baselineData = SymbolBaselineData.load()
             loadCurrentMember()
         }
         .onChange(of: pixelFit.isRunning) { _, running in
@@ -1247,38 +1196,6 @@ struct SymbolCalibrationTool: View {
                     .onChange(of: yOffset) { _, _ in autoSave() }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Toggle(isOn: $useBaselineYOffset) {
-                    Text("Baseline Y Correction")
-                }
-
-                if let correction = baselineCorrection {
-                    HStack(spacing: 4) {
-                        Text("Correction:")
-                            .foregroundStyle(.secondary)
-                        Text(String(format: "%+.4f", correction))
-                            .monospacedDigit()
-                            .foregroundStyle(.purple)
-                        if useBaselineYOffset {
-                            Text("Effective:")
-                                .foregroundStyle(.secondary)
-                            Text(String(format: "%+.4f", effectiveYOffset))
-                                .monospacedDigit()
-                                .foregroundStyle(.blue)
-                        }
-                    }
-                    .font(.caption)
-                } else if baselineData == nil {
-                    Text("symbol_baselines.json not found in bundle")
-                        .font(.caption2)
-                        .foregroundStyle(.red)
-                } else if let symbol = currentSymbol {
-                    Text("No baseline data for \(symbol)")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-            }
-
             // Same rule as the Sort row above: the Picker's label is the only
             // one, and the frame has to fit it as well as the four segments —
             // 200pt left it reading "Wei".
@@ -1295,7 +1212,7 @@ struct SymbolCalibrationTool: View {
             if let symbol = currentSymbol {
                 let view = DimIconView(
                     symbolName: symbol, displaySize: displaySize,
-                    multiplier: multiplier, xOffset: xOffset, yOffset: effectiveYOffset,
+                    multiplier: multiplier, xOffset: xOffset, yOffset: yOffset,
                     weight: weight, symbolOnly: false
                 )
                 Text("Font size: \(String(format: "%.1f", view.enclosureSize * multiplier)) pt (enclosure: \(String(format: "%.1f", view.enclosureSize)) pt)")
@@ -2027,13 +1944,7 @@ struct SymbolCalibrationTool: View {
         let cal = store.entry(forSymbol: symbol, containerKey: dk)
         let mul = cal?.multiplier ?? 0.65
         let xOff = cal?.xOffset ?? 0.0
-        let yOff: CGFloat = {
-            var off = cal?.yOffset ?? 0.0
-            if useBaselineYOffset, let data = baselineData {
-                off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
-            }
-            return off
-        }()
+        let yOff = cal?.yOffset ?? 0.0
         let w: Font.Weight = cal?.fontWeight ?? SymbolCalibrationEntry.defaultWeight
         let status = cal?.status ?? "uncalibrated"
         let isSelected = allIconsSelection.contains(symbol)
@@ -2396,21 +2307,13 @@ struct SymbolCalibrationTool: View {
             mul = multiplier
             xOff = xOffset
             w = weight
-            var off = yOffset
-            if useBaselineYOffset, let data = baselineData {
-                off += data.yOffsetCorrection(for: symbol, multiplier: multiplier) ?? 0
-            }
-            yOff = off
+            yOff = yOffset
         } else {
             let cal = store.entry(forSymbol: symbol, containerKey: dk)
             mul = cal?.multiplier ?? 0.65
             xOff = cal?.xOffset ?? 0.0
             w = cal?.fontWeight ?? SymbolCalibrationEntry.defaultWeight
-            var off = cal?.yOffset ?? 0.0
-            if useBaselineYOffset, let data = baselineData {
-                off += data.yOffsetCorrection(for: symbol, multiplier: mul) ?? 0
-            }
-            yOff = off
+            yOff = cal?.yOffset ?? 0.0
         }
 
         return ZStack {
@@ -2468,7 +2371,7 @@ struct SymbolCalibrationTool: View {
                 displaySize: displaySize,
                 multiplier: multiplier,
                 xOffset: xOffset,
-                yOffset: effectiveYOffset,
+                yOffset: yOffset,
                 weight: weight,
                 symbolOnly: symbolOnly
             )
