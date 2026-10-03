@@ -32,6 +32,11 @@ struct GlyphCoverage: Sendable {
 
     /// Σmin / Σmax: 1 for identical coverage, 0 for disjoint.
     func softIoU(_ other: GlyphCoverage) -> Double {
+        let sums = softIoUSums(other)
+        return sums.high == 0 ? 0 : sums.low / sums.high
+    }
+
+    func softIoUSums(_ other: GlyphCoverage) -> (low: Double, high: Double) {
         precondition(size == other.size && values.count == other.values.count)
         var low = [Float](repeating: 0, count: size), high = low
         var lowSum = 0.0, highSum = 0.0
@@ -50,7 +55,7 @@ struct GlyphCoverage: Sendable {
                 }
             }
         }
-        return highSum == 0 ? 0 : lowSum / highSum
+        return (lowSum, highSum)
     }
 
     /// Bounding box of the pixels at least half covered.
@@ -264,15 +269,43 @@ enum PixelFitter {
     }
 
     /// Fits `symbol` to `target`, starting from `start`: a coarse fit at each of `weights`,
-    /// then a fine one for the best and for any runner-up within 0.01 of it. Nil when
-    /// cancelled or when nothing renders. Yields between renders so the window stays live.
+    /// then a fine one for the best and for any runner-up within 0.01 of it. When some part
+    /// of Apple's glyph sits where no size or offset can put Mica's, every weight is refit
+    /// scoring that part where it is (`MisplacedParts`). Nil when cancelled or when nothing
+    /// renders. Yields between renders so the window stays live.
     static func fit(_ symbol: String, target: GlyphCoverage, start: Values,
                     weights: [String] = SymbolCalibrationEntry.weightTokens.map(\.token)) async -> Result? {
         guard let targetBox = target.box else { return nil }
+        let starts = weights.map { weight in
+            var values = start
+            values.weight = weight
+            return values
+        }
+        guard let first = await fitWeights(symbol, target: target, targetBox: targetBox, starts: starts,
+                                           scoring: { $0.softIoU(target) })
+        else { return nil }
+        var result = first.best
+        let fits = first.coarse.compactMap { coarse in
+            micaCoverage(symbol, coarse.values).map { (weight: coarse.values.weight, coverage: $0) }
+        }
+        if let parts = MisplacedParts.find(in: target, fits: fits) {
+            guard let second = await fitWeights(symbol, target: target, targetBox: targetBox,
+                                                starts: first.coarse.map(\.values), scoring: parts.score)
+            else { return nil }
+            if parts.isDisplaced(atWeight: second.best.values.weight) { result = second.best }
+        }
+        result.values.multiplier = rounded(result.values.multiplier)
+        result.values.xOffset = rounded(result.values.xOffset)
+        result.values.yOffset = rounded(result.values.yOffset)
+        return result
+    }
+
+    private static func fitWeights(_ symbol: String, target: GlyphCoverage, targetBox: (minX: Int, maxX: Int, minY: Int, maxY: Int),
+                                   starts: [Values], scoring: (GlyphCoverage) -> Double) async -> (coarse: [Result], best: Result)? {
         func score(_ v: Values) async -> Double? {
             await Task.yield()
             if Task.isCancelled { return nil }
-            return micaCoverage(symbol, v)?.softIoU(target) ?? 0
+            return micaCoverage(symbol, v).map(scoring) ?? 0
         }
         func descend(_ from: Result, steps initial: [Double], floor: Double) async -> (Result, [Double])? {
             var p = from.values, current = from.score, steps = initial
@@ -296,9 +329,7 @@ enum PixelFitter {
         }
 
         var coarse: [(Result, [Double])] = []
-        for weight in weights {
-            var unaligned = start
-            unaligned.weight = weight
+        for unaligned in starts {
             var p = unaligned
             if let b = micaCoverage(symbol, p)?.box {
                 let ratioH = Double(targetBox.maxY - targetBox.minY + 1) / Double(b.maxY - b.minY + 1)
@@ -322,11 +353,8 @@ enum PixelFitter {
             guard let (fine, _) = await descend(result, steps: steps, floor: 0.00025) else { return nil }
             if fine.score > (best?.score ?? -1) { best = fine }
         }
-        guard var result = best else { return nil }
-        result.values.multiplier = rounded(result.values.multiplier)
-        result.values.xOffset = rounded(result.values.xOffset)
-        result.values.yOffset = rounded(result.values.yOffset)
-        return result
+        guard let best else { return nil }
+        return (coarse.map(\.0), best)
     }
 
     static func rounded(_ value: Double) -> Double { (value * 10_000).rounded() / 10_000 }

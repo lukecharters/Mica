@@ -92,6 +92,90 @@ struct PixelFitTests {
     }
 }
 
+@Suite(.tags(.rendering))
+@MainActor
+struct PixelFitPartsTests {
+    static let symbol = "ellipsis"
+    static let truth = PixelFitter.Values(multiplier: 0.6, xOffset: 0, yOffset: 0, weight: "regular")
+
+    /// `coverage` with piece `k` moved by `shifts[k]` part radii, edges and all.
+    private func moved(_ coverage: GlyphCoverage, by shifts: [(x: Double, y: Double)]) -> GlyphCoverage {
+        let n = coverage.size
+        let pieces = GlyphPieces(coverage).pieces.filter { $0.area >= MisplacedParts.minimumArea }.sorted { $0.cx < $1.cx }
+        var out = coverage
+        var moves: [(region: PixelRegion, dx: Int, dy: Int)] = []
+        for (piece, shift) in zip(pieces, shifts) {
+            let region = PixelRegion.halo(of: piece.pixels, size: n, radius: MisplacedParts.edgeHalo)
+            moves.append((region, Int((shift.x * piece.radius).rounded()), Int((shift.y * piece.radius).rounded())))
+            for ly in 0..<region.height { for lx in 0..<region.width where region.member[ly * region.width + lx] {
+                out.values[(region.y0 + ly) * n + region.x0 + lx] = 0
+            } }
+        }
+        for move in moves {
+            let r = move.region
+            for ly in 0..<r.height { for lx in 0..<r.width where r.member[ly * r.width + lx] {
+                let x = r.x0 + lx + move.dx, y = r.y0 + ly + move.dy
+                out.values[y * n + x] = max(out.values[y * n + x], coverage.values[(r.y0 + ly) * n + r.x0 + lx])
+            } }
+        }
+        return out
+    }
+
+    private func fits(_ values: PixelFitter.Values) throws -> [(weight: String, coverage: GlyphCoverage)] {
+        try SymbolCalibrationEntry.weightTokens.map(\.token).map { weight in
+            var v = values
+            v.weight = weight
+            return (weight, try #require(PixelFitter.micaCoverage(Self.symbol, v)))
+        }
+    }
+
+    @Test func piecesAreLabelledWithTheirCentres() {
+        let n = 20
+        var values = [Float](repeating: 0, count: n * n)
+        for y in 2..<6 { for x in 2..<6 { values[y * n + x] = 1 } }
+        for y in 10..<16 { for x in 12..<18 { values[y * n + x] = 0.8 } }
+        let pieces = GlyphPieces(GlyphCoverage(size: n, values: values)).pieces
+        #expect(pieces.count == 2)
+        #expect(pieces.map(\.area).sorted() == [16, 36])
+        #expect(pieces.contains { $0.cx == 3.5 && $0.cy == 3.5 })
+        #expect(pieces.contains { $0.cx == 14.5 && $0.cy == 12.5 })
+    }
+
+    @Test func aGlyphMicaDrawsInPlaceHasNoMisplacedParts() throws {
+        let target = try #require(PixelFitter.micaCoverage(Self.symbol, Self.truth))
+        #expect(MisplacedParts.find(in: target, fits: try fits(Self.truth)) == nil)
+    }
+
+    @Test func aMovedPartIsScoredWhereverItSits() throws {
+        let mica = try #require(PixelFitter.micaCoverage(Self.symbol, Self.truth))
+        let target = moved(mica, by: [(0, 0), (0, 0.8), (0, 0)])
+        let parts = try #require(MisplacedParts.find(in: target, fits: try fits(Self.truth)))
+        #expect(parts.parts.count == 1)
+        #expect(parts.isDisplaced(atWeight: "regular"))
+        #expect(parts.score(mica) > 0.97)
+        #expect(parts.score(mica) > target.softIoU(mica) + 0.05)
+    }
+
+    @Test func aPartDisplacedOnlyAtAnotherWeightLeavesTheFirstPassStanding() throws {
+        let mica = try #require(PixelFitter.micaCoverage(Self.symbol, Self.truth))
+        let target = moved(mica, by: [(0, 0), (0, 0.8), (0, 0)])
+        let parts = try #require(MisplacedParts.find(in: target, fits: [(weight: "regular", coverage: target),
+                                                                       (weight: "bold", coverage: mica)]))
+        #expect(!parts.isDisplaced(atWeight: "regular"))
+        #expect(parts.isDisplaced(atWeight: "bold"))
+    }
+
+    @Test func theFitKeepsTheTrueWeightWhenPartsAreMoved() async throws {
+        let mica = try #require(PixelFitter.micaCoverage(Self.symbol, Self.truth))
+        let target = moved(mica, by: [(0, -0.8), (0, 0.8), (0, -0.8)])
+        let start = PixelFitter.Values(multiplier: 0.62, xOffset: 0, yOffset: 0, weight: "regular")
+        let result = try #require(await PixelFitter.fit(Self.symbol, target: target, start: start))
+        #expect(result.values.weight == Self.truth.weight)
+        #expect(abs(result.values.multiplier - Self.truth.multiplier) <= 0.005)
+        #expect(result.score > 0.95)
+    }
+}
+
 @Suite(.tags(.unit))
 struct SymbolCalibrationEntryFitScoreTests {
     @Test func anEntryWithoutAScoreDecodesAsNil() throws {
