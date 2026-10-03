@@ -11,6 +11,8 @@ private let usage = """
                                          per-symbol sheets: Apple's icon beside the fitted weight and the stored one
       vcal precision [--colours blue+white,black+white] [--methods threshold,normalised] [--size 1024]
                                          how precisely the pixel fit lands: synthetic known answers, colour consistency
+      vcal pieces [--symbols a,b] [--low] [--sample N] [--threshold 0.5] [--fitted path]
+                                         mask parts that no weight can align, refit without them
 
     options:
       --model ondevice|pcc        (ondevice)
@@ -49,6 +51,7 @@ struct VCal {
         while i < args.count {
             let a = args[i]
             if a == "--think" { flags.insert("think"); i += 1; continue }
+            if a == "--low" { flags.insert("low"); i += 1; continue }
             if a.hasPrefix("--"), i + 1 < args.count { options[String(a.dropFirst(2))] = args[i + 1]; i += 2; continue }
             positional.append(a); i += 1
         }
@@ -79,6 +82,20 @@ struct VCal {
                 print(out.appendingPathComponent("index.html").path)
             case "precision":
                 try precision(options: options)
+            case "pieces":
+                let fitted = options["fitted"].map { URL(fileURLWithPath: $0) } ?? FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent("Library/Containers/com.lukecharters.Mica/Data/Library/Application Support/Mica/symbol-calibration-fitted.json")
+                let threshold = Double(options["threshold"] ?? "") ?? 0.5
+                let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "")
+                let out = packageDirectory.appendingPathComponent("runs/pieces-\(stamp)")
+                try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+                print(out.path)
+                let report = try Pieces.run(fittedFile: fitted, only: options["symbols"]?.split(separator: ",").map(String.init) ?? [],
+                                            low: flags.contains("low"), sample: Int(options["sample"] ?? "") ?? 0,
+                                            seed: UInt64(options["seed"] ?? "") ?? 1, threshold: threshold,
+                                            cacheDirectory: packageDirectory.appendingPathComponent(".cache/refs"), outputDirectory: out)
+                try report.write(to: out.appendingPathComponent("summary.md"), atomically: true, encoding: .utf8)
+                print("\n" + report)
             case "perceive", "calibrate":
                 try await experiment(command, options: options, flags: flags)
             default:

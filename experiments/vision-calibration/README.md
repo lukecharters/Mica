@@ -137,3 +137,40 @@ the hand values say regular, and they pick the same heavier weight in every colo
 Synthetic tests recover the weight every time, so the method can tell weights apart; whether
 Apple draws these glyphs heavier, or a heavier weight at a slightly different size just overlaps
 better, is not yet settled.
+
+## Misplaced parts: the second pass, 2026-10-03
+
+`allergens` and `allergens.fill` fit bold, but their rings are medium. Apple draws the dots at a
+different angle from the SF Symbol, and no size or offset aligns them, so a thicker weight wins
+by smearing over them. `vcal pieces` tests a second pass:
+
+1. Fit each weight as now.
+2. Split Apple's glyph into 8-connected pieces (≥ 40 px). At each weight, match each to the Mica
+   piece that overlaps it most and measure their centre distance as a fraction of the piece's
+   radius. A piece is **misplaced** when that exceeds 0.5 at any weight, with a match of similar
+   area (½–2×) and a distance under 1.5 radii.
+3. Refit every weight with soft IoU outside the misplaced pieces, plus each misplaced piece scored
+   against Mica's match **moved onto its centre**: size and stroke count, position does not.
+   Masking the pieces outright left `allergens.fill` as two discs that every weight fits
+   (0.971/0.967/0.964/0.959).
+4. Keep the refit only if a misplaced piece is still displaced at the weight it chose. Otherwise
+   the piece was displaced only at weights the fit rejects, and the first pass stands unchanged.
+
+| symbol | first pass | second pass |
+|---|---|---|
+| allergens | bold 0.718 | medium 0.914 (bold 0.767) |
+| allergens.fill | bold 0.864 | medium 0.961 (bold 0.909) |
+
+Sweep: the 125 symbols below 0.85 plus 1,500 random (seed 7), 1,520 in all. 52 were flagged at
+step 2; step 4 kept the first pass for 50 of them, so **only the two `allergens` symbols changed**.
+Without step 4 the 50 drifted slightly, except `iphone.gen2`, whose frame merges with another part
+at bold: the refit masked the whole frame and visibly grew the symbol.
+
+Two shapes that must not count as misplaced, both seen: a translucent layer that Mica's alpha
+leaves under the 0.5 cut (no overlapping piece, so missing rather than misplaced:
+`hifispeaker.and.homepod`), and strokes that merge at a heavier weight (`iphone.gen2`).
+
+```bash
+.build/release/vcal pieces --symbols allergens,allergens.fill
+.build/release/vcal pieces --low --sample 1500 --seed 7   # about a second a symbol, cached refs
+```

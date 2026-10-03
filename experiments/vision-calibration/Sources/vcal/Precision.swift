@@ -272,15 +272,21 @@ enum CoverageFit {
         }
     }
 
-    static func descend(_ symbol: String, target: Coverage, start: IconParams, size: Int, weights: [Int]?, binary: Bool) -> Result {
+    /// `mask` marks pixels left out of the score on both sides; the target must already be zero there.
+    static func descend(_ symbol: String, target: Coverage, start: IconParams, size: Int, weights: [Int]?, binary: Bool,
+                        mask: [Bool]? = nil, scorer: ((Coverage) -> Double)? = nil) -> Result {
         var renders = 0
         func render(_ p: IconParams) -> Coverage? {
             renders += 1
             guard var c = GlyphCoverage.mica(symbol, p, size: size) else { return nil }
             if binary { c.values = c.values.map { $0 >= 0.5 ? 1 : 0 } }
+            if let mask { for i in 0..<c.values.count where mask[i] { c.values[i] = 0 } }
             return c
         }
-        func score(_ p: IconParams) -> Double { render(p)?.softIoU(target) ?? 0 }
+        func score(_ p: IconParams) -> Double {
+            guard let c = render(p) else { return 0 }
+            return scorer?(c) ?? c.softIoU(target)
+        }
         guard let targetBox = target.box else { return Result(params: start, iou: 0, renders: 0) }
         var best = Result(params: start, iou: -1, renders: 0)
         for weightIndex in weights ?? Array(IconParams.weightTokens.indices) {

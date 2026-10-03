@@ -79,7 +79,7 @@ enum Review {
         NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: NSColor.black]).draw(at: point)
     }
 
-    private static func overlay(_ target: Coverage, _ symbol: String, _ params: IconParams) -> CGImage? {
+    static func overlay(_ target: Coverage, _ symbol: String, _ params: IconParams) -> CGImage? {
         guard let mica = GlyphCoverage.mica(symbol, params, size: target.size) else { return nil }
         let n = target.size
         var rgba = [UInt8](repeating: 255, count: n * n * 4)
