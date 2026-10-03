@@ -3,9 +3,7 @@
 // Used by both the production rendering pipeline (SymbolSizingService) and the
 // calibration tool (SymbolCalibrationStore in SymbolCalibrationTool).
 //
-// Entries are per symbol, plus one per container shape. Symbols are *grouped*
-// into families for review in the tool — see `SymbolFamily` and
-// `familyOverrides` — but nothing here is stored per family.
+// Entries are per symbol, plus one per container shape.
 
 import SwiftUI
 
@@ -27,8 +25,6 @@ enum ContainerType: String, CaseIterable {
     /// The dot-component this container contributes to a symbol name, e.g. the
     /// `circle` in `person.crop.circle`.
     var suffixComponent: String { rawValue }
-
-    static let allKeys: Set<String> = Set(allCases.map(\.containerKey))
 }
 
 // MARK: - Calibration Entry
@@ -39,9 +35,15 @@ struct SymbolCalibrationEntry: Codable, Equatable {
     var yOffset: Double
     var weight: String   // a `weightTokens` key
     var status: String   // "calibrated", "skipped", "needs-review"
-    /// Provenance marker; nil for hand-calibrated entries, "auto-boxfit" for
-    /// entries accepted from the Auto Calibration playground's predicted rule.
+    /// Provenance marker; nil for hand-calibrated entries, "pixel-fit" for entries
+    /// fitted to Apple's rendering (`PixelFitter`).
     var source: String? = nil
+    /// Soft IoU of a `pixel-fit` entry against Apple's rendering when it was fitted;
+    /// nil for every other source.
+    var fitScore: Double? = nil
+    /// True when a person set a `pixel-fit` entry's status, which Re-flag then leaves alone;
+    /// nil otherwise.
+    var reviewed: Bool? = nil
 
     /// The weight of a symbol with no calibration entry, and of an unknown token.
     static let defaultWeight: Font.Weight = .medium
@@ -63,6 +65,12 @@ struct SymbolCalibrationEntry: Codable, Equatable {
     }
 
     var fontWeight: Font.Weight { Self.fontWeight(fromToken: weight) }
+
+    /// Whether the two would render the same, whatever their status and provenance.
+    func hasSameValues(as other: SymbolCalibrationEntry) -> Bool {
+        multiplier == other.multiplier && xOffset == other.xOffset && yOffset == other.yOffset
+            && fontWeight == other.fontWeight
+    }
 }
 
 // MARK: - Calibration File
@@ -71,41 +79,17 @@ struct SymbolCalibration: Codable {
     var version: Int = 1
     var symbols: [String: SymbolCalibrationEntry] = [:]
     var containers: [String: SymbolCalibrationEntry] = [:]
-    var familyOverrides: [String: String] = [:]
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
         symbols = try c.decodeIfPresent([String: SymbolCalibrationEntry].self, forKey: .symbols) ?? [:]
         containers = try c.decodeIfPresent([String: SymbolCalibrationEntry].self, forKey: .containers) ?? [:]
-        familyOverrides = try c.decodeIfPresent([String: String].self, forKey: .familyOverrides) ?? [:]
     }
 
-    init(version: Int = 1, symbols: [String: SymbolCalibrationEntry] = [:], containers: [String: SymbolCalibrationEntry] = [:], familyOverrides: [String: String] = [:]) {
+    init(version: Int = 1, symbols: [String: SymbolCalibrationEntry] = [:], containers: [String: SymbolCalibrationEntry] = [:]) {
         self.version = version
         self.symbols = symbols
         self.containers = containers
-        self.familyOverrides = familyOverrides
-    }
-}
-
-// MARK: - Symbol Family
-
-struct SymbolFamily: Identifiable {
-    let id: String // family key (e.g. "star") or "container.circle"
-    let members: [String]
-    let isContainer: Bool
-    let containerLabel: String? // "circle", "square", "rectangle"
-    let width: Double   // representative's width at 100pt
-    let height: Double  // representative's height at 100pt
-
-    var count: Int { members.count }
-    var representative: String { members[0] }
-
-    var displayLabel: String {
-        if let label = containerLabel {
-            return ".\(label) (\(String(format: "%.0f x %.0f", width, height)))"
-        }
-        return id
     }
 }

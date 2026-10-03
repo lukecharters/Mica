@@ -37,20 +37,6 @@ struct SymbolTightBounds: Codable, Equatable, Sendable {
     static let referencePointSize: Double = 100
 }
 
-// MARK: - Prediction
-
-struct AutoSizingPrediction: Sendable {
-    var multiplier: Double
-    /// Content-centering hint for the Y offset (normalized enclosure fraction,
-    /// same units as SymbolCalibrationEntry.yOffset). Advisory only — offsets are
-    /// partly optical and shouldn't be applied blindly.
-    var suggestedYOffset: Double
-    var bounds: SymbolTightBounds
-    /// True when the multiplier hit the clamp, meaning the rule had less
-    /// confidence for this shape (very wide/tall or very compact symbols).
-    var isClamped: Bool
-}
-
 // MARK: - Service
 
 enum SymbolAutoSizingService {
@@ -62,9 +48,6 @@ enum SymbolAutoSizingService {
     static let badgeWidthFactor = 0.74
     static let minMultiplier = 0.43
     static let maxMultiplier = 0.65
-    /// Global linear coefficient relating measured content-center offset to
-    /// calibrated yOffset (fitted; r = -0.61).
-    static let yOffsetCoefficient = -0.78
 
     /// True for badge composites — a `badge` component after the base name
     /// (`folder.badge.plus` yes, `badge.plus.radiowaves.forward` no).
@@ -82,29 +65,9 @@ enum SymbolAutoSizingService {
         return min(max(raw, minMultiplier), maxMultiplier)
     }
 
-    static func prediction(for bounds: SymbolTightBounds, isBadge: Bool = false) -> AutoSizingPrediction {
-        let mul = multiplier(for: bounds, isBadge: isBadge)
-        let ref = SymbolTightBounds.referencePointSize
-        let raw = bounds.tightHeight > 0 && bounds.tightWidth > 0
-            ? rawFit(th: bounds.tightHeight / ref, tw: bounds.tightWidth / ref, isBadge: isBadge)
-            : maxMultiplier
-        return AutoSizingPrediction(
-            multiplier: mul,
-            suggestedYOffset: yOffsetCoefficient * bounds.centerYOffset / ref,
-            bounds: bounds,
-            isClamped: raw < minMultiplier || raw > maxMultiplier
-        )
-    }
-
     private static func rawFit(th: Double, tw: Double, isBadge: Bool) -> Double {
         min((isBadge ? badgeHeightFactor : heightFactor) / th,
             (isBadge ? badgeWidthFactor : widthFactor) / tw)
-    }
-
-    /// Measures a symbol's tight content bounds and returns the full prediction.
-    static func prediction(forSymbol name: String, weight: NSFont.Weight = SymbolCalibrationEntry.defaultMeasurementWeight) -> AutoSizingPrediction? {
-        guard let bounds = measureTightBounds(symbol: name, weight: weight) else { return nil }
-        return prediction(for: bounds, isBadge: isBadgeVariant(name))
     }
 
     // MARK: - Tight-Bounds Measurement
@@ -151,8 +114,7 @@ enum SymbolAutoSizingService {
         guard maxX >= 0 else { return nil }
 
         // Bitmap buffer row 0 is the visual top, so a positive centerYOffset
-        // means the content sits visually below the frame center — the same
-        // convention `yOffsetCoefficient` was fitted with.
+        // means the content sits visually below the frame center.
         return SymbolTightBounds(
             tightWidth: Double(maxX - minX + 1),
             tightHeight: Double(maxY - minY + 1),
@@ -161,28 +123,5 @@ enum SymbolAutoSizingService {
             frameWidth: Double(size.width),
             frameHeight: Double(size.height)
         )
-    }
-}
-
-// MARK: - Container Recipe Catalog
-
-/// Reads Apple's hand-tuned symbol list from the live system
-/// container_recipes.plist. Membership marks symbols whose appex sizing is
-/// individually curated by Apple — i.e. symbols the box-fit rule is NOT
-/// expected to match and which deserve manual calibration.
-///
-/// The file is read from the system path at runtime and never bundled
-/// (Apple-derived data). Returns an empty set when unavailable.
-enum ContainerRecipeCatalog {
-    static let systemPath =
-        "/System/Library/PrivateFrameworks/SFSymbols.framework/Versions/A/Resources/CoreGlyphsPrivate.bundle/Contents/Resources/container_recipes.plist"
-
-    static func loadSymbolNames(from path: String = systemPath) -> Set<String> {
-        guard let data = FileManager.default.contents(atPath: path),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
-              let root = plist as? [String: Any],
-              let symbols = root["symbols"] as? [String: Any]
-        else { return [] }
-        return Set(symbols.keys)
     }
 }

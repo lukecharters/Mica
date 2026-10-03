@@ -56,7 +56,7 @@ struct IconContentView: View {
         SymbolCatalog.bundled.drawableName(for: settings.icon.foreground.symbolName)
     }
 
-    /// Resolved sizing from family calibration data (always used as baseline)
+    /// Resolved sizing from the symbol calibration (always used as baseline)
     private var resolvedSizing: ResolvedSymbolSizing {
         SymbolSizingService.resolve(for: settings.icon.foreground.symbolName)
     }

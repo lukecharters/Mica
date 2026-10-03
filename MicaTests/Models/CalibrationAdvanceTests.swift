@@ -1,5 +1,5 @@
 // CalibrationAdvanceTests.swift
-// Where the symbol calibration tool lands after Space, Tab or Escape.
+// Where the symbol calibration tool lands after Space or Escape.
 
 import Testing
 @testable import Mica
@@ -7,64 +7,80 @@ import Testing
 @Suite(.tags(.unit))
 struct CalibrationAdvanceTests {
 
-    @Test func nextMemberWhenTheFamilyHasOneLeft() {
-        let ids = ["a", "b", "c"]
-        let step = CalibrationAdvance.next(
-            familyID: "b", memberIndex: 0, memberCount: 2, isContainer: false,
-            before: ids, after: ids)
-        #expect(step == .member(1))
+    @Test func movesToTheNextSymbol() {
+        let list = ["a", "b", "c"]
+        #expect(CalibrationAdvance.next(symbol: "a", before: list, after: list) == .index(1))
     }
 
-    @Test func nextFamilyAfterTheLastMember() {
-        let ids = ["a", "b", "c"]
-        let step = CalibrationAdvance.next(
-            familyID: "b", memberIndex: 1, memberCount: 2, isContainer: false,
-            before: ids, after: ids)
-        #expect(step == .family(2))
+    @Test func aSymbolThatLeavesTheFilterDoesNotSkipTheNextOne() {
+        let step = CalibrationAdvance.next(symbol: "b", before: ["a", "b", "c"], after: ["a", "c"])
+        #expect(step == .index(1))
     }
 
-    @Test func aFamilyThatLeavesTheFilterDoesNotSkipTheNextOne() {
-        let step = CalibrationAdvance.next(
-            familyID: "gen3.left", memberIndex: 0, memberCount: 1, isContainer: false,
-            before: ["gen3", "gen3.left", "gen3.right", "pro.left"],
-            after: ["gen3", "gen3.right", "pro.left"])
-        #expect(step == .family(1))
+    @Test func theLastSymbolStays() {
+        let list = ["a", "b"]
+        #expect(CalibrationAdvance.next(symbol: "b", before: list, after: list) == .stay)
     }
 
-    @Test func aFamilyThatLeavesTheFilterMidwayMovesOn() {
-        let step = CalibrationAdvance.next(
-            familyID: "b", memberIndex: 0, memberCount: 3, isContainer: false,
-            before: ["a", "b", "c"], after: ["a", "c"])
-        #expect(step == .family(1))
-    }
-
-    @Test func aContainerAlwaysMovesToTheNextFamily() {
-        let ids = ["container.circle", "container.square"]
-        let step = CalibrationAdvance.next(
-            familyID: "container.circle", memberIndex: 0, memberCount: 40, isContainer: true,
-            before: ids, after: ids)
-        #expect(step == .family(1))
-    }
-
-    @Test func theLastFamilyStays() {
-        let ids = ["a", "b"]
-        let step = CalibrationAdvance.next(
-            familyID: "b", memberIndex: 0, memberCount: 1, isContainer: false,
-            before: ids, after: ids)
-        #expect(step == .stay)
-    }
-
-    @Test func theLastFamilyLeavingTheFilterLandsOnTheNewLast() {
-        let step = CalibrationAdvance.next(
-            familyID: "b", memberIndex: 0, memberCount: 1, isContainer: false,
-            before: ["a", "b"], after: ["a"])
-        #expect(step == .family(0))
+    @Test func theLastSymbolLeavingTheFilterLandsOnTheNewLast() {
+        #expect(CalibrationAdvance.next(symbol: "b", before: ["a", "b"], after: ["a"]) == .index(0))
     }
 
     @Test func anEmptiedFilterStays() {
-        let step = CalibrationAdvance.next(
-            familyID: "a", memberIndex: 0, memberCount: 1, isContainer: false,
-            before: ["a"], after: [])
-        #expect(step == .stay)
+        #expect(CalibrationAdvance.next(symbol: "a", before: ["a"], after: []) == .stay)
+    }
+}
+
+@Suite(.tags(.unit))
+struct CalibrationReviewListTests {
+    private static func fitted(_ score: Double, status: String = "calibrated", reviewed: Bool? = nil) -> SymbolCalibrationEntry {
+        var entry = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0, yOffset: 0, weight: "regular",
+                                           status: status, source: "pixel-fit", fitScore: score)
+        entry.reviewed = reviewed
+        return entry
+    }
+
+    private static let hand = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0, yOffset: 0,
+                                                     weight: "regular", status: "calibrated")
+
+    private static let entries: [String: SymbolCalibrationEntry] = [
+        "good": fitted(0.97),
+        "flagged": fitted(0.70, status: "needs-review"),
+        "accepted": fitted(0.80, reviewed: true),
+        "skipped": fitted(0.90, status: "skipped", reviewed: true),
+        "hand": hand,
+        "retired": hand,
+    ]
+
+    private static let catalog = ["good", "flagged", "accepted", "skipped", "hand", "missing"]
+
+    private func list(_ filter: CalibrationReviewFilter, sort: CalibrationReviewSort = .name,
+                      search: String = "") -> [String] {
+        CalibrationReviewList.symbols(catalog: Self.catalog, entries: Self.entries, filter: filter,
+                                      threshold: 0.85, search: search, sort: sort)
+    }
+
+    @Test func allShowsCatalogNamesAndEntriesOutsideIt() {
+        #expect(list(.all) == ["accepted", "flagged", "good", "hand", "missing", "retired", "skipped"])
+    }
+
+    @Test(arguments: [
+        (CalibrationReviewFilter.needsReview, ["flagged"]),
+        (.lowScore, ["accepted", "flagged"]),
+        (.reviewed, ["accepted", "skipped"]),
+        (.handEdited, ["hand", "retired"]),
+        (.skipped, ["skipped"]),
+        (.unfitted, ["missing"]),
+    ])
+    func eachFilterSelectsItsEntries(_ filter: CalibrationReviewFilter, _ expected: [String]) {
+        #expect(list(filter) == expected)
+    }
+
+    @Test func scoreOrderPutsTheWorstFirstAndUnscoredLast() {
+        #expect(list(.all, sort: .score) == ["flagged", "accepted", "skipped", "good", "hand", "missing", "retired"])
+    }
+
+    @Test func searchNarrowsTheFilter() {
+        #expect(list(.reviewed, search: "SKIP") == ["skipped"])
     }
 }

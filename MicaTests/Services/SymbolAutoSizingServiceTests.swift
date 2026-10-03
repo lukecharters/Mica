@@ -33,20 +33,13 @@ struct SymbolAutoSizingRuleTests {
 
     @Test func compactSymbolClampsToMaxMultiplier() {
         // Tiny content would produce a huge multiplier — clamp to 0.65.
-        let prediction = SymbolAutoSizingService.prediction(for: bounds(tw: 50, th: 50))
-        #expect(prediction.multiplier == SymbolAutoSizingService.maxMultiplier)
-        #expect(prediction.isClamped)
+        let mul = SymbolAutoSizingService.multiplier(for: bounds(tw: 50, th: 50))
+        #expect(mul == SymbolAutoSizingService.maxMultiplier)
     }
 
     @Test func oversizedSymbolClampsToMinMultiplier() {
-        let prediction = SymbolAutoSizingService.prediction(for: bounds(tw: 300, th: 300))
-        #expect(prediction.multiplier == SymbolAutoSizingService.minMultiplier)
-        #expect(prediction.isClamped)
-    }
-
-    @Test func unclampedPredictionIsNotFlaggedClamped() {
-        let prediction = SymbolAutoSizingService.prediction(for: bounds(tw: 100, th: 140))
-        #expect(!prediction.isClamped)
+        let mul = SymbolAutoSizingService.multiplier(for: bounds(tw: 300, th: 300))
+        #expect(mul == SymbolAutoSizingService.minMultiplier)
     }
 
     @Test func degenerateBoundsFallBackToMaxMultiplier() {
@@ -77,18 +70,8 @@ struct SymbolAutoSizingRuleTests {
     }
 
     @Test func badgeFitSharesClamps() {
-        let prediction = SymbolAutoSizingService.prediction(for: bounds(tw: 50, th: 50), isBadge: true)
-        #expect(prediction.multiplier == SymbolAutoSizingService.maxMultiplier)
-        #expect(prediction.isClamped)
-    }
-
-    @Test func suggestedYOffsetOpposesContentCenterOffset() {
-        // Content below center (positive centerYOffset) → negative offset hint.
-        var b = bounds(tw: 100, th: 100)
-        b.centerYOffset = 5
-        let prediction = SymbolAutoSizingService.prediction(for: b)
-        #expect(prediction.suggestedYOffset < 0)
-        #expect(abs(prediction.suggestedYOffset - (-0.78 * 5 / 100)) < 0.0001)
+        let mul = SymbolAutoSizingService.multiplier(for: bounds(tw: 50, th: 50), isBadge: true)
+        #expect(mul == SymbolAutoSizingService.maxMultiplier)
     }
 }
 
@@ -112,52 +95,25 @@ struct SymbolTightBoundsMeasurementTests {
         #expect(SymbolAutoSizingService.measureTightBounds(symbol: "not.a.real.symbol.zzz") == nil)
     }
 
-    @Test func endToEndPredictionIsWithinRuleRange() throws {
-        let prediction = try #require(SymbolAutoSizingService.prediction(forSymbol: "folder.fill"))
-        #expect(prediction.multiplier >= SymbolAutoSizingService.minMultiplier)
-        #expect(prediction.multiplier <= SymbolAutoSizingService.maxMultiplier)
+    @Test func endToEndMultiplierIsWithinRuleRange() throws {
+        let bounds = try #require(SymbolAutoSizingService.measureTightBounds(symbol: "folder.fill"))
+        let mul = SymbolAutoSizingService.multiplier(for: bounds)
+        #expect(mul >= SymbolAutoSizingService.minMultiplier)
+        #expect(mul <= SymbolAutoSizingService.maxMultiplier)
     }
 
-    @Test func nameBasedPredictionUsesBadgeFactorsForBadgeSymbols() throws {
+    @Test func badgeFactorsShrinkAMeasuredBadgeSymbol() throws {
         // folder.badge.plus sits inside the clamp range under both parameter
         // sets, so the badge fit must come out strictly smaller.
         let bounds = try #require(SymbolAutoSizingService.measureTightBounds(symbol: "folder.badge.plus"))
-        let byName = try #require(SymbolAutoSizingService.prediction(forSymbol: "folder.badge.plus"))
-        let badgeFit = SymbolAutoSizingService.prediction(for: bounds, isBadge: true)
-        let standardFit = SymbolAutoSizingService.prediction(for: bounds)
-        #expect(byName.multiplier == badgeFit.multiplier)
-        #expect(byName.multiplier < standardFit.multiplier)
+        #expect(SymbolAutoSizingService.isBadgeVariant("folder.badge.plus"))
+        #expect(SymbolAutoSizingService.multiplier(for: bounds, isBadge: true)
+                < SymbolAutoSizingService.multiplier(for: bounds))
     }
 }
 
 @Suite(.tags(.unit))
-struct ContainerRecipeCatalogTests {
-
-    @Test func parsesRecipeFixture() throws {
-        let plist: [String: Any] = [
-            "version": 2,
-            "symbols": [
-                "folder.fill": ["shapes": [:]],
-                "wifi": ["shapes": [:]],
-            ],
-        ]
-        let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
-        let url = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appendingPathComponent("recipes-\(UUID().uuidString).plist")
-        try data.write(to: url)
-        defer { try? FileManager.default.removeItem(at: url) }
-
-        let names = ContainerRecipeCatalog.loadSymbolNames(from: url.path)
-        #expect(names == ["folder.fill", "wifi"])
-    }
-
-    @Test func missingFileReturnsEmptySet() {
-        #expect(ContainerRecipeCatalog.loadSymbolNames(from: "/nonexistent/path.plist").isEmpty)
-    }
-}
-
-@Suite(.tags(.unit))
-struct FamilyCalEntrySourceFieldTests {
+struct SymbolCalibrationEntrySourceFieldTests {
 
     @Test func decodesLegacyEntryWithoutSource() throws {
         let json = #"{"multiplier":0.62,"xOffset":0,"yOffset":0,"weight":"regular","status":"calibrated"}"#
@@ -169,11 +125,11 @@ struct FamilyCalEntrySourceFieldTests {
     @Test func roundTripsSourceField() throws {
         let entry = SymbolCalibrationEntry(
             multiplier: 0.55, xOffset: 0, yOffset: 0,
-            weight: "regular", status: "calibrated", source: "auto-boxfit")
+            weight: "regular", status: "calibrated", source: "pixel-fit")
         let data = try JSONEncoder().encode(entry)
         let decoded = try JSONDecoder().decode(SymbolCalibrationEntry.self, from: data)
         #expect(decoded == entry)
-        #expect(decoded.source == "auto-boxfit")
+        #expect(decoded.source == "pixel-fit")
     }
 
     @Test func nilSourceIsOmittedFromEncodedJSON() throws {

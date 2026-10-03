@@ -1,12 +1,9 @@
 // SymbolSizingServiceTests.swift
 // SymbolSizingService.resolve(for:) picks one of four sources per symbol:
-//  1. family calibration (per-symbol hit)
+//  1. per-symbol calibration
 //  2. container calibration (.circle/.square/.rectangle keyword in any dot-component)
 //  3. auto box-fit (real symbol with no calibration entry — measured at runtime)
 //  4. default fallback (multiplier 0.55; symbol unknown to the system)
-// The bundled symbol-calibration.json is the source of truth for the
-// per-symbol anchors; if Apple/we re-calibrate star.fill, update the
-// expected values below.
 //
 // Every resolve here passes the BUNDLED calibration explicitly. Without that,
 // resolve() prefers the user-writable Application Support override (edited by
@@ -33,22 +30,30 @@ struct SymbolSizingServiceTests {
         SymbolSizingService.resolve(for: name, calibration: Self.bundled)
     }
 
-    // MARK: - Family calibration
-
-    @Test("star.fill hits per-symbol family calibration with shipped values")
-    func symbolCalibration_starFill() {
-        let r = resolve("star.fill")
-        #expect(r.source == .symbolCalibration)
-        #expect(abs(r.multiplier - 0.58) < 0.001)
-        #expect(r.xOffset == 0)
-        #expect(abs(r.yOffset - (-0.035)) < 0.001)
+    /// Resolves against no calibration at all, so a real symbol reaches box-fit.
+    private func resolveUncalibrated(_ name: String) -> ResolvedSymbolSizing {
+        SymbolSizingService.resolve(for: name, calibration: SymbolCalibration())
     }
 
-    @Test("folder.fill hits per-symbol family calibration")
-    func symbolCalibration_folderFill() {
-        let r = resolve("folder.fill")
+    private func expectResolvesToBundledEntry(_ name: String) throws {
+        let entry = try #require(Self.bundled.symbols[name])
+        let r = resolve(name)
         #expect(r.source == .symbolCalibration)
-        #expect(abs(r.multiplier - 0.65) < 0.001)
+        #expect(abs(r.multiplier - entry.multiplier) < 0.0001)
+        #expect(abs(r.xOffset - entry.xOffset) < 0.0001)
+        #expect(abs(r.yOffset - entry.yOffset) < 0.0001)
+    }
+
+    // MARK: - Family calibration
+
+    @Test("star.fill resolves to its bundled per-symbol entry")
+    func symbolCalibration_starFill() throws {
+        try expectResolvesToBundledEntry("star.fill")
+    }
+
+    @Test("folder.fill resolves to its bundled per-symbol entry")
+    func symbolCalibration_folderFill() throws {
+        try expectResolvesToBundledEntry("folder.fill")
     }
 
     // MARK: - Container calibration
@@ -72,13 +77,10 @@ struct SymbolSizingServiceTests {
 
     // MARK: - Auto box-fit
 
-    // These symbols exist in the system but have no per-symbol entry in the
-    // shipped symbol-calibration.json and no container keyword. If they get
-    // calibrated later, swap in another symbol from the uncalibrated set.
     @Test("A real symbol with no calibration entry resolves via box-fit prediction",
           arguments: ["soccerball", "accessibility", "apple.terminal"])
     func autoBoxFit_uncalibratedRealSymbol(_ name: String) {
-        let r = resolve(name)
+        let r = resolveUncalibrated(name)
         #expect(r.source == .autoBoxFit,
                 "Expected autoBoxFit for \(name), got \(r.source)")
         #expect(r.multiplier >= SymbolAutoSizingService.minMultiplier)
@@ -90,8 +92,8 @@ struct SymbolSizingServiceTests {
 
     @Test("Box-fit resolution is stable across repeated calls (cache consistency)")
     func autoBoxFit_repeatedCallsAgree() {
-        let first = resolve("soccerball")
-        let second = resolve("soccerball")
+        let first = resolveUncalibrated("soccerball")
+        let second = resolveUncalibrated("soccerball")
         #expect(first.source == .autoBoxFit)
         #expect(first.multiplier == second.multiplier)
     }
@@ -101,7 +103,7 @@ struct SymbolSizingServiceTests {
         let bounds = try #require(
             SymbolAutoSizingService.measureTightBounds(symbol: "soccerball"))
         let expected = SymbolAutoSizingService.multiplier(for: bounds)
-        let r = resolve("soccerball")
+        let r = resolveUncalibrated("soccerball")
         #expect(abs(r.multiplier - expected) < 0.0001)
     }
 
@@ -128,12 +130,15 @@ struct SymbolSizingServiceTests {
 
     @Test("Per-symbol calibration wins over container detection for suffix-bearing names")
     func priority_perSymbolOverContainer() {
-        // "circle.badge.plus" both (a) has a .circle suffix that would match
-        // container detection and (b) has a per-symbol symbol-calibration
-        // entry with DIFFERENT values (multiplier 0.58 vs container's 0.65).
-        // A regression where container detection ran first would produce
-        // 0.65; per-symbol priority yields 0.58.
-        let r = resolve("circle.badge.plus")
+        let symbolEntry = SymbolCalibrationEntry(
+            multiplier: 0.58, xOffset: -0.03, yOffset: 0, weight: "regular", status: "calibrated")
+        let containerEntry = SymbolCalibrationEntry(
+            multiplier: 0.65, xOffset: 0, yOffset: 0, weight: "regular", status: "calibrated")
+        let calibration = SymbolCalibration(
+            symbols: ["circle.badge.plus": symbolEntry],
+            containers: [ContainerType.circle.containerKey: containerEntry])
+
+        let r = SymbolSizingService.resolve(for: "circle.badge.plus", calibration: calibration)
         #expect(r.source == .symbolCalibration)
         #expect(abs(r.multiplier - 0.58) < 0.001,
                 "Expected per-symbol 0.58, got \(r.multiplier) — priority check failed")

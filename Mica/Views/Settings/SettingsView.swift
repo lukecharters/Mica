@@ -243,7 +243,7 @@ struct DeveloperSettingsTab: View {
                 Toggle(isOn: $developerToolsEnabled) {
                     Text("Show the Developer Menu")
                     Text("Adds a Developer menu to the menu bar. It holds the symbol "
-                         + "calibration, reference comparison and metrics tools. None "
+                         + "calibration and reference comparison tools. None "
                          + "of its items has a keyboard shortcut.")
                 }
             } header: {
