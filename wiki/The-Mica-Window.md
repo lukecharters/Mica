@@ -106,13 +106,13 @@ You do not need these tools to make icons. They are not supported.
 
 | Menu item | What it does |
 |---|---|
-| Symbol Calibration | Reviews and changes how each SF Symbol is sized. |
+| Symbol Calibration | Fits and reviews how each SF Symbol is sized. |
 | Reference Comparison | Compares a Mica icon against a reference image. |
-| Generate Symbol Metrics | Measures every SF Symbol again. |
 | Export Shadow Variations… | Saves a set of icons with different shadows. |
 
-Symbol Calibration changes how Mica sizes symbols in every icon you make.
-Click **Restore Bundled Calibration** in that window to undo the change.
+Edits in Symbol Calibration do not change your icons.
+Click **Adopt Fitted Set** to use them in every icon you make.
+Click **Restore Bundled Calibration** in that window to undo this.
 Mica reads symbol sizing once when it starts. Quit and reopen Mica to apply it.
 
 None of these items has a keyboard shortcut.
