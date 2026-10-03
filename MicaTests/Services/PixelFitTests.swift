@@ -276,82 +276,75 @@ struct CalibrationSetTests {
 
     private let entry = SymbolCalibrationEntry(multiplier: 0.5, xOffset: 0.01, yOffset: -0.01, weight: "bold",
                                                status: "calibrated", source: "pixel-fit", fitScore: 0.95)
+    private let hand = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0, yOffset: 0, weight: "medium", status: "calibrated")
+    private let circle = SymbolCalibrationEntry(multiplier: 0.65, xOffset: 0, yOffset: 0, weight: "medium", status: "calibrated")
 
-    @Test func theFittedSetStartsEmptyWithTheStoredContainers() throws {
-        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
-        let containers = store.containerEntries
-        store.activate(.fitted)
-        #expect(store.activeSet == .fitted)
-        #expect(store.symbolEntries.isEmpty)
-        #expect(store.containerEntries == containers)
+    /// Writes a stored `symbol-calibration.json` into `directory`, as Adopt would.
+    private func writeStored(_ symbols: [String: SymbolCalibrationEntry], in directory: URL) throws {
+        let file = SymbolCalibration(symbols: symbols, containers: [ContainerType.circle.containerKey: circle])
+        try JSONEncoder().encode(file).write(to: directory.appendingPathComponent(SymbolCalibrationStore.storedFileName))
     }
 
-    @Test func editingTheFittedSetLeavesTheStoredSetAlone() throws {
-        let directory = try temporaryDirectory()
-        let store = SymbolCalibrationStore(directory: directory)
-        let stored = store.symbolEntries
-        store.activate(.fitted)
-        store.setEntry(entry, forSymbol: "fixture.symbol", containerKey: nil)
-        store.activate(.stored)
-        #expect(store.symbolEntries == stored)
+    private func readStored(in directory: URL) throws -> SymbolCalibration {
+        try JSONDecoder().decode(SymbolCalibration.self, from: Data(contentsOf:
+            directory.appendingPathComponent(SymbolCalibrationStore.storedFileName)))
+    }
 
+    @Test func withoutAFittedFileTheStoredCalibrationIsShownAndNothingIsWritten() throws {
+        let directory = try temporaryDirectory()
+        try writeStored(["fixture.stored": hand], in: directory)
+        let store = SymbolCalibrationStore(directory: directory)
+        #expect(store.symbolEntries == ["fixture.stored": hand])
+        #expect(!FileManager.default.fileExists(atPath: store.fittedURL.path))
+    }
+
+    @Test func editsGoToTheFittedFileAndLeaveTheStoredOneAlone() throws {
+        let directory = try temporaryDirectory()
+        try writeStored(["fixture.stored": hand], in: directory)
+        let store = SymbolCalibrationStore(directory: directory)
+        store.setEntry(entry, forSymbol: "fixture.symbol")
+
+        #expect(try readStored(in: directory).symbols == ["fixture.stored": hand])
         let reopened = SymbolCalibrationStore(directory: directory)
-        reopened.activate(.fitted)
         #expect(reopened.symbolEntries["fixture.symbol"] == entry)
+        #expect(reopened.symbolEntries["fixture.stored"] == hand)
     }
 
-    @Test func aContainerVariantGetsItsOwnEntryInTheFittedSet() throws {
-        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
-        store.activate(.fitted)
-        let containers = store.containerEntries
-        store.setEntry(entry, forSymbol: "fixture.circle", containerKey: "circle")
-        #expect(store.symbolEntries["fixture.circle"] == entry)
-        #expect(store.containerEntries == containers)
-        #expect(store.entry(forSymbol: "fixture.circle", containerKey: "circle") == entry)
-    }
-
-    @Test func restoringTheBundledCalibrationReturnsToTheStoredSet() throws {
-        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
-        store.activate(.fitted)
-        store.restoreBundledCalibration()
-        #expect(store.activeSet == .stored)
-        #expect(!store.hasOverride)
-    }
-
-    @Test func theStoredCalibrationIsReadableWhileTheFittedSetIsActive() throws {
-        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
-        let stored = store.symbolEntries
-        store.activate(.fitted)
-        #expect(store.storedCalibration()?.symbols == stored)
-    }
-
-    @Test func adoptingTheFittedSetReplacesStoredEntriesAndKeepsTheRest() throws {
+    @Test func restoringTheBundledCalibrationRemovesTheOverrideAndKeepsTheFittedSet() throws {
         let directory = try temporaryDirectory()
+        try writeStored([:], in: directory)
         let store = SymbolCalibrationStore(directory: directory)
-        let hand = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0, yOffset: 0, weight: "medium", status: "calibrated")
-        store.setEntry(hand, forSymbol: "fixture.both", containerKey: nil)
-        store.setEntry(hand, forSymbol: "fixture.stored", containerKey: nil)
-        store.activate(.fitted)
-        store.setEntry(entry, forSymbol: "fixture.both", containerKey: nil)
-        store.setEntry(entry, forSymbol: "fixture.fitted", containerKey: nil)
+        store.setEntry(entry, forSymbol: "fixture.symbol")
+        #expect(store.hasOverride)
+
+        store.restoreBundledCalibration()
+
+        #expect(!store.hasOverride)
+        #expect(SymbolCalibrationStore(directory: directory).symbolEntries["fixture.symbol"] == entry)
+    }
+
+    @Test func adoptingReplacesStoredEntriesAndKeepsTheRest() throws {
+        let directory = try temporaryDirectory()
+        try writeStored(["fixture.both": hand, "fixture.stored": hand], in: directory)
+        let store = SymbolCalibrationStore(directory: directory)
+        store.symbolEntries = [:]
+        store.setEntry(entry, forSymbol: "fixture.both")
+        store.setEntry(entry, forSymbol: "fixture.fitted")
 
         let copy = try #require(try store.adoptFittedSet())
 
-        #expect(store.activeSet == .stored)
-        #expect(store.symbolEntries["fixture.both"] == entry)
-        #expect(store.symbolEntries["fixture.fitted"] == entry)
-        #expect(store.symbolEntries["fixture.stored"] == hand)
-        let reopened = SymbolCalibrationStore(directory: directory)
-        #expect(reopened.symbolEntries["fixture.both"] == entry)
+        let adopted = try readStored(in: directory)
+        #expect(adopted.symbols == ["fixture.both": entry, "fixture.fitted": entry, "fixture.stored": hand])
+        #expect(adopted.containers == [ContainerType.circle.containerKey: circle])
         let previous = try JSONDecoder().decode(SymbolCalibration.self, from: Data(contentsOf: copy))
-        #expect(previous.symbols["fixture.both"] == hand)
-        #expect(previous.symbols["fixture.fitted"] == nil)
+        #expect(previous.symbols == ["fixture.both": hand, "fixture.stored": hand])
     }
 
     @Test func adoptingTwiceKeepsBothPreviousStoredFiles() throws {
-        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
-        store.activate(.fitted)
-        store.setEntry(entry, forSymbol: "fixture.fitted", containerKey: nil)
+        let directory = try temporaryDirectory()
+        try writeStored([:], in: directory)
+        let store = SymbolCalibrationStore(directory: directory)
+        store.setEntry(entry, forSymbol: "fixture.fitted")
         let first = try #require(try store.adoptFittedSet(at: Date(timeIntervalSince1970: 0)))
         let second = try #require(try store.adoptFittedSet(at: Date(timeIntervalSince1970: 60)))
         #expect(first != second)
@@ -359,10 +352,10 @@ struct CalibrationSetTests {
         #expect(FileManager.default.fileExists(atPath: second.path))
     }
 
-    @Test func adoptingWithoutAFittedSetChangesNothing() throws {
-        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
-        let stored = store.symbolEntries
+    @Test func adoptingWithoutAFittedFileChangesNothing() throws {
+        let directory = try temporaryDirectory()
+        let store = SymbolCalibrationStore(directory: directory)
         #expect(throws: (any Error).self) { try store.adoptFittedSet() }
-        #expect(store.symbolEntries == stored)
+        #expect(!store.hasOverride)
     }
 }
