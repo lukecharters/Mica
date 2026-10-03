@@ -124,4 +124,51 @@ enum SymbolAutoSizingService {
             frameHeight: Double(size.height)
         )
     }
+
+    // MARK: - Radius Measurement
+
+    /// How far the symbol's farthest opaque pixel lies from the point SwiftUI
+    /// centres an `Image(systemName:)` on, in units of the point size: the middle of
+    /// the alignment rect across, the middle of the image bounds down. This × the
+    /// drawn point size is how far the glyph reaches from where it is placed. Nil
+    /// for unknown symbols.
+    static func measureRadius(symbol name: String, weight: NSFont.Weight) -> Double? {
+        let pointSize = SymbolTightBounds.referencePointSize
+        let config = NSImage.SymbolConfiguration(pointSize: pointSize, weight: weight)
+        guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else { return nil }
+
+        let size = image.size
+        let side = Int(ceil(max(size.width, size.height) * 3))
+        guard side > 0,
+              let ctx = CGContext(
+                  data: nil, width: side, height: side,
+                  bitsPerComponent: 8, bytesPerRow: side * 4,
+                  space: CGColorSpaceCreateDeviceRGB(),
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+
+        let centre = Double(side) / 2
+        let gctx = NSGraphicsContext(cgContext: ctx, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = gctx
+        let alignment = image.alignmentRect
+        image.draw(in: CGRect(x: centre - alignment.midX, y: centre - size.height / 2,
+                              width: size.width, height: size.height))
+        NSGraphicsContext.restoreGraphicsState()
+
+        guard let data = ctx.data else { return nil }
+        let buf = data.bindMemory(to: UInt8.self, capacity: side * side * 4)
+        var farthest = -1.0
+        for y in 0..<side {
+            let row = y * side * 4
+            let dy = Double(y) + 0.5 - centre
+            for x in 0..<side where buf[row + x * 4 + 3] > 127 {
+                let dx = Double(x) + 0.5 - centre
+                farthest = max(farthest, dx * dx + dy * dy)
+            }
+        }
+        guard farthest >= 0 else { return nil }
+        return farthest.squareRoot() / pointSize
+    }
 }

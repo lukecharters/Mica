@@ -19,6 +19,15 @@ struct ResolvedSymbolSizing {
     let source: SizingSource
 }
 
+/// Where a symbol is drawn. A badge is a circle, so a glyph sized for the icon's
+/// rounded square can reach its edge; `.badge` shrinks only the glyphs that reach
+/// past `SymbolSizingService.badgeKnee`. `weight` is the weight the badge will draw
+/// at, when it overrides the calibrated one.
+enum SymbolSizingContext: Hashable {
+    case icon
+    case badge(weight: Font.Weight? = nil)
+}
+
 enum SizingSource: String {
     case symbolCalibration
     case containerCalibration
@@ -37,7 +46,76 @@ struct SymbolSizingService {
         for symbolName: String,
         calibration: SymbolCalibration? = nil,
         catalog: SymbolCatalog = .bundled,
-        os: MacOSVersion = .running
+        os: MacOSVersion = .running,
+        context: SymbolSizingContext = .icon
+    ) -> ResolvedSymbolSizing {
+        let sizing = resolveForIcon(for: symbolName, calibration: calibration, catalog: catalog, os: os)
+        guard case .badge(let weightOverride) = context else { return sizing }
+        let drawableName = catalog.drawableName(for: symbolName, on: os)
+        guard let radius = glyphRadius(for: drawableName, weight: weightOverride ?? sizing.weight) else { return sizing }
+        return ResolvedSymbolSizing(
+            multiplier: badgeMultiplier(sizing.multiplier, glyphRadius: radius),
+            xOffset: sizing.xOffset,
+            yOffset: sizing.yOffset,
+            weight: sizing.weight,
+            source: sizing.source
+        )
+    }
+
+    // MARK: - Badge Fit
+
+    /// Glyphs reaching no further than this fraction of the badge radius are left alone.
+    static let badgeKnee = 0.80
+    /// No glyph reaches past this fraction of the badge radius.
+    static let badgeLimit = 0.88
+
+    /// `multiplier` with the glyph's reach compressed above `knee` so that it
+    /// approaches `limit` and never passes it. `glyphRadius` is from
+    /// `SymbolAutoSizingService.measureRadius`, in units of the point size; the
+    /// badge draws at `diameter × multiplier`, so the reach in badge radii is
+    /// `2 × multiplier × glyphRadius`.
+    static func badgeMultiplier(
+        _ multiplier: Double,
+        glyphRadius: Double,
+        knee: Double = badgeKnee,
+        limit: Double = badgeLimit
+    ) -> Double {
+        let reach = 2 * multiplier * glyphRadius
+        return reach > 0 ? multiplier * compressedReach(reach, knee: knee, limit: limit) / reach : multiplier
+    }
+
+    static func compressedReach(_ reach: Double, knee: Double = badgeKnee, limit: Double = badgeLimit) -> Double {
+        guard reach > knee, limit > knee else { return reach }
+        let span = limit - knee
+        return knee + span * tanh((reach - knee) / span)
+    }
+
+    private static let glyphRadiusCache = Mutex<[String: Double?]>([:])
+
+    private static func glyphRadius(for drawableName: String, weight: Font.Weight) -> Double? {
+        let measurementWeight = measurementWeight(for: weight)
+        let key = "\(drawableName)|\(measurementWeight.rawValue)"
+        if let cached = glyphRadiusCache.withLock({ $0[key] }) {
+            return cached
+        }
+        let radius = SymbolAutoSizingService.measureRadius(symbol: drawableName, weight: measurementWeight)
+        glyphRadiusCache.withLock { $0[key] = radius }
+        return radius
+    }
+
+    private static func measurementWeight(for weight: Font.Weight) -> NSFont.Weight {
+        let weights: [(Font.Weight, NSFont.Weight)] = [
+            (.ultraLight, .ultraLight), (.thin, .thin), (.light, .light), (.regular, .regular),
+            (.medium, .medium), (.semibold, .semibold), (.bold, .bold), (.heavy, .heavy), (.black, .black),
+        ]
+        return weights.first { $0.0 == weight }?.1 ?? SymbolCalibrationEntry.defaultMeasurementWeight
+    }
+
+    private static func resolveForIcon(
+        for symbolName: String,
+        calibration: SymbolCalibration?,
+        catalog: SymbolCatalog,
+        os: MacOSVersion
     ) -> ResolvedSymbolSizing {
         let calibrationData = calibration ?? Self.calibrationData
         let drawableName = catalog.drawableName(for: symbolName, on: os)
