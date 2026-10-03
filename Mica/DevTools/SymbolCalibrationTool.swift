@@ -776,6 +776,7 @@ struct SymbolCalibrationTool: View {
                 if family.isContainer {
                     let dk = SymbolCalibrationStore.containerDims.first { $0.label == family.containerLabel }?.key
                     return store.entry(forSymbol: "", containerKey: dk)?.status == "needs-review"
+                        || store.familyHasMember(withStatus: "needs-review", members: family.members)
                 }
                 return store.familyHasMember(withStatus: "needs-review", members: family.members)
             }
