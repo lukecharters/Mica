@@ -191,6 +191,9 @@
     "Add a badge before saving a badge preset" : {
 
     },
+    "Adopt Fitted Set…" : {
+
+    },
     "Adopt the predicted multiplier and mark the symbol calibrated from the rule" : {
 
     },
@@ -1720,6 +1723,9 @@
           }
         }
       }
+    },
+    "Make the fitted set the stored calibration, keeping a copy of the current one" : {
+
     },
     "Mark calibrated + advance member" : {
 
