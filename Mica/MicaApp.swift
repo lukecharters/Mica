@@ -459,7 +459,7 @@ struct MicaApp: App {
             //
             // The tool *windows* are gated on the same flag, for a reason found by
             // measuring: a declared `Window` scene puts its title in the **Window
-            // menu**, so leaving them unconditional left all three openable with
+            // menu**, so leaving them unconditional left them openable with
             // the preference off, which defeats the whole switch. Turning the
             // preference off therefore closes an open tool window — correct, and
             // the price of the menu not lying.
@@ -470,9 +470,6 @@ struct MicaApp: App {
                     }
                     Button("Reference Comparison") {
                         openWindow(id: "reference-comparison")
-                    }
-                    Button("Generate Symbol Metrics") {
-                        openWindow(id: "metrics-generator")
                     }
 
                     Divider()
@@ -522,12 +519,6 @@ struct MicaApp: App {
             PresetsWindow()
         }
         .defaultSize(width: 720, height: 560)
-
-        Window("Symbol Metrics Generator", id: "metrics-generator") {
-            DeferredWindowContent { SymbolMetricsGeneratorView() }
-        }
-        .defaultSize(width: 420, height: 220)
-        .commandsRemoved()
 
         Window("Symbol Calibration", id: "symbol-calibration") {
             DeferredWindowContent { SymbolCalibrationTool() }
