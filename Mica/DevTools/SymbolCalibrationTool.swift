@@ -6,7 +6,6 @@
 // calibration per container type.
 //
 // Saves to the sandbox container's Application Support/Mica/symbol-calibration.json.
-// Migrates from dim-calibration.json on first load.
 
 import SwiftUI
 
@@ -249,9 +248,7 @@ class SymbolCalibrationStore {
     private func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             guard activeSet == .stored else { return }
-            if !seedFromBundledCalibration() {
-                migrateFromDimCalibration()
-            }
+            seedFromBundledCalibration()
             return
         }
         do {
@@ -301,89 +298,15 @@ class SymbolCalibrationStore {
     /// Seeds the working copy from the bundled symbol-calibration.json
     /// (the same fallback SymbolSizingService uses in production) when no
     /// Application Support copy exists yet.
-    private func seedFromBundledCalibration() -> Bool {
+    private func seedFromBundledCalibration() {
         guard let url = Bundle.main.url(forResource: "symbol-calibration", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let file = try? JSONDecoder().decode(SymbolCalibration.self, from: data)
-        else { return false }
+        else { return }
         symbolEntries = SymbolCatalog.bundled.rekeyedToCurrentNames(file.symbols)
         containerEntries = file.containers
         familyOverrides = SymbolCatalog.bundled.rekeyedToCurrentNames(file.familyOverrides)
         print("SymbolCalibrationStore: seeded \(symbolEntries.count) symbols from bundled calibration")
-        save()
-        return true
-    }
-
-    // MARK: - Migration from dim-calibration.json
-
-    private func migrateFromDimCalibration() {
-        let dir = directory
-        let dimCalURL = dir.appendingPathComponent("dim-calibration.json")
-        let metricsURL = dir.appendingPathComponent("symbol_metrics.json")
-
-        guard FileManager.default.fileExists(atPath: dimCalURL.path),
-              FileManager.default.fileExists(atPath: metricsURL.path) else {
-            print("SymbolCalibrationStore: no migration sources found")
-            return
-        }
-
-        struct MigEntry: Decodable {
-            let multiplier: Double; let xOffset: Double; let yOffset: Double
-            let weight: String; let status: String
-        }
-        struct MigFile: Decodable {
-            let calibrations: [String: MigEntry]
-            let excludedSymbols: [String]?
-            let overrides: [String: MigEntry]?
-            let subgroups: [String: [String]]?
-        }
-
-        guard let dimData = try? Data(contentsOf: dimCalURL),
-              let dimFile = try? JSONDecoder().decode(MigFile.self, from: dimData),
-              let metricsData = try? Data(contentsOf: metricsURL),
-              let metricsFile = try? JSONDecoder().decode(SymbolMetricsFile.self, from: metricsData) else {
-            print("SymbolCalibrationStore: failed to decode migration files")
-            return
-        }
-
-        var subgroupLookup: [String: String] = [:]
-        for (subKey, symbols) in dimFile.subgroups ?? [:] {
-            for symbol in symbols { subgroupLookup[symbol] = subKey }
-        }
-        let overrides = dimFile.overrides ?? [:]
-        let containersBySignature = Self.containersBySignature(in: metricsFile.symbols)
-
-        for (symbol, metrics) in metricsFile.symbols {
-            // dim-calibration.json is keyed by dimension signature throughout —
-            // it predates container-name keys — so every lookup below uses the
-            // signature, and only the destination uses the new container key.
-            let signature = Self.dimensionSignature(of: metrics)
-
-            if let container = containersBySignature[signature] {
-                if containerEntries[container.containerKey] == nil,
-                   let e = dimFile.calibrations[signature] {
-                    containerEntries[container.containerKey] = SymbolCalibrationEntry(
-                        multiplier: e.multiplier, xOffset: e.xOffset, yOffset: e.yOffset,
-                        weight: e.weight, status: e.status)
-                }
-            } else {
-                let source: MigEntry?
-                if let ovr = overrides[symbol] {
-                    source = ovr
-                } else if let subKey = subgroupLookup[symbol], let sub = dimFile.calibrations[subKey] {
-                    source = sub
-                } else {
-                    source = dimFile.calibrations[signature]
-                }
-                if let s = source {
-                    symbolEntries[symbol] = SymbolCalibrationEntry(
-                        multiplier: s.multiplier, xOffset: s.xOffset, yOffset: s.yOffset,
-                        weight: s.weight, status: s.status)
-                }
-            }
-        }
-
-        print("SymbolCalibrationStore: migrated \(symbolEntries.count) symbols, \(containerEntries.count) containers")
         save()
     }
 }
@@ -542,8 +465,6 @@ struct SymbolCalibrationTool: View {
     @State private var families: [SymbolFamily] = []
     @State private var selectedIndex = 0
     @State private var memberIndex = 0
-    /// What Tab applies: the entry last written with Space or Tab.
-    @State private var lastCommittedEntry: SymbolCalibrationEntry?
 
     @State private var multiplier = 0.65
     @State private var xOffset = 0.0
@@ -830,7 +751,6 @@ struct SymbolCalibrationTool: View {
         .focusable()
         .onKeyPress(.space) { markCalibratedAndAdvance(); return .handled }
         .onKeyPress(.escape) { markSkippedAndAdvance(); return .handled }
-        .onKeyPress(.tab) { copyPreviousAndAdvance(); return .handled }
         .onKeyPress(phases: .down) { press in handleKeyPress(press) }
     }
 
@@ -1161,17 +1081,6 @@ struct SymbolCalibrationTool: View {
                 }
                 Slider(value: $multiplier, in: 0.3...1.0, step: 0.005)
                     .onChange(of: multiplier) { _, _ in autoSave() }
-                WrappingHStack(horizontalSpacing: 4, verticalSpacing: 4) {
-                    ForEach([0.43, 0.44, 0.46, 0.48, 0.5, 0.52, 0.53, 0.54, 0.56, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66], id: \.self) { val in
-                        Button(String(format: "%.2f", val)) {
-                            multiplier = val
-                            autoSave()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.mini)
-                        .tint(multiplier == val ? .accentColor : nil)
-                    }
-                }
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -1529,7 +1438,6 @@ struct SymbolCalibrationTool: View {
                 GridRow { Text("Up/Down"); Text("Previous / Next family") }
                 GridRow { Text("Left/Right"); Text("Previous / Next member") }
                 GridRow { Text("Space"); Text("Mark calibrated + advance member") }
-                GridRow { Text("Tab"); Text("Same as previous + advance member") }
                 GridRow { Text("Escape"); Text("Mark skipped + advance member") }
                 GridRow { Text("Cmd+Up/Down"); Text("Nudge multiplier +/-0.001") }
                 GridRow { Text("Shift+Left/Right"); Text("Nudge X offset +/-0.001") }
@@ -2721,9 +2629,7 @@ struct SymbolCalibrationTool: View {
     }
 
     private func markCalibratedAndAdvance() {
-        let entry = currentEntry(status: "calibrated")
-        lastCommittedEntry = entry
-        commitAndAdvance(markedOverCurrent(entry))
+        commitAndAdvance(markedOverCurrent(currentEntry(status: "calibrated")))
     }
 
     private func markSkippedAndAdvance() {
@@ -2733,19 +2639,6 @@ struct SymbolCalibrationTool: View {
     private func markedOverCurrent(_ entry: SymbolCalibrationEntry) -> SymbolCalibrationEntry {
         guard let symbol = currentSymbol else { return entry }
         return PixelFitter.marked(entry, over: store.entry(forSymbol: symbol, containerKey: currentContainerKey))
-    }
-
-    /// Writes the last Space/Tab entry to the current symbol, whatever its sliders
-    /// show: arriving on a symbol loads its own entry, or the defaults.
-    private func copyPreviousAndAdvance() {
-        guard var entry = lastCommittedEntry else {
-            NSSound.beep()
-            return
-        }
-        entry.status = "calibrated"
-        entry.source = nil
-        lastCommittedEntry = entry
-        commitAndAdvance(entry)
     }
 
     // MARK: - Load / Save
