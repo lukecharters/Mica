@@ -440,7 +440,6 @@ private enum FamilyFilterMode: String, CaseIterable {
     case all = "All"
     case uncalibrated = "Uncalibrated"
     case needsReview = "Needs Review"
-    case outliers = "Outliers"
     case calibrated = "Calibrated"
     case skipped = "Skipped"
     case containers = "Containers"
@@ -451,29 +450,20 @@ private enum FamilySortMode: String, CaseIterable {
     case familySize = "Size"
     case width = "Width"
     case height = "Height"
-    /// Worst box-fit disagreement first — the order outlier review wants, and
-    /// the reason the Auto Sizing Review tool had a sort of its own.
-    case boxFitDelta = "Δ"
 }
 
 /// The three destructive confirmations, as one value.
 ///
 /// **One `.alert` per view, so one enum.** Stacking a second `.alert` on the
-/// same view silently wins over the first — the rule `CLAUDE.md` records for
-/// `ContentView` — and this view already carries three `.sheet`s, so the batch
-/// operations that arrived with the box-fit review cannot bring their own.
+/// same view silently wins over the first.
 private enum CalibrationConfirmation: Identifiable {
     case applyToFamily(name: String, count: Int)
-    case acceptShownPredictions(count: Int)
-    case markShownNeedsReview(count: Int)
     case restoreBundledCalibration
     case adoptFittedSet(count: Int, flagged: Int)
 
     var id: String {
         switch self {
         case .applyToFamily: "apply"
-        case .acceptShownPredictions: "accept"
-        case .markShownNeedsReview: "review"
         case .restoreBundledCalibration: "restore"
         case .adoptFittedSet: "adopt"
         }
@@ -482,8 +472,6 @@ private enum CalibrationConfirmation: Identifiable {
     var title: String {
         switch self {
         case .applyToFamily: "Apply Calibration to Family"
-        case .acceptShownPredictions(let count): "Accept \(count) Predictions"
-        case .markShownNeedsReview(let count): "Mark \(count) as Needs Review"
         case .restoreBundledCalibration: "Restore Bundled Calibration"
         case .adoptFittedSet: "Adopt Fitted Set"
         }
@@ -492,8 +480,6 @@ private enum CalibrationConfirmation: Identifiable {
     var confirmLabel: String {
         switch self {
         case .applyToFamily: "Apply"
-        case .acceptShownPredictions: "Accept All"
-        case .markShownNeedsReview: "Mark All"
         case .restoreBundledCalibration: "Restore"
         case .adoptFittedSet: "Adopt"
         }
@@ -503,11 +489,6 @@ private enum CalibrationConfirmation: Identifiable {
         switch self {
         case .applyToFamily(let name, let count):
             "Copy the current symbol's calibration values to all \(count) members of \"\(name)\"?"
-        case .acceptShownPredictions(let count):
-            "Write the predicted multiplier to all \(count) symbols shown as calibrated entries "
-                + "(source: auto-boxfit). Apple hand-tuned symbols and containers are skipped."
-        case .markShownNeedsReview(let count):
-            "Set status to needs-review on all \(count) symbols shown, keeping their existing values."
         case .restoreBundledCalibration:
             "Delete the Application Support calibration and go back to the one Mica ships, "
                 + "so the app renders with the shipped symbol sizing again. A .backup.json "
@@ -624,33 +605,12 @@ struct SymbolCalibrationTool: View {
     @State private var symbolContainerKeys: [String: String] = [:]
     @State private var symbolMetrics: [String: SymbolMetrics] = [:]
 
-    /// The box-fit rule's predictions, measured here since 2026-08-21 — this was
-    /// a second window whose cache this tool could read but not write, so
-    /// reviewing an outlier and fixing it were two tools apart. Drives the
-    /// Outliers filter. See `DevTools/BoxFitPredictions.swift`.
-    @State private var boxFit = BoxFitReview()
     @State private var pixelFit = PixelFitRun()
     @AppStorage("pixelFitThreshold") private var pixelFitThreshold = 0.85
     @State private var adoptResult: String?
 
-    /// Whether accepting a prediction also writes its advisory content-centring
-    /// Y offset. Off by default: the multiplier is the rule's output, the offset
-    /// is a hint, and offsets are partly optical.
-    @State private var appliesSuggestedYOffset = false
-
     /// The one confirmation slot. See `CalibrationConfirmation`.
     @State private var confirmation: CalibrationConfirmation?
-
-    /// Outlier membership frozen when the Outliers filter is entered. The
-    /// filter must not re-evaluate live: editing a symbol to within the
-    /// threshold would drop its family out of filteredFamilies mid-drag and
-    /// silently jump the view to the next family. Re-entering the filter
-    /// refreshes the snapshot.
-    @State private var outlierSnapshot: Set<String> = []
-
-    /// Lives on `boxFit` so the slider can move it; kept as a property here
-    /// because five call sites read it and none of them care where it comes from.
-    private var outlierThreshold: Double { boxFit.threshold }
 
     // All Icons multi-selection
     @State private var allIconsSelection: Set<String> = []
@@ -842,10 +802,6 @@ struct SymbolCalibrationTool: View {
                 }
                 return store.familyAllMembers(withStatus: "skipped", members: family.members)
             }
-        case .outliers:
-            list = list.filter { family in
-                !family.isContainer && family.members.contains { outlierSnapshot.contains($0) }
-            }
         }
 
         if !searchText.isEmpty {
@@ -864,61 +820,9 @@ struct SymbolCalibrationTool: View {
             list.sort { $0.width < $1.width }
         case .height:
             list.sort { $0.height < $1.height }
-        case .boxFitDelta:
-            // A family's disagreement is its *worst* member's, so a family with
-            // one badly-sized variant does not sink under nine agreeing ones.
-            list.sort { worstBoxFitDelta(in: $0) > worstBoxFitDelta(in: $1) }
         }
 
         return list
-    }
-
-    // MARK: - Box-Fit Outliers
-
-    /// Calibrated symbol whose stored multiplier disagrees with the box-fit
-    /// prediction by more than the threshold. Live check — used to build the
-    /// snapshot and for row deltas, never for filtering directly.
-    private func isBoxFitOutlier(_ symbol: String) -> Bool {
-        guard let delta = boxFitDelta(for: symbol) else { return false }
-        return abs(delta) > outlierThreshold
-    }
-
-    private func rebuildOutlierSnapshot() {
-        outlierSnapshot = Set(boxFit.predictions.keys.filter(isBoxFitOutlier))
-    }
-
-    /// prediction − calibrated multiplier, or nil when either side is missing.
-    private func boxFitDelta(for symbol: String) -> Double? {
-        guard let entry = store.symbolEntries[symbol], entry.status == "calibrated",
-              let prediction = boxFit.multiplier(for: symbol) else { return nil }
-        return prediction - entry.multiplier
-    }
-
-    private func worstBoxFitDelta(in family: SymbolFamily) -> Double {
-        family.members.compactMap { boxFitDelta(for: $0).map(abs) }.max() ?? 0
-    }
-
-    /// Every calibrated symbol's disagreement, for the agreement summary.
-    private var allBoxFitDeltas: [Double] {
-        store.symbolEntries.keys.compactMap(boxFitDelta(for:))
-    }
-
-    /// The non-container symbols the batch operations would touch: everything in
-    /// the current filter that the rule has a prediction for.
-    private func shownPredictedSymbols(excludingAppleTuned: Bool) -> [String] {
-        filteredFamilies
-            .filter { !$0.isContainer }
-            .flatMap(\.members)
-            .filter { boxFit.predictions[$0] != nil }
-            .filter { !excludingAppleTuned || !boxFit.isAppleTuned($0) }
-    }
-
-    /// In the Outliers filter, land on the first outlier member instead of
-    /// member 0 so the flagged symbol is immediately editable.
-    private func firstRelevantMemberIndex() -> Int {
-        guard filterMode == .outliers, let family = currentFamily,
-              let idx = family.members.firstIndex(where: outlierSnapshot.contains) else { return 0 }
-        return idx
     }
 
     private var currentFamily: SymbolFamily? {
@@ -964,24 +868,13 @@ struct SymbolCalibrationTool: View {
         }
         .onAppear {
             baselineData = SymbolBaselineData.load()
-            boxFit.loadCatalogs()
-            if boxFit.loadCachedMeasurements() {
-                rebuildOutlierSnapshot()
-            }
             loadCurrentMember()
         }
-        // A measurement pass or a threshold change moves the outlier set under
-        // the filter, and both are explicit user actions — unlike an edit, which
-        // is why the snapshot is frozen against those. See `outlierSnapshot`.
-        .onChange(of: boxFit.isMeasuring) { _, measuring in
-            if !measuring { rebuildOutlierSnapshot() }
-        }
-        .onChange(of: boxFit.threshold) { _, _ in rebuildOutlierSnapshot() }
         .onChange(of: pixelFit.isRunning) { _, running in
             if !running { loadCurrentMember() }
         }
         .onChange(of: selectedIndex) { _, _ in
-            memberIndex = firstRelevantMemberIndex()
+            memberIndex = 0
             loadCurrentMember()
         }
         .onChange(of: memberIndex) { _, _ in loadCurrentMember() }
@@ -1060,10 +953,6 @@ struct SymbolCalibrationTool: View {
             if let symbol = currentSymbol, let entry = store.symbolEntries[symbol], let family = currentFamily {
                 applyCalibration(entry: entry, toFamily: family)
             }
-        case .acceptShownPredictions:
-            acceptShownPredictions()
-        case .markShownNeedsReview:
-            markShownNeedsReview()
         case .restoreBundledCalibration:
             store.restoreBundledCalibration()
             rebuildFamilies()
@@ -1099,8 +988,6 @@ struct SymbolCalibrationTool: View {
                 Divider()
                 pixelFitSection
                 Divider()
-                boxFitSection
-                Divider()
                 overrideSection
                 Divider()
                 keyboardShortcutsHelp
@@ -1130,28 +1017,14 @@ struct SymbolCalibrationTool: View {
                 selection: $filterMode,
                 accessibilityLabel: "Filter"
             )
-            .onChange(of: filterMode) { _, newMode in
-                if newMode == .outliers { rebuildOutlierSnapshot() }
+            .onChange(of: filterMode) { _, _ in
                 selectedIndex = 0
-                memberIndex = firstRelevantMemberIndex()
+                memberIndex = 0
                 loadCurrentMember()
             }
 
-            if filterMode == .outliers && !boxFit.hasMeasurements {
-                Label("Nothing measured yet — use Measure All Symbols below.",
-                      systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-
-            // **One label, the Picker's own.** A `.segmented` Picker on macOS
-            // draws its label to the left of the segments, so the `Text("Sort:")`
-            // that used to sit beside it was a second one — and the pair, plus
-            // the Δ segment that made five, is what compressed it into "Sor t"
-            // across two lines. The Filter row above has always relied on the
-            // Picker's label alone; this now matches it. Widen the frame rather
-            // than adding a label back: a definite width covers label *and*
-            // segments, so too small squeezes the label to nothing.
+            // A definite width covers the Picker's label *and* its segments, so
+            // too small squeezes the label to nothing.
             Picker("Sort", selection: $sortMode) {
                 ForEach(FamilySortMode.allCases, id: \.self) { mode in
                     Text(mode.rawValue).tag(mode)
@@ -1260,12 +1133,6 @@ struct SymbolCalibrationTool: View {
                                         .font(.caption2.monospaced())
                                         .foregroundStyle(idx == memberIndex ? .primary : .tertiary)
                                         .fontWeight(idx == memberIndex ? .bold : .regular)
-                                    if let delta = boxFitDelta(for: sym), abs(delta) > outlierThreshold {
-                                        Text(String(format: "%+.3f", delta))
-                                            .font(.system(size: 8).monospacedDigit())
-                                            .foregroundStyle(.red)
-                                            .help("Box-fit prediction disagrees with calibration by this much")
-                                    }
                                 }
                                 .onTapGesture { memberIndex = idx }
                                 .contextMenu {
@@ -1345,17 +1212,6 @@ struct SymbolCalibrationTool: View {
                 }
                 Slider(value: $multiplier, in: 0.3...1.0, step: 0.005)
                     .onChange(of: multiplier) { _, _ in autoSave() }
-                if let symbol = currentSymbol, let prediction = boxFit.predictions[symbol] {
-                    BoxFitPredictionRow(
-                        prediction: prediction,
-                        calibratedMultiplier: store.symbolEntries[symbol]?.multiplier,
-                        threshold: outlierThreshold,
-                        isAppleTuned: boxFit.isAppleTuned(symbol),
-                        currentMultiplier: multiplier,
-                        currentYOffset: yOffset,
-                        acceptMultiplier: { acceptPrediction(for: symbol) },
-                        acceptYOffset: { acceptSuggestedYOffset(for: symbol) })
-                }
                 WrappingHStack(horizontalSpacing: 4, verticalSpacing: 4) {
                     ForEach([0.43, 0.44, 0.46, 0.48, 0.5, 0.52, 0.53, 0.54, 0.56, 0.58, 0.59, 0.6, 0.61, 0.62, 0.63, 0.64, 0.65, 0.66], id: \.self) { val in
                         Button(String(format: "%.2f", val)) {
@@ -1704,170 +1560,6 @@ struct SymbolCalibrationTool: View {
         store.symbolEntries = PixelFitter.reflagged(store.symbolEntries, threshold: pixelFitThreshold)
         store.save()
         loadCurrentMember()
-    }
-
-    // MARK: - Box-Fit Review
-
-    /// The former Auto Sizing Review tool, as a section rather than a window:
-    /// measure, set the disagreement threshold, see how the rule is doing
-    /// overall, and accept or flag the whole filter at once.
-    private var boxFitSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Box-Fit Review")
-                    .font(.headline)
-                Spacer()
-                Button(boxFit.hasMeasurements ? "Remeasure" : "Measure All Symbols") {
-                    boxFit.measureAll()
-                }
-                .controlSize(.small)
-                .disabled(boxFit.isMeasuring)
-            }
-
-            if boxFit.isMeasuring {
-                VStack(alignment: .leading, spacing: 2) {
-                    ProgressView(value: boxFit.progress)
-                    Text("Measuring tight bounds… \(boxFit.measuredCount) symbols")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            } else if let error = boxFit.errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            } else if !boxFit.hasMeasurements {
-                Text("Predicts each symbol's multiplier from its tight bounds, "
-                     + "so a stale calibration shows up as a disagreement.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            if boxFit.hasMeasurements {
-                HStack(spacing: 10) {
-                    Text("Outlier threshold")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Slider(value: $boxFit.threshold, in: 0.01...0.1, step: 0.005)
-                        .frame(width: 130)
-                    Text(String(format: "±%.3f", boxFit.threshold))
-                        .font(.caption.monospacedDigit())
-                }
-
-                BoxFitAgreementSummary(deltas: allBoxFitDeltas, threshold: boxFit.threshold)
-
-                if boxFit.recipeSymbols.isEmpty {
-                    Label("container_recipes.plist unavailable — Apple's hand-tuned symbols "
-                          + "cannot be excluded from a batch accept.",
-                          systemImage: "exclamationmark.triangle")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
-
-                if let symbol = currentSymbol, let prediction = boxFit.predictions[symbol] {
-                    BoxFitBoundsGrid(bounds: prediction.bounds)
-                    if let base = boxFit.appleFamilyOf[symbol], base != symbol {
-                        Text("Apple family: \(base)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Toggle("Also apply the suggested Y offset", isOn: $appliesSuggestedYOffset)
-                    .toggleStyle(.checkbox)
-                    .font(.caption)
-                    .help("Write the content-centring Y hint as well when accepting a prediction")
-
-                let batchCount = shownPredictedSymbols(excludingAppleTuned: true).count
-                let reviewCount = shownPredictedSymbols(excludingAppleTuned: false).count
-                HStack(spacing: 8) {
-                    Button("Accept Shown Predictions") {
-                        confirmation = .acceptShownPredictions(count: batchCount)
-                    }
-                    .controlSize(.small)
-                    .disabled(batchCount == 0)
-
-                    Button("Mark Shown as Needs Review") {
-                        confirmation = .markShownNeedsReview(count: reviewCount)
-                    }
-                    .controlSize(.small)
-                    .disabled(reviewCount == 0)
-                }
-
-                Text("\(batchCount) of \(reviewCount) shown symbols are batch-acceptable")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-    }
-
-    // MARK: - Box-Fit Actions
-
-    /// Adopts the predicted multiplier for one symbol.
-    ///
-    /// **Writes the entry itself rather than going through `saveCurrentValues()`**,
-    /// for two reasons: that function returns early when no entry exists yet, so
-    /// on an uncalibrated symbol a slider write saves nothing; and it omits
-    /// `source`, which is right for a hand edit and wrong here. Accepting a
-    /// prediction is what `auto-boxfit` means.
-    private func acceptPrediction(for symbol: String) {
-        guard let prediction = boxFit.predictions[symbol] else { return }
-        writeAccepted(prediction, for: symbol)
-        store.save()
-        loadCurrentMember()
-    }
-
-    /// Adopts only the advisory Y offset, leaving the multiplier and the status
-    /// alone — so this is a hand edit, and clears `source` like any other.
-    private func acceptSuggestedYOffset(for symbol: String) {
-        guard let prediction = boxFit.predictions[symbol] else { return }
-        yOffset = round3(prediction.suggestedYOffset)
-        autoSave()
-    }
-
-    private func writeAccepted(_ prediction: AutoSizingPrediction, for symbol: String) {
-        let existing = store.symbolEntries[symbol]
-        store.symbolEntries[symbol] = SymbolCalibrationEntry(
-            multiplier: round3(prediction.multiplier),
-            xOffset: existing?.xOffset ?? 0,
-            yOffset: appliesSuggestedYOffset
-                ? round3(prediction.suggestedYOffset)
-                : existing?.yOffset ?? 0,
-            weight: existing?.weight ?? SymbolCalibrationEntry.weightToken(for: SymbolCalibrationEntry.defaultWeight),
-            status: "calibrated",
-            source: "auto-boxfit")
-    }
-
-    /// Apple's hand-tuned symbols are skipped: the rule is not expected to match
-    /// them, so accepting a prediction there replaces a measured value with an
-    /// estimate. Containers are skipped too — their entries live under
-    /// `containers`, keyed by shape, and a per-symbol write would not reach them.
-    private func acceptShownPredictions() {
-        for symbol in shownPredictedSymbols(excludingAppleTuned: true) {
-            guard let prediction = boxFit.predictions[symbol] else { continue }
-            writeAccepted(prediction, for: symbol)
-        }
-        store.save()
-        loadCurrentMember()
-    }
-
-    private func markShownNeedsReview() {
-        for symbol in shownPredictedSymbols(excludingAppleTuned: false) {
-            if var entry = store.symbolEntries[symbol] {
-                entry.status = "needs-review"
-                store.symbolEntries[symbol] = entry
-            } else if let prediction = boxFit.predictions[symbol] {
-                store.symbolEntries[symbol] = SymbolCalibrationEntry(
-                    multiplier: round3(prediction.multiplier),
-                    xOffset: 0, yOffset: 0, weight: SymbolCalibrationEntry.weightToken(for: SymbolCalibrationEntry.defaultWeight),
-                    status: "needs-review", source: "auto-boxfit")
-            }
-        }
-        store.save()
-        loadCurrentMember()
-    }
-
-    private func round3(_ value: Double) -> Double {
-        (value * 1000).rounded() / 1000
     }
 
     // MARK: - The Override
@@ -3110,7 +2802,7 @@ struct SymbolCalibrationTool: View {
             memberIndex = index
         case .family(let index) where index == selectedIndex:
             // Same index, different family: onChange(of: selectedIndex) will not fire.
-            memberIndex = firstRelevantMemberIndex()
+            memberIndex = 0
             loadCurrentMember()
         case .family(let index):
             selectedIndex = index

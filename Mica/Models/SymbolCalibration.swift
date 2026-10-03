@@ -39,9 +39,8 @@ struct SymbolCalibrationEntry: Codable, Equatable {
     var yOffset: Double
     var weight: String   // a `weightTokens` key
     var status: String   // "calibrated", "skipped", "needs-review"
-    /// Provenance marker; nil for hand-calibrated entries, "auto-boxfit" for
-    /// entries accepted from the Auto Calibration playground's predicted rule,
-    /// "pixel-fit" for entries fitted to Apple's rendering (`PixelFitter`).
+    /// Provenance marker; nil for hand-calibrated entries, "pixel-fit" for entries
+    /// fitted to Apple's rendering (`PixelFitter`).
     var source: String? = nil
     /// Soft IoU of a `pixel-fit` entry against Apple's rendering when it was fitted;
     /// nil for every other source.
