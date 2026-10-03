@@ -324,4 +324,45 @@ struct CalibrationSetTests {
         store.activate(.fitted)
         #expect(store.storedCalibration()?.symbols == stored)
     }
+
+    @Test func adoptingTheFittedSetReplacesStoredEntriesAndKeepsTheRest() throws {
+        let directory = try temporaryDirectory()
+        let store = SymbolCalibrationStore(directory: directory)
+        let hand = SymbolCalibrationEntry(multiplier: 0.6, xOffset: 0, yOffset: 0, weight: "medium", status: "calibrated")
+        store.setEntry(hand, forSymbol: "fixture.both", containerKey: nil)
+        store.setEntry(hand, forSymbol: "fixture.stored", containerKey: nil)
+        store.activate(.fitted)
+        store.setEntry(entry, forSymbol: "fixture.both", containerKey: nil)
+        store.setEntry(entry, forSymbol: "fixture.fitted", containerKey: nil)
+
+        let copy = try #require(try store.adoptFittedSet())
+
+        #expect(store.activeSet == .stored)
+        #expect(store.symbolEntries["fixture.both"] == entry)
+        #expect(store.symbolEntries["fixture.fitted"] == entry)
+        #expect(store.symbolEntries["fixture.stored"] == hand)
+        let reopened = SymbolCalibrationStore(directory: directory)
+        #expect(reopened.symbolEntries["fixture.both"] == entry)
+        let previous = try JSONDecoder().decode(SymbolCalibration.self, from: Data(contentsOf: copy))
+        #expect(previous.symbols["fixture.both"] == hand)
+        #expect(previous.symbols["fixture.fitted"] == nil)
+    }
+
+    @Test func adoptingTwiceKeepsBothPreviousStoredFiles() throws {
+        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
+        store.activate(.fitted)
+        store.setEntry(entry, forSymbol: "fixture.fitted", containerKey: nil)
+        let first = try #require(try store.adoptFittedSet(at: Date(timeIntervalSince1970: 0)))
+        let second = try #require(try store.adoptFittedSet(at: Date(timeIntervalSince1970: 60)))
+        #expect(first != second)
+        #expect(FileManager.default.fileExists(atPath: first.path))
+        #expect(FileManager.default.fileExists(atPath: second.path))
+    }
+
+    @Test func adoptingWithoutAFittedSetChangesNothing() throws {
+        let store = SymbolCalibrationStore(directory: try temporaryDirectory())
+        let stored = store.symbolEntries
+        #expect(throws: (any Error).self) { try store.adoptFittedSet() }
+        #expect(store.symbolEntries == stored)
+    }
 }

@@ -194,9 +194,7 @@ class SymbolCalibrationStore {
     func save() {
         let file = SymbolCalibration(version: 1, symbols: symbolEntries, containers: containerEntries, familyOverrides: familyOverrides)
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(file)
+            let data = try Self.encoded(file)
 
             let backupURL = fileURL.deletingPathExtension().appendingPathExtension("backup.json")
             if FileManager.default.fileExists(atPath: fileURL.path) {
@@ -208,6 +206,44 @@ class SymbolCalibrationStore {
         } catch {
             print("SymbolCalibrationStore: failed to save — \(error)")
         }
+    }
+
+    private static func encoded(_ file: SymbolCalibration) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(file)
+    }
+
+    /// Makes the fitted set the stored one, then shows it. Each fitted entry replaces the
+    /// stored entry for its symbol, a stored entry the fitted set lacks stays, and the fitted
+    /// containers and family overrides replace the stored ones. The stored file is first
+    /// copied to a timestamped name that no later save overwrites; returns that copy's URL.
+    @discardableResult
+    func adoptFittedSet(at date: Date = .now) throws -> URL? {
+        let fitted = try JSONDecoder().decode(SymbolCalibration.self, from: Data(contentsOf: url(of: .fitted)))
+        var adopted = storedCalibration() ?? fitted
+        adopted.symbols.merge(SymbolCatalog.bundled.rekeyedToCurrentNames(fitted.symbols)) { _, fitted in fitted }
+        adopted.containers = fitted.containers
+        adopted.familyOverrides = fitted.familyOverrides
+        let data = try Self.encoded(adopted)
+
+        let storedURL = url(of: .stored)
+        var copy: URL?
+        if FileManager.default.fileExists(atPath: storedURL.path) {
+            let stamp = date.formatted(.iso8601.year().month().day().dateSeparator(.omitted)
+                .time(includingFractionalSeconds: false).timeSeparator(.omitted))
+            let url = directory.appendingPathComponent("symbol-calibration.before-adopt-\(stamp).json")
+            try FileManager.default.copyItem(at: storedURL, to: url)
+            copy = url
+        }
+        try data.write(to: storedURL, options: .atomic)
+
+        activeSet = .stored
+        symbolEntries = [:]
+        containerEntries = [:]
+        familyOverrides = [:]
+        load()
+        return copy
     }
 
     private func load() {
@@ -431,6 +467,7 @@ private enum CalibrationConfirmation: Identifiable {
     case acceptShownPredictions(count: Int)
     case markShownNeedsReview(count: Int)
     case restoreBundledCalibration
+    case adoptFittedSet(count: Int, flagged: Int)
 
     var id: String {
         switch self {
@@ -438,6 +475,7 @@ private enum CalibrationConfirmation: Identifiable {
         case .acceptShownPredictions: "accept"
         case .markShownNeedsReview: "review"
         case .restoreBundledCalibration: "restore"
+        case .adoptFittedSet: "adopt"
         }
     }
 
@@ -447,6 +485,7 @@ private enum CalibrationConfirmation: Identifiable {
         case .acceptShownPredictions(let count): "Accept \(count) Predictions"
         case .markShownNeedsReview(let count): "Mark \(count) as Needs Review"
         case .restoreBundledCalibration: "Restore Bundled Calibration"
+        case .adoptFittedSet: "Adopt Fitted Set"
         }
     }
 
@@ -456,6 +495,7 @@ private enum CalibrationConfirmation: Identifiable {
         case .acceptShownPredictions: "Accept All"
         case .markShownNeedsReview: "Mark All"
         case .restoreBundledCalibration: "Restore"
+        case .adoptFittedSet: "Adopt"
         }
     }
 
@@ -472,6 +512,11 @@ private enum CalibrationConfirmation: Identifiable {
             "Delete the Application Support calibration and go back to the one Mica ships, "
                 + "so the app renders with the shipped symbol sizing again. A .backup.json "
                 + "copy is kept, and the app must be relaunched to pick this up."
+        case .adoptFittedSet(let count, let flagged):
+            "Replace the stored calibration with the fitted set's \(count) symbols, keeping any stored "
+                + "symbol the fitted set lacks. The stored file is copied to a symbol-calibration.before-adopt "
+                + "file first, and the app must be relaunched to render with it."
+                + (flagged > 0 ? " \(flagged) fitted symbols are flagged for review and will not be used." : "")
         }
     }
 }
@@ -586,6 +631,7 @@ struct SymbolCalibrationTool: View {
     @State private var boxFit = BoxFitReview()
     @State private var pixelFit = PixelFitRun()
     @AppStorage("pixelFitThreshold") private var pixelFitThreshold = 0.85
+    @State private var adoptResult: String?
 
     /// Whether accepting a prediction also writes its advisory content-centring
     /// Y offset. Off by default: the multiplier is the rule's output, the offset
@@ -1020,6 +1066,15 @@ struct SymbolCalibrationTool: View {
             markShownNeedsReview()
         case .restoreBundledCalibration:
             store.restoreBundledCalibration()
+            rebuildFamilies()
+        case .adoptFittedSet:
+            do {
+                let copy = try store.adoptFittedSet()
+                adoptResult = copy.map { "Adopted. The previous stored calibration is in \($0.lastPathComponent)." }
+                    ?? "Adopted."
+            } catch {
+                adoptResult = "Could not adopt the fitted set: \(error.localizedDescription)"
+            }
             rebuildFamilies()
         }
     }
@@ -1514,6 +1569,12 @@ struct SymbolCalibrationTool: View {
                      + "Switch to Fitted to run it; the stored calibration is left alone.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                if let adoptResult {
+                    Text(adoptResult)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
             } else {
                 pixelFitControls
             }
@@ -1570,6 +1631,14 @@ struct SymbolCalibrationTool: View {
                 .disabled(currentSymbol == nil)
             }
             Spacer()
+            Button("Adopt Fitted Set…") {
+                confirmation = .adoptFittedSet(
+                    count: store.symbolEntries.count,
+                    flagged: store.symbolEntries.values.filter { $0.status == "needs-review" }.count)
+            }
+            .controlSize(.small)
+            .disabled(pixelFit.isRunning || store.symbolEntries.isEmpty)
+            .help("Make the fitted set the stored calibration, keeping a copy of the current one")
             Button("Show in Finder") {
                 NSWorkspace.shared.activateFileViewerSelecting([store.url(of: .fitted)])
             }
