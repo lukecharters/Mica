@@ -310,7 +310,7 @@ struct SymbolCalibrationTool: View {
     @State private var shown: [String] = []
     @State private var selectedSymbol: String?
 
-    @State private var filter: CalibrationReviewFilter = .needsReview
+    @State private var filter: CalibrationReviewFilter = .all
     @State private var sort: CalibrationReviewSort = .score
     @State private var searchText = ""
 
