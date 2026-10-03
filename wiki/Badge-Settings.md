@@ -88,6 +88,11 @@ The badge background has no corner setting because Mica sets its shape.
 | X Offset, Y Offset | The whole badge, away from its corner. |
 | Foreground X Offset, Foreground Y Offset | The symbol or image inside the badge. |
 
+Mica draws a wide or square symbol a little smaller in the badge.
+This keeps it inside the circle.
+Round symbols keep their full size.
+Foreground Scale applies on top of this.
+
 ### Position
 
 Chooses the icon corner that holds the badge.
