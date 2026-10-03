@@ -1,6 +1,6 @@
 // SymbolSizingServiceTests.swift
 // SymbolSizingService.resolve(for:) picks one of four sources per symbol:
-//  1. family calibration (per-symbol hit)
+//  1. per-symbol calibration
 //  2. container calibration (.circle/.square/.rectangle keyword in any dot-component)
 //  3. auto box-fit (real symbol with no calibration entry — measured at runtime)
 //  4. default fallback (multiplier 0.55; symbol unknown to the system)

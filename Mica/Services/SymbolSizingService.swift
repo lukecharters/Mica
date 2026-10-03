@@ -1,7 +1,7 @@
 // SymbolSizingService.swift - Unified SF Symbol sizing resolver
 //
 // Resolves the font-size multiplier, offsets, and weight for any SF Symbol.
-// Priority: family calibration -> container calibration -> box-fit prediction
+// Priority: per-symbol calibration -> container calibration -> box-fit prediction
 // -> default (0.55). Calibration data loaded once lazily from
 // symbol-calibration.json; box-fit measures the symbol's tight bounds at
 // runtime (cached per process) via SymbolAutoSizingService.
