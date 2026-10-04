@@ -28,7 +28,9 @@ struct BadgeView: View {
     }
 
     private var resolvedBadgeSizing: ResolvedSymbolSizing {
-        SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
+        SymbolSizingService.resolve(
+            for: settings.badge.foreground.symbolName,
+            context: .badge(weight: settings.badge.foreground.symbolWeight.fontWeight))
     }
 
     private var badgeSymbolSize: CGFloat {

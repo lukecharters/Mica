@@ -305,7 +305,9 @@ enum PreviewHitTester {
         badgeSymbolSizing: ResolvedSymbolSizing?
     ) -> CGRect? {
         guard settings.badge.foreground.source != .system else { return nil }
-        let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(for: settings.badge.foreground.symbolName)
+        let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(
+            for: settings.badge.foreground.symbolName,
+            context: .badge(weight: settings.badge.foreground.symbolWeight.fontWeight))
         let side = diameter * sizing.multiplier * settings.badge.foreground.symbolScale
         guard side > 0 else { return nil }
         return centeredSquare(center: nudged(badgeCenter, by: settings.badge.foreground, unit: diameter),
