@@ -17,7 +17,6 @@ struct ResolvedShadowTests {
         #expect(style.background == ResolvedShadow.CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255))
         #expect(style.symbol == ResolvedShadow.CanvasShadow(radius: 5, offsetY: 3.5, opacity: 0.03))
         #expect(style.badgeBackground == ResolvedShadow.BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23))
-        #expect(style.badgeSymbol == ResolvedShadow.BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15))
     }
 
     @Test("macOS27 preset matches its shipped constants")
@@ -26,7 +25,6 @@ struct ResolvedShadowTests {
         #expect(style.background == ResolvedShadow.CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255))
         #expect(style.symbol == ResolvedShadow.CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11))
         #expect(style.badgeBackground == ResolvedShadow.macOS26.badgeBackground)
-        #expect(style.badgeSymbol == ResolvedShadow.macOS26.badgeSymbol)
     }
 
     @Test("macOS15 preset matches its shipped constants")
@@ -34,9 +32,28 @@ struct ResolvedShadowTests {
         let style = ResolvedShadow.macOS15
         #expect(style.background == ResolvedShadow.CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.31))
         #expect(style.symbol == ResolvedShadow.CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.21))
-        // Badge shadows remain uniform across presets.
         #expect(style.badgeBackground == ResolvedShadow.macOS26.badgeBackground)
-        #expect(style.badgeSymbol == ResolvedShadow.macOS26.badgeSymbol)
+    }
+
+    // MARK: - Badge symbol shadow
+
+    @Test("a preset's badge symbol shadow is its icon symbol shadow scaled to the badge",
+          arguments: [ResolvedShadow.macOS15, .macOS26, .macOS27])
+    func badgeSymbol_followsIconSymbol(_ style: ResolvedShadow) {
+        let enclosure = ResolvedShadow.referenceEnclosure
+        let expected = ResolvedShadow.BadgeShadow(
+            radiusMultiplier: style.symbol.radius / enclosure,
+            offsetYMultiplier: style.symbol.offsetY / enclosure,
+            opacity: style.symbol.opacity
+        )
+        #expect(style.badgeSymbol == expected)
+    }
+
+    @Test("each preset draws a different badge symbol shadow")
+    func badgeSymbol_differsAcrossPresets() {
+        #expect(ResolvedShadow.macOS15.badgeSymbol != ResolvedShadow.macOS26.badgeSymbol)
+        #expect(ResolvedShadow.macOS26.badgeSymbol != ResolvedShadow.macOS27.badgeSymbol)
+        #expect(ResolvedShadow.macOS15.badgeSymbol != ResolvedShadow.macOS27.badgeSymbol)
     }
 
     // MARK: - preset(for:) resolution
