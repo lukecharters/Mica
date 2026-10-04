@@ -143,7 +143,7 @@ enum PresetCatalog {
                 "badge-fg": .string("symbol:exclamationmark.triangle.fill"),
 //                "badge-fg-offset-x" : .number(0.05),
 //                "badge-fg-offset-y" : .number(0.05),
-                "badge-fg-scale" : .number(1.45),
+                "badge-fg-scale" : .number(1.60),
                 "badge-symbol-color" : .string("white"),
                 "badge-symbol-rendering" : .string("multicolor"),
                 "badge-symbol-weight" : .string("regular"),
@@ -248,7 +248,7 @@ enum PresetCatalog {
             scope: .badge,
             keys: [
                 "badge-fg": .string("symbol:1.circle.fill"),
-                "badge-fg-scale": .number(1.50),
+                "badge-fg-scale": .number(1.55),
                 "badge-symbol-color": .string("red"),
                 "badge-symbol-rendering" : .string("multicolor"),
                 "badge-bg-visibility": .bool(false),
@@ -314,8 +314,7 @@ enum PresetCatalog {
                 "badge-symbol-color": .string("white"),
                 "badge-symbol-weight": .string("medium"),
                 "badge-bg-color": .string("grey"),
-                "badge-fg-offset-x": .number(0.03),
-                "badge-fg-scale": .number(0.85),
+                "badge-fg-offset-x": .number(0.03)
             ],
             isBuiltIn: true
         ),
