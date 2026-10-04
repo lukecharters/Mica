@@ -203,6 +203,19 @@ enum PresetCatalog {
         ),
         
         MicaPreset(
+            name: "Migrate",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:arrow.right"),
+                "badge-symbol-weight": .string("heavy"),
+                "badge-symbol-color": .string("white"),
+                "badge-bg-color": .string("gray"),
+                "badge-position": .string("bottom-right"),
+            ],
+            isBuiltIn: true
+        ),
+        
+        MicaPreset(
             name: "New",
             scope: .badge,
             keys: [
