@@ -82,10 +82,11 @@ struct BadgeShadowExtentTests {
     /// Nothing *visible* may be cut off at the canvas boundary.
     ///
     /// Asserted on alpha rather than position, because the clamp deliberately
-    /// lands the shadow's computed extent exactly on the edge — so the faintest
-    /// tail pixel (1/255) touching the boundary is correct, not a defect. A
-    /// genuine cut leaves a much stronger edge: the enclosure-relative allowance
-    /// this replaced severed the scale-2.0 shadow ~21pt early, at roughly 9/255.
+    /// lands the shadow's computed extent on the edge — so an invisible tail
+    /// (about 2/255 at `shadowAlphaFloor`) cut at the boundary is correct, not a
+    /// defect. A genuine cut leaves a much stronger edge: the enclosure-relative
+    /// allowance this replaced severed the scale-2.0 shadow ~21pt early, at
+    /// roughly 9/255.
     ///
     /// 3/255 sits clear of both.
     @Test("A corner badge is never visibly clipped", arguments: scales)
@@ -127,7 +128,8 @@ struct BadgeShadowExtentTests {
 
     /// The measured reach of a SwiftUI shadow, as a multiple of its blur radius,
     /// at each opacity. Taken from the largest radius tested (14.4pt), where
-    /// pixel quantisation matters least.
+    /// pixel quantisation matters least. Measured to the last non-zero pixel,
+    /// so the formula is checked against it at a 0.5/255 floor.
     ///
     /// `shadowBlurExtent` must cover every one of these, or retuning
     /// `ResolvedShadow.badgeBackground.opacity` would start clipping the badge —
@@ -144,7 +146,7 @@ struct BadgeShadowExtentTests {
           arguments: measuredReach)
     func shadowBlurExtent_coversMeasuredReach(_ point: (opacity: CGFloat, reachOverRadius: CGFloat)) {
         for radius in [CGFloat(2.4), 4.8, 14.4] {
-            let allowed = BadgeGeometry.shadowBlurExtent(radius: radius, opacity: point.opacity)
+            let allowed = BadgeGeometry.shadowBlurExtent(radius: radius, opacity: point.opacity, floor: 0.5 / 255.0)
             let needed = radius * point.reachOverRadius
             #expect(allowed >= needed,
                     "At opacity \(point.opacity), radius \(radius): allowing \(allowed)pt but the shadow reaches \(needed)pt")

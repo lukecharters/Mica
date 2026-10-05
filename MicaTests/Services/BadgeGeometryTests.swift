@@ -126,7 +126,7 @@ struct BadgeGeometryTests {
     @Test("A badge that fits is not moved", arguments: positionSigns)
     func clamp_leavesAFittingBadgeAlone(_ arg: (position: BadgePosition, xSign: CGFloat, ySign: CGFloat)) {
         for enclosure in Self.enclosures {
-            // 1.03 clears the earliest crossover (≈1.05, on a bottom-anchored
+            // 1.03 clears the earliest crossover (≈1.10, on a bottom-anchored
             // badge) with margin, so this can't fail on a floating-point hair.
             for scale in [CGFloat(0.3), 0.5, 1.0, 1.03] {
                 let s = Self.settings(position: arg.position, badgeScale: scale)
