@@ -75,9 +75,7 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
-        
-        
-        
+
         MicaPreset(
             name: "Fail",
             scope: .icon,
@@ -152,7 +150,18 @@ enum PresetCatalog {
             ],
             isBuiltIn: true
         ),
-        
+                
+        MicaPreset(
+            name: "Authentication",
+            scope: .badge,
+            keys: [
+                "badge-fg": .string("symbol:lock.fill"),
+                "badge-symbol-color": .string("black"),
+                "badge-bg-color": .string("white"),
+            ],
+            isBuiltIn: true
+        ),
+
         MicaPreset(
             name: "Delete",
             scope: .badge,
