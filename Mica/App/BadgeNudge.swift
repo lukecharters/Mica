@@ -79,7 +79,7 @@ enum BadgeNudge {
     /// only has to stay off 0.30000000000000004 as presses accumulate.
     ///
     /// The clamp can *move a stored offset that was already outside the range*,
-    /// and that is intended: past `badge.scale ≈ 1.09` the legal range no longer
+    /// and that is intended: past `badge.scale ≈ 1.05` the legal range no longer
     /// contains zero, so an untouched 0% is out of bounds. The canvas drag does
     /// the same on its first frame. What neither does is re-clamp on its own —
     /// the project notes' rule that stored offsets are clamped by live gestures only,

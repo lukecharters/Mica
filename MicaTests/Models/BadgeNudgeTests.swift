@@ -155,7 +155,7 @@ struct BadgeNudgeTests {
     @Test("The nudge is independent of the enclosure size", arguments: [64.0, 206.0, 512.0, 2048.0])
     func nudgeIsIndependentOfTheEnclosureSize(enclosure: Double) {
         var settings = visibleBadge()
-        settings.badge.scale = 1.6 // past ~1.09, where the clamp actually bites
+        settings.badge.scale = 1.6 // past ~1.05, where the clamp actually bites
 
         let reference = BadgeGeometry.manualOffsetRange(
             for: settings,

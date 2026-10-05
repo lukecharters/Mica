@@ -24,7 +24,7 @@ struct ResolvedShadowTests {
         let style = ResolvedShadow.macOS27
         #expect(style.background == ResolvedShadow.CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255))
         #expect(style.symbol == ResolvedShadow.CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11))
-        #expect(style.badgeBackground == ResolvedShadow.macOS26.badgeBackground)
+        #expect(style.badgeBackground == ResolvedShadow.BadgeShadow(radiusMultiplier: 0.05, offsetYMultiplier: 0.022, opacity: 0.168))
     }
 
     @Test("macOS15 preset matches its shipped constants")

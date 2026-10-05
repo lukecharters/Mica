@@ -126,9 +126,9 @@ struct BadgeGeometryTests {
     @Test("A badge that fits is not moved", arguments: positionSigns)
     func clamp_leavesAFittingBadgeAlone(_ arg: (position: BadgePosition, xSign: CGFloat, ySign: CGFloat)) {
         for enclosure in Self.enclosures {
-            // 1.05 clears the earliest crossover (≈1.11, on a bottom-anchored
+            // 1.03 clears the earliest crossover (≈1.05, on a bottom-anchored
             // badge) with margin, so this can't fail on a floating-point hair.
-            for scale in [CGFloat(0.3), 0.5, 1.0, 1.05] {
+            for scale in [CGFloat(0.3), 0.5, 1.0, 1.03] {
                 let s = Self.settings(position: arg.position, badgeScale: scale)
                 let offset = BadgeGeometry.offset(for: s, enclosureSize: enclosure)
                 let expectedX = arg.xSign * enclosure * BadgeGeometry.anchorXRatio
@@ -144,14 +144,14 @@ struct BadgeGeometryTests {
     /// Brackets the crossover without asserting an exact value, which would be
     /// fragile. A bottom-anchored badge hits it first because the shadow falls
     /// that way.
-    @Test("A bottom-anchored badge starts moving inward between scale 1.05 and 1.20")
+    @Test("A bottom-anchored badge starts moving inward between scale 1.03 and 1.20")
     func clamp_thresholdBracket() {
         let enclosure: CGFloat = 206
         let anchor = enclosure * BadgeGeometry.anchorYRatio
 
         let below = BadgeGeometry.centreLimits(
-            for: Self.settings(position: .bottomRight, badgeScale: 1.05), enclosureSize: enclosure)
-        #expect(below.down > anchor, "At 1.05 the default anchor should still fit")
+            for: Self.settings(position: .bottomRight, badgeScale: 1.03), enclosureSize: enclosure)
+        #expect(below.down > anchor, "At 1.03 the default anchor should still fit")
 
         let above = BadgeGeometry.centreLimits(
             for: Self.settings(position: .bottomRight, badgeScale: 1.20), enclosureSize: enclosure)
@@ -196,7 +196,7 @@ struct BadgeGeometryTests {
         let s = Self.settings(position: .bottomRight, badgeScale: 1.5)
         let ext = BadgeGeometry.extents(for: s, enclosureSize: enclosure)
         let diameter = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: 1.5)
-        let dy = diameter * ResolvedShadow.macOS26.badgeBackground.offsetYMultiplier
+        let dy = diameter * ResolvedShadow.preset(for: s.icon.background.shadowStyle).badgeBackground.offsetYMultiplier
 
         #expect(ext.down > ext.up, "The downward shadow must claim more room below than above")
         #expect(abs((ext.down - ext.up) - 2 * dy) < 0.0001,

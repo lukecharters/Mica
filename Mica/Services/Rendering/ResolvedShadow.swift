@@ -51,7 +51,8 @@ struct ResolvedShadow: Equatable {
 
     static let macOS27 = ResolvedShadow(
         background: CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255),
-        symbol: CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11)
+        symbol: CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11),
+        badgeBackground: BadgeShadow(radiusMultiplier: 0.05, offsetYMultiplier: 0.022, opacity: 0.168)
     )
 
     static let macOS15 = ResolvedShadow(
@@ -89,15 +90,15 @@ struct ResolvedShadow: Equatable {
 }
 
 extension ResolvedShadow {
-    /// The badge background shadow, shared by every preset.
+    /// The badge background shadow of a preset whose OS badge has not been measured.
     static let badgeBackgroundShadow = BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23)
 
     /// A preset whose badge symbol shadow is its icon symbol shadow, scaled to the badge.
-    init(background: CanvasShadow, symbol: CanvasShadow) {
+    init(background: CanvasShadow, symbol: CanvasShadow, badgeBackground: BadgeShadow = Self.badgeBackgroundShadow) {
         self.init(
             background: background,
             symbol: symbol,
-            badgeBackground: Self.badgeBackgroundShadow,
+            badgeBackground: badgeBackground,
             badgeSymbol: BadgeShadow(matching: symbol)
         )
     }

@@ -130,8 +130,9 @@ enum BadgeGeometry {
     ///
     /// The canvas never grows to accommodate a badge — an export is always
     /// exactly its requested size — so an oversized badge moves inward instead.
-    /// At default settings this only bites past `badgeScale ≈ 1.09`; below that
-    /// the badge sits exactly where native macOS puts it.
+    /// At default settings this only bites past `badgeScale ≈ 1.05` (1.09 under
+    /// the macOS 15 and 26 shadows); below that the badge sits exactly where
+    /// native macOS puts it.
     static func centreLimits(
         for settings: IconSettings,
         enclosureSize: CGFloat
@@ -196,7 +197,7 @@ enum BadgeGeometry {
     /// offset units, so a control can stop at the limit instead of banking up a
     /// value the badge can't use. Intersected with `BadgeSpec.offsetRange`.
     ///
-    /// The range is asymmetric, and past `badgeScale ≈ 1.09` it no longer
+    /// The range is asymmetric, and past `badgeScale ≈ 1.05` it no longer
     /// contains zero — the badge *must* sit inward of its anchor by then. That's
     /// why this only clamps live gestures; re-clamping stored settings against it
     /// would silently rewrite a user's 0% into -6%.
