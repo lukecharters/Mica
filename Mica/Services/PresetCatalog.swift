@@ -83,7 +83,6 @@ enum PresetCatalog {
                 "icon-symbol-color": .string("white"),
                 "icon-bg-color": .string("red"),
                 "icon-fg": .string("symbol:xmark"),
-                "icon-symbol-weight": .string("bold"),
             ],
             isBuiltIn: true
         ),
@@ -118,7 +117,6 @@ enum PresetCatalog {
                 "icon-symbol-color": .string("white"),
                 "icon-bg-color": .string("green"),
                 "icon-fg": .string("symbol:checkmark"),
-                "icon-symbol-weight": .string("bold"),
             ],
             isBuiltIn: true
         ),
