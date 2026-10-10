@@ -92,6 +92,15 @@ System mode does not accept image drops for that group.
 Both zoom gestures work in Mica mode and System mode.
 The pointer must be over the canvas.
 
+## Import notice
+A notice appears at the top of the canvas after you import a background image.
+It lists the settings the import changed, such as Shadow off or Foreground hidden.
+Click the round arrow button to put those settings back.
+The imported image stays.
+The notice closes after six seconds.
+It stays open while the pointer is over it.
+[Background Type](Icon-Settings#background-type) lists the import defaults.
+
 ## Exporting a PNG
 Press ⇧⌘E, click **Export** in the toolbar, or click **Export** in the Document tab.
 The Save panel opens with the size, scale, and colour space at the bottom.
