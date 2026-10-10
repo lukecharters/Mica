@@ -36,13 +36,13 @@ struct ImportNoticeTests {
         #expect(found.subtitle == "Icon Padding off · Shadow off · Corners off · Foreground hidden")
     }
 
-    @Test("Artwork over default settings reports only the hidden foreground")
+    @Test("Artwork over default settings reports only corners and the hidden foreground")
     func artwork_reportsOnlyWhatChanged() throws {
         let (notice, _) = try Self.notice(IconSettings()) {
             $0.icon.applyBackgroundImage(try Self.artwork())
         }
         let found = try #require(notice)
-        #expect(found.fields == [.foreground])
+        #expect(found.fields == [.corners, .foreground])
         #expect(found.title == "Artwork Imported")
     }
 
@@ -54,8 +54,8 @@ struct ImportNoticeTests {
             $0.icon.applyBackgroundImage(try Self.artwork())
         }
         let found = try #require(notice)
-        #expect(found.fields == [.padding, .shadow, .corners])
-        #expect(found.subtitle == "Icon Padding on · Shadow on · Corners on")
+        #expect(found.fields == [.padding, .shadow])
+        #expect(found.subtitle == "Icon Padding on · Shadow on")
     }
 
     @Test("A badge import reports padding, shadow and foreground, and no corners")
@@ -87,7 +87,7 @@ struct ImportNoticeTests {
 
     @Test("An import that changes nothing else raises no notice")
     func importChangingNothing_noNotice() throws {
-        let keepForeground = ImportDefaults(hidesForeground: false, turnsOffCornerRadius: true)
+        let keepForeground = ImportDefaults(hidesForeground: false, turnsOffCornerRadius: false)
         let (notice, _) = try Self.notice(IconSettings()) {
             $0.icon.applyBackgroundImage(try Self.artwork(), defaults: keepForeground)
         }

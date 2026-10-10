@@ -737,26 +737,23 @@ struct MicaConfigTests {
         let decoded = try Self.roundTrip(settings).settings.icon.background
         #expect(decoded.compensatesForPadding == false)
         #expect(decoded.shadowStyle == IconBackgroundSpec().shadowStyle)
-        #expect(decoded.cornerRadiusStyle == IconBackgroundSpec().cornerRadiusStyle)
+        #expect(decoded.cornerRadiusStyle == .off)
     }
 
-    @Test("app-icon styling over full-bleed artwork is written and round-trips")
+    @Test("app-icon padding and shadow over full-bleed artwork are written and round-trip")
     func fullBleedBackground_overridesAreWritten() throws {
         var settings = IconSettings()
         settings.icon.applyBackgroundImage(try ImportedImage.testFixture(width: 64, height: 64))
         settings.icon.background.compensatesForPadding = true
         settings.icon.background.shadowStyle = .off
-        settings.icon.background.cornerRadiusStyle = .off
 
         let object = try Self.encoded(settings)
         #expect(object["icon-bg-padding"] as? Bool == false)
         #expect(object["icon-bg-shadow"] as? String == "off")
-        #expect(object["icon-bg-corner-radius"] as? String == "off")
 
         let decoded = try Self.roundTrip(settings).settings.icon.background
         #expect(decoded.compensatesForPadding == true)
         #expect(decoded.shadowStyle == .off)
-        #expect(decoded.cornerRadiusStyle == .off)
     }
 
     @Test("a badge background's padding and shadow baselines follow the artwork")

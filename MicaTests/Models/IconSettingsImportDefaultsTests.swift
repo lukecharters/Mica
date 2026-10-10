@@ -1,10 +1,10 @@
 // IconSettingsImportDefaultsTests.swift
 // Covers the per-slot imported-image helpers on IconSettings. Every image
 // import (menu, paste, drag, sidebar, CLI) routes through these so the
-// defaults stay consistent. A background's defaults depend on the image: an
-// app icon (transparent edges) gets padding compensation with its shadow and
-// corners off, artwork that reaches its edges gets neither. A foreground
-// import leaves the shadow alone.
+// defaults stay consistent. A background's padding and shadow depend on the
+// image: an app icon (transparent edges) gets padding compensation with its
+// shadow off, artwork that reaches its edges gets neither. Corners go off for
+// either. A foreground import leaves the shadow alone.
 
 import Testing
 import SwiftUI
@@ -109,7 +109,7 @@ struct IconSettingsImportDefaultsTests {
         #expect(settings.icon.background.cornerRadiusStyle == .off)
     }
 
-    @Test("Importing full-bleed artwork as the icon background keeps its edges, shadow and corners")
+    @Test("Importing full-bleed artwork as the icon background keeps its edges and shadow, and turns corners off")
     func iconBackground_fullBleedKeepsStyles() throws {
         var settings = IconSettings()
         settings.icon.background.shadowStyle = .macOS15
@@ -119,10 +119,10 @@ struct IconSettingsImportDefaultsTests {
 
         #expect(settings.icon.background.compensatesForPadding == false)
         #expect(settings.icon.background.shadowStyle == .macOS15)
-        #expect(settings.icon.background.cornerRadiusStyle == .macOS15)
+        #expect(settings.icon.background.cornerRadiusStyle == .off)
     }
 
-    @Test("Full-bleed artwork after an app icon turns the shadow and corners back on")
+    @Test("Full-bleed artwork after an app icon turns the shadow back on and leaves corners off")
     func iconBackground_fullBleedAfterAppIcon() throws {
         var settings = IconSettings()
         settings.icon.applyBackgroundImage(try ImportedImage.iconFixture())
@@ -131,11 +131,11 @@ struct IconSettingsImportDefaultsTests {
 
         #expect(settings.icon.background.compensatesForPadding == false)
         #expect(settings.icon.background.shadowStyle == IconBackgroundSpec().shadowStyle)
-        #expect(settings.icon.background.cornerRadiusStyle == IconBackgroundSpec().cornerRadiusStyle)
+        #expect(settings.icon.background.cornerRadiusStyle == .off)
     }
 
-    @Test("The corner preference applies to app icons only")
-    func iconBackground_cornerPreferenceScopedToAppIcons() throws {
+    @Test("With the corner preference off, every import keeps the corners it had")
+    func iconBackground_cornerPreferenceOffKeepsCorners() throws {
         let keepCorners = ImportDefaults(hidesForeground: true, turnsOffCornerRadius: false)
 
         var icon = IconSettings()
@@ -143,9 +143,9 @@ struct IconSettingsImportDefaultsTests {
         #expect(icon.icon.background.cornerRadiusStyle == IconBackgroundSpec().cornerRadiusStyle)
 
         var artwork = IconSettings()
-        artwork.icon.background.cornerRadiusStyle = .off
+        artwork.icon.background.cornerRadiusStyle = .macOS15
         artwork.icon.applyBackgroundImage(try ImportedImage.testFixture(width: 64, height: 64), defaults: keepCorners)
-        #expect(artwork.icon.background.cornerRadiusStyle == IconBackgroundSpec().cornerRadiusStyle)
+        #expect(artwork.icon.background.cornerRadiusStyle == .macOS15)
     }
 
     // MARK: - Badge background

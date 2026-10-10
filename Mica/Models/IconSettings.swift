@@ -98,9 +98,8 @@ struct IconSpec: Equatable {
     mutating func applyBackgroundImage(_ image: ImportedImage,
                                        defaults: ImportDefaults = .fixed) {
         background.apply(image)                     // source, padding, shadow
-        if !image.hasIconMargin || defaults.turnsOffCornerRadius {
-            background.cornerRadiusStyle = IconBackgroundSpec.importedCornerRadiusStyle(
-                for: image, current: background.cornerRadiusStyle)
+        if defaults.turnsOffCornerRadius {
+            background.cornerRadiusStyle = .off
         }
         if defaults.hidesForeground {
             foreground.isHidden = true
@@ -412,15 +411,6 @@ struct IconBackgroundSpec: Equatable {
     static func importedShadowStyle(for image: ImportedImage?, current: DropShadowStyle) -> DropShadowStyle {
         if image?.hasIconMargin ?? true { return .off }
         return current == .off ? IconBackgroundSpec().shadowStyle : current
-    }
-
-    /// The corner radius an imported background starts with: off for an app icon,
-    /// on for artwork that reaches its edges. The GUI's preference can keep an app
-    /// icon's corners — see `IconSpec.applyBackgroundImage(_:defaults:)`.
-    static func importedCornerRadiusStyle(for image: ImportedImage?,
-                                          current: IconCornerRadiusStyle) -> IconCornerRadiusStyle {
-        if image?.hasIconMargin ?? true { return .off }
-        return current == .off ? IconBackgroundSpec().cornerRadiusStyle : current
     }
 }
 

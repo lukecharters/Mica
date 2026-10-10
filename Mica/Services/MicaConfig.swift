@@ -711,14 +711,13 @@ private struct ConfigReader {
             settings.icon.background.usesGradient = gradient
         }
         // The third conditional baseline: absent `icon-bg-corner-radius` + an imported
-        // icon background ⇒ `.off` for an app icon and on for artwork that reaches its
-        // edges, mirroring `IconSpec.applyBackgroundImage`; encode uses the same
-        // baseline. The background shadow follows the same split.
+        // icon background ⇒ `.off`, mirroring `IconSpec.applyBackgroundImage`; encode
+        // uses the same baseline. The background shadow's baseline depends on
+        // `ImportedImage.hasIconMargin`.
         if let cornerRadius = token(.iconBGCornerRadius, as: IconCornerRadiusStyle.self) {
             settings.icon.background.cornerRadiusStyle = cornerRadius
         } else if importedBackground {
-            settings.icon.background.cornerRadiusStyle = IconBackgroundSpec.importedCornerRadiusStyle(
-                for: settings.icon.background.image, current: settings.icon.background.cornerRadiusStyle)
+            settings.icon.background.cornerRadiusStyle = .off
         }
         if let shadow = token(.iconBGShadow, as: DropShadowStyle.self) {
             settings.icon.background.shadowStyle = shadow
@@ -1270,11 +1269,10 @@ private struct ConfigWriter {
             // `.off`), so both remaining sources read it.
             //
             // Baseline mirrors decode's fresh-import rule, the third of the three: an
-            // imported app icon's corner radius defaults to `.off`, other imported
-            // artwork's to on. The shadow, which every source draws, splits the same way.
+            // imported background's corner radius defaults to `.off`. The shadow, which
+            // every source draws, is off for an app icon and on for other artwork.
             let cornerBaseline: IconCornerRadiusStyle = iconBGImportWritten
-                ? IconBackgroundSpec.importedCornerRadiusStyle(
-                    for: iconBG.image, current: defaults.icon.background.cornerRadiusStyle)
+                ? .off
                 : defaults.icon.background.cornerRadiusStyle
             if iconBG.cornerRadiusStyle != cornerBaseline {
                 put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)

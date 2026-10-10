@@ -191,10 +191,10 @@ struct ImportSettingsTab: View {
                 // Names the control it moves — the Corners picker, its Off case — so
                 // the user can go and undo it.
                 Toggle(isOn: $turnsOffCornerRadius) {
-                    Text("Set Corners to Off for App Icons")
-                    Text("Turns corner rounding off when the imported image is an app "
-                         + "icon, so its own shape is drawn. Images that fill their "
-                         + "edges, like photos and textures, always keep rounded corners.")
+                    Text("Set Corners to Off on Import")
+                    Text("Turns corner rounding off for imported artwork. Rounding cuts "
+                         + "the corners from artwork that fills its own bounds. Turn "
+                         + "this off to clip a photo or texture to the icon's shape.")
                 }
             } header: {
                 Text("Imported Backgrounds")
@@ -208,9 +208,9 @@ struct ImportSettingsTab: View {
                     // targets. Without it, someone who turns both off and then runs
                     // the CLI gets a different icon with no way to know why.
                     Text("These settings apply to Mica only. mica-cli always hides the "
-                         + "foreground and sets Corners to Off for app icons. Imported "
-                         + "configurations do the same. One configuration then renders "
-                         + "the same way everywhere.")
+                         + "foreground and sets Corners to Off. Imported configurations "
+                         + "do the same. One configuration then renders the same way "
+                         + "everywhere.")
                 }
                 .settingsFooter()
             }

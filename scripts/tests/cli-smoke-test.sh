@@ -715,10 +715,10 @@ run_negative_case() {
 #      foreground explicitly switched off.
 #   2. Switching the foreground back on changes the render. Before phase 3 nothing
 #      could: the gate was in the render and no setting reached past it.
-#   3. The import defaults follow the artwork. Artwork that fills its bounds keeps
-#      its corners, its shadow and its edges; an app icon (transparent edges) gets
-#      corners and shadow off and padding compensation on. An explicit flag beats
-#      each default.
+#   3. The import defaults follow the artwork. Every import turns corners off.
+#      Artwork that fills its bounds keeps its shadow and its edges; an app icon
+#      (transparent edges) gets its shadow off and padding compensation on. An
+#      explicit flag beats each default.
 #   4. The superseded `macos11` token renders exactly as `macos15` does. This claim
 #      needs no imported artwork and uses none — it is here because the A/B harness
 #      is, and because a token that still parses but resolves elsewhere is a
@@ -738,8 +738,8 @@ IMPORT_FAIL=0
 IMPORT_CASES=(
     "bare-equals-explicit-off|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg-visibility|off"
     "revealing-foreground-changes-the-render|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-fg-visibility|on"
-    "artwork-corner-radius-defaults-on|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|macos26"
-    "artwork-corner-radius-off-differs|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|off"
+    "artwork-corner-radius-defaults-off|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|off"
+    "artwork-corner-radius-on-differs|differ|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-corner-radius|macos26"
     "artwork-shadow-defaults-on|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-shadow|macos27"
     "artwork-keeps-its-padding|same|--icon-bg|\$FILLED|--|--icon-bg|\$FILLED|--icon-bg-padding|on"
     "app-icon-corner-radius-defaults-off|same|--icon-bg|\$APPICON|--|--icon-bg|\$APPICON|--icon-bg-corner-radius|off"

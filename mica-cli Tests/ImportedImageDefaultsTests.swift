@@ -1,7 +1,8 @@
 // ImportedImageDefaultsTests.swift
 // Mirrors the GUI's imported-image defaults in the CLI. An imported background
 // that is an app icon (transparent edges) gets padding compensation with its
-// shadow and corners off; artwork that reaches its edges keeps all three.
+// shadow off; artwork that reaches its edges keeps both. Corners go off for
+// either.
 // Foreground imports keep their shadow. Explicit flags override every default.
 
 import Testing
@@ -71,7 +72,7 @@ struct ImportedImageDefaultsTests {
         #expect(settings.icon.background.shadowStyle == .off)
     }
 
-    @Test("Full-bleed artwork as --icon-bg keeps its edges, shadow and corners")
+    @Test("Full-bleed artwork as --icon-bg keeps its edges and shadow")
     func iconBackgroundFullBleed_defaults() throws {
         let path = try makeTempImageFile(inset: 0).path
         let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", path])
@@ -79,7 +80,6 @@ struct ImportedImageDefaultsTests {
         #expect(settings.icon.background.source == .image)
         #expect(settings.icon.background.compensatesForPadding == false)
         #expect(settings.icon.background.shadowStyle == IconBackgroundSpec().shadowStyle)
-        #expect(settings.icon.background.cornerRadiusStyle == IconBackgroundSpec().cornerRadiusStyle)
     }
 
     @Test("Explicit --icon-bg-padding and --icon-bg-shadow beat the detected defaults")
@@ -106,9 +106,9 @@ struct ImportedImageDefaultsTests {
     // structurally unable to change what `mica-cli` renders. These tests pin the
     // resulting values so the routing cannot be quietly undone.
 
-    @Test("An app icon as --icon-bg turns the corner radius off")
-    func iconBackgroundImage_turnsCornerRadiusOff() throws {
-        let path = try makeTempImageFile(inset: 0.1).path
+    @Test("Any image as --icon-bg turns the corner radius off", arguments: [0.1, 0])
+    func iconBackgroundImage_turnsCornerRadiusOff(inset: Double) throws {
+        let path = try makeTempImageFile(inset: inset).path
         let settings = try IconGenerationRunner()
             .buildTestSettings(from: parseCommand(["--icon-symbol", "star.fill", "--icon-bg", path]))
         #expect(settings.icon.background.cornerRadiusStyle == .off)
