@@ -1,6 +1,5 @@
 {
-  "size": 256,
-  "scale": "2x",
+  "size": "256@2x",
   "color-space": "displayP3",
 
   "icon-fg": "symbol:bolt.fill",

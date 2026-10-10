@@ -23,7 +23,7 @@ enum IconExtractor {
         }
 
         guard scaleFactor == 1 || scaleFactor == 2 else {
-            throw CLIError.invalidArgument("--scale must be 1x or 2x (received \(scaleFactor))")
+            throw CLIError.invalidArgument("The scale must be @1x or @2x (received \(scaleFactor))")
         }
 
         let pixelSize = size * scaleFactor

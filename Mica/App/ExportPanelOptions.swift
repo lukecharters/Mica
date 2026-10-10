@@ -1,6 +1,6 @@
 // App/ExportPanelOptions.swift
 //
-// The state behind the save panel's accessory view: the three export settings,
+// The state behind the save panel's accessory view: the export settings,
 // edited **for one export only**.
 //
 // The override is the whole point of the type. `spec` starts as a copy of the
@@ -37,21 +37,7 @@ struct ExportPanelOptions: Equatable {
     mutating func reset() { spec = seed }
 
     /// The sizes the accessory's menu offers.
-    var sizeChoices: [CGFloat] { Self.sizeChoices(including: spec.size) }
-
-    /// `ExportPreferences.sizeChoices`, plus `size` itself when it is not one of
-    /// them.
-    ///
-    /// A configuration file can carry any size in `ExportSpec.minSize...maxSize`,
-    /// and a `Picker` whose selection matches no tag renders **empty** — so a
-    /// window opened from a 300pt configuration would show a blank menu and lose
-    /// the size the moment the user touched anything else. The odd size is offered
-    /// in its sorted place instead.
-    static func sizeChoices(including size: CGFloat) -> [CGFloat] {
-        let choices = ExportPreferences.sizeChoices
-        guard !choices.contains(size) else { return choices }
-        return (choices + [size]).sorted()
-    }
+    var sizeChoices: [ExportSize] { ExportPreferences.sizeChoices(including: spec.exportSize) }
 
     /// The pixel dimensions this export will write, as `1024×1024px`.
     ///

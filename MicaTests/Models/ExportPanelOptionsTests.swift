@@ -66,12 +66,12 @@ struct ExportPanelOptionsTests {
         #expect(options.spec == options.seed)
     }
 
-    /// `isOverridden` compares whole specs, so a fourth export setting is covered
-    /// the day it is added — but only while that stays true. Three stored
-    /// properties today: size, isRetina, colorSpace.
-    @Test("ExportSpec has three stored settings, all of them covered")
-    func exportSpec_hasThreeStoredSettings() {
-        #expect(Mirror(reflecting: ExportSpec()).children.count == 3)
+    /// `isOverridden` compares whole specs, so a new export setting is covered
+    /// the day it is added — but only while that stays true. Two stored
+    /// properties today: exportSize (size and @2x together) and colorSpace.
+    @Test("ExportSpec has two stored settings, all of them covered")
+    func exportSpec_hasTwoStoredSettings() {
+        #expect(Mirror(reflecting: ExportSpec()).children.count == 2)
     }
 
     // MARK: - The size menu
@@ -91,10 +91,22 @@ struct ExportPanelOptionsTests {
 
         let choices = ExportPanelOptions(seed: spec).sizeChoices
 
-        #expect(choices.contains(300), "a Picker whose selection matches no tag renders empty")
+        #expect(choices.contains(ExportSize(points: 300)), "a Picker whose selection matches no tag renders empty")
         #expect(choices == choices.sorted())
         #expect(choices.count == ExportPreferences.sizeChoices.count + 1)
         #expect(Set(choices).count == choices.count)
+    }
+
+    @Test("An off-list @2x size joins the menu after its 1x row")
+    func offListRetinaSize_isOffered() {
+        var spec = ExportSpec()
+        spec.exportSize = ExportSize(points: 300, scale: .twoX)
+
+        let choices = ExportPanelOptions(seed: spec).sizeChoices
+
+        #expect(choices.contains(spec.exportSize))
+        #expect(choices == choices.sorted())
+        #expect(choices.count == ExportPreferences.sizeChoices.count + 1)
     }
 
     // MARK: - The caption

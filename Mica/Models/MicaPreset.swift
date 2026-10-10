@@ -23,7 +23,7 @@
 //
 // ## Why the key namespace makes this cheap
 //
-// Every `MicaConfigKey` is `icon-*`, `badge-*`, or one of the three export keys, and
+// Every `MicaConfigKey` is `icon-*`, `badge-*`, or one of the two export keys, and
 // `ConfigReader.apply()` writes each family into exactly one branch of
 // `IconSettings` — `icon-*` into `settings.icon`, `badge-*` into `settings.badge`,
 // the rest into `settings.export`. So the scopes below are a partition of the key

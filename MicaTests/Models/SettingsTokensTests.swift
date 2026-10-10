@@ -12,6 +12,49 @@ import Foundation
 @Suite(.tags(.unit))
 struct SettingsTokensTests {
 
+    // MARK: - Export sizes
+
+    @Test("An export size parses with or without a scale suffix", arguments: [
+        ("512", ExportSize(points: 512)),
+        ("512@1x", ExportSize(points: 512)),
+        ("512@2x", ExportSize(points: 512, scale: .twoX)),
+        ("16@2X", ExportSize(points: 16, scale: .twoX)),
+        ("1024@2x", ExportSize(points: 1024, scale: .twoX)),
+    ])
+    func exportSizeParses(_ raw: String, _ expected: ExportSize) throws {
+        #expect(try ExportSize.parse(raw).get() == expected)
+    }
+
+    @Test("A malformed export size is refused as malformed",
+          arguments: ["", "512x", "512@", "@2x", "512@3x", "512@2x@2x", "51.2", "512 @2x", "-16"])
+    func exportSizeRefusesMalformed(_ raw: String) {
+        if raw == "-16" {
+            // A whole number, so it is out of range rather than malformed.
+            #expect(ExportSize.parse(raw) == .failure(.outOfRange(-16)))
+        } else {
+            #expect(ExportSize.parse(raw) == .failure(.malformed))
+        }
+    }
+
+    @Test("An export size outside the range is refused with the number")
+    func exportSizeRefusesOutOfRange() throws {
+        #expect(ExportSize.parse("2048@2x") == .failure(.outOfRange(2048)))
+        #expect(ExportSize.parse("8") == .failure(.outOfRange(8)))
+        // `extract` passes its own, wider range.
+        #expect(try ExportSize.parse("2048@2x", in: 16...2048).get() == ExportSize(points: 2048, scale: .twoX))
+    }
+
+    @Test("An export size writes the token it parses from, and never @1x")
+    func exportSizeTokenRoundTrips() throws {
+        for size in [ExportSize(points: 64), ExportSize(points: 64, scale: .twoX)] {
+            #expect(try ExportSize.parse(size.token).get() == size)
+        }
+        #expect(ExportSize(points: 64).token == "64")
+        #expect(ExportSize(points: 64, scale: .twoX).token == "64@2x")
+        #expect(ExportSize(points: 1024, scale: .twoX).displayName == "1024pt @2x")
+        #expect(ExportSize(points: 1024, scale: .twoX).pixelSize == 2048)
+    }
+
     // MARK: - Round trips
 
     @Test("Every SymbolRenderingStyle case round-trips its token")

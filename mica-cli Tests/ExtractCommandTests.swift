@@ -22,8 +22,7 @@ import ArgumentParser
         let command = try ExtractCommand.parse([
             "/Applications",
             "--output", "/tmp/icons",
-            "--size", "256",
-            "--scale", "2x",
+            "--size", "256@2x",
             "--recursive",
             "--depth", "0",
             "--color-space", "sRGB"
@@ -86,9 +85,20 @@ import ArgumentParser
         #expect(try ExtractCommand.parse(["/some/path", "--force"]).output.force == true)
     }
 
-    @Test func rejectsInvalidScale() {
+    @Test func rejectsInvalidScale() throws {
+        #expect(try parseFailureMessage(["/some/path", "--size", "512@3x"])
+            .contains("optionally followed by @2x"))
+    }
+
+    @Test func acceptsTheWiderExtractRangeAtTwoX() throws {
+        let command = try ExtractCommand.parse(["/some/path", "--size", "2048@2x"])
+        #expect(command.size == 2048)
+        #expect(command.scale == .twoX)
+    }
+
+    @Test func scaleFlagIsGone() {
         #expect(throws: (any Error).self) {
-            _ = try ExtractCommand.parse(["/some/path", "--scale", "3x"])
+            _ = try ExtractCommand.parse(["/some/path", "--scale", "2x"])
         }
     }
 

@@ -21,7 +21,7 @@ struct MicaPresetTests {
     @Test("The two scopes partition the key vocabulary, leaving only the export keys")
     func scopesPartitionTheKeys() {
         // The property that makes the whole design cheap: `icon-*` and `badge-*` are
-        // disjoint, cover everything but the three export keys, and map onto the two
+        // disjoint, cover everything but the two export keys, and map onto the two
         // branches of `IconSettings` the scoped copy writes. "Presets never touch
         // export settings" falls out of this rather than being a rule anyone applies.
         var unowned: [String] = []
@@ -30,7 +30,7 @@ struct MicaPresetTests {
             #expect(owners.count <= 1, "'\(key.rawValue)' is owned by two scopes")
             if owners.isEmpty { unowned.append(key.rawValue) }
         }
-        #expect(unowned.sorted() == ["color-space", "scale", "size"])
+        #expect(unowned.sorted() == ["color-space", "size"])
     }
 
     @Test("Each generation mode belongs to its own scope")

@@ -86,8 +86,9 @@ struct BaseOverrideTests {
         let base = Self.distinctiveBase()
         let result = try Self.build(["--size", "1024"], onto: base)
 
+        // `--size` names the whole size, so the base's @2x does not survive it.
         var expected = base
-        expected.export.size = 1024
+        expected.export.exportSize = ExportSize(points: 1024)
         #expect(result == expected)
     }
 
@@ -251,7 +252,7 @@ struct BaseOverrideTests {
     @Test("Export flags override the base")
     func exportFlags_override() throws {
         let result = try Self.build(
-            ["--size", "128", "--scale", "1x", "--color-space", "sRGB"],
+            ["--size", "128", "--color-space", "sRGB"],
             onto: Self.distinctiveBase()
         )
         #expect(result.export.size == 128)

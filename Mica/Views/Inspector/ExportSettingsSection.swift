@@ -15,14 +15,15 @@ struct ExportSettingsSection: View {
             // MARK: - Export Size Section
             InspectorSection(title: "Export Size") {
                 VStack(alignment: .leading, spacing: 8) {
-                    // Same list Settings ▸ Export offers, so the two pickers cannot
-                    // drift into showing different sizes.
-                    Picker("Size", selection: $iconSettings.export.size) {
-                        ForEach(ExportPreferences.sizeChoices, id: \.self) { size in
+                    // Same list Settings ▸ Export and the save panel offer, so the
+                    // pickers cannot drift into showing different sizes.
+                    Picker("Size", selection: $iconSettings.export.exportSize) {
+                        ForEach(ExportPreferences.sizeChoices(including: iconSettings.export.exportSize),
+                                id: \.self) { size in
                             // `verbatim:` matters. A plain `Text("\(Int(size))pt")`
                             // is a `LocalizedStringKey`, whose Int interpolation
                             // applies locale grouping — 1024 renders as "1,024pt".
-                            Text(verbatim: "\(Int(size))pt").tag(size)
+                            Text(verbatim: size.displayName).tag(size)
                         }
                     }
                     .pickerStyle(.menu)
@@ -31,13 +32,9 @@ struct ExportSettingsSection: View {
                     // an addition rather than the only description. Same for the
                     // colour space picker below.
                     .labelsHidden()
-                    .help("The icon\u{2019}s size in points. Settings \u{25B8} Export sets what a new window opens at.")
+                    .help("The icon\u{2019}s size in points. @2x doubles the pixels, for Retina displays. Settings \u{25B8} Export sets what a new window opens at.")
 
-                    Toggle("2x (Retina)", isOn: $iconSettings.export.isRetina)
-                        .font(.subheadline)
-                        .help("Export at twice the point size, for Retina displays")
-
-                    Text(retinaSizeDescription)
+                    Text(pixelSizeDescription)
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -89,13 +86,9 @@ struct ExportSettingsSection: View {
         .padding()
     }
 
-    private var retinaSizeDescription: String {
-        let baseSize = Int(iconSettings.export.size)
-        if iconSettings.export.isRetina {
-            return "Exports at \(baseSize * 2)×\(baseSize * 2)px"
-        } else {
-            return "Exports at \(baseSize)×\(baseSize)px"
-        }
+    private var pixelSizeDescription: String {
+        let side = Int(iconSettings.export.pixelSize.rounded())
+        return "Exports at \(side)×\(side)px"
     }
 
     private var colorSpaceDescription: String {

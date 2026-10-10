@@ -1,9 +1,9 @@
 // Views/Controls/ExportOptionsAccessory.swift
 //
-// The save panel's accessory view: size, 2x and colour space, beside the
-// filename they apply to.
+// The save panel's accessory view: size and colour space, beside the filename
+// they apply to.
 //
-// The same three controls as the inspector's Export pane and the same wording,
+// The same two controls as the inspector's Export pane and the same wording,
 // deliberately — they are the same settings, and this is the second place to
 // reach them rather than a second set. The difference is what a change *means*:
 // here it applies to one file, and `ExportPanelOptions` explains why.
@@ -30,15 +30,13 @@ struct ExportOptionsAccessory: View {
                 .font(.callout)
             }
 
-            Picker("Size", selection: $model.options.spec.size) {
+            Picker("Size", selection: $model.options.spec.exportSize) {
                 // `verbatim:` matters — see `ExportPanelOptions.pixelDescription`.
                 ForEach(model.options.sizeChoices, id: \.self) { size in
-                    Text(verbatim: "\(Int(size))pt").tag(size)
+                    Text(verbatim: size.displayName).tag(size)
                 }
             }
 
-            Toggle("2x (Retina)", isOn: $model.options.spec.isRetina)
-            Spacer()
             Picker("Color Space", selection: $model.options.spec.colorSpace) {
                 ForEach(ExportColorSpace.allCases) { colorSpace in
                     Text(colorSpace.displayName).tag(colorSpace)
@@ -103,6 +101,6 @@ struct ExportOptionsAccessory: View {
 
 #Preview("Overridden") {
     let model = ExportPanelModel(options: ExportPanelOptions(seed: ExportSpec()))
-    model.options.spec.isRetina = true
+    model.options.spec.exportSize = ExportSize(points: 512, scale: .twoX)
     return ExportOptionsAccessory(model: model)
 }

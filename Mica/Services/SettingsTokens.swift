@@ -159,19 +159,83 @@ enum ToggleState: String, CaseIterable, Sendable {
     init(_ isOn: Bool) { self = isOn ? .on : .off }
 }
 
-/// Output resolution multiplier shared by every `mica-cli` subcommand and the
-/// JSON configuration's "scale" key. `1x` renders at the requested pixel size;
-/// `2x` doubles it (retina).
+/// Output resolution multiplier: `1x` renders at the point size, `2x` doubles
+/// the pixels. Spelled as the `@2x` suffix of an `ExportSize` on every surface;
+/// the bare `1x`/`2x` tokens survive only in the configuration's retired
+/// `scale` key and the stored Settings default.
 enum ExportScale: String, CaseIterable, Sendable {
     case oneX = "1x"
     case twoX = "2x"
 
     /// Integer multiplier applied to the base pixel size.
     var factor: Int { self == .twoX ? 2 : 1 }
+}
 
-    /// The scale matching `ExportSpec`'s default, so `--scale`'s documented
-    /// default is derived from the settings rather than restated as a literal.
-    static var settingsDefault: ExportScale { ExportSpec().isRetina ? .twoX : .oneX }
+/// An export size as the size menus, `--size` and the configuration's `size` key
+/// spell it: a point size with an optional `@2x`. `512` is 512×512px and
+/// `512@2x` is 1024×1024px.
+///
+/// One value rather than a size and a separate scale, because that is how the
+/// user picks it — one menu row, one flag. `ExportSpec` stores it as
+/// `exportSize`, with `size` and `isRetina` as views of its two halves.
+struct ExportSize: Hashable, Comparable, Sendable {
+    var points: CGFloat
+    var scale: ExportScale
+
+    init(points: CGFloat, scale: ExportScale = .oneX) {
+        self.points = points
+        self.scale = scale
+    }
+
+    /// Why a string is not an export size. The caller owns the wording, since the
+    /// CLI and the configuration reader each name their own key.
+    enum ParseError: Error, Equatable {
+        /// Not `<whole number>` or `<whole number>@1x|@2x`.
+        case malformed
+        /// A well-formed size outside `range`.
+        case outOfRange(Int)
+    }
+
+    /// Parse `512`, `512@2x` or `512@1x`; the `x` is case-insensitive.
+    static func parse(_ raw: String,
+                      in range: ClosedRange<Int> = Int(ExportSpec.minSize)...Int(ExportSpec.maxSize))
+        -> Result<ExportSize, ParseError> {
+        let parts = raw.split(separator: "@", omittingEmptySubsequences: false)
+        guard (1...2).contains(parts.count), let points = Int(parts[0]) else {
+            return .failure(.malformed)
+        }
+        var scale = ExportScale.oneX
+        if parts.count == 2 {
+            guard let parsed = ExportScale(rawValue: parts[1].lowercased()) else {
+                return .failure(.malformed)
+            }
+            scale = parsed
+        }
+        guard range.contains(points) else { return .failure(.outOfRange(points)) }
+        return .success(ExportSize(points: CGFloat(points), scale: scale))
+    }
+
+    /// The CLI/config spelling: `512` or `512@2x`. `@1x` is accepted on input and
+    /// never written.
+    var token: String {
+        let base = "\(Int(points.rounded()))"
+        return scale == .twoX ? "\(base)@2x" : base
+    }
+
+    /// The menu row: `512pt` or `512pt @2x`, the spelling the System-mode preview
+    /// note already uses.
+    var displayName: String {
+        let base = "\(Int(points.rounded()))pt"
+        return scale == .twoX ? "\(base) @2x" : base
+    }
+
+    /// The exported pixel dimension.
+    var pixelSize: CGFloat { points * CGFloat(scale.factor) }
+
+    /// Menu order: by point size, 1x before @2x.
+    static func < (lhs: ExportSize, rhs: ExportSize) -> Bool {
+        (lhs.points, lhs.scale.factor) < (rhs.points, rhs.scale.factor)
+    }
 }
 
 // MARK: - Overloaded source values

@@ -16,15 +16,34 @@ enum ExportPreferences {
     /// Stored as `ExportColorSpace.rawValue`, which is also the CLI's
     /// `--color-space` token.
     static let defaultColorSpaceKey = "export.defaultColorSpace"
+    /// Stored as `ExportScale.rawValue` (`1x`/`2x`). Paired with `defaultSizeKey`
+    /// rather than replacing it, so a size stored before the @2x rows existed
+    /// still reads.
+    static let defaultScaleKey = "export.defaultScale"
 
-    /// The sizes both size pickers offer — Settings ▸ Export and the inspector's
-    /// Export tab. One list so the two cannot drift into offering different sets.
+    /// The sizes every size picker offers — Settings ▸ Export, the inspector's
+    /// Export tab and the save panel. One list so they cannot drift into offering
+    /// different sets.
     ///
     /// Deliberately *not* on `ExportSpec`: this is a presentation choice, where
     /// `minSize`/`maxSize` are the shipped contract the CLI validates `--size`
-    /// against. Any size in that range is legal; these seven are the ones worth a
-    /// menu row.
-    static let sizeChoices: [CGFloat] = [16, 32, 64, 128, 256, 512, 1024]
+    /// against. Any size in that range is legal at either scale; these seven, each
+    /// at 1x and @2x, are the ones worth a menu row.
+    static let sizeChoices: [ExportSize] = [16, 32, 64, 128, 256, 512, 1024].flatMap { points in
+        ExportScale.allCases.map { ExportSize(points: points, scale: $0) }
+    }
+
+    /// `sizeChoices`, plus `size` itself when it is not one of them.
+    ///
+    /// A configuration file can carry any size in `ExportSpec.minSize...maxSize`,
+    /// and a `Picker` whose selection matches no tag renders **empty** — so a
+    /// window opened from a 300pt configuration would show a blank menu and lose
+    /// the size the moment the user touched anything else. The odd size is offered
+    /// in its sorted place instead.
+    static func sizeChoices(including size: ExportSize) -> [ExportSize] {
+        guard !sizeChoices.contains(size) else { return sizeChoices }
+        return (sizeChoices + [size]).sorted()
+    }
 }
 
 extension ExportSpec {
@@ -46,6 +65,11 @@ extension ExportSpec {
         if let stored = defaults.object(forKey: ExportPreferences.defaultSizeKey) as? Double,
            (Double(ExportSpec.minSize)...Double(ExportSpec.maxSize)).contains(stored) {
             spec.size = CGFloat(stored)
+        }
+
+        if let raw = defaults.string(forKey: ExportPreferences.defaultScaleKey),
+           let scale = ExportScale(rawValue: raw) {
+            spec.isRetina = scale == .twoX
         }
 
         if let raw = defaults.string(forKey: ExportPreferences.defaultColorSpaceKey),

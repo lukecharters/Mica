@@ -101,13 +101,13 @@ struct MicaConfigTests {
 
     @Test("the stored-property count is pinned, so a new setting cannot be forgotten")
     func storedPropertyCountIsPinned() {
-        #expect(Self.leafCount(of: IconSettings()) == 65,
+        #expect(Self.leafCount(of: IconSettings()) == 64,
                 "a new stored property needs a config key (and a probe below) or an entry in the documented lossiness list")
     }
 
     @Test("each spec contributes the leaf count the codec was built against")
     func perSpecLeafCounts() {
-        #expect(Self.leafCount(of: ExportSpec()) == 3)
+        #expect(Self.leafCount(of: ExportSpec()) == 2)
         #expect(Self.leafCount(of: ForegroundSpec.iconDefault) == 17)
         #expect(Self.leafCount(of: IconBackgroundSpec()) == 12)
         #expect(Self.leafCount(of: BadgeBackgroundSpec()) == 11)
@@ -122,8 +122,7 @@ struct MicaConfigTests {
     /// the discriminators a key depends on — an image background for the scale
     /// and padding keys, `badge-fg` for every badge key.
     private static let keyProbes: [(key: String, value: Any, context: [String: Any])] = [
-        ("size", 256, [:]),
-        ("scale", "2x", [:]),
+        ("size", "256@2x", [:]),
         ("color-space", "displayP3", [:]),
         ("icon-generation-mode", "system", [:]),
         ("badge-generation-mode", "system", ["badge-fg": "symbol:plus"]),
@@ -905,11 +904,54 @@ struct MicaConfigTests {
         #expect(object["icon-bg-shadow"] as? String == "macos15")
     }
 
-    @Test("the export scale takes 2x or the bare number 2")
-    func exportScaleIsLiberal() throws {
-        #expect(try Self.decode(["scale": "2x"]).settings.export.isRetina == true)
+    @Test("the retired scale key still loads, as 2x or the bare number 2")
+    func retiredScaleKeyStillLoads() throws {
+        let old = try Self.decode(["size": 256, "scale": "2x"])
+        #expect(old.settings.export.exportSize == ExportSize(points: 256, scale: .twoX))
+        #expect(old.warnings.isEmpty, "a file written before the suffix is not a mistake")
         #expect(try Self.decode(["scale": 2]).settings.export.isRetina == true)
         #expect(try Self.decode(["scale": 1]).settings.export.isRetina == false)
+    }
+
+    @Test("size takes an @2x suffix")
+    func sizeTakesTheScaleSuffix() throws {
+        let retina = try Self.decode(["size": "512@2x"])
+        #expect(retina.settings.export.exportSize == ExportSize(points: 512, scale: .twoX))
+        #expect(retina.warnings.isEmpty)
+        #expect(try Self.decode(["size": "128@1x"]).settings.export.exportSize == ExportSize(points: 128))
+        #expect(try Self.decode(["size": "128"]).settings.export.exportSize == ExportSize(points: 128))
+        #expect(try Self.decode(["size": 128]).settings.export.exportSize == ExportSize(points: 128))
+    }
+
+    @Test("an @2x size encodes as a suffix and a 1x size as a plain number")
+    func sizeEncodesTheSuffixOnlyAtTwoX() throws {
+        var settings = IconSettings()
+        settings.export.exportSize = ExportSize(points: 256, scale: .twoX)
+        var object = try #require(try JSONSerialization.jsonObject(
+            with: MicaConfigCodec.encode(settings: settings)) as? [String: Any])
+        #expect(object["size"] as? String == "256@2x")
+        #expect(object[MicaConfigKey.retiredScaleName] == nil, "the retired key is never written")
+
+        settings.export.isRetina = false
+        object = try #require(try JSONSerialization.jsonObject(
+            with: MicaConfigCodec.encode(settings: settings)) as? [String: Any])
+        #expect(object["size"] as? Int == 256)
+        #expect(object[MicaConfigKey.retiredScaleName] == nil)
+    }
+
+    @Test("a suffixed size wins over the retired scale key, with a warning")
+    func suffixedSizeBeatsRetiredScale() throws {
+        let decoded = try Self.decode(["size": "512@2x", "scale": "1x"])
+        #expect(decoded.settings.export.exportSize == ExportSize(points: 512, scale: .twoX))
+        #expect(decoded.warnings.map(\.key) == [MicaConfigKey.retiredScaleName])
+    }
+
+    @Test("a malformed or out-of-range size warns and keeps the default",
+          arguments: ["512@3x", "512@", "@2x", "2048@2x", "8@2x"])
+    func badSizeWarns(_ raw: String) throws {
+        let decoded = try Self.decode(["size": raw])
+        #expect(decoded.settings.export.exportSize == ExportSpec().exportSize)
+        #expect(decoded.warnings.map(\.key) == ["size"])
     }
 
     // MARK: - Warnings
