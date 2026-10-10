@@ -31,10 +31,18 @@ extension PresetScope {
     ///
     /// **A misspelled name draws nothing at all, with no error**, so
     /// `PresetsToolbarTests` resolves both through `NSImage`.
+    ///
+    /// `app.grid.2x2` is new in macOS 27 and does not resolve on earlier systems, so
+    /// they keep `square.grid.2x2`.
     var toolbarSymbolName: String {
         switch self {
-        case .icon:  "square.grid.2x2"
-        case .badge: "circle.grid.2x2"
+        case .icon:
+            if #available(macOS 27, *) {
+                return "app.grid.2x2"
+            }
+            return "square.grid.2x2"
+        case .badge:
+            return "circle.grid.2x2"
         }
     }
 }
