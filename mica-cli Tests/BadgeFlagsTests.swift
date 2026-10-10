@@ -28,7 +28,6 @@ struct BadgeFlagsTests {
         #expect(badge.scale == nil)
         #expect(badge.offsetX == nil)
         #expect(badge.offsetY == nil)
-        #expect(badge.isImageBackground == false)
     }
 
     // MARK: - Activation

@@ -30,8 +30,7 @@ enum InspectorPreferences {
     /// to any radius at all.
     ///
     /// Off suits artwork that *should* be clipped to a chiclet — a texture or a
-    /// photo. Nothing in the file says which kind arrived, which is why this asks
-    /// rather than guesses per-file. Icon-only; the badge has no corner radius.
+    /// photo. Icon-only; the badge has no corner radius.
     static let turnsOffCornerRadiusOnBackgroundImportKey = "import.turnsOffCornerRadius"
 }
 

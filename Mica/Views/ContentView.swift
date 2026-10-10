@@ -413,7 +413,9 @@ struct ContentView: View {
         // observe. A previous version decided that policy here and got redo wrong in a
         // way no unit test could reach.
         .onChange(of: viewModel.iconSettings) { previous, current in
-            viewModel.settingsDidChange(from: previous, undoManager: undoManager)
+            if viewModel.settingsDidChange(from: previous, undoManager: undoManager) != nil {
+                viewModel.observeImport(from: previous)
+            }
             // Piggy-backing rather than taking a fifth `.onChange`: the badge can
             // reach a new source from anywhere — the inspector, a pasted image, an
             // imported configuration, an undo — and the mode picker has to remember
@@ -911,6 +913,7 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .top) { ImportNoticeOverlay(viewModel: viewModel) }
         // Focus-resolved ⌘C. `.onCopyCommand` hooks the **standard** Copy, which is
         // the only way the icon can answer to ⌘C at all: two menu items sharing one
         // key equivalent are deduplicated when the menu is built and the later one

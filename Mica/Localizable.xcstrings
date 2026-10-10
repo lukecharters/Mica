@@ -1217,6 +1217,12 @@
     "Corners" : {
 
     },
+    "Corners off" : {
+
+    },
+    "Corners on" : {
+
+    },
     "Custom" : {
 
     },
@@ -1315,6 +1321,12 @@
           }
         }
       }
+    },
+    "Foreground hidden" : {
+
+    },
+    "Foreground shown" : {
+
     },
     "Format" : {
       "comment" : "A label for the Format tab in the inspector.",
@@ -1419,7 +1431,16 @@
     "Icon" : {
 
     },
+    "Icon Imported" : {
+
+    },
     "Icon Padding" : {
+
+    },
+    "Icon Padding off" : {
+
+    },
+    "Icon Padding on" : {
 
     },
     "icon preset" : {
@@ -1432,6 +1453,9 @@
 
     },
     "Image" : {
+
+    },
+    "Image Imported" : {
 
     },
     "Image Scale" : {
@@ -1738,6 +1762,9 @@
     "Progress" : {
 
     },
+    "Put back the settings this import changed" : {
+
+    },
     "Re-flag" : {
 
     },
@@ -1830,6 +1857,9 @@
     "Restore Bundled Calibration" : {
 
     },
+    "Revert" : {
+
+    },
     "Review below" : {
 
     },
@@ -1888,6 +1918,12 @@
 
     },
     "Shadow" : {
+
+    },
+    "Shadow off" : {
+
+    },
+    "Shadow on" : {
 
     },
     "Shadows" : {

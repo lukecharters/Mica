@@ -97,7 +97,7 @@ struct IconSpec: Equatable {
     /// back on and both layers draw.
     mutating func applyBackgroundImage(_ image: ImportedImage,
                                        defaults: ImportDefaults = .fixed) {
-        background.apply(image)                     // source, padding, shadow off
+        background.apply(image)                     // source, padding, shadow
         if defaults.turnsOffCornerRadius {
             background.cornerRadiusStyle = .off
         }
@@ -231,7 +231,7 @@ struct BadgeSpec: Equatable {
     /// ignored rather than absent, so one type serves both seams.
     mutating func applyBackgroundImage(_ image: ImportedImage,
                                        defaults: ImportDefaults = .fixed) {
-        background.apply(image)                     // source, padding, shadow off
+        background.apply(image)                     // source, padding, shadow
         if defaults.hidesForeground {
             foreground.isHidden = true
         }
@@ -352,14 +352,11 @@ struct ForegroundSpec: Equatable {
     static let iconDefault = ForegroundSpec(symbolName: "command", isHidden: false)
     static let badgeDefault = ForegroundSpec(symbolName: "gearshape.fill", isHidden: true)
 
-    /// Import an image as this layer's artwork, with the import-time defaults: the
-    /// drop shadow off, because an imported graphic usually carries its own.
-    /// One implementation for both groups — the icon's and the badge's imports
-    /// were two identical methods before the specs collapsed them.
+    /// Import an image as this layer's artwork. The drop shadow is left as it is.
+    /// One implementation for both groups.
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
-        shadowStyle = .off
     }
 
     /// Drop imported artwork and go back to drawing the symbol.
@@ -376,7 +373,6 @@ struct ForegroundSpec: Equatable {
         let fresh = ForegroundSpec(symbolName: symbolName, isHidden: isHidden)
         image = nil
         source = fresh.source
-        shadowStyle = fresh.shadowStyle
     }
 }
 
@@ -399,14 +395,22 @@ struct IconBackgroundSpec: Equatable {
 
     var gradientColors: [Color] { [gradientStartColor.resolved, gradientEndColor.resolved] }
 
-    /// Import an image as this background, with the import-time defaults: "Icon
-    /// Padding" compensation on (scaling a native app icon's chiclet up to fill
-    /// the frame) and the shadow off.
+    /// Import an image as this background. An app icon (`hasIconMargin`) gets
+    /// "Icon Padding" compensation, scaling its chiclet up to fill the frame, and
+    /// the shadow off, since it carries its own. Artwork that reaches its edges
+    /// gets neither, and a shadow that was off comes back on.
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
-        compensatesForPadding = true
-        shadowStyle = .off
+        compensatesForPadding = image.hasIconMargin
+        shadowStyle = Self.importedShadowStyle(for: image, current: shadowStyle)
+    }
+
+    /// The shadow an imported background starts with. Shared with the
+    /// configuration decoder and the CLI, which apply it field by field.
+    static func importedShadowStyle(for image: ImportedImage?, current: DropShadowStyle) -> DropShadowStyle {
+        if image?.hasIconMargin ?? true { return .off }
+        return current == .off ? IconBackgroundSpec().shadowStyle : current
     }
 }
 
@@ -448,14 +452,14 @@ struct BadgeBackgroundSpec: Equatable {
             * (compensatesForPadding ? ImportedImageGeometry.paddingCompensationFactor : 1.0)
     }
 
-    /// Import an image as this background, with the import-time defaults: "Icon
-    /// Padding" compensation on (scaling a native app icon's chiclet up to fill
-    /// the frame) and the shadow off.
+    /// Import an image as this background, on the icon background's terms: an
+    /// app icon gets padding compensation and no shadow, other artwork the
+    /// reverse. See `IconBackgroundSpec.apply(_:)`.
     mutating func apply(_ image: ImportedImage) {
         self.image = image
         source = .image
-        compensatesForPadding = true
-        drawsShadow = false
+        compensatesForPadding = image.hasIconMargin
+        drawsShadow = !image.hasIconMargin
     }
 }
 

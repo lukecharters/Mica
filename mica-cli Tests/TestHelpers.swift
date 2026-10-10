@@ -28,3 +28,33 @@ func makeTempImageFile(file: StaticString = #filePath, line: UInt = #line) throw
     try png.write(to: url)
     return url
 }
+
+/// Writes a 64×64 PNG to a unique temporary URL: an opaque square inset by
+/// `inset` of each side, or filling the canvas at an inset of 0. An inset of
+/// 0.1 is where the macOS icon grid puts an app icon's chiclet.
+func makeTempImageFile(inset: Double) throws -> URL {
+    let size = 64
+    let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: size,
+        pixelsHigh: size,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: size * 4,
+        bitsPerPixel: 32
+    )!
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+    NSColor.systemBlue.setFill()
+    NSRect(x: 0, y: 0, width: size, height: size)
+        .insetBy(dx: Double(size) * inset, dy: Double(size) * inset)
+        .fill()
+    NSGraphicsContext.restoreGraphicsState()
+    let png = bitmap.representation(using: .png, properties: [:])!
+    let url = URL.temporaryDirectory.appending(path: "cli-test-\(UUID().uuidString).png")
+    try png.write(to: url)
+    return url
+}

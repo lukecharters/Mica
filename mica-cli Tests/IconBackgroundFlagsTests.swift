@@ -21,8 +21,6 @@ struct IconBackgroundFlagsTests {
         #expect(bg.cornerRadius == nil)
         #expect(bg.scale == nil)
         #expect(bg.visibility == nil)
-        // A nil --icon-bg still resolves to the generated background, not a path.
-        #expect(bg.isImageBackground == false)
     }
 
     // MARK: - Background resolution
@@ -76,14 +74,6 @@ struct IconBackgroundFlagsTests {
         #expect(message.contains(token))
         #expect(message.contains("no longer available"))
         #expect(!message.lowercased().contains("file not found"))
-    }
-
-    /// The retired keyword is not a path, so nothing downstream may treat it as one
-    /// — `validate()` throwing is the only thing that should happen to it.
-    @Test("the retired keyword is not read as an image background")
-    func preRenderedIsNotAnImagePath() throws {
-        let command = try parseCommand(["--icon-symbol", "star.fill", "--icon-bg", "prerendered-liquid-glass"])
-        #expect(command.background.isImageBackground == false)
     }
 
     // MARK: - Style toggles

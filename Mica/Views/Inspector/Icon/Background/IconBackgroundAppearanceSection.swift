@@ -18,7 +18,19 @@ struct IconBackgroundAppearanceSection: View {
 
     @ViewBuilder
     private var importedControls: some View {
+        if advancedControlsEnabled {
+            cornersControl
+        }
         shadowControl
+    }
+
+    private var cornersControl: some View {
+        Picker("Corners", systemImage: "viewfinder", selection: $iconSettings.icon.background.cornerRadiusStyle) {
+            ForEach(IconCornerRadiusStyle.allCases) { style in
+                Text(style.rawValue).tag(style)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var shadowControl: some View {
@@ -32,12 +44,7 @@ struct IconBackgroundAppearanceSection: View {
     private var standardControls: some View {
 
         if advancedControlsEnabled {
-            Picker("Corners", systemImage: "viewfinder", selection: $iconSettings.icon.background.cornerRadiusStyle) {
-                ForEach(IconCornerRadiusStyle.allCases) { style in
-                    Text(style.rawValue).tag(style)
-                }
-            }
-            .pickerStyle(.segmented)
+            cornersControl
 
             Toggle("Custom Gradient", isOn: Binding(
                 get: { iconSettings.icon.background.usesCustomGradient },

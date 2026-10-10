@@ -327,7 +327,7 @@ Sets the shadow style behind the foreground.
 | **In the app** | Icon ▸ Foreground ▸ Appearance ▸ **Shadow** |
 | **Command line** | `--icon-fg-shadow off\|macos15\|macos26\|macos27` |
 | **Config key** | `"icon-fg-shadow"` |
-| **Default** | `off` for images, `macos27` otherwise |
+| **Default** | `macos27` |
 | **Shown when** | Mica mode. |
 
 With advanced controls off, the app shows an on/off switch. On gives `macos27`.
@@ -373,6 +373,20 @@ Any other icon foreground flag shows the foreground.
 Otherwise, the foreground stays hidden.
 The sidebar eye shows it again in the app.
 Settings ▸ Importing can turn off this default.
+
+Mica checks the edges of an imported background image.
+An app icon has a clear border on every side.
+Other artwork reaches at least one edge.
+A file that is not an image imports its Finder icon.
+Mica always treats that icon as an app icon.
+
+| Image | Padding | Shadow | Corners |
+|---|---|---|---|
+| App icon | `off` | `off` | `off` |
+| Other artwork | `on` | `macos27` | `off` |
+
+A flag or config key overrides each default.
+In the app, Settings ▸ Importing can keep the corners.
 
 <img src="images/icon-bg-image-foreground-hidden.png" width="128" alt="Imported background with foreground hidden"> <img src="images/icon-bg-image-foreground-shown.png" width="128" alt="Imported background with foreground shown">
 
@@ -479,13 +493,13 @@ Sets the corner shape for colour and imported image backgrounds.
 | **In the app** | Icon ▸ Background ▸ Appearance ▸ **Corners** |
 | **Command line** | `--icon-bg-corner-radius off\|macos15\|macos26` |
 | **Config key** | `"icon-bg-corner-radius"` |
-| **Default** | `macos26` |
+| **Default** | `off` for imported images, `macos26` otherwise |
 | **Shown when** | Advanced controls are on and Mica mode is active. |
 
 <img src="images/icon-bg-corner-radius-off.png" width="128" alt="Corners off"> <img src="images/icon-bg-corner-radius-macos15.png" width="128" alt="macOS 15 corners"> <img src="images/icon-bg-corner-radius-macos26.png" width="128" alt="macOS 26 corners">
 
 From left: `off`, `macos15`, `macos26`.
-Use `off` for artwork that fills its own edges.
+Use `macos15` or `macos26` to clip imported artwork to the icon shape.
 
 ```shell
 mica-cli --icon-symbol star.fill --size 256 --icon-bg-corner-radius macos26
@@ -502,7 +516,7 @@ Sets the shadow style behind the icon background.
 | **In the app** | Icon ▸ Background ▸ Appearance ▸ **Shadow** |
 | **Command line** | `--icon-bg-shadow off\|macos15\|macos26\|macos27` |
 | **Config key** | `"icon-bg-shadow"` |
-| **Default** | `off` for images, `macos27` otherwise |
+| **Default** | `off` for imported app icons, `macos27` otherwise |
 | **Shown when** | Mica mode. |
 
 <img src="images/icon-bg-shadow-off.png" width="128" alt="Background shadow off"> <img src="images/icon-bg-shadow-macos15.png" width="128" alt="macOS 15 background shadow"> <img src="images/icon-bg-shadow-macos27.png" width="128" alt="macOS 27 background shadow">
@@ -525,7 +539,7 @@ Controls whether Mica keeps padding already present in imported artwork.
 | **In the app** | Icon ▸ Background ▸ Layout ▸ **Icon Padding** |
 | **Command line** | `--icon-bg-padding on\|off` |
 | **Config key** | `"icon-bg-padding"` |
-| **Default** | `off` |
+| **Default** | `off` for app icons, `on` for other artwork |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Background Type is Imported. |
 
 <img src="images/icon-bg-padding-on.png" width="128" alt="Imported background padding preserved"> <img src="images/icon-bg-padding-off.png" width="128" alt="Imported background scaled to fill">

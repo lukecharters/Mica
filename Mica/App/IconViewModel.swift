@@ -55,6 +55,9 @@ final class IconViewModel: ObservableObject {
     /// installs nothing and produces no warnings.
     @Published var userMessage: UserMessage?
 
+    /// The banner over the preview after a background import changed other settings.
+    @Published var importNotice: ImportNotice?
+
     /// Show `message`, or do nothing if there is nothing to show.
     ///
     /// Takes an optional so a caller can pass a constructor that answers "nothing to

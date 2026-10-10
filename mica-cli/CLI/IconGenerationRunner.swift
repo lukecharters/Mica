@@ -323,7 +323,6 @@ class IconGenerationRunner {
             // configuration's foreground stands; a flags-only `generate` requires
             // one, and its error comes from the throwing `resolvedForeground()` in
             // performEnhancedValidation.
-            var commandImportedForeground = false
             if let foreground = try command.providedForeground() {
                 switch foreground {
                 case .symbol(let name):
@@ -335,7 +334,6 @@ class IconGenerationRunner {
                     settings.icon.foreground.symbolName = command.defaultOutputBasename()
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                     settings.icon.foreground.image = try ImageImportService.importFromURL(url)
-                    commandImportedForeground = true
                 }
             }
 
@@ -401,7 +399,9 @@ class IconGenerationRunner {
                 if let scale = command.background.scale {
                     settings.icon.background.imageScale = scale
                 }
-                settings.icon.background.compensatesForPadding = command.background.effectivePaddingCompensation
+                if let padding = command.background.padding {
+                    settings.icon.background.compensatesForPadding = !padding.isOn
+                }
                 commandImportedBackground = true
             }
 
@@ -412,14 +412,8 @@ class IconGenerationRunner {
             if let cornerRadius = command.background.cornerRadius {
                 settings.icon.background.cornerRadiusStyle = try parseCornerRadius(cornerRadius)
             }
-            // An explicit --icon-bg-shadow wins; otherwise only a *freshly imported*
-            // background forces the shadow off (mirroring
-            // `IconBackgroundSpec.apply(_:)`). Absent flag + no import leaves the
-            // base's shadow, which is what a document needs.
             if let shadow = command.background.shadow {
                 settings.icon.background.shadowStyle = try parseShadowStyle(shadow)
-            } else if commandImportedBackground {
-                settings.icon.background.shadowStyle = .off
             }
 
             // Background visibility (new --icon-bg-visibility → iconBackgroundHidden)
@@ -452,12 +446,8 @@ class IconGenerationRunner {
                 settings.icon.foreground.paletteTertiaryColor = try MicaColorValue(strictlyParsing: parts[2])
             }
 
-            // Symbol style. As with the background shadow, only a fresh import
-            // forces the shadow off (mirroring `ForegroundSpec.apply(_:)`).
             if let shadow = command.iconForeground.shadow {
                 settings.icon.foreground.shadowStyle = shadow
-            } else if commandImportedForeground {
-                settings.icon.foreground.shadowStyle = .off
             }
             if let symbolWeight = command.iconForeground.symbolWeight {
                 settings.icon.foreground.symbolWeight = try parseSymbolWeight(symbolWeight)
@@ -508,7 +498,6 @@ class IconGenerationRunner {
             let commandBadgeForeground = try command.resolvedBadgeForeground()
             if command.badgeIsActive || settings.badge.isVisible {
                 // Badge foreground source (folds --badge-fg + --badge-fg-scale).
-                var commandImportedBadgeForeground = false
                 switch commandBadgeForeground {
                 case .symbol(let name):
                     settings.badge.foreground.source = .symbol
@@ -517,7 +506,6 @@ class IconGenerationRunner {
                     settings.badge.foreground.source = .image
                     let url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
                     settings.badge.foreground.image = try ImageImportService.importFromURL(url)
-                    commandImportedBadgeForeground = true
                 case nil:
                     break
                 }
@@ -572,7 +560,9 @@ class IconGenerationRunner {
                     if let backgroundScale = command.badge.backgroundScale {
                         settings.badge.background.imageScale = backgroundScale
                     }
-                    settings.badge.background.compensatesForPadding = command.badge.effectiveBackgroundPaddingCompensation
+                    if let padding = command.badge.backgroundPadding {
+                        settings.badge.background.compensatesForPadding = !padding.isOn
+                    }
                     commandImportedBadgeBackground = true
                 }
 
@@ -582,8 +572,6 @@ class IconGenerationRunner {
                 }
                 if let backgroundShadow = command.badge.backgroundShadow {
                     settings.badge.background.drawsShadow = backgroundShadow.isOn
-                } else if commandImportedBadgeBackground {
-                    settings.badge.background.drawsShadow = false
                 }
 
                 // Badge layout.
@@ -629,11 +617,8 @@ class IconGenerationRunner {
                     settings.badge.foreground.fillStyle = symbolGradient.isOn ? .gradient : .flat
                 }
 
-                // Badge foreground shadow — off only for a fresh import.
                 if let foregroundShadow = command.badge.foregroundShadow {
                     settings.badge.foreground.shadowStyle = foregroundShadow
-                } else if commandImportedBadgeForeground {
-                    settings.badge.foreground.shadowStyle = .off
                 }
 
                 // Badge generation mode (system → appex pipeline).

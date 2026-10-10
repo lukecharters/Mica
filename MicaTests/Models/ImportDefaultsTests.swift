@@ -23,7 +23,7 @@ struct ImportDefaultsTests {
         #expect(settings.icon.foreground.isHidden == false)
         #expect(settings.icon.background.cornerRadiusStyle == .macOS26)
 
-        settings.icon.applyBackgroundImage(try ImportedImage.testFixture())
+        settings.icon.applyBackgroundImage(try ImportedImage.iconFixture())
 
         #expect(settings.icon.background.source == .image)
         #expect(settings.icon.background.image != nil)
@@ -40,7 +40,7 @@ struct ImportDefaultsTests {
         settings.badge.isVisible = true
         #expect(settings.badge.foreground.isHidden == false)
 
-        settings.badge.applyBackgroundImage(try ImportedImage.testFixture())
+        settings.badge.applyBackgroundImage(try ImportedImage.iconFixture())
 
         #expect(settings.badge.background.source == .image)
         #expect(settings.badge.background.image != nil)
@@ -52,7 +52,7 @@ struct ImportDefaultsTests {
     @Test("Hiding the foreground is a default, not a veto — it can be switched back on")
     func hiddenForeground_canBeSwitchedBackOn() throws {
         var settings = IconSettings()
-        settings.icon.applyBackgroundImage(try ImportedImage.testFixture())
+        settings.icon.applyBackgroundImage(try ImportedImage.iconFixture())
         #expect(settings.icon.foreground.isHidden == true)
 
         settings.icon.foreground.isHidden = false
@@ -77,8 +77,8 @@ struct ImportDefaultsTests {
         var settings = IconSettings()
         settings.badge.isVisible = true
 
-        settings.icon.applyBackgroundImage(try ImportedImage.testFixture(), defaults: defaults)
-        settings.badge.applyBackgroundImage(try ImportedImage.testFixture(), defaults: defaults)
+        settings.icon.applyBackgroundImage(try ImportedImage.iconFixture(), defaults: defaults)
+        settings.badge.applyBackgroundImage(try ImportedImage.iconFixture(), defaults: defaults)
 
         #expect(settings.icon.foreground.isHidden == defaults.hidesForeground)
         #expect(settings.badge.foreground.isHidden == defaults.hidesForeground)
@@ -90,7 +90,7 @@ struct ImportDefaultsTests {
     func badgeIgnoresTheCornerRadiusDefault() throws {
         var settings = IconSettings()
         settings.badge.applyBackgroundImage(
-            try ImportedImage.testFixture(),
+            try ImportedImage.iconFixture(),
             defaults: ImportDefaults(hidesForeground: false, turnsOffCornerRadius: true))
 
         // One `ImportDefaults` serves both seams, so the badge takes the field and
