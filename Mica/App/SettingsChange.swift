@@ -140,8 +140,7 @@ extension SettingsChange {
         + badgeBackgroundFields
 
     private static let exportFields: [SettingField] = [
-        SettingField("export.size", "Change Export Size", \.export.size),
-        SettingField("export.isRetina", "Change Retina Scale", \.export.isRetina),
+        SettingField("export.exportSize", "Change Export Size", \.export.exportSize),
         SettingField("export.colorSpace", "Change Color Space", \.export.colorSpace),
     ]
 

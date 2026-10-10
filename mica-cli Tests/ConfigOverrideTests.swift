@@ -22,8 +22,7 @@ struct ConfigOverrideTests {
     /// A configuration that is non-default in every group, so a flag that
     /// overwrites something it should have left alone shows up as a changed field.
     static let distinctiveConfig: [String: Any] = [
-        "size": 256,
-        "scale": "2x",
+        "size": "256@2x",
         "color-space": "displayP3",
 
         "icon-fg": "symbol:bolt.fill",
@@ -147,8 +146,10 @@ struct ConfigOverrideTests {
         let context = try Self.load(Self.distinctiveConfig)
         let result = try Self.build(["--size", "1024"], onto: context)
 
+        // `--size` names the whole size, scale included, so the file's @2x does
+        // not survive a bare 1024.
         var expected = try #require(context.base)
-        expected.export.size = 1024
+        expected.export.exportSize = ExportSize(points: 1024)
         #expect(result == expected)
     }
 

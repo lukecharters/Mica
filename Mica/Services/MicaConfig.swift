@@ -55,9 +55,8 @@ import Foundation
 /// Every configuration key IS a `generate` long flag name (without `--`).
 /// `ConfigFlagParityTests` holds this equality in both directions.
 enum MicaConfigKey: String, CaseIterable, Sendable {
-    // Export
+    // Export. `size` carries the scale as an `@2x` suffix; see `retiredScaleName`.
     case size
-    case scale
     case colorSpace = "color-space"
 
     // Generation modes
@@ -133,6 +132,14 @@ enum MicaConfigKey: String, CaseIterable, Sendable {
         "badge-bg-colour": .badgeBGColor,
         "badge-bg-gradient-colours": .badgeBGGradientColors,
     ]
+
+    /// The key that carried the export scale (`"scale": "2x"`) until the scale moved
+    /// into `size` as `"512@2x"` on 2026-10-10.
+    ///
+    /// Read for files written before then and never written, and **not** a
+    /// `MicaConfigKey`: there is no `--scale` flag any more, and every key is a flag.
+    /// A suffixed `size` wins over it.
+    static let retiredScaleName = "scale"
 
     /// The `generate` flags that are deliberately not configuration keys, with
     /// the message an attempt to use one gets.
@@ -368,6 +375,8 @@ private struct ConfigReader {
     let loadImage: MicaConfigCodec.ImageLoader
 
     var values: [MicaConfigKey: Any] = [:]
+    /// The value of the retired `scale` key, if the file has one.
+    var retiredScale: Any?
     var warnings: [MicaConfigWarning] = []
     var settings = IconSettings()
     var appexColors = MicaAppexColors()
@@ -393,6 +402,8 @@ private struct ConfigReader {
                 } else {
                     values[canonical] = value
                 }
+            } else if rawKey == MicaConfigKey.retiredScaleName {
+                retiredScale = value
             } else if MicaConfigKey.processLevelNames.contains(rawKey) {
                 warn(rawKey, "'\(rawKey)' is a command-line flag, not a configuration key — pass it on the command line")
             } else if MicaConfigKey.presetFlagNames.contains(rawKey) {
@@ -589,11 +600,16 @@ private struct ConfigReader {
         let effectiveBadgeMode = badgeMode ?? BadgeSpec().mode
 
         // Export.
-        if let size = number(.size, in: Double(ExportSpec.minSize)...Double(ExportSpec.maxSize)) {
-            settings.export.size = CGFloat(size)
+        let sizeCarriesScale = (values[.size] as? String)?.contains("@") == true
+        if let size = exportSize() {
+            settings.export.exportSize = size
         }
-        if let scale = exportScale() {
-            settings.export.isRetina = scale.factor == 2
+        if let scale = retiredExportScale() {
+            if sizeCarriesScale {
+                warn(MicaConfigKey.retiredScaleName, "ignored; 'size' already gives the scale")
+            } else {
+                settings.export.isRetina = scale == .twoX
+            }
         }
         if let colorSpace = token(.colorSpace, as: ExportColorSpace.self) {
             settings.export.colorSpace = colorSpace
@@ -1020,16 +1036,36 @@ private struct ConfigReader {
         }
     }
 
-    /// `scale` takes "1x"/"2x", or (liberally) the bare numbers 1 and 2.
-    private mutating func exportScale() -> ExportScale? {
-        guard let value = values[.scale] else { return nil }
+    /// `size` takes a number (`512`), or a string with an optional scale suffix
+    /// (`"512"`, `"512@2x"`). A bare number is always 1x.
+    private mutating func exportSize() -> ExportSize? {
+        guard let value = values[.size] else { return nil }
+        guard let string = value as? String, !isBool(value), string.contains("@") else {
+            return number(.size, in: Double(ExportSpec.minSize)...Double(ExportSpec.maxSize))
+                .map { ExportSize(points: CGFloat($0)) }
+        }
+        switch ExportSize.parse(string) {
+        case .success(let size):
+            return size
+        case .failure(.malformed):
+            warn(MicaConfigKey.size.rawValue, "expected a size like 512 or \"512@2x\", got \"\(string)\"")
+        case .failure(.outOfRange(let points)):
+            warn(MicaConfigKey.size.rawValue,
+                 "\(points) is outside \(Int(ExportSpec.minSize))–\(Int(ExportSpec.maxSize))")
+        }
+        return nil
+    }
+
+    /// The retired `scale` key: "1x"/"2x", or (liberally) the bare numbers 1 and 2.
+    private mutating func retiredExportScale() -> ExportScale? {
+        guard let value = retiredScale else { return nil }
         if let string = value as? String, !isBool(value) {
             if let scale = ExportScale(rawValue: string.lowercased()) { return scale }
         } else if let numeric = value as? NSNumber, !isBool(value) {
             if numeric.intValue == 1 { return .oneX }
             if numeric.intValue == 2 { return .twoX }
         }
-        warn(MicaConfigKey.scale.rawValue, "expected \"1x\" or \"2x\"")
+        warn(MicaConfigKey.retiredScaleName, "expected \"1x\" or \"2x\"")
         return nil
     }
 }
@@ -1151,8 +1187,13 @@ private struct ConfigWriter {
 
         // Export — always operative. `size` is identity: an implicit export size
         // is the one thing you cannot recover by looking at the file.
-        put(.size, Int(settings.export.size))
-        if settings.export.isRetina { put(.scale, ExportScale.twoX.rawValue) }
+        // A 1x size stays a JSON number, so files written before the @2x suffix
+        // existed re-encode unchanged.
+        if settings.export.isRetina {
+            put(.size, settings.export.exportSize.token)
+        } else {
+            put(.size, Int(settings.export.size))
+        }
         if settings.export.colorSpace != defaults.export.colorSpace {
             put(.colorSpace, settings.export.colorSpace.cliToken)
         }

@@ -32,7 +32,7 @@ struct SettingsChangeTests {
     @Test("every stored property has a named field")
     func everyStoredPropertyIsNamed() {
         #expect(SettingsChange.fields.count == Self.leafCount(of: IconSettings()))
-        #expect(SettingsChange.fields.count == 65)
+        #expect(SettingsChange.fields.count == 64)
     }
 
     /// A duplicated key would make two different settings coalesce into each other: edit
@@ -67,8 +67,7 @@ struct SettingsChangeTests {
     /// table by key, so a new field fails here too until it is added.
     private static func mutate(_ settings: inout IconSettings, at key: String) {
         switch key {
-        case "export.size": settings.export.size = 123
-        case "export.isRetina": settings.export.isRetina.toggle()
+        case "export.exportSize": settings.export.exportSize = ExportSize(points: 123, scale: .twoX)
         case "export.colorSpace": settings.export.colorSpace = .displayP3
         case "icon.mode": settings.icon.mode = .system
 

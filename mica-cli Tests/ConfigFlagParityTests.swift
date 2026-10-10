@@ -37,8 +37,7 @@ struct ConfigFlagParityTests {
 
     static func sampleFlagValue(for key: MicaConfigKey) -> String {
         switch key {
-        case .size: return "512"
-        case .scale: return "2x"
+        case .size: return "512@2x"
         case .colorSpace: return "displayP3"
         case .iconGenerationMode: return "mica"
         case .badgeGenerationMode: return "mica"
@@ -267,8 +266,7 @@ struct ConfigFlagParityTests {
         .init(name: "empty", config: [:]),
 
         .init(name: "export", config: [
-            "size": 256,
-            "scale": "2x",
+            "size": "256@2x",
             "color-space": "displayP3",
         ]),
 

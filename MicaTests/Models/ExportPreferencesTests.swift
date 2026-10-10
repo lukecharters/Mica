@@ -26,19 +26,35 @@ struct ExportPreferencesTests {
         #expect(ExportSpec.fromPreferences(emptyDefaults()) == ExportSpec())
     }
 
-    @Test("Both preferences are honoured")
-    func bothPreferences_areHonoured() {
+    @Test("All three preferences are honoured")
+    func allPreferences_areHonoured() {
         let defaults = emptyDefaults()
         defaults.set(1024.0, forKey: ExportPreferences.defaultSizeKey)
+        defaults.set(ExportScale.twoX.rawValue, forKey: ExportPreferences.defaultScaleKey)
         defaults.set(ExportColorSpace.displayP3.rawValue,
                      forKey: ExportPreferences.defaultColorSpaceKey)
 
         let spec = ExportSpec.fromPreferences(defaults)
 
-        #expect(spec.size == 1024)
+        #expect(spec.exportSize == ExportSize(points: 1024, scale: .twoX))
         #expect(spec.colorSpace == .displayP3)
-        // Not a preference, so it stays at the struct's default either way.
-        #expect(spec.isRetina == false)
+    }
+
+    @Test("A size stored without a scale opens at 1x")
+    func sizeWithoutScale_isOneX() {
+        // What a Settings domain written before the @2x rows existed holds.
+        let defaults = emptyDefaults()
+        defaults.set(256.0, forKey: ExportPreferences.defaultSizeKey)
+
+        #expect(ExportSpec.fromPreferences(defaults).exportSize == ExportSize(points: 256))
+    }
+
+    @Test("An unrecognised scale falls back to 1x")
+    func unknownScale_fallsBack() {
+        let defaults = emptyDefaults()
+        defaults.set("3x", forKey: ExportPreferences.defaultScaleKey)
+
+        #expect(ExportSpec.fromPreferences(defaults).isRetina == false)
     }
 
     @Test("Each preference is independent of the other")
@@ -129,10 +145,21 @@ struct ExportPreferencesTests {
     func sizeChoices_areLegalAndIncludeTheDefault() {
         let legal = ExportSpec.minSize...ExportSpec.maxSize
         for size in ExportPreferences.sizeChoices {
-            #expect(legal.contains(size), "\(size)pt is offered but out of range")
+            #expect(legal.contains(size.points), "\(size.token) is offered but out of range")
         }
         // Otherwise Settings ▸ Export would open with nothing selected on a fresh
-        // install, since the picker's rows are these seven.
-        #expect(ExportPreferences.sizeChoices.contains(ExportSpec.defaultSize))
+        // install, since the picker's rows are this list.
+        #expect(ExportPreferences.sizeChoices.contains(ExportSpec().exportSize))
+    }
+
+    @Test("Every offered point size comes at 1x and @2x, in menu order")
+    func sizeChoices_pairEachSizeWithItsRetinaRow() {
+        let choices = ExportPreferences.sizeChoices
+        #expect(choices == choices.sorted())
+        #expect(Set(choices).count == choices.count)
+        for size in choices {
+            #expect(choices.contains(ExportSize(points: size.points, scale: .oneX)))
+            #expect(choices.contains(ExportSize(points: size.points, scale: .twoX)))
+        }
     }
 }

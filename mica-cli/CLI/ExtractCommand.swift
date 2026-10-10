@@ -14,7 +14,7 @@ struct ExtractCommand: ParsableCommand {
             EXAMPLES:
               mica-cli extract /Applications/Notes.app
               mica-cli extract /System/Applications/Calculator.app \\
-                -o ~/Desktop/icons --scale 2x
+                -o ~/Desktop/icons --size 512@2x
               mica-cli extract ~/Projects -o ~/icons --recursive --depth 2 \\
                 --size 256 --color-space sRGB
             """
@@ -29,11 +29,21 @@ struct ExtractCommand: ParsableCommand {
     )
     var outputPath: String?
 
-    @Option(name: [.short, .long], help: "Icon size in pixels (\(IconExtractor.sizeRange.lowerBound) to \(IconExtractor.sizeRange.upperBound))")
-    var size: Int = 512
+    @Option(
+        name: [.customShort("s"), .customLong("size")],
+        help: ArgumentHelp(
+            "Icon size, \(IconExtractor.sizeRange.lowerBound) to \(IconExtractor.sizeRange.upperBound); add @2x to double the pixels (default: 512)",
+            valueName: "size"
+        ),
+        transform: { try parseExportSizeArgument($0, range: IconExtractor.sizeRange) }
+    )
+    var exportSize = ExportSize(points: 512)
 
-    @Option(name: .long, help: ArgumentHelp("Output resolution: 1x (default) or 2x", valueName: "scale"))
-    var scale: ExportScale = .oneX
+    /// The point size, before the @2x multiplier.
+    var size: Int { Int(exportSize.points) }
+
+    /// The `@2x` half of `--size`.
+    var scale: ExportScale { exportSize.scale }
 
     @Flag(name: [.short, .long], help: "Process directory contents recursively, skipping hidden items and symbolic links")
     var recursive: Bool = false
@@ -51,10 +61,6 @@ struct ExtractCommand: ParsableCommand {
     var output: OutputOptions
 
     mutating func validate() throws {
-        guard IconExtractor.sizeRange.contains(size) else {
-            throw ValidationError("Size must be between \(IconExtractor.sizeRange.lowerBound) and \(IconExtractor.sizeRange.upperBound). You provided: \(size)")
-        }
-
         if let depth {
             guard depth >= 0 else {
                 throw ValidationError("--depth must be zero or greater")

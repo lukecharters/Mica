@@ -52,12 +52,25 @@ struct ExportSpec: Equatable {
     static let maxSize: CGFloat = 1024
     static let defaultSize: CGFloat = 512
 
-    var size: CGFloat = ExportSpec.defaultSize
-    var isRetina: Bool = false
+    /// The point size and its scale, stored as the one value the size menus and
+    /// `--size` pick, so choosing `512@2x` is one change with one undo name.
+    var exportSize = ExportSize(points: ExportSpec.defaultSize)
     var colorSpace: ExportColorSpace = .sRGB
 
-    /// The exported pixel dimension — `size` after the retina multiplier.
-    var pixelSize: CGFloat { isRetina ? size * 2 : size }
+    /// The point size, before the @2x multiplier.
+    var size: CGFloat {
+        get { exportSize.points }
+        set { exportSize.points = newValue }
+    }
+
+    /// Whether the export is @2x.
+    var isRetina: Bool {
+        get { exportSize.scale == .twoX }
+        set { exportSize.scale = newValue ? .twoX : .oneX }
+    }
+
+    /// The exported pixel dimension — `size` after the @2x multiplier.
+    var pixelSize: CGFloat { exportSize.pixelSize }
 
     var isSizeValid: Bool { (ExportSpec.minSize...ExportSpec.maxSize).contains(size) }
 }

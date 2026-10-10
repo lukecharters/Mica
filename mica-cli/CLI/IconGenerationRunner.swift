@@ -289,10 +289,7 @@ class IconGenerationRunner {
             // passed, so an absent flag leaves whatever is already in
             // `settings` — the ExportSpec default, or a `--config` value.
             if let size = command.export.size {
-                settings.export.size = CGFloat(size)
-            }
-            if let scale = command.export.scale {
-                settings.export.isRetina = scale.factor == 2
+                settings.export.exportSize = size
             }
             if let colorSpace = command.export.colorSpace {
                 settings.export.colorSpace = colorSpace

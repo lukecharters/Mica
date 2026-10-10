@@ -110,19 +110,33 @@ struct ExportDefaultsSettingsTab: View {
     @AppStorage(ExportPreferences.defaultSizeKey)
     private var defaultSize = Double(ExportSpec.defaultSize)
 
+    @AppStorage(ExportPreferences.defaultScaleKey)
+    private var defaultScale = ExportScale.oneX
+
     @AppStorage(ExportPreferences.defaultColorSpaceKey)
     private var defaultColorSpace = ExportColorSpace.sRGB
+
+    /// The two stored halves as the one value the menu picks.
+    private var defaultExportSize: Binding<ExportSize> {
+        Binding {
+            ExportSize(points: CGFloat(defaultSize), scale: defaultScale)
+        } set: { size in
+            defaultSize = Double(size.points)
+            defaultScale = size.scale
+        }
+    }
 
     var body: some View {
         Form {
             // "New Icons" carries the word "default" once, so the rows below can be
             // spelled exactly as the inspector spells them.
             Section {
-                Picker("Size", selection: $defaultSize) {
-                    ForEach(ExportPreferences.sizeChoices, id: \.self) { size in
+                Picker("Size", selection: defaultExportSize) {
+                    ForEach(ExportPreferences.sizeChoices(including: defaultExportSize.wrappedValue),
+                            id: \.self) { size in
                         // See `ExportSettingsSection` — without `verbatim:` this is
                         // a `LocalizedStringKey` and 1024 renders as "1,024pt".
-                        Text(verbatim: "\(Int(size))pt").tag(Double(size))
+                        Text(verbatim: size.displayName).tag(size)
                     }
                 }
 

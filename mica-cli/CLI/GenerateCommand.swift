@@ -42,6 +42,19 @@ private func resolveAppexColorArg(
     }
 }
 
+/// Parses `--size` for both subcommands: a whole number in `range`, optionally
+/// followed by `@2x` (or `@1x`).
+func parseExportSizeArgument(_ raw: String, range: ClosedRange<Int>) throws -> ExportSize {
+    switch ExportSize.parse(raw, in: range) {
+    case .success(let size):
+        return size
+    case .failure(.malformed):
+        throw ValidationError("Size must be a whole number, optionally followed by @2x (for example 512@2x). You provided: \(raw)")
+    case .failure(.outOfRange(let points)):
+        throw ValidationError("Size must be between \(range.lowerBound) and \(range.upperBound). You provided: \(points)")
+    }
+}
+
 private func validateScale(_ scale: String, name: String) throws -> Double {
     guard let value = Double(scale) else {
         throw ValidationError("\(name) must be a number.")
@@ -126,31 +139,13 @@ struct ExportOptions: ParsableArguments {
     @Option(
         name: [.customLong("size"), .customShort("s")],
         help: ArgumentHelp(
-            "Pixel size, 16-1024 \(defaultNote(Int(ExportSpec.defaultSize)))",
-            valueName: "pixels"
+            "Size, 16-1024; add @2x to double the pixels \(defaultNote(ExportSpec().exportSize.token))",
+            discussion: "512 writes a 512x512 PNG and 512@2x a 1024x1024 one.",
+            valueName: "size"
         ),
-        transform: { size in
-            guard let intSize = Int(size) else {
-                throw ValidationError("Size must be a whole number (no decimals).")
-            }
-            let minSize = Int(ExportSpec.minSize)
-            let maxSize = Int(ExportSpec.maxSize)
-            guard (minSize...maxSize).contains(intSize) else {
-                throw ValidationError("Size must be between \(minSize) and \(maxSize) pixels. You provided: \(intSize)")
-            }
-            return intSize
-        }
+        transform: { try parseExportSizeArgument($0, range: Int(ExportSpec.minSize)...Int(ExportSpec.maxSize)) }
     )
-    var size: Int?
-
-    @Option(
-        name: .long,
-        help: ArgumentHelp(
-            "Resolution: 1x or 2x \(defaultNote(ExportScale.settingsDefault.rawValue))",
-            valueName: "scale"
-        )
-    )
-    var scale: ExportScale?
+    var size: ExportSize?
 
     @Option(
         name: [.customLong("color-space"), .customLong("colour-space")],

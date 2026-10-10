@@ -4,11 +4,11 @@
 # Exercises every non-default argument value (happy path) plus a fixed set of
 # invalid-input cases (negative path), across the redesigned flag surface:
 #   - generate (default subcommand): --icon-fg…/--icon-bg…, --badge-fg…/--badge-bg…,
-#     --icon-generation-mode/--badge-generation-mode, --scale, --color-space,
+#     --icon-generation-mode/--badge-generation-mode, --size (with @2x), --color-space,
 #     and the --json/-q/-v output modes.
 #   - generate --config <file.json>: a configuration alone, a flag overriding one,
 #     the warning and fatal paths, and relative image resolution.
-#   - extract subcommand: <path> -o <dir> [--size --scale --color-space --recursive --depth].
+#   - extract subcommand: <path> -o <dir> [--size --color-space --recursive --depth].
 # Produces per-case PNGs in a timestamped output directory and a README.txt summary.
 # See the original design notes for the original design.
 
@@ -63,7 +63,7 @@ HAPPY_CASES=(
 
     # ---- Export ----
     "size-1024|star.fill|--size|1024"
-    "scale-2x|star.fill|--scale|2x"
+    "size-2x|star.fill|--size|512@2x"
     "color-space-display-p3|star.fill|--color-space|displayP3"
     "color-space-srgb|star.fill|--color-space|sRGB"
 
@@ -205,7 +205,8 @@ NEGATIVE_CASES=(
     "size-too-large|Size must be between|star.fill|--size|9999"
     "output-exists|already exists|star.fill|-o|\$SYMBOL_FIXTURE"
     "size-non-numeric|whole number|star.fill|--size|abc"
-    "scale-invalid|is invalid for '--scale|star.fill|--scale|3x"
+    "size-bad-suffix|optionally followed by @2x|star.fill|--size|512@3x"
+    "scale-flag-removed|Unknown option '--scale'|star.fill|--scale|2x"
     "color-space-invalid|is invalid for '--color-space|star.fill|--color-space|BGR"
     "icon-symbol-rendering-invalid|Symbol rendering mode must be one of|star.fill|--icon-symbol-rendering|invalid"
     "icon-symbol-weight-invalid|Symbol weight must be one of|star.fill|--icon-symbol-weight|notaweight"
@@ -289,7 +290,7 @@ NEGATIVE_CASES=(
     "quiet-verbose-conflict|--quiet and --verbose cannot be used together|star.fill|--quiet|--verbose"
 
     # ---- extract subcommand ----
-    "extract-bad-scale|is invalid for '--scale|extract|/System/Applications/Calculator.app|--scale|3x"
+    "extract-bad-suffix|optionally followed by @2x|extract|/System/Applications/Calculator.app|--size|128@3x"
     "extract-depth-without-recursive|--depth requires --recursive|extract|/System/Applications|--depth|2"
     "extract-path-not-found|Bundle not found|extract|/nonexistent/path.app"
     "extract-dir-without-recursive|Pass --recursive|extract|/System/Applications"
@@ -313,7 +314,9 @@ CONFIG_CASES=(
     # …and with it, since `generate --config` must mean the same thing.
     "config-explicit-subcommand|0|-|512|generate|--config|\$CONFIG"
     # A flag beats the file: 256@2x becomes 128@1x.
-    "config-size-override|0|-|128|--config|\$CONFIG|--size|128|--scale|1x"
+    "config-size-override|0|-|128|--config|\$CONFIG|--size|128"
+    # A file written before the @2x suffix still loads its retired "scale" key.
+    "config-retired-scale|0|-|512|--config|\$FIXTURES/smoke-config-retired-scale.json"
     # An unknown key is a warning on stderr and a successful run.
     "config-unknown-key|0|not a configuration key|-|--config|\$FIXTURES/smoke-config-unknown-key.json"
     # …and it is still heard under --quiet, which is the point of the channel.
@@ -358,7 +361,7 @@ PARITY_CASES=(
 EXTRACT_CASES=(
     "extract-baseline|/System/Applications/Calculator.app"
     "extract-size-256|/System/Applications/Calculator.app|--size|256"
-    "extract-scale-2x|/System/Applications/Calculator.app|--size|128|--scale|2x"
+    "extract-size-2x|/System/Applications/Calculator.app|--size|128@2x"
     "extract-color-space-srgb|/System/Applications/Calculator.app|--color-space|sRGB"
     "extract-color-space-display-p3|/System/Applications/Calculator.app|--color-space|displayP3"
     "extract-recursive|/System/Applications/Utilities|--recursive|--depth|0|--size|128"

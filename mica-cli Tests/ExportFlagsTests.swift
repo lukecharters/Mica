@@ -1,7 +1,7 @@
 // ExportFlagsTests.swift
-// Covers the generate command's export namespace: --size / --scale /
-// --color-space parsing and their mapping into IconSettings.exportSize /
-// export.isRetina / export.colorSpace via buildIconSettings. The extract
+// Covers the generate command's export namespace: --size (with its @2x
+// suffix) and --color-space parsing and their mapping into
+// IconSettings.export.exportSize / export.colorSpace via buildIconSettings. The extract
 // command's equivalents are covered in ExtractCommandTests.
 
 import Testing
@@ -58,17 +58,15 @@ struct ExportFlagsTests {
     func omittedExportFlagsAreNil() throws {
         let command = try parseCommand(["--icon-symbol", "star.fill"])
         #expect(command.export.size == nil)
-        #expect(command.export.scale == nil)
         #expect(command.export.colorSpace == nil)
     }
 
     @Test("Export flags passed their default value still parse as non-nil")
     func explicitDefaultValuesAreNotNil() throws {
         let command = try parseCommand([
-            "--icon-symbol", "star.fill", "--size", "512", "--scale", "1x", "--color-space", "sRGB",
+            "--icon-symbol", "star.fill", "--size", "512", "--color-space", "sRGB",
         ])
-        #expect(command.export.size == 512)
-        #expect(command.export.scale == .oneX)
+        #expect(command.export.size == ExportSize(points: 512))
         #expect(command.export.colorSpace == .sRGB)
     }
 
@@ -81,36 +79,39 @@ struct ExportFlagsTests {
         #expect(settings.export.size == CGFloat(size))
     }
 
-    @Test("--size rejects out-of-range and non-integer values",
-          arguments: ["15", "1025", "0", "512.5", "abc"])
+    @Test("--size rejects out-of-range, non-integer and badly suffixed values",
+          arguments: ["15", "1025", "0", "512.5", "abc", "1025@2x", "512@3x", "512@", "@2x", "512x2"])
     func sizeRejectsInvalid(_ size: String) {
         #expect(throws: (any Error).self) {
             _ = try parseCommand(["--icon-symbol", "star.fill", "--size", size])
         }
     }
 
-    // MARK: - --scale
+    // MARK: - @2x
 
-    @Test("--scale 2x sets export.isRetina; 1x and default clear it")
-    func scaleMapsToRetina() throws {
+    @Test("--size with @2x sets export.isRetina; a bare or @1x size clears it")
+    func suffixMapsToRetina() throws {
         let runner = IconGenerationRunner()
         #expect(try runner.buildTestSettings(
-            from: parseCommand(["--icon-symbol", "star.fill", "--scale", "2x"])).export.isRetina == true)
+            from: parseCommand(["--icon-symbol", "star.fill", "--size", "256@2x"])).export.exportSize
+            == ExportSize(points: 256, scale: .twoX))
         #expect(try runner.buildTestSettings(
-            from: parseCommand(["--icon-symbol", "star.fill", "--scale", "1x"])).export.isRetina == false)
+            from: parseCommand(["--icon-symbol", "star.fill", "--size", "256@1x"])).export.isRetina == false)
+        #expect(try runner.buildTestSettings(
+            from: parseCommand(["--icon-symbol", "star.fill", "--size", "256"])).export.isRetina == false)
     }
 
-    @Test("export.pixelSize doubles at 2x")
+    @Test("export.pixelSize doubles at @2x")
     func finalExportSizeDoubles() throws {
         let settings = try IconGenerationRunner().buildTestSettings(
-            from: parseCommand(["--icon-symbol", "star.fill", "--size", "512", "--scale", "2x"]))
+            from: parseCommand(["--icon-symbol", "star.fill", "--size", "512@2x"]))
         #expect(settings.export.pixelSize == 1024)
     }
 
-    @Test("--scale rejects unsupported factors", arguments: ["3x", "0x", "2", "x2"])
-    func scaleRejectsInvalid(_ scale: String) {
+    @Test("--scale is gone")
+    func scaleFlagIsGone() {
         #expect(throws: (any Error).self) {
-            _ = try parseCommand(["--icon-symbol", "star.fill", "--scale", scale])
+            _ = try parseCommand(["--icon-symbol", "star.fill", "--scale", "2x"])
         }
     }
 
