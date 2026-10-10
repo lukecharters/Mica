@@ -117,8 +117,8 @@ struct ImportNotice: Identifiable, Equatable {
 
     var title: String {
         image.hasIconMargin
-            ? String(localized: "App Icon Imported")
-            : String(localized: "Artwork Imported")
+            ? String(localized: "Icon Imported")
+            : String(localized: "Image Imported")
     }
 
     /// One short phrase per changed field, naming the inspector control and the

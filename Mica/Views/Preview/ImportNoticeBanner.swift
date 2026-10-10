@@ -10,7 +10,7 @@ struct ImportNoticeOverlay: View {
     @State private var isHovering = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    static let displayDuration: Duration = .seconds(6)
+    static let displayDuration: Duration = .seconds(8)
 
     private struct TimerKey: Equatable {
         var id: UUID?
@@ -56,9 +56,10 @@ struct ImportNoticeBanner: View {
     var body: some View {
         HStack(spacing: 14) {
             thumbnail
-            VStack(spacing: 1) {
+            VStack(spacing: 4) {
                 Text(verbatim: notice.title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
                 Text(verbatim: notice.subtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
@@ -67,7 +68,7 @@ struct ImportNoticeBanner: View {
             .accessibilityElement(children: .combine)
             Button(action: onRevert) {
                 Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 34, height: 34)
                     .background(Circle().fill(Color.accentColor))
