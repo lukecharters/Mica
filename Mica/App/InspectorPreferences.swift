@@ -25,13 +25,10 @@ enum InspectorPreferences {
     /// foreground disappears at the moment of import.
     static let hidesForegroundOnBackgroundImportKey = "import.hidesForeground"
 
-    /// On import of a background image, set the icon's corner radius to `off`.
-    /// On by default, because artwork that fills its own bounds loses its corners
-    /// to any radius at all.
-    ///
-    /// Off suits artwork that *should* be clipped to a chiclet — a texture or a
-    /// photo. Nothing in the file says which kind arrived, which is why this asks
-    /// rather than guesses per-file. Icon-only; the badge has no corner radius.
+    /// On import of an app icon as a background, set the icon's corner radius to
+    /// `off`, so the icon's own shape is drawn unclipped. On by default. Artwork
+    /// that reaches its edges keeps its corners either way
+    /// (`ImportedImage.hasIconMargin`). Icon-only; the badge has no corner radius.
     static let turnsOffCornerRadiusOnBackgroundImportKey = "import.turnsOffCornerRadius"
 }
 

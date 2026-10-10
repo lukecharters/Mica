@@ -615,7 +615,6 @@ private struct ConfigReader {
         }
 
         // Icon foreground source.
-        var importedForeground = false
         if let raw = string(.iconFG) {
             if let value = ForegroundValue(parsing: raw) {
                 switch value {
@@ -628,7 +627,6 @@ private struct ConfigReader {
                     settings.icon.foreground.symbolName =
                         ((path as NSString).lastPathComponent as NSString).deletingPathExtension
                     settings.icon.foreground.image = importImage(atPath: path, key: .iconFG)
-                    importedForeground = true
                 }
             } else {
                 warn(MicaConfigKey.iconFG.rawValue, "'symbol:' requires a symbol name, e.g. symbol:star.fill")
@@ -698,7 +696,8 @@ private struct ConfigReader {
             if let scale = number(.iconBGScale, in: ForegroundSpec.imageScaleRange) {
                 settings.icon.background.imageScale = scale
             }
-            settings.icon.background.compensatesForPadding = !(toggle(.iconBGPadding) ?? false)
+            let isAppIcon = settings.icon.background.image?.hasIconMargin ?? true
+            settings.icon.background.compensatesForPadding = !(toggle(.iconBGPadding) ?? !isAppIcon)
             importedBackground = true
         }
 
@@ -712,20 +711,20 @@ private struct ConfigReader {
             settings.icon.background.usesGradient = gradient
         }
         // The third conditional baseline: absent `icon-bg-corner-radius` + an imported
-        // icon background ⇒ `.off`, mirroring `IconSpec.applyBackgroundImage`. Artwork
-        // that fills its own bounds loses its corners to any radius at all, so a fresh
-        // import turns clipping off; encode uses the same baseline.
+        // icon background ⇒ `.off` for an app icon and on for artwork that reaches its
+        // edges, mirroring `IconSpec.applyBackgroundImage`; encode uses the same
+        // baseline. The background shadow follows the same split.
         if let cornerRadius = token(.iconBGCornerRadius, as: IconCornerRadiusStyle.self) {
             settings.icon.background.cornerRadiusStyle = cornerRadius
         } else if importedBackground {
-            settings.icon.background.cornerRadiusStyle = .off
+            settings.icon.background.cornerRadiusStyle = IconBackgroundSpec.importedCornerRadiusStyle(
+                for: settings.icon.background.image, current: settings.icon.background.cornerRadiusStyle)
         }
-        // An explicit shadow wins; otherwise only a freshly imported background
-        // forces the shadow off (mirroring `IconBackgroundSpec.apply(_:)`).
         if let shadow = token(.iconBGShadow, as: DropShadowStyle.self) {
             settings.icon.background.shadowStyle = shadow
         } else if importedBackground {
-            settings.icon.background.shadowStyle = .off
+            settings.icon.background.shadowStyle = IconBackgroundSpec.importedShadowStyle(
+                for: settings.icon.background.image, current: settings.icon.background.shadowStyle)
         }
         if let visibility = toggle(.iconBGVisibility) {
             settings.icon.background.isHidden = !visibility
@@ -758,8 +757,6 @@ private struct ConfigReader {
         }
         if let shadow = shadowStyle(.iconFGShadow) {
             settings.icon.foreground.shadowStyle = shadow
-        } else if importedForeground {
-            settings.icon.foreground.shadowStyle = .off
         }
         if let weight = token(.iconSymbolWeight, as: SymbolWeight.self) {
             settings.icon.foreground.symbolWeight = weight
@@ -839,7 +836,6 @@ private struct ConfigReader {
                                      badgeMode: GenerationMode?,
                                      effectiveBadgeMode: GenerationMode,
                                      groupVisible: Bool?) {
-        var importedBadgeForeground = false
         if let foregroundRaw {
             if let value = ForegroundValue(parsing: foregroundRaw) {
                 switch value {
@@ -849,7 +845,6 @@ private struct ConfigReader {
                 case .image(let path):
                     settings.badge.foreground.source = .image
                     settings.badge.foreground.image = importImage(atPath: path, key: .badgeFG)
-                    importedBadgeForeground = true
                 }
             } else {
                 warn(MicaConfigKey.badgeFG.rawValue, "'symbol:' requires a symbol name, e.g. symbol:plus.circle")
@@ -901,7 +896,8 @@ private struct ConfigReader {
             if let scale = number(.badgeBGScale, in: ForegroundSpec.imageScaleRange) {
                 settings.badge.background.imageScale = scale
             }
-            settings.badge.background.compensatesForPadding = !(toggle(.badgeBGPadding) ?? false)
+            let isAppIcon = settings.badge.background.image?.hasIconMargin ?? true
+            settings.badge.background.compensatesForPadding = !(toggle(.badgeBGPadding) ?? !isAppIcon)
             importedBadgeBackground = true
         }
 
@@ -916,7 +912,7 @@ private struct ConfigReader {
         if let shadow = toggle(.badgeBGShadow) {
             settings.badge.background.drawsShadow = shadow
         } else if importedBadgeBackground {
-            settings.badge.background.drawsShadow = false
+            settings.badge.background.drawsShadow = !(settings.badge.background.image?.hasIconMargin ?? true)
         }
 
         // Layout.
@@ -964,8 +960,6 @@ private struct ConfigReader {
         }
         if let shadow = shadowStyle(.badgeFGShadow) {
             settings.badge.foreground.shadowStyle = shadow
-        } else if importedBadgeForeground {
-            settings.badge.foreground.shadowStyle = .off
         }
         if let badgeMode {
             settings.badge.mode = badgeMode
@@ -1213,10 +1207,7 @@ private struct ConfigWriter {
         if iconSymbolStyling, iconFG.fillStyle != defaults.icon.foreground.fillStyle {
             put(.iconSymbolGradient, iconFG.fillStyle == .gradient)
         }
-        // Baseline mirrors decode's fresh-import rule: an imported foreground's
-        // shadow defaults off.
-        if iconFGDraws,
-           iconFG.shadowStyle != (iconFGIsImage ? .off : defaults.icon.foreground.shadowStyle) {
+        if iconFGDraws, iconFG.shadowStyle != defaults.icon.foreground.shadowStyle {
             put(.iconFGShadow, iconFG.shadowStyle.cliToken)
         }
         // Visibility is never gated — it is what did the hiding — but its baseline is
@@ -1268,8 +1259,10 @@ private struct ConfigWriter {
                     put(.iconBG, assets.relativePath(for: image))
                     if iconBG.imageScale != 1.0 { put(.iconBGScale, iconBG.imageScale) }
                     // The padding key is the inverse of the stored compensation,
-                    // and decode's baseline for an image background is on.
-                    if !iconBG.compensatesForPadding { put(.iconBGPadding, true) }
+                    // and decode's baseline is on for an app icon only.
+                    if iconBG.compensatesForPadding != image.hasIconMargin {
+                        put(.iconBGPadding, !iconBG.compensatesForPadding)
+                    }
                 }
             }
             // The corner radius shapes the chiclet and clips an imported image
@@ -1277,18 +1270,20 @@ private struct ConfigWriter {
             // `.off`), so both remaining sources read it.
             //
             // Baseline mirrors decode's fresh-import rule, the third of the three: an
-            // imported background's corner radius defaults to `.off`, so a user who
-            // wants their artwork clipped produces a key and a user who accepts the
-            // import default does not.
+            // imported app icon's corner radius defaults to `.off`, other imported
+            // artwork's to on. The shadow, which every source draws, splits the same way.
             let cornerBaseline: IconCornerRadiusStyle = iconBGImportWritten
-                ? .off
+                ? IconBackgroundSpec.importedCornerRadiusStyle(
+                    for: iconBG.image, current: defaults.icon.background.cornerRadiusStyle)
                 : defaults.icon.background.cornerRadiusStyle
             if iconBG.cornerRadiusStyle != cornerBaseline {
                 put(.iconBGCornerRadius, iconBG.cornerRadiusStyle.cliToken)
             }
-            // Every source draws the background shadow. Baseline mirrors
-            // decode's fresh-import rule: an imported background's shadow is off.
-            if iconBG.shadowStyle != (iconBGIsImage ? .off : defaults.icon.background.shadowStyle) {
+            let shadowBaseline: DropShadowStyle = iconBGImportWritten
+                ? IconBackgroundSpec.importedShadowStyle(
+                    for: iconBG.image, current: defaults.icon.background.shadowStyle)
+                : defaults.icon.background.shadowStyle
+            if iconBG.shadowStyle != shadowBaseline {
                 put(.iconBGShadow, iconBG.shadowStyle.cliToken)
             }
         }
@@ -1401,7 +1396,7 @@ private struct ConfigWriter {
         if badgeSymbolStyling, badgeFG.fillStyle != badgeDefault.fillStyle {
             put(.badgeSymbolGradient, badgeFG.fillStyle == .gradient)
         }
-        if badgeFGDraws, badgeFG.shadowStyle != (badgeFGIsImage ? .off : badgeDefault.shadowStyle) {
+        if badgeFGDraws, badgeFG.shadowStyle != badgeDefault.shadowStyle {
             put(.badgeFGShadow, badgeFG.shadowStyle.cliToken)
         }
         // Never gated — these are what switch the badge's layers off at all — but the
@@ -1445,10 +1440,15 @@ private struct ConfigWriter {
                 if let image = badgeBG.image {
                     put(.badgeBG, assets.relativePath(for: image))
                     if badgeBG.imageScale != 1.0 { put(.badgeBGScale, badgeBG.imageScale) }
-                    if !badgeBG.compensatesForPadding { put(.badgeBGPadding, true) }
+                    if badgeBG.compensatesForPadding != image.hasIconMargin {
+                        put(.badgeBGPadding, !badgeBG.compensatesForPadding)
+                    }
                 }
             }
-            if badgeBG.drawsShadow != (badgeBGDrawsImage ? false : BadgeBackgroundSpec().drawsShadow) {
+            let shadowBaseline = badgeBGDrawsImage
+                ? !(badgeBG.image?.hasIconMargin ?? true)
+                : BadgeBackgroundSpec().drawsShadow
+            if badgeBG.drawsShadow != shadowBaseline {
                 put(.badgeBGShadow, badgeBG.drawsShadow)
             }
         }

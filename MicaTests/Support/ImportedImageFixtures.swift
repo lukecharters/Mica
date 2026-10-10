@@ -24,8 +24,22 @@ extension ImportedImage {
         )
     }
 
-    /// Solid-colour PNG bytes.
-    static func pngData(width: Int = 4, height: Int = 4, fill: NSColor = .systemRed) throws -> Data {
+    /// An app-icon-shaped image: a transparent canvas with an opaque square inset
+    /// by `inset` of each side, the way the macOS icon grid places a chiclet.
+    static func iconFixture(size: Int = 64, inset: Double = 0.1,
+                            fill: NSColor = .systemBlue) throws -> ImportedImage {
+        ImportedImage(
+            id: UUID(),
+            imageData: try pngData(width: size, height: size, fill: fill, inset: inset),
+            sourceName: "icon-fixture.png",
+            isFileIcon: false
+        )
+    }
+
+    /// Solid-colour PNG bytes, filling the whole canvas or, with `inset`, a centred
+    /// square that leaves that fraction of each side transparent.
+    static func pngData(width: Int = 4, height: Int = 4, fill: NSColor = .systemRed,
+                        inset: Double = 0) throws -> Data {
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil,
             pixelsWide: width,
@@ -44,7 +58,9 @@ extension ImportedImage {
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
         fill.setFill()
-        NSRect(x: 0, y: 0, width: width, height: height).fill()
+        NSRect(x: 0, y: 0, width: width, height: height)
+            .insetBy(dx: Double(width) * inset, dy: Double(height) * inset)
+            .fill()
         NSGraphicsContext.restoreGraphicsState()
 
         guard let data = rep.representation(using: .png, properties: [:]) else {

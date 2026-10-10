@@ -658,8 +658,7 @@ struct MicaConfigTests {
         var settings = IconSettings()
         settings.icon.foreground.apply(try ImportedImage.testFixture(fill: .systemRed, sourceName: "Glyph.png"))
         settings.icon.foreground.symbolName = "Glyph"
-        settings.icon.applyBackgroundImage(
-            try ImportedImage.testFixture(fill: .systemBlue, sourceName: "Backdrop.png"))
+        settings.icon.applyBackgroundImage(try ImportedImage.iconFixture(fill: .systemBlue))
         settings.icon.background.imageScale = 1.2
         settings.icon.background.compensatesForPadding = false
 
@@ -714,7 +713,7 @@ struct MicaConfigTests {
         // omitted, so anything else the user picks has to be written or their clipped
         // artwork comes back unclipped.
         var settings = IconSettings()
-        settings.icon.applyBackgroundImage(try ImportedImage.testFixture(sourceName: "Art.png"))
+        settings.icon.applyBackgroundImage(try ImportedImage.iconFixture())
         settings.icon.background.cornerRadiusStyle = .macOS26
 
         let json = try MicaConfigCodec.encode(settings: settings)
@@ -723,6 +722,72 @@ struct MicaConfigTests {
 
         let decoded = try Self.roundTrip(settings)
         #expect(decoded.settings.icon.background.cornerRadiusStyle == .macOS26)
+    }
+
+    @Test("full-bleed artwork's import defaults are the baseline, so they write no keys")
+    func fullBleedBackground_defaultsAreOmitted() throws {
+        var settings = IconSettings()
+        settings.icon.applyBackgroundImage(try ImportedImage.testFixture(width: 64, height: 64))
+
+        let object = try Self.encoded(settings)
+        #expect(object["icon-bg-padding"] == nil)
+        #expect(object["icon-bg-shadow"] == nil)
+        #expect(object["icon-bg-corner-radius"] == nil)
+
+        let decoded = try Self.roundTrip(settings).settings.icon.background
+        #expect(decoded.compensatesForPadding == false)
+        #expect(decoded.shadowStyle == IconBackgroundSpec().shadowStyle)
+        #expect(decoded.cornerRadiusStyle == IconBackgroundSpec().cornerRadiusStyle)
+    }
+
+    @Test("app-icon styling over full-bleed artwork is written and round-trips")
+    func fullBleedBackground_overridesAreWritten() throws {
+        var settings = IconSettings()
+        settings.icon.applyBackgroundImage(try ImportedImage.testFixture(width: 64, height: 64))
+        settings.icon.background.compensatesForPadding = true
+        settings.icon.background.shadowStyle = .off
+        settings.icon.background.cornerRadiusStyle = .off
+
+        let object = try Self.encoded(settings)
+        #expect(object["icon-bg-padding"] as? Bool == false)
+        #expect(object["icon-bg-shadow"] as? String == "off")
+        #expect(object["icon-bg-corner-radius"] as? String == "off")
+
+        let decoded = try Self.roundTrip(settings).settings.icon.background
+        #expect(decoded.compensatesForPadding == true)
+        #expect(decoded.shadowStyle == .off)
+        #expect(decoded.cornerRadiusStyle == .off)
+    }
+
+    @Test("a badge background's padding and shadow baselines follow the artwork")
+    func badgeBackground_baselinesFollowTheArtwork() throws {
+        for (image, isAppIcon) in [(try ImportedImage.iconFixture(), true),
+                                   (try ImportedImage.testFixture(width: 64, height: 64), false)] {
+            var settings = IconSettings()
+            settings.badge.isVisible = true
+            settings.badge.applyBackgroundImage(image)
+
+            let object = try Self.encoded(settings)
+            #expect(object["badge-bg-padding"] == nil)
+            #expect(object["badge-bg-shadow"] == nil)
+
+            let decoded = try Self.roundTrip(settings).settings.badge.background
+            #expect(decoded.compensatesForPadding == isAppIcon)
+            #expect(decoded.drawsShadow == !isAppIcon)
+        }
+    }
+
+    @Test("an imported foreground's shadow baseline is the symbol's")
+    func importedForeground_shadowBaselineIsTheDefault() throws {
+        var settings = IconSettings()
+        settings.icon.foreground.apply(try ImportedImage.testFixture())
+        #expect(try Self.encoded(settings)["icon-fg-shadow"] == nil)
+        #expect(try Self.roundTrip(settings).settings.icon.foreground.shadowStyle
+                == ForegroundSpec.iconDefault.shadowStyle)
+
+        settings.icon.foreground.shadowStyle = .off
+        #expect(try Self.encoded(settings)["icon-fg-shadow"] as? String == "off")
+        #expect(try Self.roundTrip(settings).settings.icon.foreground.shadowStyle == .off)
     }
 
     @Test("System-mode appex colours round-trip beside the settings")

@@ -173,12 +173,12 @@ struct PreviewDropTests {
     @Test("Routing to the icon imports as the icon background")
     func apply_toIcon_setsIconBackground() throws {
         var s = Self.settingsWithBadge()
-        let image = try ImportedImage.testFixture(sourceName: "Dropped.png")
+        let image = try ImportedImage.iconFixture()
 
         PreviewDrop.apply(image, to: .iconBackground, in: &s)
 
         #expect(s.icon.background.source == .image)
-        #expect(s.icon.background.image?.sourceName == "Dropped.png")
+        #expect(s.icon.background.image?.id == image.id)
         #expect(s.icon.foreground.isHidden)
         #expect(s.icon.background.cornerRadiusStyle == .off)
         #expect(s.badge.background.source != .image)

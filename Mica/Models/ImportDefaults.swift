@@ -2,7 +2,7 @@
 import Foundation
 
 /// The two guesses Mica makes when a *background* image is imported: hide that
-/// group's foreground, and turn the icon's corner radius off.
+/// group's foreground, and turn the icon's corner radius off for an app icon.
 ///
 /// Both are guesses at something the file cannot tell us, so both are
 /// preferences in the GUI — see §5 of
@@ -24,7 +24,8 @@ import Foundation
 struct ImportDefaults: Equatable {
     /// Hide the imported background's own group foreground.
     var hidesForeground: Bool
-    /// Set `IconCornerRadiusStyle.off`. Icon-only — the badge has no corner
+    /// Set `IconCornerRadiusStyle.off` when the image is an app icon
+    /// (`ImportedImage.hasIconMargin`). Icon-only — the badge has no corner
     /// radius, its shape coming from `BadgeGeometry.badgeCornerRadiusRatio` or
     /// from imported artwork's own alpha.
     var turnsOffCornerRadius: Bool

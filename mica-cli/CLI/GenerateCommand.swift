@@ -559,10 +559,9 @@ struct IconBackgroundOptions: ParsableArguments {
     )
     var shadow: String?
 
-    // nil = unspecified → fill the frame (padding off).
     @Option(
         name: .customLong("icon-bg-padding"),
-        help: ArgumentHelp("Keep imported icon padding: on or off", valueName: "on|off")
+        help: ArgumentHelp("Keep imported icon padding: on or off; app icons default to off", valueName: "on|off")
     )
     var padding: ToggleState?
 
@@ -574,36 +573,6 @@ struct IconBackgroundOptions: ParsableArguments {
         )
     )
     var visibility: ToggleState?
-
-    /// True when `--icon-bg` is a file path rather than a generated-background
-    /// keyword. An absent flag is not an image background — the default source is
-    /// `.color`, so the generated-background defaults below apply.
-    var isImageBackground: Bool {
-        guard let selection else { return false }
-        let lowered = selection.lowercased()
-        // A retired keyword is not a path either — `validate()` rejects it by
-        // name, and answering true here would start resolving image defaults
-        // against a filename the user never wrote.
-        return !IconBackgroundValue.keywords.contains(lowered)
-            && !IconBackgroundValue.retiredKeywords.contains(lowered)
-    }
-
-    /// Resolved background shadow style: an explicit `--icon-bg-shadow` wins;
-    /// otherwise image backgrounds default to no shadow and everything else to
-    /// `IconBackgroundSpec`'s default.
-    var effectiveShadowStyle: String {
-        if let shadow { return shadow }
-        return isImageBackground ? "off" : IconBackgroundSpec().shadowStyle.cliToken
-    }
-
-    /// Resolved padding compensation. The user-facing `--icon-bg-padding` flag
-    /// mirrors the GUI "Icon Padding" toggle: `on` keeps the image's padding
-    /// (compensation off), `off` fills the frame (compensation on). Unspecified
-    /// fills the frame, matching the GUI's image-import default.
-    var effectivePaddingCompensation: Bool {
-        guard let padding else { return true }
-        return !padding.isOn
-    }
 }
 
 // MARK: - Badge Options
@@ -848,10 +817,9 @@ struct BadgeOptions: ParsableArguments {
     )
     var backgroundShadow: ToggleState?
 
-    // nil = unspecified → fill the frame (padding off).
     @Option(
         name: .customLong("badge-bg-padding"),
-        help: ArgumentHelp("Keep imported badge padding: on or off", valueName: "on|off")
+        help: ArgumentHelp("Keep imported badge padding: on or off; app icons default to off", valueName: "on|off")
     )
     var backgroundPadding: ToggleState?
 
@@ -912,21 +880,6 @@ struct BadgeOptions: ParsableArguments {
     var offsetY: Double?
 
     // MARK: Derived
-
-    /// True when `--badge-bg` is a file path rather than a generated-background
-    /// keyword. An absent flag is not an image background — see the icon's.
-    var isImageBackground: Bool {
-        guard let background else { return false }
-        return !BadgeBackgroundValue.keywords.contains(background.lowercased())
-    }
-
-    /// Resolved padding compensation for an imported badge background. Mirrors the
-    /// GUI "Icon Padding" toggle: `on` keeps the image's padding (compensation off),
-    /// `off` fills the frame (compensation on). Unspecified fills the frame.
-    var effectiveBackgroundPaddingCompensation: Bool {
-        guard let backgroundPadding else { return true }
-        return !backgroundPadding.isOn
-    }
 
     /// True when any argument styling the badge *foreground* was given.
     ///

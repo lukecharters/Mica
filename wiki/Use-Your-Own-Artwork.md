@@ -23,6 +23,8 @@ mica-cli --icon-bg ~/Desktop/company-logo.png \
 
 **Result:** The artwork fills the icon.
 Importing a background hides the foreground by default.
+An image with a clear border on every side counts as an app icon.
+[Background Type](Icon-Settings#background-type) lists the defaults for each kind.
 
 Add a symbol when you want both layers.
 

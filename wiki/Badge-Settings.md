@@ -427,7 +427,7 @@ Sets the shadow style behind the badge foreground.
 | **In the app** | Badge ▸ Foreground ▸ Appearance ▸ **Shadow** |
 | **Command line** | `--badge-fg-shadow off\|macos15\|macos26\|macos27` |
 | **Config key** | `"badge-fg-shadow"` |
-| **Default** | `off` for images, `macos27` otherwise |
+| **Default** | `macos27` |
 | **Shown when** | Mica mode. |
 
 With advanced controls off, the app shows an on/off switch. On gives `macos27`.
@@ -470,6 +470,10 @@ mica-cli --icon-symbol star.fill --size 512 --badge-bg artwork.png
 
 Importing a badge background hides its foreground by default.
 Any other badge foreground flag shows the foreground.
+
+An imported app icon loses its padding and shadow by default.
+Other artwork keeps both.
+[Background Type](Icon-Settings#background-type) explains how Mica tells them apart.
 
 > **System mode ignores imported backgrounds and custom gradients.**
 
@@ -566,7 +570,7 @@ Shows or hides the shadow behind the badge background.
 | **In the app** | Badge ▸ Background ▸ Appearance ▸ **Shadow** |
 | **Command line** | `--badge-bg-shadow on\|off` |
 | **Config key** | `"badge-bg-shadow"` |
-| **Default** | `off` for images, `on` otherwise |
+| **Default** | `off` for imported app icons, `on` otherwise |
 | **Shown when** | Mica mode. |
 
 <img src="images/badge-bg-shadow-on.png" width="128" alt="Badge background shadow on"> <img src="images/badge-bg-shadow-off.png" width="128" alt="Badge background shadow off">
@@ -588,7 +592,7 @@ Controls whether Mica keeps padding already present in imported badge artwork.
 | **In the app** | Badge ▸ Background ▸ Layout ▸ **Icon Padding** |
 | **Command line** | `--badge-bg-padding on\|off` |
 | **Config key** | `"badge-bg-padding"` |
-| **Default** | `off` |
+| **Default** | `off` for app icons, `on` for other artwork |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Background Type is Imported. |
 
 <img src="images/badge-bg-padding-on.png" width="128" alt="Imported badge padding preserved"> <img src="images/badge-bg-padding-off.png" width="128" alt="Imported badge background scaled to fill">
