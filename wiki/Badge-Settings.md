@@ -435,7 +435,7 @@ With advanced controls off, the app shows an on/off switch. On gives `macos27`.
 <img src="images/badge-fg-shadow-off.png" width="128" alt="Badge foreground shadow off"> <img src="images/badge-fg-shadow-macos27.png" width="128" alt="Badge foreground shadow macOS 27">
 
 Left: `off`. Right: `macos27`.
-On the badge, `macos15`, `macos26` and `macos27` look the same.
+Each style draws the same shadow as on the icon foreground, scaled to the badge.
 
 ```shell
 mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-fg-shadow macos27

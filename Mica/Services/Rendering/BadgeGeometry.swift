@@ -19,17 +19,20 @@ enum BadgeGeometry {
     /// Badge anchor from enclosure center, matching native macOS.
     static let anchorXRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
     static let anchorYRatio: CGFloat = 76.0 / 208.0     // ≈ 0.3654
-    /// The faintest alpha an 8-bit render can hold. Past this the shadow is
-    /// literally not in the image, so there is nothing left to make room for.
-    static let shadowAlphaFloor: CGFloat = 0.5 / 255.0
+    /// The shadow alpha the clamp budgets room for. The tail below it darkens a
+    /// background by under 2% and cannot be seen, so the canvas edge may cut it;
+    /// budgeting for it would leave a visible gap between a clamped badge and the edge.
+    /// The formula overshoots a circle's edge, so the cut lands near 2/255.
+    static let shadowAlphaFloor: CGFloat = 4.0 / 255.0
 
     /// How far a SwiftUI `.shadow(radius:)` reaches past the shape before its
-    /// alpha falls below `shadowAlphaFloor`.
+    /// alpha falls below `floor`.
     ///
     /// Scales with the radius and *also* with the opacity: a stronger shadow's
     /// tail stays above the floor for longer. Gaussian falloff puts that second
     /// term at `sqrt(ln(opacity / floor))`, which matches measurement closely —
-    /// a shadowed circle's outermost non-transparent pixel sits at:
+    /// a shadowed circle's outermost non-transparent pixel (a floor of 0.5/255)
+    /// sits at:
     ///
     ///     opacity   0.10   0.23   0.40   0.60   1.00
     ///     measured  1.875  2.083  2.222  2.292  2.361   (x radius)
@@ -46,9 +49,9 @@ enum BadgeGeometry {
     /// clearance follows on its own. `BadgeShadowExtentTests` pins the table.
     static let shadowBlurExtentMargin: CGFloat = 1.05
 
-    static func shadowBlurExtent(radius: CGFloat, opacity: CGFloat) -> CGFloat {
-        guard radius > 0, opacity > shadowAlphaFloor else { return 0 }
-        return radius * sqrt(log(opacity / shadowAlphaFloor)) * shadowBlurExtentMargin
+    static func shadowBlurExtent(radius: CGFloat, opacity: CGFloat, floor: CGFloat = shadowAlphaFloor) -> CGFloat {
+        guard radius > 0, opacity > floor else { return 0 }
+        return radius * sqrt(log(opacity / floor)) * shadowBlurExtentMargin
     }
 
     /// The canvas is the enclosure plus `2 * backgroundInset` (25 at the 256pt
@@ -130,7 +133,7 @@ enum BadgeGeometry {
     ///
     /// The canvas never grows to accommodate a badge — an export is always
     /// exactly its requested size — so an oversized badge moves inward instead.
-    /// At default settings this only bites past `badgeScale ≈ 1.09`; below that
+    /// At default settings this only bites past `badgeScale ≈ 1.10`; below that
     /// the badge sits exactly where native macOS puts it.
     static func centreLimits(
         for settings: IconSettings,
@@ -196,7 +199,7 @@ enum BadgeGeometry {
     /// offset units, so a control can stop at the limit instead of banking up a
     /// value the badge can't use. Intersected with `BadgeSpec.offsetRange`.
     ///
-    /// The range is asymmetric, and past `badgeScale ≈ 1.09` it no longer
+    /// The range is asymmetric, and past `badgeScale ≈ 1.10` it no longer
     /// contains zero — the badge *must* sit inward of its anchor by then. That's
     /// why this only clamps live gestures; re-clamping stored settings against it
     /// would silently rewrite a user's 0% into -6%.

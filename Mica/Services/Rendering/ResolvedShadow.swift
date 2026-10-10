@@ -36,31 +36,27 @@ struct ResolvedShadow: Equatable {
         static let none = BadgeShadow(radiusMultiplier: 0, offsetYMultiplier: 0, opacity: 0)
     }
 
+    /// The icon enclosure at the 256pt reference size.
+    static let referenceEnclosure: CGFloat = 206
+
     var background: CanvasShadow
     var symbol: CanvasShadow
     var badgeBackground: BadgeShadow
     var badgeSymbol: BadgeShadow
 
-    // Badge shadows are identical across presets.
     static let macOS26 = ResolvedShadow(
         background: CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255),
-        symbol: CanvasShadow(radius: 5, offsetY: 3.5, opacity: 0.03),
-        badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
-        badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
+        symbol: CanvasShadow(radius: 5, offsetY: 3.5, opacity: 0.03)
     )
 
     static let macOS27 = ResolvedShadow(
         background: CanvasShadow(radius: 4, offsetY: 2, opacity: 0.255),
-        symbol: CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11),
-        badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
-        badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
+        symbol: CanvasShadow(radius: 4.4, offsetY: 7.3, opacity: 0.11)
     )
 
     static let macOS15 = ResolvedShadow(
         background: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.31),
-        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.21),
-        badgeBackground: BadgeShadow(radiusMultiplier: 0.03, offsetYMultiplier: 0.04, opacity: 0.23),
-        badgeSymbol: BadgeShadow(radiusMultiplier: 0.02, offsetYMultiplier: 0.025, opacity: 0.15)
+        symbol: CanvasShadow(radius: 2, offsetY: 2.5, opacity: 0.21)
     )
 
     /// The preset matching a settings-level shadow style. `.off` disables only
@@ -89,5 +85,33 @@ struct ResolvedShadow: Equatable {
     /// The badge symbol shadow a foreground's own style draws.
     static func badgeSymbol(for style: DropShadowStyle) -> BadgeShadow {
         style == .off ? .none : preset(for: style).badgeSymbol
+    }
+}
+
+extension ResolvedShadow {
+    /// The badge background shadow, shared by every preset because Apple's badge
+    /// shadow does not change between macOS 15, 26 and 27.
+    static let badgeBackgroundShadow = BadgeShadow(radiusMultiplier: 0.05, offsetYMultiplier: 0.022, opacity: 0.168)
+
+    /// A preset whose badge symbol shadow is its icon symbol shadow, scaled to the badge.
+    init(background: CanvasShadow, symbol: CanvasShadow) {
+        self.init(
+            background: background,
+            symbol: symbol,
+            badgeBackground: Self.badgeBackgroundShadow,
+            badgeSymbol: BadgeShadow(matching: symbol)
+        )
+    }
+}
+
+extension ResolvedShadow.BadgeShadow {
+    /// An icon symbol shadow carried onto the badge, with the badge diameter
+    /// standing in for the icon's enclosure.
+    init(matching symbol: ResolvedShadow.CanvasShadow) {
+        self.init(
+            radiusMultiplier: symbol.radius / ResolvedShadow.referenceEnclosure,
+            offsetYMultiplier: symbol.offsetY / ResolvedShadow.referenceEnclosure,
+            opacity: symbol.opacity
+        )
     }
 }

@@ -100,3 +100,5 @@ default.profraw
 
 # Local git-history backups
 *.bundle
+
+experiments/macos-27-badges/examples/
