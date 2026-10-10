@@ -49,9 +49,6 @@
         }
       }
     },
-    "2x (Retina)" : {
-
-    },
     "a custom color" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1288,9 +1285,6 @@
     "Export as PNG…" : {
 
     },
-    "Export at twice the point size, for Retina displays" : {
-
-    },
     "Export Configuration…" : {
 
     },
@@ -2162,7 +2156,7 @@
     "The drop shadow behind the imported image" : {
 
     },
-    "The icon’s size in points. Settings ▸ Export sets what a new window opens at." : {
+    "The icon’s size in points. @2x doubles the pixels, for Retina displays. Settings ▸ Export sets what a new window opens at." : {
 
     },
     "The Mac is in dark mode, which changes Apple's rendering. Switch to light mode to fit." : {
