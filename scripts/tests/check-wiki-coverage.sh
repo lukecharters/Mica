@@ -37,16 +37,15 @@ KEYS="$(
         sed -nE 's/^[[:space:]]*case[[:space:]]+[A-Za-z0-9]+([[:space:]]*=[[:space:]]*"([^"]+)")?.*/\2/p' |
         awk '
             NR == 1 && $0 == "" { print "size"; next }
-            NR == 2 && $0 == "" { print "scale"; next }
             NF { print }
         '
 )"
 
 KEY_COUNT="$(printf '%s\n' "$KEYS" | grep -c .)"
-if [[ "$KEY_COUNT" -eq 50 ]]; then
-    pass "parsed 50 configuration keys"
+if [[ "$KEY_COUNT" -eq 49 ]]; then
+    pass "parsed 49 configuration keys"
 else
-    fail "parsed $KEY_COUNT configuration keys, expected 50"
+    fail "parsed $KEY_COUNT configuration keys, expected 49"
 fi
 
 while IFS= read -r key; do

@@ -126,7 +126,6 @@ See [Use Presets](Use-Presets).
 | Flag | Short form | Details |
 |---|---|---|
 | `--size` | `-s` | [Export size](Export-Settings#export-size) |
-| `--scale` | None | [Export scale](Export-Settings#export-scale) |
 | `--color-space` | None | [Colour space](Export-Settings#colour-space) |
 
 Every `color` flag also accepts a `colour` alias.
@@ -204,8 +203,7 @@ mica-cli extract <path> [options]
 |---|---|---|
 | `<path>` | None | A file or directory to inspect. |
 | `--output PATH` | `-o` | Destination directory. |
-| `--size PIXELS` | `-s` | Icon size, `16` to `2048`. Default: `512`. |
-| `--scale SCALE` | None | `1x` or `2x`. Default: `1x`. |
+| `--size SIZE` | `-s` | Icon size, `16` to `2048`. Add `@2x` to double the pixels. Default: `512`. |
 | `--recursive` | `-r` | Processes directory contents. Skips hidden items and symbolic links. |
 | `--depth NUMBER` | None | Limits nested depth. Requires `--recursive`. |
 | `--color-space SPACE` | None | `sRGB` or `displayP3`. |

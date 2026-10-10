@@ -54,5 +54,4 @@ See [Colour Formats](Colour-Formats) for the shared colour syntax.
 | Background Padding | `--badge-bg-padding` | Badge ▸ Background ▸ Layout | [Badge Settings](Badge-Settings#background-padding) |
 | Background Scale | `--badge-bg-scale` | Badge ▸ Background ▸ Layout | [Badge Settings](Badge-Settings#background-scale) |
 | Export Size | `--size` | Export ▸ Size | [Export Settings](Export-Settings#export-size) |
-| Export Scale | `--scale` | Export ▸ 2x (Retina) | [Export Settings](Export-Settings#export-scale) |
 | Colour Space | `--color-space` | Export ▸ Color Space | [Export Settings](Export-Settings#colour-space) |

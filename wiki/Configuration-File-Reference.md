@@ -31,7 +31,6 @@ This example creates a configuration and generates its icon.
 cat > fleet-icon.json <<'JSON'
 {
   "size": 512,
-  "scale": "1x",
   "color-space": "sRGB",
   "icon-generation-mode": "mica",
   "icon-fg": "symbol:lock.shield.fill",
