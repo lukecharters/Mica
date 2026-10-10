@@ -32,7 +32,7 @@ struct ImportNoticeTests {
         let found = try #require(notice)
         #expect(found.group == .icon)
         #expect(found.fields == [.padding, .shadow, .corners, .foreground])
-        #expect(found.title == "App Icon Imported")
+        #expect(found.title == "Icon Imported")
         #expect(found.subtitle == "Icon Padding off · Shadow off · Corners off · Foreground hidden")
     }
 
@@ -43,7 +43,7 @@ struct ImportNoticeTests {
         }
         let found = try #require(notice)
         #expect(found.fields == [.corners, .foreground])
-        #expect(found.title == "Artwork Imported")
+        #expect(found.title == "Image Imported")
     }
 
     @Test("Artwork after an app icon reports the settings it turned back on")
