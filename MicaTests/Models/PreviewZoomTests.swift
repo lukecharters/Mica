@@ -261,4 +261,24 @@ struct PreviewZoomTests {
             #expect(abs(roundTrip - 1.0) < 1e-12)
         }
     }
+
+    // MARK: - The icon's on-screen size
+
+    @Test("Match Export Size previews an @2x export at its point size")
+    func matchExport_usesPointsNotPixels() {
+        var export = ExportSpec()
+        export.exportSize = ExportSize(points: 512, scale: .twoX)
+
+        #expect(PreviewZoom.iconDisplaySize(previewPointSize: nil, export: export, zoom: 1) == 512)
+        #expect(PreviewZoom.iconDisplaySize(previewPointSize: nil, export: export, zoom: 2) == 1024)
+    }
+
+    @Test("A chosen preview size overrides the export size, at either scale")
+    func previewSize_overridesExport() {
+        var export = ExportSpec()
+        export.exportSize = ExportSize(points: 1024, scale: .twoX)
+
+        #expect(PreviewZoom.iconDisplaySize(previewPointSize: 75, export: export, zoom: 1) == 75)
+        #expect(PreviewZoom.iconDisplaySize(previewPointSize: 75, export: export, zoom: 0.5) == 37.5)
+    }
 }

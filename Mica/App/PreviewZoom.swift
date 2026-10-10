@@ -21,6 +21,20 @@ enum PreviewZoom {
     /// What View ▸ Actual Size sets, and the level a window opens at.
     static let actualSize: Double = 1.0
 
+    /// The icon's on-screen edge length, for both preview panes.
+    ///
+    /// A chosen preview size is the base; with none (Match Export Size) the export's
+    /// **point** size is, never its pixel size. A 512pt @2x export previews at
+    /// 512pt, as it would appear on a Retina screen. Mica mode used the pixel size
+    /// until 2026-10-10 while System mode used points, so one export drew at two
+    /// sizes depending on the mode.
+    ///
+    /// One function because the zoom gesture's anchor maths is handed this number
+    /// and would drift against a pane that sized its icon differently.
+    static func iconDisplaySize(previewPointSize: CGFloat?, export: ExportSpec, zoom: Double) -> CGFloat {
+        (previewPointSize ?? export.size) * zoom
+    }
+
     /// The next rung above `zoom`, or nil if there is none.
     ///
     /// Deliberately "the smallest level strictly greater than" rather than an index

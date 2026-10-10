@@ -191,8 +191,6 @@ struct ContentView: View {
     }
 
 
-    private var actualExportSize: CGFloat { viewModel.iconSettings.export.pixelSize }
-
     /// The window's own undo manager, which is what `@Environment(\.undoManager)` gives
     /// a plain `WindowGroup` — verified `===` the window's `NSUndoManager` in the running
     /// app. Drives the observers below; see `IconViewModel+Undo.swift`.
@@ -1078,15 +1076,12 @@ struct ContentView: View {
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
     }
 
-    /// The icon's on-screen edge length.
-    ///
-    /// A selected portal preview size becomes the base that zoom scales; otherwise the
-    /// export size does. `AppexPreviewPane.iconDisplaySize` is the System-mode twin and
-    /// must stay the same expression — the zoom gesture's anchor maths is handed this
-    /// number and would drift against a pane that sized its icon differently.
+    /// The icon's on-screen edge length. Shared with `AppexPreviewPane` through
+    /// `PreviewZoom.iconDisplaySize` — see there.
     private var previewDisplaySize: CGFloat {
-        let baseSize = previewPointSize ?? actualExportSize
-        return baseSize * zoomLevel
+        PreviewZoom.iconDisplaySize(previewPointSize: previewPointSize,
+                                    export: viewModel.iconSettings.export,
+                                    zoom: zoomLevel)
     }
 }
 

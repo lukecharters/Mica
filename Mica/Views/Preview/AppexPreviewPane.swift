@@ -90,7 +90,9 @@ struct AppexPreviewPane: View {
     /// The icon's on-screen edge length. Read by `iconContent` and by the zoom
     /// gesture's anchor maths, which needs the same number — see `PreviewZoomGesture`.
     private var iconDisplaySize: CGFloat {
-        (previewPointSize ?? viewModel.iconSettings.export.size) * zoomLevel
+        PreviewZoom.iconDisplaySize(previewPointSize: previewPointSize,
+                                    export: viewModel.iconSettings.export,
+                                    zoom: zoomLevel)
     }
 
     @ViewBuilder
