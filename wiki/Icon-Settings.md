@@ -374,9 +374,11 @@ Otherwise, the foreground stays hidden.
 The sidebar eye shows it again in the app.
 Settings ▸ Importing can turn off this default.
 
-Mica checks the edges of an imported background.
+Mica checks the edges of an imported background image.
 An app icon has a clear border on every side.
 Other artwork reaches at least one edge.
+A file that is not an image imports its Finder icon.
+Mica always treats that icon as an app icon.
 
 | Image | Padding | Shadow | Corners |
 |---|---|---|---|

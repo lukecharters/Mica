@@ -717,8 +717,9 @@ run_negative_case() {
 #      could: the gate was in the render and no setting reached past it.
 #   3. The import defaults follow the artwork. Every import turns corners off.
 #      Artwork that fills its bounds keeps its shadow and its edges; an app icon
-#      (transparent edges) gets its shadow off and padding compensation on. An
-#      explicit flag beats each default.
+#      (transparent edges) or the Finder icon of a file that is not an image gets
+#      its shadow off and padding compensation on. An explicit flag beats each
+#      default.
 #   4. The superseded `macos11` token renders exactly as `macos15` does. This claim
 #      needs no imported artwork and uses none — it is here because the A/B harness
 #      is, and because a token that still parses but resolves elsewhere is a
@@ -746,6 +747,8 @@ IMPORT_CASES=(
     "app-icon-shadow-defaults-off|same|--icon-bg|\$APPICON|--|--icon-bg|\$APPICON|--icon-bg-shadow|off"
     "app-icon-fills-the-frame|same|--icon-bg|\$APPICON|--|--icon-bg|\$APPICON|--icon-bg-padding|off"
     "app-icon-padding-flag-wins|differ|--icon-bg|\$APPICON|--|--icon-bg|\$APPICON|--icon-bg-padding|on"
+    "file-icon-shadow-defaults-off|same|--icon-bg|\$FILEICON|--|--icon-bg|\$FILEICON|--icon-bg-shadow|off"
+    "file-icon-fills-the-frame|same|--icon-bg|\$FILEICON|--|--icon-bg|\$FILEICON|--icon-bg-padding|off"
     # The foreground rule, end to end. Rule 2: naming or styling a foreground reveals
     # it, so the render changes. Both spellings of "naming" are here, because
     # --icon-symbol and --icon-fg symbol: must not disagree about a rule this visible.
@@ -820,6 +823,8 @@ make_filled_fixture() {
     "${CLI_BINARY}" --icon-symbol square.fill --size 256 --icon-bg-color white \
         -o "${APP_ICON_FIXTURE}" -q >/dev/null 2>&1
     sips --cropToHeightWidth 200 200 "${APP_ICON_FIXTURE}" --out "${FILLED_FIXTURE}" >/dev/null 2>&1
+    FILE_ICON_FIXTURE="${OUTPUT_DIR}/not-an-image.txt"
+    printf 'not an image\n' > "${FILE_ICON_FIXTURE}"
 }
 
 run_import_case() {
@@ -841,6 +846,7 @@ run_import_case() {
         fi
         field="${field//\$FILLED/${FILLED_FIXTURE}}"
         field="${field//\$APPICON/${APP_ICON_FIXTURE}}"
+        field="${field//\$FILEICON/${FILE_ICON_FIXTURE}}"
         if [[ "${seen_separator}" -eq 0 ]]; then
             a_args+=("${field}")
         else

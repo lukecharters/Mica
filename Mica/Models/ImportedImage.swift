@@ -16,11 +16,11 @@ struct ImportedImage: Equatable {
     /// bundle or any other non-image file), false when the source file's own
     /// pixels were imported. Drives the "Icon"/"Image" label in the UI.
     let isFileIcon: Bool
-    /// True when every edge of the image is transparent — the margin the macOS
-    /// icon grid leaves around an app icon's chiclet. Decides the background
-    /// import defaults: an app icon gets padding compensation with its shadow and
-    /// corners off, artwork that reaches its edges keeps both. Data that does not
-    /// decode reads as an app icon.
+    /// True for a file icon, and for image content whose every edge is
+    /// transparent — the margin the macOS icon grid leaves around an app icon's
+    /// chiclet. Decides the background import defaults: an app icon gets padding
+    /// compensation with its shadow off, artwork that reaches its edges keeps
+    /// both. Data that does not decode reads as an app icon.
     let hasIconMargin: Bool
 
     init(id: UUID, imageData: Data, sourceName: String, isFileIcon: Bool) {
@@ -28,7 +28,7 @@ struct ImportedImage: Equatable {
         self.imageData = imageData
         self.sourceName = sourceName
         self.isFileIcon = isFileIcon
-        self.hasIconMargin = Self.detectsIconMargin(in: imageData)
+        self.hasIconMargin = isFileIcon || Self.detectsIconMargin(in: imageData)
     }
 
     var nsImage: NSImage? { NSImage(data: imageData) }

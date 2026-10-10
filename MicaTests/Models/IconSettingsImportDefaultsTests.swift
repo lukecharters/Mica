@@ -47,6 +47,21 @@ struct IconSettingsImportDefaultsTests {
         #expect(image.hasIconMargin == false)
     }
 
+    @Test("A file icon reads as an app icon whatever its edges")
+    func detection_fileIconIsAlwaysAnAppIcon() throws {
+        let fullBleed = try ImportedImage.testFixture(width: 64, height: 64, isFileIcon: true)
+        #expect(fullBleed.hasIconMargin)
+
+        var settings = IconSettings()
+        settings.icon.applyBackgroundImage(fullBleed)
+        #expect(settings.icon.background.compensatesForPadding)
+        #expect(settings.icon.background.shadowStyle == .off)
+
+        settings.badge.applyBackgroundImage(fullBleed)
+        #expect(settings.badge.background.compensatesForPadding)
+        #expect(!settings.badge.background.drawsShadow)
+    }
+
     @Test("Data that does not decode reads as an app icon")
     func detection_undecodableReadsAsIcon() {
         let image = ImportedImage(id: UUID(), imageData: Data(), sourceName: "test", isFileIcon: false)

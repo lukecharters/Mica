@@ -62,6 +62,20 @@ struct ImportedImageDefaultsTests {
         #expect(settings.icon.foreground.shadowStyle == .off)
     }
 
+    @Test("A file that is not an image imports its Finder icon as an app icon")
+    func iconBackgroundFileIcon_defaults() throws {
+        let url = URL.temporaryDirectory.appending(path: "cli-test-\(UUID().uuidString).txt")
+        try Data("not an image".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let settings = try IconGenerationRunner().buildTestSettings(
+            from: parseCommand(["--icon-bg", url.path, "--badge-bg", url.path]))
+        #expect(settings.icon.background.image?.isFileIcon == true)
+        #expect(settings.icon.background.compensatesForPadding == true)
+        #expect(settings.icon.background.shadowStyle == .off)
+        #expect(settings.badge.background.compensatesForPadding == true)
+        #expect(settings.badge.background.drawsShadow == false)
+    }
+
     @Test("An app icon as --icon-bg fills the frame and drops its shadow")
     func iconBackgroundAppIcon_defaults() throws {
         let path = try makeTempImageFile(inset: 0.1).path
