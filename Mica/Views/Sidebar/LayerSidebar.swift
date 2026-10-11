@@ -36,6 +36,13 @@ struct LayerSidebar: View {
     /// restarts the outlines' fade. Resting on a row lets them fade; moving within it
     /// brings them back.
     var onPointer: ((PreviewPointer) -> Void)? = nil
+    /// Reports the layer a drag over a row would land on, so the canvas outlines
+    /// it at the hover weight — the same two-way link as `onPointer`, for a drag,
+    /// which the hover cannot see. nil when the drag leaves or lands.
+    var onDropTarget: ((PreviewHitTarget?) -> Void)? = nil
+
+    /// Where a failed drop goes. See `UserMessage`.
+    @Environment(\.reportUserMessage) private var reportUserMessage
 
     /// Read directly rather than passed in, the way every other reader of this key
     /// does. Nothing threads through `ContentView.body`, which sits at the
@@ -54,6 +61,7 @@ struct LayerSidebar: View {
                     .tag(LayerSidebarRow.group(group))
                     .contextMenu { contextMenu(for: group) }
                     .reportsHover(.group(group), to: onPointer)
+                    .onDrop(of: ImageImportService.allDropTypes, delegate: dropDelegate(for: .group(group)))
 
                     ForEach(rows(for: group)) { tab in
                         LayerRow(
@@ -70,6 +78,7 @@ struct LayerSidebar: View {
                         .listRowInsets(.init(top: 0, leading: Self.childIndent, bottom: 0, trailing: 0))
                         .contextMenu { contextMenu(for: group) }
                         .reportsHover(.layer(group, tab), to: onPointer)
+                        .onDrop(of: ImageImportService.allDropTypes, delegate: dropDelegate(for: .layer(group, tab)))
                     }
                 }
             }
@@ -101,6 +110,26 @@ struct LayerSidebar: View {
         IconContextMenuContent(
             settings: $iconSettings,
             items: IconContextMenu.sidebarItems(for: group, settings: iconSettings)
+        )
+    }
+
+    // MARK: - Drop
+
+    /// A row as a drop destination. The row names its layer, so the location
+    /// within it does not matter; `PreviewDrop.target(for:…)` decides which layer
+    /// that is and whether the row refuses the drop.
+    ///
+    /// A drop does not select the row, for the reason the canvas drop does not
+    /// select its layer: it is a content action, not navigation.
+    private func dropDelegate(for row: LayerSidebarRow) -> LayerDropDelegate {
+        LayerDropDelegate(
+            target: { _ in
+                PreviewDrop.target(for: row, settings: iconSettings, advancedControlsEnabled: advancedControlsEnabled)
+            },
+            onTarget: { onDropTarget?($0) },
+            perform: { providers, target in
+                PreviewDrop.accept(providers, onto: target, settings: $iconSettings, reporter: reportUserMessage)
+            }
         )
     }
 

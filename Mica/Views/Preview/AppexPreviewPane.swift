@@ -29,6 +29,10 @@ struct AppexPreviewPane: View {
     /// Bumped by the owner on a canvas click and on pointer motion, so the outlines
     /// come back after they have faded.
     var outlineWake: Int = 0
+    /// Holds the outlines while a drag is over a sidebar row. This pane takes no
+    /// drop itself, but a badge row in the sidebar does, and its outline is drawn
+    /// here. See `ScaledIconPreview.holdsOutlines`.
+    var holdsOutlines: Bool = false
     /// The right-click menu's commands, as in `ScaledIconPreview` — this pane is
     /// the canvas in System mode, so it carries the same menu.
     var contextActions: PreviewContextActions = .unavailable
@@ -170,7 +174,8 @@ struct AppexPreviewPane: View {
                     selected: selection,
                     hovered: hovered,
                     pointerIsInside: pointerIsInside,
-                    wake: outlineWake
+                    wake: outlineWake,
+                    autoFade: !holdsOutlines
                 )
             }
             .contentShape(Rectangle())
