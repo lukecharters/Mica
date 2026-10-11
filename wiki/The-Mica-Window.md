@@ -21,6 +21,8 @@ The Presets window shows them all. See [Use Presets](Use-Presets).
 The sidebar contains the Icon and Badge groups.
 Advanced controls add Foreground and Background rows.
 The Badge group also has a Layout row.
+Each layer row shows a small picture of that layer.
+A hidden layer's picture is dimmed.
 
 Select a row to show its controls.
 Each eye shows or hides that layer.

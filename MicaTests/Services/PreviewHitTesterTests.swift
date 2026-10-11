@@ -362,13 +362,13 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
-    @Test("A custom foreground image is hit across its 0.85-enclosure box")
+    @Test("A custom foreground image is hit across its image frame")
     func customImageForeground_hitBox() throws {
         var s = IconSettings()
         s.icon.foreground.source = .image
         s.icon.foreground.image = try ImportedImage.testFixture()
         let centre = Self.canvasCentre(s)
-        let half = Self.enclosure() * 0.85 * s.icon.foreground.imageScale / 2
+        let half = Self.enclosure() * IconContentView.importedImageRatio * s.icon.foreground.imageScale / 2
 
         #expect(Self.hit(centre, s) == .iconForeground)
         #expect(Self.hit(CGPoint(x: centre.x + half - 0.5, y: centre.y), s) == .iconForeground)
@@ -661,6 +661,51 @@ struct PreviewHitTesterTests {
         #expect(abs(rect.width - expectedSide) < 0.001)
         #expect(abs(rect.midX - badgeCentre.x) < 0.001)
         #expect(abs(rect.midY - badgeCentre.y) < 0.001)
+    }
+
+    /// The box used to be sized off the symbol settings whatever the source, so an
+    /// imported glyph's outline followed a symbol-scale slider that is not even
+    /// shown for an image, and ignored the image scale that is.
+    @Test("An imported badge glyph outlines its image frame, not a symbol box")
+    func selectionShape_badgeImportedForegroundIsImageFrame() throws {
+        var s = Self.settingsWithBadge()
+        s.badge.foreground.apply(try ImportedImage.testFixture())
+        s.badge.foreground.imageScale = 1.2
+        s.badge.foreground.symbolScale = 0.4
+        let (badgeCentre, radius) = Self.badgeCircle(s)
+        let expectedSide = radius * 2 * BadgeView.importedImageRatio * 1.2
+
+        guard case .roundedRect(let rect, _)? = Self.shape(.badgeForeground, s) else {
+            Issue.record("Expected a rounded rect for an imported badge foreground")
+            return
+        }
+        #expect(abs(rect.width - expectedSide) < 0.001)
+        #expect(abs(rect.midX - badgeCentre.x) < 0.001)
+        #expect(abs(rect.midY - badgeCentre.y) < 0.001)
+    }
+
+    @Test("An imported badge glyph with no image chosen has no box")
+    func selectionShape_badgeImportedForegroundWithoutImage() {
+        var s = Self.settingsWithBadge()
+        s.badge.foreground.source = .image
+        #expect(Self.shape(.badgeForeground, s) == nil)
+    }
+
+    /// Over imported badge artwork the glyph is picked by its box, so the box's
+    /// edge is the boundary between the two layers.
+    @Test("Over imported artwork, an imported badge glyph is hit across its image frame")
+    func badgeImportedForeground_hitBoxOverImportedBackground() throws {
+        var s = Self.settingsWithBadge()
+        s.badge.applyBackgroundImage(
+            try ImportedImage.testFixture(width: 32, height: 32, fill: .systemBrown))
+        s.badge.foreground.apply(try ImportedImage.testFixture())
+        s.badge.foreground.isHidden = false      // the background import's hide default, reversed
+        s.badge.foreground.symbolScale = 0.4     // a symbol box well inside the image frame
+        let (centre, radius) = Self.badgeCircle(s)
+        let half = radius * 2 * BadgeView.importedImageRatio * s.badge.foreground.imageScale / 2
+
+        #expect(Self.hit(CGPoint(x: centre.x + half - 0.5, y: centre.y), s) == .badgeForeground)
+        #expect(Self.hit(CGPoint(x: centre.x + half + 0.5, y: centre.y), s) == .badgeBackground)
     }
 
     @Test("Nothing drawn means nothing outlined")

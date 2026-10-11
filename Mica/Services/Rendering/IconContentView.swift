@@ -30,6 +30,11 @@ struct IconContentView: View {
     private let baseCornerRadius: CGFloat = 54
     private let baseBackgroundInset: CGFloat = 25
 
+    /// An imported foreground image's frame, as a fraction of the enclosure
+    /// (before `imageScale`). `PreviewHitTester` boxes the foreground with it, so
+    /// the outline and the click target cannot drift from the render.
+    static let importedImageRatio: CGFloat = 0.85
+
     // Badge layout ratios live in BadgeGeometry (shared with the previews).
 
     private var scaleFactor: CGFloat { displaySize / baseSize }
@@ -284,8 +289,8 @@ struct IconContentView: View {
                     .interpolation(.high)
                     .aspectRatio(contentMode: .fit)
                     .frame(
-                        width: enclosureSize * 0.85 * effectiveScale,
-                        height: enclosureSize * 0.85 * effectiveScale
+                        width: enclosureSize * Self.importedImageRatio * effectiveScale,
+                        height: enclosureSize * Self.importedImageRatio * effectiveScale
                     )
             }
 

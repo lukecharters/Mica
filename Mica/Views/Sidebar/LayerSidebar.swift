@@ -59,6 +59,7 @@ struct LayerSidebar: View {
                         LayerRow(
                             group: group,
                             tab: tab,
+                            thumbnailSettings: iconSettings.isolatingLayer(group, tab),
                             visibilityBinding: layerVisibilityBinding(for: group, tab: tab)
                         )
                         .tag(LayerSidebarRow.layer(group, tab))
@@ -336,17 +337,18 @@ private struct GroupVisibilityToggle: View {
 
 // MARK: - Layer row
 
-/// One layer beneath its group: a glyph, the layer's name, and its own eye.
+/// One layer beneath its group: a thumbnail of the layer (a glyph for Layout),
+/// the layer's name, and its own eye.
 ///
-/// Deliberately no thumbnail. The four that were here until 2026-07-25 each
-/// re-implemented a slice of `IconContentView` at 36pt — the symbol's rendering
-/// mode, the background's gradient, the badge's imported artwork — and a fifth
-/// copy of the render is a fifth thing to keep in step with the pipeline, the
-/// visibility gates and the hit tester. The row's job is to be clicked and to say
-/// what is hidden; the preview two panes over is the picture.
+/// The thumbnail is the real render with every other layer hidden — see
+/// `LayerThumbnail`. The four that were here until 2026-07-25 each re-implemented
+/// a slice of `IconContentView` at 36pt and drifted from it, which is why they
+/// went; this shape has no copy to drift.
 private struct LayerRow: View {
     let group: IconLayerGroup
     let tab: LayerTab
+    /// The settings isolated to this layer, or nil for Layout, which draws its glyph.
+    let thumbnailSettings: IconSettings?
     /// nil for Layout, which is the badge's position and size rather than a layer,
     /// so there is nothing for an eye to hide. See `LayerTab.isHideable`.
     let visibilityBinding: Binding<Bool>?
@@ -359,15 +361,30 @@ private struct LayerRow: View {
 
     /// The same glyph box `GroupRow` uses, so a layer row is the same height as the
     /// group row above it and the list reads as one set of rows rather than two.
-    /// The glyph *drawn* in it is smaller and secondary — with every row the same
-    /// height, the type and the indent are what carry the hierarchy.
+    /// The thumbnail and Layout's glyph are both drawn smaller than it — with every
+    /// row the same height, the type and the indent are what carry the hierarchy.
     private static let glyphBox: CGFloat = 36
+
+    /// Smaller than the box, because a layer row is exactly `glyphBox` tall: at
+    /// full size two adjacent thumbnails touch and read as one tile.
+    private static let thumbnailSize: CGFloat = 32
+
+    private static let hiddenOpacity: Double = 0.35
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: tab.systemImage)
-                .font(.system(size: 18))
-                .frame(width: Self.glyphBox, height: Self.glyphBox)
+            if let thumbnailSettings {
+                LayerThumbnail(group: group, layer: tab, settings: thumbnailSettings, size: Self.thumbnailSize)
+                    .frame(width: Self.glyphBox, height: Self.glyphBox)
+                    // A hidden layer keeps its picture, dimmed, so the row still
+                    // says what the eye would bring back.
+                    .opacity(visibilityBinding?.wrappedValue == false ? Self.hiddenOpacity : 1)
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: tab.systemImage)
+                    .font(.system(size: 18))
+                    .frame(width: Self.glyphBox, height: Self.glyphBox)
+            }
 
             // `tab.label` is a `String` variable, so this is `Text`'s
             // non-localizing overload — correct here: the three layer names are
