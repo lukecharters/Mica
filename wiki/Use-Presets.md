@@ -113,6 +113,7 @@ Names are not case sensitive.
 Each preset also has a slug, the name in lowercase with hyphens for spaces.
 A slug needs no quotes: `--icon-preset software-update`.
 To see them, click **Show Slugs** in the Presets window's toolbar.
+To copy one, Control-click a preset and choose **Copy Slug**.
 
 A badge preset does not supply an icon symbol.
 Give one with `--icon-symbol`.

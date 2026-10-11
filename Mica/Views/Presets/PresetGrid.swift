@@ -331,7 +331,13 @@ private struct PresetTile: View {
                            : "Replaces the badge’s settings")
         .help(helpText)
         .contextMenu {
+            // On every tile and whether or not slugs are on show: the slug is what
+            // `mica-cli` takes, and copying it should not need the toggle first.
+            Button("Copy Slug") {
+                PresetSlugPasteboard.copy(resolved.preset)
+            }
             if let onDelete {
+                Divider()
                 Button("Delete", role: .destructive, action: onDelete)
             }
         }
