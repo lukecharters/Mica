@@ -55,6 +55,16 @@ struct PresetCatalogTests {
         }
     }
 
+    @Test("Slugs are unique within a scope")
+    func slugsAreUniqueWithinScope() {
+        // Two distinct names can share a slug ("Restart Required", "Restart, Required!"),
+        // and `--icon-preset <slug>` would then reach only the first.
+        for scope in PresetScope.allCases {
+            let slugs = PresetCatalog.builtIn(scope).map(\.slug)
+            #expect(Set(slugs).count == slugs.count, "\(scope) has a duplicate slug")
+        }
+    }
+
     @Test("Neither scope's catalogue is empty")
     func catalogueIsPopulated() {
         // Deliberately a floor and not a count. The number of presets is a curation

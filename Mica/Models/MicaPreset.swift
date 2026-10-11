@@ -156,6 +156,28 @@ struct MicaPreset: Equatable, Identifiable, Sendable {
     /// filenames encode — see `UserPresetStore`.
     var id: String { "\(isBuiltIn ? "builtin" : "user").\(scope.rawValue).\(name)" }
 
+    /// The name as `mica-cli` accepts it without quoting: `Software Update` is
+    /// `software-update`. `--icon-preset` matches this as well as the name, and the
+    /// Presets window shows it on request.
+    ///
+    /// Taken from `name`, never `displayName`, so a built-in's slug is the same in
+    /// every language. Unique within a scope, because `UserPresetStore.uniqueName`
+    /// uniques on it against the built-ins too — it is also the filename.
+    var slug: String { Self.slug(name) }
+
+    /// Lowercase letters and digits, every other run of characters one hyphen.
+    static func slug(_ name: String) -> String {
+        let allowed = name.lowercased().map { character -> Character in
+            character.isLetter || character.isNumber ? character : "-"
+        }
+        // Collapse runs and trim, so "Restart  Required!" is `restart-required`
+        // rather than `restart--required-`.
+        let collapsed = String(allowed)
+            .split(separator: "-", omittingEmptySubsequences: true)
+            .joined(separator: "-")
+        return collapsed.isEmpty ? "preset" : collapsed
+    }
+
     init(name: String, scope: PresetScope, keys: [String: MicaPresetValue], isBuiltIn: Bool = false) {
         self.name = name
         self.scope = scope

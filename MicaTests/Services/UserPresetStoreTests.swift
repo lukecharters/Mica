@@ -257,9 +257,9 @@ struct UserPresetStoreTests {
 
     @Test("The slug collapses runs and never comes out empty")
     func slugIsWellFormed() {
-        #expect(UserPresetStore.slug("Restart  Required!") == "restart-required")
-        #expect(UserPresetStore.slug("Installer") == "installer")
-        #expect(UserPresetStore.slug("!!!") == "preset")
+        #expect(MicaPreset.slug("Restart  Required!") == "restart-required")
+        #expect(MicaPreset.slug("Installer") == "installer")
+        #expect(MicaPreset.slug("!!!") == "preset")
     }
 
     @Test("The scope is part of the filename, so the two scopes cannot collide")
@@ -291,7 +291,7 @@ struct UserPresetStoreTests {
         let existing = [MicaPreset(name: "Restart Required", scope: .icon, keys: [:])]
         let name = UserPresetStore.uniqueName("Restart, Required!", in: .icon, existing: existing)
         #expect(name == "Restart, Required! 2")
-        #expect(UserPresetStore.slug(name) != UserPresetStore.slug("Restart Required"))
+        #expect(MicaPreset.slug(name) != MicaPreset.slug("Restart Required"))
     }
 
     @Test("A free name is returned unchanged")
