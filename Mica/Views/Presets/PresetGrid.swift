@@ -200,6 +200,9 @@ extension PresetSectionHeader where Trailing == EmptyView {
 struct PresetGrid: View {
     let rows: [ResolvedPreset]
     var columns: [GridItem] = PresetGridMetrics.columns
+    /// Whether each tile shows its slug under the name. The Presets window's toggle;
+    /// the popovers never do.
+    var showsSlugs = false
     let onApply: (MicaPreset) -> Void
     let onDelete: (MicaPreset) -> Void
 
@@ -212,6 +215,7 @@ struct PresetGrid: View {
             ForEach(rows) { row in
                 PresetTile(
                     resolved: row,
+                    showsSlug: showsSlugs,
                     onApply: { onApply(row.preset) },
                     onDelete: row.preset.isBuiltIn ? nil : { onDelete(row.preset) }
                 )
@@ -278,6 +282,7 @@ struct PresetSaveButton: View {
 /// controls on.
 private struct PresetTile: View {
     let resolved: ResolvedPreset
+    let showsSlug: Bool
     let onApply: () -> Void
     /// Nil for a built-in, which has no file to delete.
     let onDelete: (() -> Void)?
@@ -303,11 +308,14 @@ private struct PresetTile: View {
                 PresetThumbnail(resolved: resolved)
                     .presetTileChrome()
 
-                nameLabel
+                labelText
                     .font(.subheadline)
-                    .lineLimit(2, reservesSpace: true)
+                    .lineLimit(showsSlug ? 4 : 2, reservesSpace: true)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
+                    // The grid proposes a height; without this a tile with the slug
+                    // on is squeezed and the name truncates to one line.
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(width: PresetGridMetrics.thumbnailSize)
             .contentShape(Rectangle())
@@ -351,6 +359,20 @@ private struct PresetTile: View {
         return label
     }
 
+    /// The name line, and the slug under it when it is on show.
+    ///
+    /// One `Text` rather than two stacked, so the slug sits directly under however many
+    /// lines the name took and the reserved space falls below both. Two views each
+    /// reserving its own lines left a one-line name with a blank line under it, then
+    /// the slug. A slug wraps at its hyphens; truncating it would hide what it is for.
+    private var labelText: Text {
+        guard showsSlug else { return nameLabel }
+        let slug = Text(verbatim: resolved.preset.slug)
+            .font(.caption.monospaced())
+            .foregroundStyle(.secondary)
+        return nameLabel + Text(verbatim: "\n") + slug
+    }
+
     private func glyph(_ indicator: PresetIndicator) -> Text {
         Text(Image(systemName: indicator.symbolName)).foregroundStyle(.secondary)
     }
@@ -361,13 +383,18 @@ private struct PresetTile: View {
         let scope = resolved.scope == .icon
             ? String(localized: "icon preset")
             : String(localized: "badge preset")
-        return ([name, scope] + indicators.map(\.clause)).joined(separator: ", ")
+        return ([name, scope] + indicators.map(\.clause) + slugClause).joined(separator: ", ")
     }
 
     private var helpText: String {
-        let clauses = indicators.map(\.clause)
+        let clauses = indicators.map(\.clause) + slugClause
         guard !clauses.isEmpty else { return name }
         return "\(name) — \(clauses.joined(separator: ", "))"
+    }
+
+    /// The slug, once it is on show, so the tooltip and VoiceOver say what the tile does.
+    private var slugClause: [String] {
+        showsSlug ? [String(localized: "slug \(resolved.preset.slug)")] : []
     }
 }
 
