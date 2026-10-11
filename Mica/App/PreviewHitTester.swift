@@ -95,10 +95,6 @@ enum PreviewHitTester {
     /// visible.
     static let badgeInnerHitRatio: CGFloat = 0.62
 
-    /// Fraction of the enclosure used by a custom foreground image
-    /// (mirrors `IconContentView.iconContent`'s `enclosureSize * 0.85` frame).
-    private static let customImageEnclosureRatio: CGFloat = 0.85
-
     /// Corner radius of a non-circular badge, as a fraction of its side.
     ///
     /// Only the colour badge is a `Circle()`. A System-mode badge is an app-icon
@@ -380,7 +376,7 @@ enum PreviewHitTester {
 
         case .image:
             guard settings.icon.foreground.image?.nsImage != nil else { return nil }
-            let side = enclosureSize * customImageEnclosureRatio * settings.icon.foreground.imageScale
+            let side = enclosureSize * IconContentView.importedImageRatio * settings.icon.foreground.imageScale
             guard side > 0 else { return nil }
             return centeredSquare(
                 center: nudged(center, by: settings.icon.foreground, unit: enclosureSize),
@@ -523,7 +519,7 @@ enum PreviewHitTester {
         case .image:
             // Renderer draws nothing until the data decodes, so neither do we.
             guard settings.icon.foreground.image?.nsImage != nil else { return false }
-            let side = enclosureSize * customImageEnclosureRatio * settings.icon.foreground.imageScale
+            let side = enclosureSize * IconContentView.importedImageRatio * settings.icon.foreground.imageScale
             return squareContains(
                 point,
                 center: nudged(center, by: settings.icon.foreground, unit: enclosureSize),

@@ -362,13 +362,13 @@ struct PreviewHitTesterTests {
         #expect(Self.hit(Self.canvasCentre(s), s) == .iconBackground)
     }
 
-    @Test("A custom foreground image is hit across its 0.85-enclosure box")
+    @Test("A custom foreground image is hit across its image frame")
     func customImageForeground_hitBox() throws {
         var s = IconSettings()
         s.icon.foreground.source = .image
         s.icon.foreground.image = try ImportedImage.testFixture()
         let centre = Self.canvasCentre(s)
-        let half = Self.enclosure() * 0.85 * s.icon.foreground.imageScale / 2
+        let half = Self.enclosure() * IconContentView.importedImageRatio * s.icon.foreground.imageScale / 2
 
         #expect(Self.hit(centre, s) == .iconForeground)
         #expect(Self.hit(CGPoint(x: centre.x + half - 0.5, y: centre.y), s) == .iconForeground)
