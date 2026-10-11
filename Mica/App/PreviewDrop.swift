@@ -12,7 +12,7 @@
 // App-only on purpose: a drag does not exist in the CLI, so this file stays out
 // of `Models/` and `Services/` and off both `membershipExceptions` lists.
 
-import Foundation
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -322,6 +322,16 @@ struct LayerDropDelegate: DropDelegate {
     }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
+        // **SwiftUI sends one more `dropUpdated` after `performDrop`**, and no
+        // `dropExited` after it. Measured 2026-10-11: reporting that update set
+        // the target again just after the drop had cleared it, so the outlines
+        // stayed on screen, held, with nothing left to release them. A drag
+        // always has the button down, so an update with it up is that stray
+        // call, and the drag is over.
+        guard NSEvent.pressedMouseButtons & 1 != 0 else {
+            onTarget(nil)
+            return nil
+        }
         let resolved = target(info.location)
         onTarget(resolved)
         return DropProposal(operation: resolved == nil ? .forbidden : .copy)
