@@ -790,6 +790,18 @@ struct ContentView: View {
         previewSelection(for: hoveredRow)
     }
 
+    /// What the preview outlines at the selected weight: nothing while a drag is
+    /// over the canvas or a sidebar row, the selection otherwise.
+    ///
+    /// The selection says nothing about where a drop lands, so during a drag the
+    /// drop target's outline is drawn alone. That also keeps the drop target in
+    /// the hover colour when it is the selected layer, where `PreviewOutlines`
+    /// would otherwise draw the selected weight instead. The user's choice,
+    /// 2026-10-11; a plain hover keeps both outlines.
+    private var outlinedSelection: PreviewSelection? {
+        dropTarget == nil ? currentPreviewSelection : nil
+    }
+
     /// What the preview outlines at the hover weight: the layer a drag would land
     /// on while one is over the canvas or a sidebar row, the hover otherwise.
     ///
@@ -929,7 +941,7 @@ struct ContentView: View {
                     previewPointSize: $previewPointSize,
                     onSelect: select,
                     onPointer: pointerChanged,
-                    selection: currentPreviewSelection,
+                    selection: outlinedSelection,
                     hovered: outlinedHover,
                     pointerIsInside: pointerIsInside || dropTarget != nil,
                     outlineWake: outlineWake,
@@ -1047,7 +1059,7 @@ struct ContentView: View {
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
                     onPointer: pointerChanged,
-                    selection: currentPreviewSelection,
+                    selection: outlinedSelection,
                     hovered: outlinedHover,
                     pointerIsInside: pointerIsInside || dropTarget != nil,
                     outlineWake: outlineWake,
