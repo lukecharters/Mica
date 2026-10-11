@@ -87,6 +87,8 @@ AGENTS.md
 .claude.local.md
 .agents/
 skills-lock.json
+# Local issue tracker used by the agent skills (docs/agents/issue-tracker.md).
+/.scratch/
 
 # Editor settings
 .vscode/
