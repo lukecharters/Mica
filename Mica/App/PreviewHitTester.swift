@@ -290,9 +290,11 @@ enum PreviewHitTester {
         )
     }
 
-    /// Bounding box of the badge's drawn glyph, sized as `BadgeView` sizes it
-    /// (badge diameter × multiplier × symbol scale, centred, no offsets). Nil when
-    /// there is no glyph of its own — System mode bakes it into the appex image.
+    /// Bounding box of the badge's drawn glyph, sized as `BadgeView` sizes it and
+    /// centred on the badge plus the glyph's nudge. A symbol is diameter ×
+    /// multiplier × symbol scale; an imported image is diameter ×
+    /// `BadgeView.importedImageRatio` × image scale. Nil when there is no glyph of
+    /// its own — System mode bakes it into the appex image — or no image chosen.
     ///
     /// Shared by the outline and the hit test so clicking the glyph and outlining it
     /// cannot disagree. That matters more than it used to: the glyph can now sit
@@ -304,13 +306,22 @@ enum PreviewHitTester {
         diameter: CGFloat,
         badgeSymbolSizing: ResolvedSymbolSizing?
     ) -> CGRect? {
-        guard settings.badge.foreground.source != .system else { return nil }
-        let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(
-            for: settings.badge.foreground.symbolName,
-            context: .badge(weight: settings.badge.foreground.symbolWeight.fontWeight))
-        let side = diameter * sizing.multiplier * settings.badge.foreground.symbolScale
+        let foreground = settings.badge.foreground
+        let side: CGFloat
+        switch foreground.source {
+        case .symbol:
+            let sizing = badgeSymbolSizing ?? SymbolSizingService.resolve(
+                for: foreground.symbolName,
+                context: .badge(weight: foreground.symbolWeight.fontWeight))
+            side = diameter * sizing.multiplier * foreground.symbolScale
+        case .image:
+            guard foreground.image?.nsImage != nil else { return nil }
+            side = diameter * BadgeView.importedImageRatio * foreground.imageScale
+        case .system:
+            return nil
+        }
         guard side > 0 else { return nil }
-        return centeredSquare(center: nudged(badgeCenter, by: settings.badge.foreground, unit: diameter),
+        return centeredSquare(center: nudged(badgeCenter, by: foreground, unit: diameter),
                               side: side)
     }
 

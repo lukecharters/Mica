@@ -54,6 +54,15 @@ struct LayerThumbnailZoomTests {
         Self.expectCentredAndFilling(try Self.boxInTile(group, isolated))
     }
 
+    @Test("An imported badge glyph is centred in the tile and fills it")
+    func importedBadgeGlyphIsCentredAndFills() throws {
+        var settings = IconSettings()
+        settings.badge.foreground.apply(try ImportedImage.testFixture())
+        settings.badge.foreground.imageScale = 1.3
+        let isolated = try #require(settings.isolatingLayer(.badge, .foreground))
+        Self.expectCentredAndFilling(try Self.boxInTile(.badge, isolated))
+    }
+
     @Test("A background is not zoomed", arguments: [IconLayerGroup.icon, .badge])
     func backgroundIsNotZoomed(group: IconLayerGroup) throws {
         let settings = try #require(IconSettings().isolatingLayer(group, .background))
