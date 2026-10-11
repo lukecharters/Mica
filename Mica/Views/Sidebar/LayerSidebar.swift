@@ -67,7 +67,8 @@ struct LayerSidebar: View {
                         // rather than `.padding`: padding insets the row's
                         // *content* and leaves the selection highlight full-width,
                         // so the indent would vanish the moment a row is selected.
-                        .listRowInsets(.init(top: 0, leading: Self.childIndent, bottom: 0, trailing: 0))
+                        .listRowInsets(.init(top: Self.childVerticalInset, leading: Self.childIndent,
+                                             bottom: Self.childVerticalInset, trailing: 0))
                         .contextMenu { contextMenu(for: group) }
                         .reportsHover(.layer(group, tab), to: onPointer)
                     }
@@ -86,6 +87,14 @@ struct LayerSidebar: View {
     /// 20pt box. Aligning the two glyph *columns* instead would be an indent of
     /// zero, since the boxes are now the same width.
     private static let childIndent: CGFloat = 36
+
+    /// Top and bottom inset on a layer row, which makes it the 44pt the group rows
+    /// measure (36pt glyph box + 4 + 4).
+    ///
+    /// The insets replace the List's defaults, so leaving these at zero — as they
+    /// were until 2026-10-11 — made a layer row exactly its 36pt glyph box, with
+    /// the 32pt thumbnails almost touching from one row to the next.
+    private static let childVerticalInset: CGFloat = 4
 
     /// The group's menu, offered from its layer rows too.
     ///
@@ -365,8 +374,9 @@ private struct LayerRow: View {
     /// row the same height, the type and the indent are what carry the hierarchy.
     private static let glyphBox: CGFloat = 36
 
-    /// Smaller than the box, because a layer row is exactly `glyphBox` tall: at
-    /// full size two adjacent thumbnails touch and read as one tile.
+    /// Smaller than the box, so two adjacent thumbnails never touch and read as
+    /// one tile. The row's own vertical inset (`childVerticalInset`) adds the rest
+    /// of the gap.
     private static let thumbnailSize: CGFloat = 32
 
     private static let hiddenOpacity: Double = 0.35
