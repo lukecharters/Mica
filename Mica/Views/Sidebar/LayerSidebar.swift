@@ -374,7 +374,7 @@ private struct LayerRow: View {
     var body: some View {
         HStack(spacing: 8) {
             if let thumbnailSettings {
-                LayerThumbnail(group: group, settings: thumbnailSettings, size: Self.thumbnailSize)
+                LayerThumbnail(group: group, layer: tab, settings: thumbnailSettings, size: Self.thumbnailSize)
                     .frame(width: Self.glyphBox, height: Self.glyphBox)
                     // A hidden layer keeps its picture, dimmed, so the row still
                     // says what the eye would bring back.
