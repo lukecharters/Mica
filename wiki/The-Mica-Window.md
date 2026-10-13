@@ -82,13 +82,18 @@ Press Escape with an empty search to close the browser.
 | Click a visible layer | Selects that layer. |
 | Drag the badge | Changes its offset. |
 | Press an arrow key | Nudges the badge by one percent. |
-| Drop an image on the icon | Imports the icon background. |
-| Drop an image on the badge | Imports the badge background. |
+| Drop an image on a layer | Imports the image into that layer. |
 | Right-click | Opens copy, export, paste, remove, and reset actions. |
 | Pinch on a trackpad | Zooms the canvas. |
 | Hold ⌘ and scroll | Zooms the canvas. |
 | Scroll | Moves the canvas when the icon is larger than the pane. |
 
+While you drag an image over the canvas, an outline shows the layer that will receive it.
+You can also drop an image on a layer in the sidebar.
+A drop on Icon or Badge in the sidebar imports that group's background.
+Hidden layers do not accept drops.
+With Advanced Controls off, a drop always imports the background.
+No outline appears.
 System mode does not accept image drops for that group.
 
 Both zoom gestures work in Mica mode and System mode.

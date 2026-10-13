@@ -1,6 +1,8 @@
 // PreviewDropTests.swift
 //
-// Item B4: what a canvas drop accepts, and which layer it lands on.
+// Item B4: what a canvas drop accepts, and which layer it lands on. Since
+// 2026-10-11 also the layer-aware routing (advanced controls on), the sidebar
+// rows as drop targets, and what the preview outlines during a drag.
 //
 // Only the two decidable halves are tested here — the declared type list and
 // the routing — because they are the two that can be wrong *quietly*. A drag
@@ -41,8 +43,25 @@ struct PreviewDropTests {
         return CGPoint(x: displaySize / 2 + offset.width, y: displaySize / 2 + offset.height)
     }
 
-    private static func target(_ point: CGPoint, _ settings: IconSettings) -> PreviewHitTarget {
-        PreviewDrop.target(at: point, settings: settings, displaySize: displaySize)
+    /// Simple mode by default, which is the routing every test written before
+    /// 2026-10-11 describes.
+    private static func target(_ point: CGPoint, _ settings: IconSettings,
+                               advanced: Bool = false) -> PreviewHitTarget {
+        PreviewDrop.target(at: point, settings: settings, displaySize: displaySize,
+                           advancedControlsEnabled: advanced)
+    }
+
+    private static var canvasCentre: CGPoint {
+        CGPoint(x: displaySize / 2, y: displaySize / 2)
+    }
+
+    /// A point on the badge outside the glyph's inner hit region but inside the
+    /// circle: 90% of the way to the rim.
+    private static func badgeRing(_ settings: IconSettings) -> CGPoint {
+        let enclosure = PreviewHitTester.enclosureSize(displaySize: displaySize)
+        let radius = BadgeGeometry.diameter(enclosureSize: enclosure, badgeScale: settings.badge.scale) / 2
+        let centre = badgeCentre(settings)
+        return CGPoint(x: centre.x, y: centre.y + radius * 0.9)
     }
 
     // MARK: - Declared types
@@ -113,7 +132,7 @@ struct PreviewDropTests {
         #expect(Self.target(Self.badgeCentre(s), s) == .badgeBackground)
     }
 
-    @Test("A drop on the badge glyph still lands on the badge background")
+    @Test("In simple mode, a drop on the badge glyph lands on the badge background")
     func target_onBadgeGlyph_isStillBackground() {
         // The badge centre is the *foreground*'s hit region — clicking it selects
         // the glyph. A drop is narrowed to the group's background regardless,
@@ -149,6 +168,154 @@ struct PreviewDropTests {
         let point = Self.badgeCentre(s)
         s.badge.isVisible = false
         #expect(Self.target(point, s) == .iconBackground)
+    }
+
+    // MARK: - Routing with the advanced controls on
+
+    @Test("A drop on the badge glyph lands on the badge foreground")
+    func advanced_onBadgeGlyph_isBadgeForeground() {
+        let s = Self.settingsWithBadge()
+        #expect(Self.target(Self.badgeCentre(s), s, advanced: true) == .badgeForeground)
+    }
+
+    @Test("A drop on the badge outside its glyph lands on the badge background")
+    func advanced_onBadgeRing_isBadgeBackground() {
+        let s = Self.settingsWithBadge()
+        let point = Self.badgeRing(s)
+        #expect(PreviewHitTester.target(at: point, settings: s,
+                                        displaySize: Self.displaySize) == .badgeBackground)
+        #expect(Self.target(point, s, advanced: true) == .badgeBackground)
+    }
+
+    @Test("A drop on the icon glyph lands on the icon foreground")
+    func advanced_onIconGlyph_isIconForeground() {
+        let s = IconSettings()
+        #expect(PreviewHitTester.target(at: Self.canvasCentre, settings: s,
+                                        displaySize: Self.displaySize) == .iconForeground)
+        #expect(Self.target(Self.canvasCentre, s, advanced: true) == .iconForeground)
+    }
+
+    @Test("A hidden icon foreground is skipped, and the drop lands on the background")
+    func advanced_hiddenIconForeground_isIconBackground() {
+        var s = IconSettings()
+        s.icon.foreground.isHidden = true
+        #expect(Self.target(Self.canvasCentre, s, advanced: true) == .iconBackground)
+    }
+
+    @Test("A drop on the canvas margin still lands on the icon background")
+    func advanced_onNothing_fallsBackToIcon() {
+        #expect(Self.target(.zero, Self.settingsWithBadge(), advanced: true) == .iconBackground)
+    }
+
+    @Test("Every canvas route agrees with the hit tester wherever it hits something")
+    func advanced_agreesWithHitTester() {
+        // The routing is not allowed a second answer to "which layer is under the
+        // pointer" — a sweep across the canvas holds it to that.
+        let s = Self.settingsWithBadge()
+        for x in stride(from: 0, through: Self.displaySize, by: 8) {
+            for y in stride(from: 0, through: Self.displaySize, by: 8) {
+                let point = CGPoint(x: x, y: y)
+                let hit = PreviewHitTester.target(at: point, settings: s, displaySize: Self.displaySize)
+                #expect(Self.target(point, s, advanced: true) == (hit ?? .iconBackground))
+            }
+        }
+    }
+
+    // MARK: - Sidebar rows
+
+    private static func rowTarget(_ row: LayerSidebarRow, _ settings: IconSettings,
+                                  advanced: Bool = true) -> PreviewHitTarget? {
+        PreviewDrop.target(for: row, settings: settings, advancedControlsEnabled: advanced)
+    }
+
+    @Test("A layer row takes the drop onto its own layer",
+          arguments: [
+            (LayerSidebarRow.layer(.icon, .foreground), PreviewHitTarget.iconForeground),
+            (.layer(.icon, .background), .iconBackground),
+            (.layer(.badge, .foreground), .badgeForeground),
+            (.layer(.badge, .background), .badgeBackground),
+          ])
+    func row_layer_isThatLayer(_ row: LayerSidebarRow, _ expected: PreviewHitTarget) {
+        #expect(Self.rowTarget(row, Self.settingsWithBadge()) == expected)
+    }
+
+    @Test("A group row takes the drop onto the group's background")
+    func row_group_isBackground() {
+        let s = Self.settingsWithBadge()
+        #expect(Self.rowTarget(.group(.icon), s) == .iconBackground)
+        #expect(Self.rowTarget(.group(.badge), s) == .badgeBackground)
+    }
+
+    @Test("The badge's Layout row takes the drop onto the badge background")
+    func row_layout_isBadgeBackground() {
+        #expect(Self.rowTarget(.layer(.badge, .layout), Self.settingsWithBadge()) == .badgeBackground)
+    }
+
+    @Test("In simple mode a row only ever reaches a background")
+    func row_simpleMode_isBackground() {
+        // Layer rows are not shown in simple mode, but the rule must not depend on
+        // that: a foreground route would replace a layer the simple pane hides.
+        let s = Self.settingsWithBadge()
+        #expect(Self.rowTarget(.layer(.icon, .foreground), s, advanced: false) == .iconBackground)
+        #expect(Self.rowTarget(.layer(.badge, .foreground), s, advanced: false) == .badgeBackground)
+    }
+
+    @Test("A row whose layer is hidden refuses the drop")
+    func row_hiddenLayer_refuses() {
+        var s = Self.settingsWithBadge()
+        s.icon.foreground.isHidden = true
+        s.badge.background.isHidden = true
+        #expect(Self.rowTarget(.layer(.icon, .foreground), s) == nil)
+        #expect(Self.rowTarget(.layer(.badge, .background), s) == nil)
+        #expect(Self.rowTarget(.group(.badge), s) == nil)
+        // The other layers are unaffected.
+        #expect(Self.rowTarget(.layer(.icon, .background), s) == .iconBackground)
+        #expect(Self.rowTarget(.layer(.badge, .foreground), s) == .badgeForeground)
+    }
+
+    @Test("A hidden badge refuses a drop on any of its rows")
+    func row_hiddenBadge_refuses() {
+        let s = IconSettings()  // the badge starts hidden
+        #expect(Self.rowTarget(.group(.badge), s) == nil)
+        #expect(Self.rowTarget(.layer(.badge, .foreground), s) == nil)
+        #expect(Self.rowTarget(.layer(.badge, .layout), s) == nil)
+    }
+
+    @Test("A System-mode icon refuses the drop, as its canvas does")
+    func row_systemIcon_refuses() {
+        var s = IconSettings()
+        s.icon.mode = .system
+        #expect(Self.rowTarget(.group(.icon), s) == nil)
+    }
+
+    @Test("A System-mode badge takes the drop onto its background, as the canvas does")
+    func row_systemBadge_isBackground() {
+        var s = Self.settingsWithBadge()
+        s.badge.foreground.source = .system
+        #expect(Self.target(Self.badgeCentre(s), s, advanced: true) == .badgeBackground)
+        #expect(Self.rowTarget(.group(.badge), s) == .badgeBackground)
+    }
+
+    // MARK: - The outline during a drag
+
+    @Test("A drag outlines the layer it would land on")
+    func outline_namesTheTargetLayer() {
+        let s = Self.settingsWithBadge()
+        #expect(PreviewDrop.outline(for: .iconForeground, settings: s, advancedControlsEnabled: true) == .iconForeground)
+        #expect(PreviewDrop.outline(for: .badgeBackground, settings: s, advancedControlsEnabled: true) == .badgeBackground)
+    }
+
+    @Test("In simple mode a drag outlines nothing")
+    func outline_simpleMode_isNil() {
+        let s = Self.settingsWithBadge()
+        #expect(PreviewDrop.outline(for: .iconBackground, settings: s, advancedControlsEnabled: false) == nil)
+    }
+
+    @Test("A drag over a System-mode badge outlines the badge as a whole")
+    func outline_systemBadge_isWholeBadge() {
+        var s = Self.settingsWithBadge()
+        s.badge.foreground.source = .system
+        #expect(PreviewDrop.outline(for: .badgeBackground, settings: s, advancedControlsEnabled: true) == .badge)
     }
 
     // MARK: - Applying
@@ -194,5 +361,20 @@ struct PreviewDropTests {
 
         #expect(!s.icon.foreground.isHidden)
         #expect(s.icon.background.cornerRadiusStyle != .off)
+    }
+
+    @Test("Routing to a foreground imports as that foreground and touches nothing else")
+    func apply_toForeground_setsForeground() throws {
+        var s = Self.settingsWithBadge()
+        let image = try ImportedImage.testFixture(sourceName: "Glyph.png")
+
+        PreviewDrop.apply(image, to: .badgeForeground, in: &s)
+
+        #expect(s.badge.foreground.source == .image)
+        #expect(s.badge.foreground.image?.sourceName == "Glyph.png")
+        // A foreground import makes none of a background import's guesses.
+        #expect(s.badge.background.source != .image)
+        #expect(!s.badge.foreground.isHidden)
+        #expect(s.icon.foreground.source != .image)
     }
 }

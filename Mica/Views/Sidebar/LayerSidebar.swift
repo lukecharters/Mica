@@ -36,11 +36,30 @@ struct LayerSidebar: View {
     /// restarts the outlines' fade. Resting on a row lets them fade; moving within it
     /// brings them back.
     var onPointer: ((PreviewPointer) -> Void)? = nil
+    /// Reports the layer a drag over a row would land on, so the canvas outlines
+    /// it at the hover weight — the same two-way link as `onPointer`, for a drag,
+    /// which the hover cannot see. nil when the drag leaves or lands.
+    var onDropTarget: ((PreviewHitTarget?) -> Void)? = nil
+
+    /// Where a failed drop goes. See `UserMessage`.
+    @Environment(\.reportUserMessage) private var reportUserMessage
 
     /// Read directly rather than passed in, the way every other reader of this key
     /// does. Nothing threads through `ContentView.body`, which sits at the
     /// type-checker's ceiling.
     @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
+
+    /// Whether the list has keyboard focus, which is what draws its selection in
+    /// the accent colour rather than the inactive grey.
+    ///
+    /// **A click on a row does not focus the list on its own.** Measured
+    /// 2026-10-11 over the accessibility API: after a row click, focus stayed on
+    /// the canvas (which is `.focusable()` for ⌘C, ⌘V and the arrow keys), or
+    /// fell to the window when the focused text field went away with its pane.
+    /// Only a click on the list's empty background focused it. Removing the
+    /// rows' hover, context-menu and drop modifiers changed nothing, so the row
+    /// click focuses the list itself — see `selectionBinding` and `focusesList`.
+    @FocusState private var listIsFocused: Bool
 
     var body: some View {
         List(selection: selectionBinding) {
@@ -54,6 +73,8 @@ struct LayerSidebar: View {
                     .tag(LayerSidebarRow.group(group))
                     .contextMenu { contextMenu(for: group) }
                     .reportsHover(.group(group), to: onPointer)
+                    .focusesList($listIsFocused)
+                    .onDrop(of: ImageImportService.allDropTypes, delegate: dropDelegate(for: .group(group)))
 
                     ForEach(rows(for: group)) { tab in
                         LayerRow(
@@ -71,11 +92,14 @@ struct LayerSidebar: View {
                                              bottom: Self.childVerticalInset, trailing: 0))
                         .contextMenu { contextMenu(for: group) }
                         .reportsHover(.layer(group, tab), to: onPointer)
+                        .focusesList($listIsFocused)
+                        .onDrop(of: ImageImportService.allDropTypes, delegate: dropDelegate(for: .layer(group, tab)))
                     }
                 }
             }
         }
         .listStyle(.sidebar)
+        .focused($listIsFocused)
     }
 
     /// Leading inset on a layer row.
@@ -110,6 +134,26 @@ struct LayerSidebar: View {
         IconContextMenuContent(
             settings: $iconSettings,
             items: IconContextMenu.sidebarItems(for: group, settings: iconSettings)
+        )
+    }
+
+    // MARK: - Drop
+
+    /// A row as a drop destination. The row names its layer, so the location
+    /// within it does not matter; `PreviewDrop.target(for:…)` decides which layer
+    /// that is and whether the row refuses the drop.
+    ///
+    /// A drop does not select the row, for the reason the canvas drop does not
+    /// select its layer: it is a content action, not navigation.
+    private func dropDelegate(for row: LayerSidebarRow) -> LayerDropDelegate {
+        LayerDropDelegate(
+            target: { _ in
+                PreviewDrop.target(for: row, settings: iconSettings, advancedControlsEnabled: advancedControlsEnabled)
+            },
+            onTarget: { onDropTarget?($0) },
+            perform: { providers, target in
+                PreviewDrop.accept(providers, onto: target, settings: $iconSettings, reporter: reportUserMessage)
+            }
         )
     }
 
@@ -235,6 +279,14 @@ struct LayerSidebar: View {
 // MARK: - Hover reporting
 
 private extension View {
+    /// Focuses the list when the row is clicked. Simultaneous, so the List's own
+    /// selection still handles the click; and on every click rather than in the
+    /// selection binding's setter, because re-clicking the row that is already
+    /// selected sets nothing, and it still needs to take focus back.
+    func focusesList(_ isFocused: FocusState<Bool>.Binding) -> some View {
+        simultaneousGesture(TapGesture().onEnded { isFocused.wrappedValue = true })
+    }
+
     /// Reports `row` while the pointer is over it, nil when it leaves.
     ///
     /// `.contentShape` first, and it is not optional: a row is an `HStack` with a

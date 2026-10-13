@@ -230,6 +230,10 @@ struct ContentView: View {
     /// Whether the pointer is over either canvas or a sidebar row. False is what
     /// makes the outlines fade at once instead of holding for 1.5s first.
     @State private var pointerIsInside: Bool = false
+    /// The layer a drag over the canvas or a sidebar row would land on, or nil when
+    /// no drag is over either. Outlined at the hover weight in place of the hover,
+    /// which goes quiet for the length of a drag session.
+    @State private var dropTarget: PreviewHitTarget? = nil
     /// The badge's way back out of System mode. Owned here rather than by whichever
     /// control switches the mode: this view is mounted for the window's whole life,
     /// so the remembered source cannot go stale.
@@ -287,7 +291,8 @@ struct ContentView: View {
                 selection: $selectedGroup,
                 iconTab: $iconTab,
                 badgeTab: $badgeTab,
-                onPointer: pointerChanged
+                onPointer: pointerChanged,
+                onDropTarget: dropTargetChanged
             )
             // **No `.reportsPaneWidth` here, and that is a finding rather than an
             // omission.** AppKit autosaves this split view's divider and restores
@@ -785,6 +790,33 @@ struct ContentView: View {
         previewSelection(for: hoveredRow)
     }
 
+    /// What the preview outlines at the selected weight: nothing while a drag is
+    /// over the canvas or a sidebar row, the selection otherwise.
+    ///
+    /// The selection says nothing about where a drop lands, so during a drag the
+    /// drop target's outline is drawn alone. That also keeps the drop target in
+    /// the hover colour when it is the selected layer, where `PreviewOutlines`
+    /// would otherwise draw the selected weight instead. The user's choice,
+    /// 2026-10-11; a plain hover keeps both outlines.
+    private var outlinedSelection: PreviewSelection? {
+        dropTarget == nil ? currentPreviewSelection : nil
+    }
+
+    /// What the preview outlines at the hover weight: the layer a drag would land
+    /// on while one is over the canvas or a sidebar row, the hover otherwise.
+    ///
+    /// The drag's answer bypasses the inspector gates `previewSelection(for:)`
+    /// applies — see `PreviewDrop.outline` — and is nil with the advanced controls
+    /// off, where a drop only ever reaches a background and nothing outlines.
+    private var outlinedHover: PreviewSelection? {
+        guard let dropTarget else { return hoveredPreviewSelection }
+        return PreviewDrop.outline(
+            for: dropTarget,
+            settings: viewModel.iconSettings,
+            advancedControlsEnabled: advancedControlsEnabled
+        )
+    }
+
     /// The one place a row becomes something to outline, which is why the selection
     /// and the hover both go through it: **every gate is applied once**, so the
     /// hover cannot outline something the selection could not.
@@ -848,6 +880,13 @@ struct ContentView: View {
         }
     }
 
+    /// A drag moved over, between or off the layers. Written only on a change, like
+    /// `hoveredRow`, so a drag travelling across one layer does not invalidate the
+    /// body on every update.
+    private func dropTargetChanged(_ target: PreviewHitTarget?) {
+        if dropTarget != target { dropTarget = target }
+    }
+
     /// Points the inspector at the layer the user clicked in the preview. The tab
     /// only moves for a group in Mica mode — a System group has no tabs, so
     /// selecting the group is the whole story there. Harmless with the advanced
@@ -902,10 +941,11 @@ struct ContentView: View {
                     previewPointSize: $previewPointSize,
                     onSelect: select,
                     onPointer: pointerChanged,
-                    selection: currentPreviewSelection,
-                    hovered: hoveredPreviewSelection,
-                    pointerIsInside: pointerIsInside,
+                    selection: outlinedSelection,
+                    hovered: outlinedHover,
+                    pointerIsInside: pointerIsInside || dropTarget != nil,
                     outlineWake: outlineWake,
+                    holdsOutlines: dropTarget != nil,
                     contextActions: previewContextActions
                 )
             }
@@ -1019,11 +1059,13 @@ struct ContentView: View {
                     badgeAppexError: viewModel.badgeAppexError,
                     onSelect: select,
                     onPointer: pointerChanged,
-                    selection: currentPreviewSelection,
-                    hovered: hoveredPreviewSelection,
-                    pointerIsInside: pointerIsInside,
+                    selection: outlinedSelection,
+                    hovered: outlinedHover,
+                    pointerIsInside: pointerIsInside || dropTarget != nil,
                     outlineWake: outlineWake,
-                    contextActions: previewContextActions
+                    contextActions: previewContextActions,
+                    onDropTarget: dropTargetChanged,
+                    holdsOutlines: dropTarget != nil
                 )
                 .frame(
                     minWidth: viewport.size.width,

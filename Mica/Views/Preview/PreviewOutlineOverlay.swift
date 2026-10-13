@@ -69,13 +69,20 @@ struct PreviewOutlineOverlay: View {
     @State private var isVisible = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// Restart key: a different selection, a different hover, any pointer motion, or
-    /// the pointer arriving or leaving.
+    /// Restart key: a different selection, a different hover, any pointer motion,
+    /// the pointer arriving or leaving, or the fade being switched back on.
+    ///
+    /// `autoFade` has to be here. A drag holds the outlines by switching it off,
+    /// and the task then shows them and returns without scheduling a fade. If
+    /// switching it back on when the drag lands did not restart the task, nothing
+    /// would ever hide them. Before 2026-10-11 the key left it out, and the
+    /// outlines stayed on screen after every drop.
     private struct FadeKey: Equatable {
         let selected: PreviewSelection?
         let hovered: PreviewSelection?
         let wake: Int
         let pointerIsInside: Bool
+        let autoFade: Bool
     }
 
     /// Resolved outlines paired with their shapes, in draw order — hovered first,
@@ -129,7 +136,8 @@ struct PreviewOutlineOverlay: View {
                 selected: selected,
                 hovered: hovered,
                 wake: wake,
-                pointerIsInside: pointerIsInside
+                pointerIsInside: pointerIsInside,
+                autoFade: autoFade
             )
         ) {
             guard autoFade else {

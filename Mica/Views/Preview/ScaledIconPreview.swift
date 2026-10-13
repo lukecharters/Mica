@@ -49,6 +49,13 @@ struct ScaledIconPreview: View {
     /// the export document and the pasteboard, which are view-model state this view
     /// never sees.
     var contextActions: PreviewContextActions = .unavailable
+    /// Reports the layer a drag is over, so the owner can outline it at the hover
+    /// weight — the hover itself goes quiet during a drag. nil when the drag leaves
+    /// or lands. See `LayerDropDelegate`.
+    var onDropTarget: ((PreviewHitTarget?) -> Void)? = nil
+    /// Holds the outlines at full strength instead of letting them fade, for as
+    /// long as a drag is over the canvas or a sidebar row.
+    var holdsOutlines: Bool = false
 
     /// So a badge drag is one undo step rather than one per frame.
     @Environment(\.continuousEdit) private var continuousEdit
@@ -56,6 +63,10 @@ struct ScaledIconPreview: View {
     /// because it is not this view's decision how a failure is shown — see
     /// `UserMessage`.
     @Environment(\.reportUserMessage) private var reportUserMessage
+    /// Decides whether a drop can land on a foreground — see `PreviewDrop.target`.
+    /// Read directly, like `LayerSidebar` does, rather than threaded through
+    /// `ContentView.body`.
+    @AppStorage(InspectorPreferences.advancedControlsKey) private var advancedControlsEnabled = false
 
     @State private var dragStart: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -125,7 +136,8 @@ struct ScaledIconPreview: View {
                 selected: selection,
                 hovered: hovered,
                 pointerIsInside: pointerIsInside,
-                wake: outlineWake
+                wake: outlineWake,
+                autoFade: !holdsOutlines
             )
 
             // Draggable badge overlay
@@ -186,16 +198,21 @@ struct ScaledIconPreview: View {
                 actions: contextActions
             )
         }
-        // Attached after `.frame`, so `location` arrives in the same `displaySize`
+        // Attached after `.frame`, so the location arrives in the same `displaySize`
         // square canvas coordinates the tap gesture above works in — which is what
         // `PreviewHitTester` expects. Verified on screen 2026-08-05 by dropping on
         // the badge and watching the badge change; a *global*-space location would
         // land off-canvas and route everything back to the icon, which is exactly
         // what not fixing B4 looks like. The types come from `ImageImportService`
         // rather than a list spelled here, so there is one place to widen.
-        .onDrop(of: ImageImportService.allDropTypes, isTargeted: $isDropTargeted) { providers, location in
-            handleDrop(providers: providers, at: location)
-        }
+        .onDrop(of: ImageImportService.allDropTypes, delegate: LayerDropDelegate(
+            target: { location in dropTarget(at: location) },
+            onTarget: { onDropTarget?($0) },
+            perform: { providers, target in
+                PreviewDrop.accept(providers, onto: target, settings: $settings, reporter: reportUserMessage)
+            },
+            isTargeted: $isDropTargeted
+        ))
         .onChange(of: settings.badge.offsetX) { _, newValue in
             // Only track external offset changes (sliders, reset). Re-seeding on the
             // drag's own writes compounds the offset: DragGesture.translation is
@@ -340,45 +357,14 @@ struct ScaledIconPreview: View {
 
     // MARK: - Drag and Drop
 
-    /// - Returns: whether the drop was *accepted* — whether anything here can
-    ///   read it. That is the only question `.onDrop` is asking, and it has to be
-    ///   answered now: the import is asynchronous, so success is not known yet.
-    ///   This used to `return true` unconditionally, telling the system a drop
-    ///   had landed even when nothing could read it, and then `print()`ing the
-    ///   failure where no user would see it. Now an unreadable drag is refused by
-    ///   the system's own snap-back, and one we can read but fail to import
-    ///   surfaces as an alert (B3).
-    private func handleDrop(providers: [NSItemProvider], at location: CGPoint) -> Bool {
-        guard let provider = providers.first(where: PreviewDrop.canRead) else { return false }
-
-        // Resolved now, from the geometry as it was when the drop landed — not
-        // inside the task below, which resumes after an arbitrary delay while a
-        // file promise is fulfilled and could route by a badge that has moved.
-        let target = PreviewDrop.target(at: location, settings: settings, displaySize: displaySize)
-        let itemCount = providers.count
-
-        Task { @MainActor in
-            do {
-                let imported = try await PreviewDrop.load(provider)
-                // Padding compensation on (fill the frame) and shadow off come from
-                // the background's own `apply`. The other two import defaults —
-                // foreground hidden, corner radius off — are preferences, hence
-                // `.fromPreferences()`.
-                //
-                // Deliberately does *not* call `onSelect`: that would point the
-                // inspector at the changed layer and force the panel open, and a
-                // drop is a content action rather than a navigation one. The
-                // artwork appearing is the feedback.
-                PreviewDrop.apply(imported, to: target, in: &settings, defaults: .fromPreferences())
-                if itemCount > 1 {
-                    reportUserMessage.report(
-                        .onlyFirstDroppedItemUsed(count: itemCount, name: imported.sourceName)
-                    )
-                }
-            } catch {
-                reportUserMessage.report(.imageImportFailed(error))
-            }
-        }
-        return true
+    /// The layer a drop at `location` lands on. Never nil: a miss is the icon
+    /// background, so the canvas accepts a drop anywhere on it.
+    private func dropTarget(at location: CGPoint) -> PreviewHitTarget? {
+        PreviewDrop.target(
+            at: location,
+            settings: settings,
+            displaySize: displaySize,
+            advancedControlsEnabled: advancedControlsEnabled
+        )
     }
 }
