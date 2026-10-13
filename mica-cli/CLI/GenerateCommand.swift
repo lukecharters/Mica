@@ -988,7 +988,7 @@ struct GenerateCommand: AsyncParsableCommand {
     @Option(
         name: .customLong("icon-preset"),
         help: ArgumentHelp(
-            "Apply a named icon preset before other flags",
+            "Apply an icon preset, by name or slug, before other flags",
             valueName: "name"
         )
     )
@@ -997,7 +997,7 @@ struct GenerateCommand: AsyncParsableCommand {
     @Option(
         name: .customLong("badge-preset"),
         help: ArgumentHelp(
-            "Apply a named badge preset before other flags",
+            "Apply a badge preset, by name or slug, before other flags",
             valueName: "name"
         )
     )

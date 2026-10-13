@@ -23,14 +23,15 @@ mica-cli --icon-symbol star.fill --output icon.png
 
 | Flag | Details |
 |---|---|
-| `--icon-preset NAME` | Applies a named icon preset. |
-| `--badge-preset NAME` | Applies a named badge preset. |
+| `--icon-preset NAME` | Applies an icon preset, by name or slug. |
+| `--badge-preset NAME` | Applies a badge preset, by name or slug. |
 
 Presets apply before every other flag, so a flag overrides the preset.
 Names are not case sensitive.
+A slug is the name in lowercase with hyphens for spaces, so `software-update` works without quotes.
 
 Mica reads the built-in presets and any you saved in the app.
-An unknown name stops the command and lists the names that exist.
+An unknown name stops the command and lists the slugs that exist.
 
 Neither flag is a configuration key.
 A configuration file holds the preset's values instead of its name.

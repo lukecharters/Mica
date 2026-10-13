@@ -36,6 +36,9 @@ struct PresetsWindow: View {
     /// the shape of the window, like the inspector's thirteen.
     @AppStorage("presetsWindow.builtIn.expanded") private var builtInExpanded = true
     @AppStorage("presetsWindow.saved.expanded") private var savedExpanded = true
+    /// Whether each tile shows the slug `mica-cli` accepts under the name. The window's
+    /// only, and off by default: it is for someone moving between the app and a script.
+    @AppStorage("presetsWindow.showsSlugs") private var showsSlugs = false
 
     private var isSearching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -63,6 +66,9 @@ struct PresetsWindow: View {
             }
             .searchable(text: $query, prompt: "Search Presets")
             .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    slugToggle
+                }
                 ToolbarItem(placement: .primaryAction) {
                     saveButton
                 }
@@ -162,7 +168,7 @@ struct PresetsWindow: View {
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 4)
                 } else {
-                    PresetGrid(rows: rows, onApply: apply, onDelete: deletePreset)
+                    PresetGrid(rows: rows, showsSlugs: showsSlugs, onApply: apply, onDelete: deletePreset)
                         // Dimmed, not disabled: the context menu's Delete has to keep
                         // working with no icon window, and `.disabled` would take it.
                         .opacity(target.handle == nil ? 0.5 : 1)
@@ -188,6 +194,15 @@ struct PresetsWindow: View {
         .help(handle == nil
               ? "Open an icon window to save a preset"
               : PresetSaveButton.helpText(for: scope, canSave: canSave))
+    }
+
+    private var slugToggle: some View {
+        Toggle(isOn: $showsSlugs) {
+            Label("Show Slugs", systemImage: "terminal")
+        }
+        .help(showsSlugs
+              ? "Hide the name each preset takes in mica-cli"
+              : "Show the name each preset takes in mica-cli")
     }
 
     // MARK: - Actions

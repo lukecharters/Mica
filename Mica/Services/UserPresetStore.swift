@@ -196,19 +196,7 @@ enum UserPresetStore {
     /// slugify alike would collide on disk. `uniqueName(_:in:existing:)` prevents
     /// that by uniquing on the slug as well as the name.
     static func fileURL(for preset: MicaPreset, in directory: URL = directoryURL) -> URL {
-        directory.appendingPathComponent("\(preset.scope.rawValue)-\(slug(preset.name)).json")
-    }
-
-    static func slug(_ name: String) -> String {
-        let allowed = name.lowercased().map { character -> Character in
-            character.isLetter || character.isNumber ? character : "-"
-        }
-        // Collapse runs and trim, so "Restart  Required!" is `restart-required`
-        // rather than `restart--required-`.
-        let collapsed = String(allowed)
-            .split(separator: "-", omittingEmptySubsequences: true)
-            .joined(separator: "-")
-        return collapsed.isEmpty ? "preset" : collapsed
+        directory.appendingPathComponent("\(preset.scope.rawValue)-\(preset.slug).json")
     }
 
     /// Write a preset, creating the directory if needed. Overwrites a file with the
@@ -267,9 +255,9 @@ enum UserPresetStore {
         let base = trimmed.isEmpty ? "Preset" : trimmed
         let inScope = existing.filter { $0.scope == scope }
         let takenNames = Set(inScope.map { $0.name.lowercased() })
-        let takenSlugs = Set(inScope.map { slug($0.name) })
+        let takenSlugs = Set(inScope.map(\.slug))
         func isTaken(_ candidate: String) -> Bool {
-            takenNames.contains(candidate.lowercased()) || takenSlugs.contains(slug(candidate))
+            takenNames.contains(candidate.lowercased()) || takenSlugs.contains(MicaPreset.slug(candidate))
         }
         guard isTaken(base) else { return base }
 

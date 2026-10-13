@@ -1416,6 +1416,9 @@
     "Hide the Foreground on Import" : {
 
     },
+    "Hide the name each preset takes in mica-cli" : {
+
+    },
     "Hide these presets" : {
 
     },
@@ -1954,10 +1957,16 @@
     "Show Sidebar" : {
 
     },
+    "Show Slugs" : {
+
+    },
     "Show the %@" : {
 
     },
     "Show the Developer Menu" : {
+
+    },
+    "Show the name each preset takes in mica-cli" : {
 
     },
     "Show these presets" : {
@@ -1974,6 +1983,9 @@
 
     },
     "Skip + advance" : {
+
+    },
+    "slug %@" : {
 
     },
     "Some Presets Couldn’t Be Read" : {

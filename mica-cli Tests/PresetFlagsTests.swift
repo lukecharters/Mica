@@ -92,6 +92,25 @@ struct PresetFlagsTests {
         #expect(exact.isBuiltIn)
     }
 
+    @Test("Every built-in resolves by its slug")
+    func resolvesBySlug() throws {
+        // Every one, not a sample: a slug that collided with another preset's name or
+        // slug would resolve to the wrong preset, and only the full set shows that.
+        for scope in PresetScope.allCases {
+            for preset in PresetCatalog.builtIn(scope) {
+                let resolved = try GenerationContext.resolvePreset(named: preset.slug, scope: scope)
+                #expect(resolved == preset, "\(preset.slug) resolved to \(resolved.name)")
+            }
+        }
+    }
+
+    @Test("A slug is matched case-insensitively, like a name")
+    func slugIgnoresCase() throws {
+        let preset = try anyPreset(.badge)
+        let resolved = try GenerationContext.resolvePreset(named: preset.slug.uppercased(), scope: .badge)
+        #expect(resolved == preset)
+    }
+
     @Test("An unknown preset is fatal, and the error lists what is available")
     func unknownPresetIsFatal() throws {
         // Fatal rather than ignored, on the same terms as an unknown `--config` path:
@@ -101,7 +120,8 @@ struct PresetFlagsTests {
         #expect(throws: (any Error).self) {
             _ = try GenerationContext.resolvePreset(named: "nosuch", scope: .icon)
         }
-        let available = try anyIcon()
+        // Listed as slugs, the form that needs no quoting.
+        let available = try anyPreset(.icon).slug
         do {
             _ = try GenerationContext.resolvePreset(named: "nosuch", scope: .icon)
         } catch {

@@ -136,23 +136,26 @@ struct GenerationContext {
         )
     }
 
-    /// Find a preset by name within its scope: built-ins first, then the user's.
+    /// Find a preset by name or slug within its scope: built-ins first, then the user's.
     ///
-    /// Matched case-insensitively, because a preset name is a display name rather
-    /// than an identifier and `--icon-preset installer` is what anyone would type.
-    /// A built-in wins a tie, which is the same rule the pane's name-uniquing
-    /// enforces on the way in — so the tie should not arise.
+    /// The name is matched case-insensitively, because a preset name is a display name
+    /// rather than an identifier and `--icon-preset installer` is what anyone would
+    /// type. The slug is the same name with no quoting needed — `software-update` for
+    /// "Software Update" — and is what the Presets window shows. A built-in wins a tie,
+    /// which is the same rule the pane's name-uniquing enforces on the way in, on
+    /// slugs as well as names — so the tie should not arise.
     ///
-    /// The error lists what *is* available. A bare "unknown preset" leaves the user
-    /// with no way to find out but to read the source, since presets are the one part
-    /// of the CLI's vocabulary that is not in `--help`.
+    /// The error lists what *is* available, as slugs. A bare "unknown preset" leaves
+    /// the user with no way to find out but to read the source, since presets are the
+    /// one part of the CLI's vocabulary that is not in `--help`.
     static func resolvePreset(named name: String, scope: PresetScope) throws -> MicaPreset {
         let available = PresetCatalog.builtIn(scope) + UserPresetStore.load(scope)
-        if let match = available.first(where: { $0.name.lowercased() == name.lowercased() }) {
+        let wanted = name.lowercased()
+        if let match = available.first(where: { $0.name.lowercased() == wanted || $0.slug == wanted }) {
             return match
         }
         let flag = scope == .icon ? "--icon-preset" : "--badge-preset"
-        let names = available.map(\.name).joined(separator: ", ")
+        let names = available.map(\.slug).joined(separator: ", ")
         throw CLIError.configurationError(
             "\(flag): no \(scope.rawValue) preset named \"\(name)\". Available: \(names)"
         )

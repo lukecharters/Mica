@@ -39,6 +39,7 @@ Type in the search field to filter by name.
 Each kind has two sections: **Built-in** and **Yours**.
 Click a section heading to fold that section away.
 Mica remembers which sections you folded.
+Click **Show Slugs** in the toolbar to show each preset's command-line slug under its name.
 
 A preset applies to the icon window you used last.
 The Presets window can stay open while you work in that window.
@@ -108,6 +109,11 @@ That command uses the Settings preset's colours with a different symbol.
 
 `mica-cli` reads the presets you saved in the app.
 Names are not case sensitive.
+
+Each preset also has a slug, the name in lowercase with hyphens for spaces.
+A slug needs no quotes: `--icon-preset software-update`.
+To see them, click **Show Slugs** in the Presets window's toolbar.
+To copy one, Control-click a preset and choose **Copy Slug**.
 
 A badge preset does not supply an icon symbol.
 Give one with `--icon-symbol`.
