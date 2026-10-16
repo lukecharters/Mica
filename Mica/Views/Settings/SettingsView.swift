@@ -81,16 +81,14 @@ struct GeneralSettingsTab: View {
                     Text("Show Advanced Controls")
                     // A caption inside the Toggle's label rather than a sibling
                     // `Text`, so VoiceOver reads it as part of the switch.
-                    Text("Shows a Foreground and a Background layer for each group. "
-                         + "Each layer gets its own controls. Off shows one pane per group.")
+                    Text("Shows separate Foreground and Background layers for each group.")
                 }
             } header: {
                 Text("Inspector")
             } footer: {
                 // `revealAdvancedControlsIfNeeded()` flips this out from under the
                 // user. Unexplained, that reads as a bug in this window.
-                Text("Importing an image switches this on. The simple pane has no "
-                     + "controls for imported artwork.")
+                Text("Importing an image turns this on. Imported artwork needs these controls.")
                     .settingsFooter()
             }
         }
@@ -128,7 +126,7 @@ struct ExportDefaultsSettingsTab: View {
 
     var body: some View {
         Form {
-            // "New Icons" carries the word "default" once, so the rows below can be
+            // The header carries the word "default" once, so the rows below can be
             // spelled exactly as the inspector spells them.
             Section {
                 Picker("Size", selection: defaultExportSize) {
@@ -149,12 +147,12 @@ struct ExportDefaultsSettingsTab: View {
                 Text(colorSpaceDescription)
                     .settingsFooter()
             } header: {
-                Text("New Icons")
+                Text("Defaults for New Windows")
             } footer: {
                 // The load-bearing line. Mica keeps nothing between launches, so a
                 // repeat user's first question is whether this touched the icon they
                 // are looking at. It didn't.
-                Text("New windows start here. Windows already open keep their own settings.")
+                Text("Windows already open keep their own settings.")
                     .settingsFooter()
             }
         }
@@ -196,35 +194,26 @@ struct ImportSettingsTab: View {
         Form {
             Section {
                 Toggle(isOn: $hidesForeground) {
-                    Text("Hide the Foreground on Import")
-                    Text("Hides the symbol when you import a background image. A "
-                         + "background image is usually a finished icon. Turn this off "
-                         + "to put a symbol on your own artwork.")
+                    Text("Hide Foreground")
+                    Text("An imported background is usually a finished icon. Turn this off to add a symbol to your own artwork.")
                 }
 
                 // Names the control it moves — the Corners picker, its Off case — so
                 // the user can go and undo it.
                 Toggle(isOn: $turnsOffCornerRadius) {
-                    Text("Set Corners to Off on Import")
-                    Text("Turns corner rounding off for imported artwork. Rounding cuts "
-                         + "the corners from artwork that fills its own bounds. Turn "
-                         + "this off to clip a photo or texture to the icon's shape.")
+                    Text("Turn Off Corners")
+                    Text("Keeps rounded corners from clipping the artwork. Turn this off to round a photo or texture to the icon's shape.")
                 }
             } header: {
-                Text("Imported Backgrounds")
+                Text("When Importing a Background")
             } footer: {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("You can change both on the icon itself. The sidebar eye shows "
-                         + "a hidden foreground again. Corners sits in the icon's "
-                         + "Background tab.")
+                    Text("To undo either one, click the eye in the sidebar or change Corners on the icon's Background layer.")
 
                     // The honest version of `ImportDefaults` being split across
                     // targets. Without it, someone who turns both off and then runs
                     // the CLI gets a different icon with no way to know why.
-                    Text("These settings apply to Mica only. mica-cli always hides the "
-                         + "foreground and sets Corners to Off. Imported configurations "
-                         + "do the same. One configuration then renders the same way "
-                         + "everywhere.")
+                    Text("mica-cli and imported configurations ignore these settings. They always hide the foreground and turn off corners.")
                 }
                 .settingsFooter()
             }
@@ -255,24 +244,18 @@ struct DeveloperSettingsTab: View {
         Form {
             Section {
                 Toggle(isOn: $developerToolsEnabled) {
-                    Text("Show the Developer Menu")
-                    Text("Adds a Developer menu to the menu bar. It holds the symbol "
-                         + "calibration and reference comparison tools. None "
-                         + "of its items has a keyboard shortcut.")
+                    Text("Show Developer Menu")
+                    Text("Adds the symbol calibration and reference comparison tools to the menu bar.")
                 }
             } header: {
                 Text("Developer Tools")
             } footer: {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("You do not need these tools to make icons. They are not "
-                         + "supported. Symbol Calibration changes how Mica sizes "
-                         + "symbols in every icon you make. Mica only reads that "
-                         + "change while this setting is on.")
+                    Text("These tools are unsupported and not needed to make icons.")
 
-                    Text("Mica reads symbol sizing once when it starts. Quit and "
-                         + "reopen Mica to apply a change to this setting. Click "
-                         + "Restore Bundled Calibration in that window to undo a "
-                         + "calibration.")
+                    Text("Symbol Calibration can change how symbols are sized in every icon. That change applies only while this setting is on. Quit and reopen Mica after you change this setting.")
+
+                    Text("To undo a calibration, click Restore Bundled Calibration in Symbol Calibration.")
                 }
                 .settingsFooter()
             }
