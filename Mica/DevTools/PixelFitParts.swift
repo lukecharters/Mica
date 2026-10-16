@@ -5,7 +5,7 @@
 // weight for smearing over them. Weight grows a stroke about its centre and leaves the
 // centre put, so a part whose centre moves is misplaced, and the refit scores it after
 // moving Mica's part onto Apple's centre: its size and stroke count, its position does not.
-// Measured in experiments/vision-calibration (`vcal pieces`).
+// Measured in docs/research/vision-model-symbol-calibration-2026-10.md.
 
 import Accelerate
 import Foundation

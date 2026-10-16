@@ -2,7 +2,7 @@
 //
 // Compares the glyph alone: Mica's exact alpha against a coverage estimate read out of
 // the appex reference, scored by soft IoU, and coordinate-descends multiplier and
-// offsets at each offered weight. Measured in experiments/vision-calibration: fits
+// offsets at each offered weight. Measured in docs/research/vision-model-symbol-calibration-2026-10.md: fits
 // recover known values to ~0.0001 in multiplier and ~0.3 px in offset, and Apple's
 // renders in different colours agree to ~0.001.
 
