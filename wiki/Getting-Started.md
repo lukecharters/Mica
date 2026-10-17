@@ -4,11 +4,15 @@ This tutorial installs Mica and creates three useful PNG files.
 
 ## 1. Install Mica
 
-Download the latest `.pkg` from the [Releases page](https://github.com/lukecharters/Mica/releases).
+Download `Mica.pkg` from the latest release on the [Releases page](https://github.com/lukecharters/Mica/releases).
 Open the package and complete the installer.
 
 The package installs Mica in `/Applications`.
 It also adds `mica-cli` to your command path.
+
+The release also has `Mica.dmg`.
+It installs the app only.
+To add `mica-cli` to your command path after a `.dmg` install, see the [README](https://github.com/lukecharters/Mica#download).
 
 Open Terminal and check the command.
 
