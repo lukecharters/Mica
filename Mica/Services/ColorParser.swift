@@ -766,7 +766,7 @@ enum ColorParseError: LocalizedError {
         case .unknownSystemColor(let color):
             return "Unknown system color: '\(color)'. Try: blue, red, primary, etc."
         case .unsupportedCSSFormat(let format):
-            return "Unsupported CSS color format: '\(format)'. Supported: rgb(), rgba(), hsl(), hsla()"
+            return "Unsupported CSS color format: '\(format)'. Supported: rgb(), hsl()"
         }
     }
 }
