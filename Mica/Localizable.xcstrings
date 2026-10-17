@@ -2192,7 +2192,7 @@
     "The symbol’s size within the icon. Mica picks a per-symbol default from its calibration data; this scales that." : {
 
     },
-    "The whole badge, relative to the size macOS itself draws one. Past about 109% it starts moving inward to stay on the canvas." : {
+    "The whole badge, relative to the size macOS itself draws one. Past about 110% it starts moving inward to stay on the canvas." : {
 
     },
     "There’s already a preset called “%@”. This one will be saved as “%@”." : {
