@@ -1375,32 +1375,31 @@ struct GenerateCommand: AsyncParsableCommand {
     }
 
     private func validateBadgeDependencies(in context: GenerationContext) throws {
-        // Resolves and surfaces any empty-symbol error; nil → badge inactive.
-        guard let badgeForeground = try resolvedBadgeForeground() else {
-            // A configuration's badge still takes flags, so its dependencies are
-            // checked too — minus the foreground ones, which it already satisfies.
-            if context.base?.badge.isVisible == true {
-                try validateBadgeBackgroundDependencies(in: context)
+        // The foreground checks apply only to a foreground named on the command
+        // line. Resolving also surfaces any empty-symbol error.
+        if let badgeForeground = try resolvedBadgeForeground() {
+            if case .symbol(let name) = badgeForeground {
+                guard name.allSatisfy({ $0.isLetter || $0.isNumber || ".-_".contains($0) }) else {
+                    throw ValidationError("Badge symbol name contains invalid characters. Use only letters, numbers, dots, dashes, and underscores.")
+                }
             }
-            return
-        }
 
-        if case .symbol(let name) = badgeForeground {
-            guard name.allSatisfy({ $0.isLetter || $0.isNumber || ".-_".contains($0) }) else {
-                throw ValidationError("Badge symbol name contains invalid characters. Use only letters, numbers, dots, dashes, and underscores.")
+            // System badge mode renders via the appex pipeline, which needs an SF Symbol.
+            if context.effectiveBadgeMode(generation.badgeGenerationMode) == .system, case .image = badgeForeground {
+                throw ValidationError("--badge-generation-mode system requires an SF Symbol badge foreground (--badge-fg symbol:NAME); image foregrounds are only supported in mica mode.")
             }
         }
 
-        // System badge mode renders via the appex pipeline, which needs an SF Symbol.
-        if context.effectiveBadgeMode(generation.badgeGenerationMode) == .system, case .image = badgeForeground {
-            throw ValidationError("--badge-generation-mode system requires an SF Symbol badge foreground (--badge-fg symbol:NAME); image foregrounds are only supported in mica mode.")
+        // The rest hold whenever the badge renders, which a foreground flag is only
+        // one way to ask for: `--badge-bg` or `--badge-visibility on` activates it
+        // alone, and a configuration can supply it. Gating these on the foreground
+        // let `--badge-bg custom-gradient` render white-to-indigo unchecked.
+        if badgeIsActive(in: context) {
+            try validateBadgeBackgroundDependencies(in: context)
         }
-
-        try validateBadgeBackgroundDependencies(in: context)
     }
 
-    /// The badge dependencies that hold whether the badge came from `--badge-fg`
-    /// or from a configuration.
+    /// The badge dependencies that hold however the badge was activated.
     private func validateBadgeBackgroundDependencies(in context: GenerationContext) throws {
         // As with the icon: a configuration already carries a gradient pair.
         if context.base == nil, case .customGradient = resolvedBadgeBackground(), badge.backgroundGradientColors.isEmpty {
