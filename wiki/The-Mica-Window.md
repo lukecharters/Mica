@@ -157,6 +157,31 @@ The Save panel opens with the size and colour space at the bottom.
 Change them there to export one file at different settings.
 The window's own settings do not change.
 
+## Presets window
+The Presets window shows every preset and has a search field.
+
+| Way to open it | Where |
+|---|---|
+| **Show All Presets…** | The button at the bottom of either presets popover |
+| **View ▸ Show Presets** | The menu bar. Or press **⌃⌘P**. |
+| **Window ▸ Presets** | The menu bar |
+
+| Control | Purpose |
+|---|---|
+| **Icon** and **Badge** | Choose the kind of preset to show. |
+| Search Presets | Filters the presets by name. |
+| **Built-in** and **Saved** | Section headings. Click one to fold that section away. Mica remembers your choice. |
+| **Show Slugs** | Shows each preset's command-line slug under its name. |
+| **+** | Saves the current icon or badge as a preset of the kind shown. |
+
+A preset applies to the icon window you used last.
+The Presets window can stay open while you work in that window.
+With no icon window open, a notice appears and the presets dim.
+You can still browse and delete presets.
+
+Right-click a preset and choose **Copy Slug** to copy its slug.
+This also works in the popovers.
+
 ## Help menu
 | Menu item | Opens |
 |---|---|
