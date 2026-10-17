@@ -106,8 +106,11 @@ struct ExtractCommand: ParsableCommand {
         }
         let isDirectory = isDirectoryRef.boolValue
 
-        let inputURL = URL(fileURLWithPath: resolvedInputPath)
-        let isPackage = (try? inputURL.resourceValues(forKeys: [.isPackageKey]))?.isPackage ?? false
+        // Read the package flag from the symlink's target. On macOS 27,
+        // /Applications/Safari.app is a symlink into the Cryptex, and the link
+        // itself is not a package. Messages keep the path the user typed.
+        let targetURL = URL(fileURLWithPath: resolvedInputPath).resolvingSymlinksInPath()
+        let isPackage = (try? targetURL.resourceValues(forKeys: [.isPackageKey]))?.isPackage ?? false
 
         let outputDirectory = try OutputResolver.resolveOutputDirectory(outputPath)
 
@@ -117,16 +120,21 @@ struct ExtractCommand: ParsableCommand {
             }
             return try exportDirectory(at: resolvedInputPath, to: outputDirectory, reporter: reporter)
         } else {
-            return try exportSingleItem(at: resolvedInputPath, to: outputDirectory, reporter: reporter)
+            return try exportSingleItem(
+                at: resolvedInputPath, iconSource: targetURL.path, to: outputDirectory, reporter: reporter)
         }
     }
 
-    private func exportSingleItem(at path: String, to outputDirectory: URL, reporter: OutputReporter) throws -> [OutputFileJSON] {
+    /// `path` is what the user typed: it names the output file and is the
+    /// reported source. `iconSource` is that path with symlinks resolved.
+    private func exportSingleItem(
+        at path: String, iconSource: String, to outputDirectory: URL, reporter: OutputReporter
+    ) throws -> [OutputFileJSON] {
         let filename = OutputResolver.suggestedIconFilename(forItemAt: path, size: size, scaleFactor: scale.factor)
         let destination = outputDirectory.appendingPathComponent(filename)
         try refuseExistingDestinations([destination])
         try IconExtractor.saveIcon(
-            forBundleAt: path,
+            forBundleAt: iconSource,
             size: size,
             scaleFactor: scale.factor,
             colorSpace: colorSpace,

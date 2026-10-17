@@ -240,6 +240,30 @@ import ArgumentParser
         #expect(replaced.map(\.path) == written.map(\.path))
     }
 
+    /// On macOS 27, /Applications/Safari.app is a symlink into the Cryptex.
+    /// The link itself is not a package, so the check must read its target.
+    @Test func extractsAnAppThroughASymbolicLink() throws {
+        let fm = FileManager.default
+        let root = URL.temporaryDirectory.appending(path: "mica-extract-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let app = root.appending(path: "real/Tool.app")
+        try fm.createDirectory(at: app.appending(path: "Contents"), withIntermediateDirectories: true)
+        let plist: [String: Any] = ["CFBundleIdentifier": "com.example.tool", "CFBundlePackageType": "APPL"]
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            .write(to: app.appending(path: "Contents/Info.plist"))
+        let link = root.appending(path: "links/Tool.app")
+        try fm.createDirectory(at: link.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fm.createSymbolicLink(at: link, withDestinationURL: app)
+
+        let output = root.appending(path: "out")
+        let command = try ExtractCommand.parse([link.path, "-o", output.path, "--size", "64", "-q"])
+        let written = try command.runExtraction(reporter: command.output.reporter)
+
+        #expect(written.map(\.path) == [output.appending(path: "Tool-64.png").path])
+        #expect(written.first?.source == link.path)
+        #expect(fm.fileExists(atPath: output.appending(path: "Tool-64.png").path))
+    }
+
     // MARK: - What a recursive run touches
 
     @Test func recursiveSkipsHiddenItemsAndSymbolicLinks() throws {
