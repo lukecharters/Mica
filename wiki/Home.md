@@ -15,6 +15,7 @@ The app and command line tool produce identical output from the same settings.
 - [Bulk Generate Icons](Bulk-Generate-Icons)
 - [Extract App Icons](Extract-App-Icons)
 - [Reuse Settings With Config Files](Reuse-Settings-With-Config-Files)
+- [Submit An MDM Icon Size](Submit-An-MDM-Icon-Size)
 
 ## Reference
 - [Settings Index](Settings-Index)
