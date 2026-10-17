@@ -45,16 +45,17 @@ cat > base-icon.json <<'JSON'
 }
 JSON
 
-mkdir -p icons
+mkdir -p base-icons
 for item in "security:lock.shield.fill" "repair:wrench.fill"; do
   name="${item%%:*}"
   symbol="${item#*:}"
   mica-cli --config base-icon.json --icon-symbol "$symbol" \
-    --output "icons/$name.png" --json |
+    --output "base-icons/$name.png" --json |
     plutil -extract outputs.0.path raw -o - -
 done
 ```
-**Result:** `plutil` prints each saved path.
+**Result:** `plutil` prints each saved path in the `base-icons` folder.
+
 ## Change the result
 
 - [Configuration File Reference](Configuration-File-Reference) documents the base file.
