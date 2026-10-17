@@ -231,8 +231,10 @@ setup_run() {
 make_artwork() {
     echo "==> Generating source artwork"
     local raw="${WORK_DIR}/artwork-raw.png"
-    ARTWORK="${IMAGES_DIR}/artwork-source.png"
-    LOGO="${IMAGES_DIR}/artwork-logo.png"
+    # Inputs only. No page shows them, so they stay in the work directory and
+    # out of wiki/images/, where check-wiki-coverage.sh would call them unused.
+    ARTWORK="${WORK_DIR}/artwork.png"
+    LOGO="${WORK_DIR}/logo.png"
 
     "${CLI_BINARY}" --icon-symbol swift --size 512 \
         --icon-bg custom-gradient --icon-bg-gradient-colors '#F05138,#FFB800' \
@@ -246,14 +248,6 @@ make_artwork() {
         --icon-bg-visibility off --icon-symbol-color '#F05138' --icon-fg-scale 1.4 \
         -o "${LOGO}" -q >/dev/null 2>&1 \
         || die "could not render the logo source."
-
-    # Both are shown on Use-Your-Own-Artwork, so they are records too.
-    printf 'artwork\tsource\t%s\t%s\n' "${ARTWORK}" \
-        "mica-cli --icon-symbol swift --icon-bg custom-gradient --icon-bg-gradient-colors '#F05138,#FFB800' --icon-bg-corner-radius off --icon-fg-scale 1.2 --size 512  (then cropped to 400x400)" \
-        >> "${RECORDS}"
-    printf 'artwork\tlogo\t%s\t%s\n' "${LOGO}" \
-        "mica-cli --icon-symbol swift --icon-bg-visibility off --icon-symbol-color '#F05138' --icon-fg-scale 1.4 --size 512" \
-        >> "${RECORDS}"
 }
 
 # emit <group> <slug> <args...>
@@ -667,8 +661,7 @@ write_manifest() {
         echo "produced its image. Copy it from the table below rather than writing"
         echo "one, so the page and the picture cannot disagree."
         echo ""
-        echo "\`artwork.png\` in a command is \`artwork-source.png\` here, and"
-        echo "\`logo.png\` is \`artwork-logo.png\`. Both are generated too."
+        echo "\`artwork.png\` and \`logo.png\` in a command are your own image files."
         echo ""
         echo "| Image | Group | Value | Command |"
         echo "|---|---|---|---|"
