@@ -276,6 +276,9 @@ NEGATIVE_CASES=(
     "icon-fg-offset-out-of-range|must be between -0.5 and 0.5|star.fill|--icon-fg-offset-x|0.6"
     "badge-fg-offset-out-of-range|must be between -0.5 and 0.5|star.fill|--badge-fg|symbol:plus.circle|--badge-fg-offset-y|0.6"
     "badge-bg-custom-gradient-missing-colors|--badge-bg custom-gradient requires|star.fill|--badge-fg|symbol:plus.circle|--badge-bg|custom-gradient"
+    # --badge-bg activates the badge on its own, so the same rule holds with no
+    # badge foreground. This rendered white-to-indigo with exit 0 until 2026-10-17.
+    "badge-bg-custom-gradient-missing-colors-no-fg|--badge-bg custom-gradient requires|star.fill|--badge-bg|custom-gradient"
     "badge-generation-system-image-fg|image foregrounds are only supported in mica mode|star.fill|--badge-fg|\$SYMBOL_FIXTURE|--badge-generation-mode|system"
     # Phase 4 / decision D2: System mode refuses what it cannot show rather than
     # rendering something else. The alpha one is not obvious — the OS discards an

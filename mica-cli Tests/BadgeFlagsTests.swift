@@ -5,6 +5,7 @@
 
 import Testing
 import Foundation
+import ArgumentParser
 
 @Suite
 @MainActor
@@ -210,6 +211,36 @@ struct BadgeFlagsTests {
         #expect(throws: (any Error).self) {
             try parseCommand(["--icon-symbol", "star.fill", "--badge-fg", "symbol:plus", "--badge-bg", "custom-gradient"]).performValidationForTesting()
         }
+    }
+
+    // A background flag activates the badge on its own, so the dependency checks
+    // have to run without a foreground too — otherwise the first command rendered
+    // a white-to-indigo badge with exit 0 while the second refused it.
+    @Test("--badge-bg custom-gradient needs its colors with or without a badge foreground", arguments: [
+        ["--icon-symbol", "star.fill", "--badge-bg", "custom-gradient"],
+        ["--icon-symbol", "star.fill", "--badge-symbol", "lock.fill", "--badge-bg", "custom-gradient"],
+        ["--icon-symbol", "star.fill", "--badge-visibility", "on", "--badge-bg", "custom-gradient"],
+    ])
+    func customGradientRequiresColorsWithoutForeground(arguments: [String]) {
+        let error = #expect(throws: ValidationError.self) {
+            try parseCommand(arguments).performValidationForTesting()
+        }
+        #expect(error?.description.contains("--badge-bg custom-gradient requires --badge-bg-gradient-colors") == true)
+    }
+
+    @Test("--badge-bg custom-gradient with its colors and no badge foreground is accepted")
+    func customGradientWithColorsWithoutForegroundIsAccepted() throws {
+        try parseCommand(["--icon-symbol", "star.fill", "--badge-bg", "custom-gradient", "--badge-bg-gradient-colors", "red,blue"])
+            .performValidationForTesting()
+    }
+
+    @Test("A badge palette count is checked when --badge-visibility on activates the badge")
+    func paletteCountValidationWithoutForeground() {
+        let error = #expect(throws: ValidationError.self) {
+            try parseCommand(["--icon-symbol", "star.fill", "--badge-visibility", "on", "--badge-symbol-rendering", "palette", "--badge-symbol-palette", "red,green"])
+                .performValidationForTesting()
+        }
+        #expect(error?.description.contains("requires exactly three colors") == true)
     }
 
     @Test("A badge palette without exactly three colors is rejected")
