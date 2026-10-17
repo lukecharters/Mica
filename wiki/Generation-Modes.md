@@ -10,7 +10,7 @@ The icon and badge choose their modes separately.
 
 | | Mica mode | System mode |
 |---|---|---|
-| Minimum macOS | macOS 15 | macOS 26 |
+| The Mac that runs Mica needs | macOS 15 or later | macOS 26 or later |
 | Main use | Full control | Current macOS system style |
 | Foreground | SF Symbol or image | SF Symbol |
 | Background | Colour, gradient, or image | System colour |
@@ -51,13 +51,14 @@ The command line accepts some shared flags but they do not change that System re
 Choose Mica mode when you need control over the design.
 It supports imported artwork, custom gradients, shadows, corners, and symbol styles.
 
-Choose it when any fleet Mac runs macOS 15 through macOS 25.
+Choose it when the Mac that runs Mica has macOS 15.
 Mica mode is the default.
 
 ## Choose System mode
 
 Choose System mode when you want the icon macOS 26 draws.
-Every target Mac must run macOS 26 or later.
+The Mac that runs Mica must run macOS 26 or later.
+Fleet Macs that show the exported icon can run any version.
 
 Use a valid SF Symbol.
 Choose symbol and background colours that fit inside sRGB.

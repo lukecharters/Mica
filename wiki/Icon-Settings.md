@@ -19,7 +19,7 @@ Importing an image turns advanced controls back on.
 | **Rendering** | Monochrome | Palette shows three colour controls. |
 | **Background Type** | Colour | Imported shows image layout controls. |
 | **Custom Gradient** | Off | On shows two gradient colour controls. |
-| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26. |
+| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26 on the Mac that runs Mica. |
 
 <img src="images/advanced-off.png" width="300" alt="The Icon pane with advanced controls off, showing six controls"> <img src="images/advanced-on.png" width="300" alt="The Icon Foreground layer with advanced controls on, showing every control">
 
@@ -49,7 +49,7 @@ Chooses whether Mica or macOS draws the icon.
 | **Command line** | `--icon-generation-mode mica\|system` |
 | **Config key** | `"icon-generation-mode"` |
 | **Default** | `mica` |
-| **Shown when** | Always shown. System needs macOS 26. |
+| **Shown when** | Always shown. System needs macOS 26 on the Mac that runs Mica. |
 
 ```shell
 mica-cli --icon-symbol star.fill --icon-generation-mode mica
@@ -315,7 +315,7 @@ Left: `on`. Right: `off`.
 mica-cli --icon-symbol star.fill --size 256 --icon-symbol-gradient off
 ```
 
-> **This setting needs macOS 26. System mode ignores it.**
+> **This setting needs macOS 26 on the Mac that runs Mica. System mode ignores it.**
 
 ### Foreground Shadow
 

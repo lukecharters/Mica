@@ -18,7 +18,7 @@ On the command line, use a badge symbol, foreground, background, or visibility f
 | **Rendering** | Monochrome | Palette shows three colour controls. |
 | **Background Type** | Colour | Imported shows image layout controls. |
 | **Custom Gradient** | Off | On shows two gradient colour controls. |
-| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26. |
+| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26 on the Mac that runs Mica. |
 
 Advanced controls are off by default.
 The simple pane shows six controls while your other settings still apply.
@@ -54,7 +54,7 @@ Chooses whether Mica or macOS draws the badge.
 | **Command line** | `--badge-generation-mode mica\|system` |
 | **Config key** | `"badge-generation-mode"` |
 | **Default** | `mica` |
-| **Shown when** | The badge is active. System needs macOS 26. |
+| **Shown when** | The badge is active. System needs macOS 26 on the Mac that runs Mica. |
 
 ```shell
 mica-cli --icon-symbol star.fill --badge-symbol plus --badge-generation-mode mica
@@ -414,7 +414,7 @@ Left: `on`. Right: `off`.
 mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-symbol-gradient off
 ```
 
-> **This setting needs macOS 26. System mode ignores it.**
+> **This setting needs macOS 26 on the Mac that runs Mica. System mode ignores it.**
 
 ### Foreground Shadow
 
