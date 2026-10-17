@@ -152,6 +152,11 @@ for file in "$WIKI_DIR"/images/*; do
     if printf '%s\n' "${UNUSED_EXEMPT[@]}" | grep -qxF "$name"; then
         continue
     fi
+    # An ignored file (a stray default.profraw from a coverage build) is not
+    # part of the wiki.
+    if git -C "$WIKI_DIR" check-ignore -q "$file" 2>/dev/null; then
+        continue
+    fi
     if printf '%s\n' "$IMAGE_REFS" | grep -qxF "$name"; then
         :
     else
