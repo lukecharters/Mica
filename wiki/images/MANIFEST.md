@@ -7,13 +7,10 @@ Every reference entry in the settings pages quotes the command that
 produced its image. Copy it from the table below rather than writing
 one, so the page and the picture cannot disagree.
 
-`artwork.png` in a command is `artwork-source.png` here, and
-`logo.png` is `artwork-logo.png`. Both are generated too.
+`artwork.png` and `logo.png` in a command are your own image files.
 
 | Image | Group | Value | Command |
 |---|---|---|---|
-| `artwork-source.png` | `artwork` | `source` | `mica-cli --icon-symbol swift --icon-bg custom-gradient --icon-bg-gradient-colors '#F05138,#FFB800' --icon-bg-corner-radius off --icon-fg-scale 1.2 --size 512  (then cropped to 400x400)` |
-| `artwork-logo.png` | `artwork` | `logo` | `mica-cli --icon-symbol swift --icon-bg-visibility off --icon-symbol-color '#F05138' --icon-fg-scale 1.4 --size 512` |
 | `icon-fg-symbol.png` | `icon-fg` | `symbol` | `mica-cli --icon-symbol star.fill --size 256` |
 | `icon-fg-image.png` | `icon-fg` | `image` | `mica-cli --icon-fg logo.png --size 256` |
 | `icon-fg-scale-0.5.png` | `icon-fg-scale` | `0.5` | `mica-cli --icon-symbol star.fill --size 256 --icon-fg-scale 0.5` |

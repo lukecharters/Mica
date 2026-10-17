@@ -101,10 +101,29 @@ while IFS= read -r flag; do
 done <<< "$FLAGS"
 pass "all documented long flags are recognised"
 
-IMAGE_REFS="$(
+# Every <img src=...> value, quoted or unquoted, with the quotes removed.
+IMG_SRCS="$(
     printf '%s\n' "$WIKI_TEXT" |
-        grep -oE 'src="images/[^"]+"' |
-        sed -E 's/^src="images\/(.*)"$/\1/' |
+        grep -oE '<img[^>]*[[:space:]]src=("[^"]*"|[^[:space:]>]+)' |
+        sed -E 's/.*[[:space:]]src=//; s/^"//; s/"$//' |
+        sort -u
+)"
+
+BAD_SRC=0
+while IFS= read -r src; do
+    [[ -z "$src" ]] && continue
+    if [[ "$src" != images/* ]]; then
+        fail "wiki image src $src does not start with images/"
+        BAD_SRC=$((BAD_SRC + 1))
+    fi
+done <<< "$IMG_SRCS"
+if [[ "$BAD_SRC" -eq 0 ]]; then
+    pass "all wiki image sources start with images/"
+fi
+
+IMAGE_REFS="$(
+    printf '%s\n' "$IMG_SRCS" |
+        sed -nE 's/^images\///p' |
         sort -u
 )"
 
@@ -117,6 +136,48 @@ while IFS= read -r image; do
     fi
 done <<< "$IMAGE_REFS"
 pass "all wiki image references resolve"
+
+# The generator renders the two generation-mode images for its own System-mode
+# check. No page shows them.
+UNUSED_EXEMPT=(
+    MANIFEST.md
+    icon-generation-mode-mica.png
+    icon-generation-mode-system.png
+)
+
+UNUSED=0
+for file in "$WIKI_DIR"/images/*; do
+    [[ -f "$file" ]] || continue
+    name="${file##*/}"
+    if printf '%s\n' "${UNUSED_EXEMPT[@]}" | grep -qxF "$name"; then
+        continue
+    fi
+    if printf '%s\n' "$IMAGE_REFS" | grep -qxF "$name"; then
+        :
+    else
+        fail "wiki/images/$name is used by no page"
+        UNUSED=$((UNUSED + 1))
+    fi
+done
+if [[ "$UNUSED" -eq 0 ]]; then
+    pass "every wiki image is used by a page"
+fi
+
+# A link that climbs out of the wiki breaks on the GitHub wiki. An image path
+# that does the same is caught by the images/ check above.
+PARENT_LINKS="$(
+    printf '%s\n' "$WIKI_TEXT" |
+        grep -oE '\]\(\.\./[^)]*\)|href="\.\./[^"]*"|href=\.\./[^[:space:]>]*' |
+        sort -u
+)"
+
+if [[ -z "$PARENT_LINKS" ]]; then
+    pass "no wiki link climbs out of the wiki"
+else
+    while IFS= read -r link; do
+        fail "wiki link climbs out of the wiki: $link"
+    done <<< "$PARENT_LINKS"
+fi
 
 LINKS="$(
     printf '%s\n' "$WIKI_TEXT" |
@@ -134,6 +195,22 @@ while IFS= read -r slug; do
     fi
 done <<< "$LINKS"
 pass "all internal wiki page links resolve"
+
+SIDEBAR="$WIKI_DIR/_Sidebar.md"
+UNLISTED=0
+for page in "$WIKI_DIR"/*.md; do
+    slug="$(basename "$page" .md)"
+    [[ "$slug" == "_Sidebar" ]] && continue
+    if grep -qE "\]\($slug(#[A-Za-z0-9_-]+)?\)" "$SIDEBAR" 2>/dev/null; then
+        :
+    else
+        fail "wiki/$slug.md is not linked from _Sidebar.md"
+        UNLISTED=$((UNLISTED + 1))
+    fi
+done
+if [[ "$UNLISTED" -eq 0 ]]; then
+    pass "every wiki page is linked from _Sidebar.md"
+fi
 
 printf '\n'
 if [[ "$FAIL" -eq 0 ]]; then
