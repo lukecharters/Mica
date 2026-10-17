@@ -7,12 +7,12 @@ struct ExtractCommand: ParsableCommand {
         abstract: "Export icons from a file or from every item inside a directory.",
         usage: """
             mica-cli extract <path> [<options>]
-            mica-cli extract /Applications/Notes.app
+            mica-cli extract /System/Applications/Notes.app
             mica-cli extract /Applications -o ~/Desktop/icons --recursive
             """,
         discussion: """
             EXAMPLES:
-              mica-cli extract /Applications/Notes.app
+              mica-cli extract /System/Applications/Notes.app
               mica-cli extract /System/Applications/Calculator.app \\
                 -o ~/Desktop/icons --size 512@2x
               mica-cli extract ~/Projects -o ~/icons --recursive --depth 2 \\
