@@ -217,7 +217,7 @@ Depth `0` includes direct children only.
 Depth must be zero or greater.
 
 ```shell
-mica-cli extract /Applications/Notes.app --output extracted-icons
+mica-cli extract /System/Applications/Notes.app --output extracted-icons
 ```
 
 ## Negative values

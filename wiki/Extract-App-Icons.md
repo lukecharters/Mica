@@ -9,7 +9,7 @@ mkdir -p extracted-icons
 mica-cli extract /Applications/Safari.app --output extracted-icons
 ```
 
-**Result:** `extracted-icons/Safari.png` contains Safari's assigned icon.
+**Result:** `extracted-icons/Safari-512.png` contains Safari's assigned icon.
 
 Mica does not replace an existing file. Add `--force` to replace it.
 
@@ -44,7 +44,7 @@ Each larger value includes one more nested level.
 
 ```shell
 mkdir -p extracted-icons
-mica-cli extract /Applications/Notes.app \
+mica-cli extract /System/Applications/Notes.app \
   --output extracted-icons \
   --json |
   plutil -extract outputs.0.path raw -o - -

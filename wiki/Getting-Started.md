@@ -62,7 +62,7 @@ Run this command.
 mica-cli extract /Applications/Safari.app --output ~/Desktop
 ```
 
-**Result:** Your Desktop contains `Safari.png`.
+**Result:** Your Desktop contains `Safari-512.png`.
 
 ## Next
 

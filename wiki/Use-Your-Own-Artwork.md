@@ -41,7 +41,7 @@ mica-cli --icon-bg ~/Desktop/company-logo.png \
 ```shell
 mkdir -p ~/Desktop/extracted-icons
 mica-cli extract /Applications/Safari.app --output ~/Desktop/extracted-icons
-mica-cli --icon-bg ~/Desktop/extracted-icons/Safari.png \
+mica-cli --icon-bg ~/Desktop/extracted-icons/Safari-512.png \
   --icon-bg-padding on \
   --output ~/Desktop/safari-reused.png
 ```
