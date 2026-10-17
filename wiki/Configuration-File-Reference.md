@@ -21,7 +21,19 @@ Each key matches a long command-line flag without `--`.
 Use `"icon-fg": "symbol:NAME"` or `"badge-fg": "symbol:NAME"`.
 
 Invocation options also have no keys.
-These options are `--output`, `--config`, `--json`, `--quiet`, and `--verbose`.
+Pass them on the command line.
+
+| Option | Effect |
+|---|---|
+| `--output` | Sets the PNG path. |
+| `--config` | Loads a configuration file. |
+| `--json` | Writes one result object. |
+| `--quiet` | Hides diagnostics. |
+| `--verbose` | Writes progress details. |
+| `--force` | Replaces an existing file. |
+
+A file that holds one of these keys gets a warning.
+Mica ignores that key.
 
 ## Complete example
 
@@ -107,6 +119,10 @@ A relative path starts from the configuration file's folder.
 
 This example expects an `images` folder beside the configuration file.
 
+A path outside the configuration's folder still loads.
+Mica shows a warning for it.
+This covers an absolute path, a `~` path, and a relative path that leaves the folder.
+
 ## Warnings and errors
 
 An unknown key produces a warning.
@@ -157,5 +173,8 @@ Switching to monochrome removes those colours from the next export.
 
 Hidden layer appearance settings are also omitted.
 System mode omits Mica-only settings for that group.
+
+Mica reads `"icon-visibility"` and `"badge-visibility"` but never writes them.
+An export writes each layer's own visibility key instead.
 
 See [Settings Index](Settings-Index) for all configuration keys.

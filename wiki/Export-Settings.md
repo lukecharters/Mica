@@ -16,7 +16,7 @@ Click **Reset** in the panel to go back to them.
 | 512 | Standard source artwork |
 | 1024 | High-resolution source artwork |
 
-Each size also comes as `@2x`, for Retina displays.
+Each size also comes as `@2x`.
 An `@2x` size has twice the pixels in each direction.
 
 The **Preview Size** menu lists these under the vendor's name.
@@ -60,7 +60,7 @@ For example, `"size": 512` or `"size": "512@2x"`.
 Older files with a `"scale": "2x"` key still load at @2x.
 
 ```shell
-mica-cli --icon-symbol star.fill --size 512@2x
+mica-cli --icon-symbol star.fill --size 512@2x --output star-1024.png
 ```
 
 ### Colour Space
@@ -79,5 +79,5 @@ Use sRGB for broad support.
 Use Display P3 when your source artwork uses its wider colour range.
 
 ```shell
-mica-cli --icon-symbol star.fill --size 512 --color-space displayP3
+mica-cli --icon-symbol star.fill --size 512 --color-space displayP3 --output star-p3.png
 ```

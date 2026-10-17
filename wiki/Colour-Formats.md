@@ -12,7 +12,7 @@ This rule covers command-line flags and configuration values.
 | RGB | `rgb(0,136,255)` | Uses values from 0 through 255. |
 | HSL | `hsl(209,100%,50%)` | Uses degrees and percentages. |
 | sRGB components | `srgb:0,0.53,1` | Uses values from 0 through 1. |
-| Display P3 components | `display-p3:1,0,0` | Converts to Mica's stored colour space. |
+| Display P3 components | `display-p3:1,0,0` | Uses the wider Display P3 range. |
 | Extended components | `extended-srgb:1.093,-0.227,-0.15,1` | Keeps values outside standard sRGB. |
 
 RGB and HSL accept an optional fourth alpha value.
@@ -20,7 +20,7 @@ RGB and HSL accept an optional fourth alpha value.
 `extended-gray:` needs two components.
 
 ```shell
-mica-cli --icon-symbol star.fill --icon-bg-color "hsl(209,100%,50%)"
+mica-cli --icon-symbol star.fill --icon-bg-color "hsl(209,100%,50%)" --output star-hsl.png
 ```
 
 ## Colour tokens
@@ -49,7 +49,7 @@ You can still use those tokens in flags and configuration files.
 Add `:opacity` to a token, hex value, RGB value, or HSL value.
 
 ```shell
-mica-cli --icon-symbol star.fill --icon-symbol-color "white:0.5"
+mica-cli --icon-symbol star.fill --icon-symbol-color "white:0.5" --output star-opacity.png
 ```
 
 The suffix multiplies the colour's existing alpha.
@@ -75,13 +75,13 @@ On the command line, give each colour as its own value.
 Every colour form works this way.
 
 ```shell
-mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors display-p3:1,0.2,0 "rgb(0,136,255)"
+mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors display-p3:1,0.2,0 "rgb(0,136,255)" --output star-gradient.png
 ```
 
 You can also give one value with commas between the colours.
 
 ```shell
-mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "blue,rgb(255,107,53)"
+mica-cli --icon-symbol star.fill --icon-bg custom-gradient --icon-bg-gradient-colors "blue,rgb(255,107,53)" --output star-gradient-commas.png
 ```
 
 One comma-separated value accepts every form except the component forms.
