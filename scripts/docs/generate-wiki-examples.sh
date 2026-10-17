@@ -13,7 +13,10 @@
 #
 #   scripts/docs/generate-wiki-examples.sh              # build, render, verify
 #   SKIP_BUILD=1 scripts/docs/generate-wiki-examples.sh # reuse the last build
-#   KEEP_OLD=1   scripts/docs/generate-wiki-examples.sh # don't delete old images
+#   KEEP_OLD=1   scripts/docs/generate-wiki-examples.sh # don't delete the last run's images
+#
+# Hand-made images (the UI screenshots, the dummy-icon photographs) are never
+# deleted: only the PNGs the previous MANIFEST.md lists are.
 #
 # ---- three things that will otherwise cost you an hour ----------------------
 #
@@ -204,16 +207,20 @@ setup_run() {
     if [[ "${KEEP_OLD:-0}" == "1" ]]; then
         echo "==> Keeping existing images (KEEP_OLD=1)"
     else
-        # The images that were here were made by hand for the old pages, and
-        # several are named for what they look like rather than which setting
-        # they show (terminal-black.png, hierarchical-teal.png). Nothing in the
-        # rewritten wiki references them.
-        local old
-        old="$(find "${IMAGES_DIR}" -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')"
-        if [[ "${old}" != "0" ]]; then
-            echo "==> Deleting ${old} existing PNG(s) from wiki/images/"
-            find "${IMAGES_DIR}" -maxdepth 1 -name '*.png' -delete
+        # Delete only what the last run made, as listed in its manifest, so an
+        # image a later run no longer emits does not linger. Everything else in
+        # wiki/images/ is hand-made (the UI screenshots and the dummy-icon
+        # photographs) and is left alone.
+        local manifest="${IMAGES_DIR}/MANIFEST.md" old=0 name
+        if [[ -f "${manifest}" ]]; then
+            while IFS= read -r name; do
+                if [[ -f "${IMAGES_DIR}/${name}" ]]; then
+                    rm -f "${IMAGES_DIR}/${name}"
+                    old=$((old + 1))
+                fi
+            done < <(sed -n 's/^| `\([^`]*\.png\)` |.*/\1/p' "${manifest}")
         fi
+        echo "==> Deleted ${old} previously generated PNG(s) from wiki/images/"
     fi
     echo "==> Output: ${IMAGES_DIR}"
 }
