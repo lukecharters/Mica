@@ -56,7 +56,7 @@ struct BadgeGroupLayoutSection: View {
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         } onEditingChanged: { continuousEdit.sliderEditing($0) }
-        .help("The whole badge, relative to the size macOS itself draws one. Past about 109% it starts moving inward to stay on the canvas.")
+        .help("The whole badge, relative to the size macOS itself draws one. Past about 110% it starts moving inward to stay on the canvas.")
     }
 
     /// The percent readout, **rounded rather than truncated**.
