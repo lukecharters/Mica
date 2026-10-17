@@ -28,7 +28,9 @@ mica-cli --icon-symbol star.fill --output icon.png
 
 Presets apply before every other flag, so a flag overrides the preset.
 Names are not case sensitive.
-A slug is the name in lowercase with hyphens for spaces, so `software-update` works without quotes.
+A slug is the name in lowercase letters and digits.
+Each run of other characters becomes one hyphen.
+So `software-update` works without quotes.
 
 Mica reads the built-in presets and any you saved in the app.
 An unknown name stops the command and lists the slugs that exist.
@@ -222,7 +224,7 @@ mica-cli extract /Applications/Notes.app --output extracted-icons
 
 ## Negative values
 
-Attach negative badge offsets with `=`.
+Attach any negative offset with `=`.
 A space makes the number look like another flag.
 
 ```shell
