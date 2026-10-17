@@ -18,7 +18,7 @@ On the command line, use a badge symbol, foreground, background, or visibility f
 | **Rendering** | Monochrome | Palette shows three colour controls. |
 | **Background Type** | Colour | Imported shows image layout controls. |
 | **Custom Gradient** | Off | On shows two gradient colour controls. |
-| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26. |
+| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26 on the Mac that runs Mica. |
 
 Advanced controls are off by default.
 The simple pane shows six controls while your other settings still apply.
@@ -54,7 +54,7 @@ Chooses whether Mica or macOS draws the badge.
 | **Command line** | `--badge-generation-mode mica\|system` |
 | **Config key** | `"badge-generation-mode"` |
 | **Default** | `mica` |
-| **Shown when** | The badge is active. System needs macOS 26. |
+| **Shown when** | The badge is active. System needs macOS 26 on the Mac that runs Mica. |
 
 ```shell
 mica-cli --icon-symbol star.fill --badge-symbol plus --badge-generation-mode mica
@@ -79,7 +79,6 @@ mica-cli --icon-symbol star.fill --badge-visibility on
 ## Layout
 
 Layout moves and resizes the whole badge.
-The badge background has no corner setting because Mica sets its shape.
 
 | Setting | Changes |
 |---|---|
@@ -128,7 +127,7 @@ Changes the size of the whole badge.
 <img src="images/badge-scale-0.7.png" width="128" alt="Badge size 0.7"> <img src="images/badge-scale-1.0.png" width="128" alt="Badge size 1.0"> <img src="images/badge-scale-1.4.png" width="128" alt="Badge size 1.4">
 
 From left: `0.7`, `1.0`, `1.4`.
-Above about 109%, the badge moves inward to stay inside the icon.
+Above about 110%, the badge moves inward to stay inside the icon.
 
 ```shell
 mica-cli --icon-symbol star.fill --badge-symbol plus --size 512 --badge-scale 1.4
@@ -194,7 +193,7 @@ Chooses an SF Symbol or an imported image for the badge foreground.
 | **Command line** | `--badge-symbol NAME`, `--badge-fg symbol:NAME`, or `--badge-fg PATH` |
 | **Config key** | `"badge-fg"` |
 | **Default** | `symbol:gearshape.fill` when the badge is active |
-| **Shown when** | Advanced controls are on and Mica mode is active. |
+| **Shown when** | Mica mode. System mode accepts SF Symbols only. |
 
 <img src="images/badge-fg-symbol.png" width="128" alt="SF Symbol badge foreground"> <img src="images/badge-fg-image.png" width="128" alt="Imported badge foreground">
 
@@ -335,7 +334,7 @@ Sets the badge symbol colour outside palette mode.
 
 | | |
 |---|---|
-| **In the app** | Badge ▸ Foreground ▸ Appearance ▸ **Color** |
+| **In the app** | Badge ▸ Foreground ▸ Appearance ▸ **Colour** |
 | **Command line** | `--badge-symbol-color COLOR` |
 | **Config key** | `"badge-symbol-color"` |
 | **Default** | `white` |
@@ -415,7 +414,7 @@ Left: `on`. Right: `off`.
 mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-scale 2.0 --badge-symbol-gradient off
 ```
 
-> **This setting needs macOS 26. System mode ignores it.**
+> **This setting needs macOS 26 on the Mac that runs Mica. System mode ignores it.**
 
 ### Foreground Shadow
 
@@ -446,7 +445,7 @@ mica-cli --icon-symbol star.fill --size 512 --badge-symbol heart.fill --badge-sc
 ## Background
 
 The background uses a colour, custom gradient, or imported image.
-Mica sets the badge shape, so there is no badge corner setting.
+The badge has no corner setting.
 
 ### Background Type
 
@@ -454,7 +453,7 @@ Chooses a standard colour, custom gradient, or imported image.
 
 | | |
 |---|---|
-| **In the app** | Badge ▸ Background ▸ Source ▸ **Type** and image picker |
+| **In the app** | Badge ▸ Background ▸ Source ▸ **Type** and image picker, or Badge ▸ Background ▸ Appearance ▸ **Custom Gradient** |
 | **Command line** | `--badge-bg standard\|custom-gradient\|PATH` |
 | **Config key** | `"badge-bg"` |
 | **Default** | `standard` |
@@ -469,6 +468,7 @@ mica-cli --icon-symbol star.fill --size 512 --badge-bg artwork.png
 ```
 
 Importing a badge background hides its foreground by default.
+An explicit `--badge-fg-visibility` value wins.
 Any other badge foreground flag shows the foreground.
 
 An imported app icon loses its padding and shadow by default.
@@ -501,7 +501,7 @@ Sets the badge background colour.
 
 | | |
 |---|---|
-| **In the app** | Badge ▸ Background ▸ Appearance ▸ **Color** |
+| **In the app** | Badge ▸ Background ▸ Appearance ▸ **Colour** |
 | **Command line** | `--badge-bg-color COLOR` |
 | **Config key** | `"badge-bg-color"` |
 | **Default** | `gray` in Mica mode, `blue` in System mode |
@@ -526,7 +526,7 @@ Sets the top and bottom colours for a custom badge gradient.
 | **In the app** | Badge ▸ Background ▸ Appearance ▸ **Primary** and **Secondary** |
 | **Command line** | `--badge-bg-gradient-colors COLOR COLOR` or `--badge-bg-gradient-colors COLOR,COLOR` |
 | **Config key** | `"badge-bg-gradient-colors"` |
-| **Default** | None. Required with `custom-gradient`. |
+| **Default** | `white,indigo` in the app. The command line needs both colours with `custom-gradient`. |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Custom Gradient is on. |
 
 <img src="images/badge-bg-gradient-colors-sunset.png" width="128" alt="Orange badge gradient"> <img src="images/badge-bg-gradient-colors-ocean.png" width="128" alt="Blue and purple badge gradient">
@@ -572,6 +572,8 @@ Shows or hides the shadow behind the badge background.
 | **Config key** | `"badge-bg-shadow"` |
 | **Default** | `off` for imported app icons, `on` otherwise |
 | **Shown when** | Mica mode. |
+
+With advanced controls off, the app shows this as a **Background Shadow** switch.
 
 <img src="images/badge-bg-shadow-on.png" width="128" alt="Badge background shadow on"> <img src="images/badge-bg-shadow-off.png" width="128" alt="Badge background shadow off">
 
