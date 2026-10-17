@@ -13,9 +13,11 @@ The Mica window has three panes for selecting, viewing, and changing an icon.
 Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.
 Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.
 Use **View ▸ Show Presets** or **⌃⌘P** to open the Presets window.
+Use **View ▸ Preview Size** to change the preview size from the menu bar.
+Use **View ▸ Show Advanced Controls** to show or hide advanced controls.
 
 Presets are not a pane. Two toolbar buttons open them in a popover.
-The Presets window shows them all. See [Use Presets](Use-Presets).
+The [Presets window](#presets-window) shows them all. See [Use Presets](Use-Presets).
 
 ## Sidebar
 The sidebar contains the Icon and Badge groups.
@@ -37,7 +39,7 @@ The icon background is hidden here, so the Icon eye is mixed.
 | Control | Purpose |
 |---|---|
 | Icon Presets and Badge Presets | Open the presets for that part of the icon. |
-| Preview Size | Shows the icon at a chosen point size. |
+| Preview Size | Sets the size the canvas draws the icon at. The default is **Match Export Size**. See [Preview sizes](#preview-sizes). |
 | Zoom | Changes the canvas zoom. Lists nine steps from 25% to 800%. |
 | Export | Saves the icon as a PNG. Same as ⇧⌘E. Sits above the inspector's left edge. |
 | Sliders button | Shows or hides advanced controls. |
@@ -58,6 +60,30 @@ The menu then shows that value with no step ticked.
 
 Both gestures zoom into the point under the pointer.
 Put the pointer on the part of the icon you want to inspect.
+
+### Preview sizes
+The **Preview Size** menu starts with **Match Export Size**, the default.
+Next come seven standard sizes, from 16 to 1024 points.
+Then it lists the sizes that MDM portals show icons at, grouped by vendor.
+
+| Vendor | View | Size (pt) |
+|---|---|---:|
+| Fleet Desktop | Software View | 24 |
+| Fleet Desktop | Updates View | 64 |
+| Intune Company Portal | List View | 30 |
+| Intune Company Portal | Grid View | 80 |
+| Intune Company Portal | Item View | 163 |
+| Iru Self Service | All Views | 82 |
+| Jamf Self Service+ | Catalog View | 40 |
+| Jamf Self Service+ | Item View | 88 |
+| Jamf Self Service classic | Browse View | 75 |
+| Jamf Self Service classic | Item View | 120 |
+| Munki Managed Software Center | Updates View | 64 |
+| Munki Managed Software Center | Categories View | 75 |
+| Munki Managed Software Center | Software View | 90 |
+| Munki Managed Software Center | Item View | 140 |
+
+Some rows share a size. Pick one, and every row with that size is ticked.
 
 ## Symbol browser
 Click the grid button beside a Symbol field to open the symbol browser.
@@ -83,7 +109,7 @@ Press Escape with an empty search to close the browser.
 | Drag the badge | Changes its offset. |
 | Press an arrow key | Nudges the badge by one percent. |
 | Drop an image on a layer | Imports the image into that layer. |
-| Right-click | Opens copy, export, paste, remove, and reset actions. |
+| Right-click | Opens the canvas menu. See [Right-click menus](#right-click-menus). |
 | Pinch on a trackpad | Zooms the canvas. |
 | Hold ⌘ and scroll | Zooms the canvas. |
 | Scroll | Moves the canvas when the icon is larger than the pane. |
@@ -94,25 +120,76 @@ A drop on Icon or Badge in the sidebar imports that group's background.
 Hidden layers do not accept drops.
 With Advanced Controls off, a drop always imports the background.
 No outline appears.
-System mode does not accept image drops for that group.
+An icon in System mode does not accept image drops.
+A badge in System mode accepts a drop on its background.
 
 Both zoom gestures work in Mica mode and System mode.
 The pointer must be over the canvas.
+
+## Right-click menus
+Right-click the canvas or a sidebar row to open a menu for that group.
+Sidebar rows have the same kind of menu, with fewer items.
+
+| Item | Canvas | Sidebar row |
+|---|---|---|
+| Copy Icon | Yes | No |
+| Export as PNG… | Yes | No |
+| Paste as Background, Paste as Symbol | Mica mode only | No |
+| Remove Imported Background or Symbol | After you import an image | After you import an image |
+| Reset Badge Position | After you move the badge | No |
+| Hide Layers or Show Layers | Yes | Yes |
+| Reset Icon or Reset Badge | No | Yes |
+
+Each item names its group, such as **Paste as Badge Background**.
 
 ## Import notice
 A notice appears at the top of the canvas after you import a background image.
 It lists the settings the import changed, such as Shadow off or Foreground hidden.
 Click the round arrow button to put those settings back.
 The imported image stays.
-The notice closes after six seconds.
+The notice closes after eight seconds.
 It stays open while the pointer is over it.
 [Background Type](Icon-Settings#background-type) lists the import defaults.
 
 ## Exporting a PNG
 Press ⇧⌘E, click **Export** in the toolbar, or click **Export** in the Document tab.
-The Save panel opens with the size, scale, and colour space at the bottom.
+The Save panel opens with the size and colour space at the bottom.
 Change them there to export one file at different settings.
 The window's own settings do not change.
+
+## Presets window
+The Presets window shows every preset and has a search field.
+
+| Way to open it | Where |
+|---|---|
+| **Show All Presets…** | The button at the bottom of either presets popover |
+| **View ▸ Show Presets** | The menu bar. Or press **⌃⌘P**. |
+| **Window ▸ Presets** | The menu bar |
+
+| Control | Purpose |
+|---|---|
+| **Icon** and **Badge** | Choose the kind of preset to show. |
+| Search Presets | Filters the presets by name. |
+| **Built-in** and **Saved** | Section headings. Click one to fold that section away. Mica remembers your choice. |
+| **Show Slugs** | Shows each preset's command-line slug under its name. |
+| **+** | Saves the current icon or badge as a preset of the kind shown. |
+
+A preset applies to the icon window you used last.
+The Presets window can stay open while you work in that window.
+With no icon window open, a notice appears and the presets dim.
+You can still browse and delete presets.
+
+Right-click a preset and choose **Copy Slug** to copy its slug.
+This also works in the popovers.
+
+## Help menu
+| Menu item | Opens |
+|---|---|
+| Mica Help | The [Home](Home) page of this wiki |
+| Settings Index | [Settings Index](Settings-Index) |
+| Command Line Tool Reference | [CLI Reference](CLI-Reference) |
+| Release Notes | The Mica releases page |
+| Report an Issue… | A new issue form, with your Mica and macOS versions filled in |
 
 ## Developer menu
 Mica includes the tools used to build it. They are hidden by default.

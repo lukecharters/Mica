@@ -35,6 +35,20 @@ So `software-update` works without quotes.
 Mica reads the built-in presets and any you saved in the app.
 An unknown name stops the command and lists the slugs that exist.
 
+To see each slug, click **Show Slugs** in the [Presets window](The-Mica-Window#presets-window).
+To copy one, right-click a preset and choose **Copy Slug**.
+
+```shell
+mica-cli --icon-preset software-update --output icon.png
+```
+
+A badge preset does not supply an icon symbol.
+Give one with `--icon-symbol`.
+
+```shell
+mica-cli --icon-symbol app.fill --badge-preset Update --output icon.png
+```
+
 Neither flag is a configuration key.
 A configuration file holds the preset's values instead of its name.
 
