@@ -235,7 +235,7 @@ Sets the symbol colour outside palette mode.
 
 | | |
 |---|---|
-| **In the app** | Icon ▸ Foreground ▸ Appearance ▸ **Color** |
+| **In the app** | Icon ▸ Foreground ▸ Appearance ▸ **Colour** |
 | **Command line** | `--icon-symbol-color COLOR` |
 | **Config key** | `"icon-symbol-color"` |
 | **Default** | `white` |
@@ -353,7 +353,7 @@ Chooses a standard colour, custom gradient, or imported image.
 
 | | |
 |---|---|
-| **In the app** | Icon ▸ Background ▸ Source ▸ **Type** and image picker |
+| **In the app** | Icon ▸ Background ▸ Source ▸ **Type** and image picker, or Icon ▸ Background ▸ Appearance ▸ **Custom Gradient** |
 | **Command line** | `--icon-bg standard\|custom-gradient\|PATH` |
 | **Config key** | `"icon-bg"` |
 | **Default** | `standard` |
@@ -372,7 +372,7 @@ An explicit `--icon-fg-visibility` value wins.
 Any other icon foreground flag shows the foreground.
 Otherwise, the foreground stays hidden.
 The sidebar eye shows it again in the app.
-Settings ▸ Importing can turn off this default.
+Settings ▸ Importing ▸ **Hide Foreground** turns off this default.
 
 Mica checks the edges of an imported background image.
 An app icon has a clear border on every side.
@@ -386,7 +386,7 @@ Mica always treats that icon as an app icon.
 | Other artwork | `on` | `macos27` | `off` |
 
 A flag or config key overrides each default.
-In the app, Settings ▸ Importing can keep the corners.
+In the app, turn off Settings ▸ Importing ▸ **Turn Off Corners** to keep the corners.
 
 <img src="images/icon-bg-image-foreground-hidden.png" width="128" alt="Imported background with foreground hidden"> <img src="images/icon-bg-image-foreground-shown.png" width="128" alt="Imported background with foreground shown">
 
@@ -396,7 +396,8 @@ Left: default hidden foreground. Right: foreground shown.
 
 <img src="images/settings-importing.png" width="470" alt="Settings ▸ Importing with both import toggles on">
 
-Settings ▸ Importing turns off both import defaults.
+Settings ▸ Importing ▸ **When Importing a Background** holds both import defaults.
+Turn off a switch to turn off that default.
 
 > **System mode ignores imported backgrounds and custom gradients.**
 
@@ -424,7 +425,7 @@ Sets the standard background colour.
 
 | | |
 |---|---|
-| **In the app** | Icon ▸ Background ▸ Appearance ▸ **Color** |
+| **In the app** | Icon ▸ Background ▸ Appearance ▸ **Colour** |
 | **Command line** | `--icon-bg-color COLOR` |
 | **Config key** | `"icon-bg-color"` |
 | **Default** | `blue` |
@@ -449,7 +450,7 @@ Sets the top and bottom colours for a custom gradient.
 | **In the app** | Icon ▸ Background ▸ Appearance ▸ **Primary** and **Secondary** |
 | **Command line** | `--icon-bg-gradient-colors COLOR COLOR` or `--icon-bg-gradient-colors COLOR,COLOR` |
 | **Config key** | `"icon-bg-gradient-colors"` |
-| **Default** | None. Required with `custom-gradient`. |
+| **Default** | `blue,purple` in the app. The command line needs both colours with `custom-gradient`. |
 | **Shown when** | Advanced controls are on, Mica mode is active, and Custom Gradient is on. |
 
 <img src="images/icon-bg-gradient-colors-sunset.png" width="128" alt="Orange custom gradient"> <img src="images/icon-bg-gradient-colors-ocean.png" width="128" alt="Blue and purple custom gradient">
@@ -518,6 +519,8 @@ Sets the shadow style behind the icon background.
 | **Config key** | `"icon-bg-shadow"` |
 | **Default** | `off` for imported app icons, `macos27` otherwise |
 | **Shown when** | Mica mode. |
+
+With advanced controls off, the app shows a **Background Shadow** switch. On gives `macos27`.
 
 <img src="images/icon-bg-shadow-off.png" width="128" alt="Background shadow off"> <img src="images/icon-bg-shadow-macos15.png" width="128" alt="macOS 15 background shadow"> <img src="images/icon-bg-shadow-macos27.png" width="128" alt="macOS 27 background shadow">
 
