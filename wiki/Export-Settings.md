@@ -19,21 +19,7 @@ Click **Reset** in the panel to go back to them.
 Each size also comes as `@2x`, for Retina displays.
 An `@2x` size has twice the pixels in each direction.
 
-The **Preview Size** menu lists these under the vendor's name.
-
-| Vendor | Destination preview | Size |
-|---|---|---:|
-| Fleet | Desktop - Software View | 24 |
-| Fleet | Desktop - Updates View | 64 |
-| Iru | Self Service - All Views | 164 |
-| Jamf | Self Service+ - Grid View | 40 |
-| Jamf | Self Service+ - Item View | 88 |
-| Jamf | Self Service classic - Grid View | 75 |
-| Jamf | Self Service classic - Item View | 120 |
-| Munki | Managed Software Center - Updates View | 64 |
-| Munki | Managed Software Center - Categories View | 75 |
-| Munki | Managed Software Center - Software View | 90 |
-| Munki | Managed Software Center - Item View | 140 |
+For MDM portal icon sizes, see [Preview sizes](The-Mica-Window#preview-sizes).
 
 ### Export Size
 
