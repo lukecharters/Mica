@@ -10,13 +10,13 @@ The Mica window has three panes for selecting, viewing, and changing an icon.
 | Canvas | Shows the current icon and accepts direct actions. |
 | Inspector | Changes the selected group or layer. |
 
-Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.
-Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.
-Use **View ▸ Show Presets** or **⌃⌘P** to open the Presets window.
-Use **View ▸ Preview Size** to change the preview size from the menu bar.
+Use **View ▸ Show Sidebar** or **⌃⌘S** to show the sidebar.</br>
+Use **View ▸ Show Inspector** or **⌃⌘I** to show the inspector.</br>
+Use **View ▸ Show Presets** or **⌃⌘P** to open the Presets window.</br>
+Use **View ▸ Preview Size** to change the preview size from the menu bar.</br>
 Use **View ▸ Show Advanced Controls** to show or hide advanced controls.
 
-Presets are not a pane. Two toolbar buttons open them in a popover.
+Presets are accessed from their two toolbar buttons and open in a popover.
 The [Presets window](#presets-window) shows them all. See [Use Presets](Use-Presets).
 
 ## Sidebar

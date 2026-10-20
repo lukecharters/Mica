@@ -1,6 +1,6 @@
 # Getting Started
 
-This tutorial installs Mica and creates three useful PNG files.
+This tutorial installs Mica and creates three PNG files.
 
 ## 1. Install Mica
 
@@ -63,10 +63,10 @@ It matches the icon you made in the app.
 Run this command.
 
 ```shell
-mica-cli extract /Applications/Safari.app --output ~/Desktop
+mica-cli extract /System/Applications/Calculator.app --output ~/Desktop
 ```
 
-**Result:** Your Desktop contains `Safari-512.png`.
+**Result:** Your Desktop contains `Calculator-512.png`.
 
 ## Next
 

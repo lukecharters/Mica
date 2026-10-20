@@ -1,7 +1,6 @@
 # Mica
 
-Mica makes native-looking Mac app icons from SF Symbols or your own artwork.
-The app and command line tool produce identical output from the same settings.
+Mica is a macOS app for admins to create or extract icons with an accompanying command-line tool.
 
 ## Start here
 - [Getting Started](Getting-Started) takes you from installation to your first icons.
@@ -27,15 +26,13 @@ The app and command line tool produce identical output from the same settings.
 - [Configuration File Reference](Configuration-File-Reference)
 
 ## Requirements
+macOS 15 Sequoia or later
 
-| Feature | Requires |
-|---|---|
-| Everything except the items below | macOS 15 Sequoia or later |
-| System mode | macOS 26 Tahoe or later |
-| Symbol gradients | macOS 26 Tahoe or later |
+## Community
+Head to the `#mica` channel on the [Mac Admins Slack](https://www.macadmins.org/community/slack/).
 
 ## Getting help
 
-[Open an issue](https://github.com/lukecharters/Mica/issues) for bugs, questions, or feature requests.
+[Open an issue](https://github.com/lukecharters/Mica/issues) for bugs or feature requests.
 Include your macOS version and Mica version.
 For render bugs, include your settings or full command.
