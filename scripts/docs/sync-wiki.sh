@@ -124,10 +124,25 @@ pass "cloned, on branch '$BRANCH'"
 # MANIFEST.md is excluded: it is the command-per-image record for the generator,
 # addressed to whoever writes the pages, not a page anyone should land on.
 
+#
+# Only files git tracks are published. wiki/ also holds ignored files that
+# nothing reports — .DS_Store, and the default.profraw a coverage-instrumented
+# mica-cli writes into its working directory when the image generator runs —
+# and a plain rsync of the folder publishes them. They are staged through a
+# copy because --files-from and --delete do not combine.
+
+STAGE_DIR="$CLONE_DIR/stage"
+mkdir -p "$STAGE_DIR"
+if ! (cd "$WIKI_DIR" && git ls-files -z) \
+    | rsync -a --from0 --files-from=- "$WIKI_DIR/" "$STAGE_DIR/"; then
+    fail "could not stage the tracked wiki files"
+    exit 1
+fi
+
 rsync -a --delete \
     --exclude '.git' \
     --exclude 'images/MANIFEST.md' \
-    "$WIKI_DIR/" .
+    "$STAGE_DIR/" .
 
 git add -A
 
