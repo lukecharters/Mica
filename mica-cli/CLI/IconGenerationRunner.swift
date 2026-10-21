@@ -51,7 +51,10 @@ class IconGenerationRunner {
         // The destination is settled before the render so a refused write costs
         // nothing. An existing file is replaced only on --force.
         let basename = command.defaultOutputBasename(in: context)
-        let outputURL = try resolveOutputPath(basename: basename, userPath: command.export.outputPath)
+        var outputURL = try resolveOutputPath(basename: basename, userPath: command.export.outputPath)
+        if command.export.outputPath == nil {
+            outputURL = Self.defaultOutputURL(outputURL, avoiding: command.inputImagePaths)
+        }
         guard command.output.force || !FileManager.default.fileExists(atPath: outputURL.path) else {
             throw CLIError.fileSystem("Output file already exists: \(outputURL.path). Pass --force to replace it.")
         }
@@ -720,6 +723,29 @@ class IconGenerationRunner {
             .replacingOccurrences(of: ":", with: "-")
 
         return URL(fileURLWithPath: "./\(sanitized).png")
+    }
+
+    /// A default name is taken from the imported image, so `--icon-bg artwork.png`
+    /// run beside `artwork.png` would name its output `artwork.png`: refused without
+    /// `--force`, and the source artwork overwritten with it. When the default path
+    /// is the same file as an input, it gains an `-icon` suffix instead.
+    ///
+    /// Compared by file identity rather than by path, so a relative path, a
+    /// symbolic link or a different letter case on a case-insensitive volume all
+    /// count. An explicit `--output` never comes through here.
+    static func defaultOutputURL(_ url: URL, avoiding inputPaths: [String]) -> URL {
+        func fileID(_ url: URL) -> (any NSObjectProtocol)? {
+            // The identifier is the link's own unless the link is resolved first.
+            try? url.resolvingSymlinksInPath().resourceValues(forKeys: [.fileResourceIdentifierKey]).fileResourceIdentifier
+        }
+        guard let outputID = fileID(url) else { return url }
+        let isInput = inputPaths.contains { path in
+            let input = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+            return fileID(input)?.isEqual(outputID) == true
+        }
+        guard isInput else { return url }
+        let stem = url.deletingPathExtension().lastPathComponent
+        return url.deletingLastPathComponent().appendingPathComponent("\(stem)-icon.png")
     }
     
     /// Encode via the shared `PNGExporter` (same DPI metadata as GUI exports)

@@ -130,7 +130,7 @@ struct ExportOptions: ParsableArguments {
         name: [.customLong("output"), .customShort("o")],
         help: ArgumentHelp(
             "Output PNG path",
-            discussion: "Defaults to the current directory. The path goes to stdout; diagnostics go to stderr.",
+            discussion: "Defaults to the current directory, named after the symbol or image. A name that is the input image itself gains -icon: artwork.png gives artwork-icon.png. The path goes to stdout; diagnostics go to stderr.",
             valueName: "path"
         )
     )
@@ -1179,6 +1179,17 @@ struct GenerateCommand: AsyncParsableCommand {
             if case .image(let path) = resolvedBackground() { return Self.basename(ofPath: path) }
             return "icon"
         }
+    }
+
+    /// Every image file the command line names, as typed. The default output name
+    /// is checked against these so it never lands on one of the command's inputs.
+    var inputImagePaths: [String] {
+        var paths: [String] = []
+        if case .image(let path)? = try? resolvedForeground() { paths.append(path) }
+        if case .image(let path) = resolvedBackground() { paths.append(path) }
+        if case .image(let path)? = try? resolvedBadgeForeground() { paths.append(path) }
+        if case .image(let path) = resolvedBadgeBackground() { paths.append(path) }
+        return paths
     }
 
     private static func basename(ofPath path: String) -> String {
