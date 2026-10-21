@@ -15,7 +15,7 @@ struct BadgeView: View {
     /// An imported foreground image's frame, as a fraction of the badge diameter
     /// (before `imageScale`). `PreviewHitTester` boxes the glyph with it, so the
     /// outline and the click target cannot drift from the render.
-    static let importedImageRatio: CGFloat = 0.65
+    nonisolated static let importedImageRatio: CGFloat = 0.65
 
     /// The badge background's shadow follows the icon background's style.
     private var resolvedShadow: ResolvedShadow {
