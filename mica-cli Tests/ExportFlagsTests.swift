@@ -54,6 +54,60 @@ struct ExportFlagsTests {
         #expect(throws: (any Error).self) { try command.performValidationForTesting() }
     }
 
+    // MARK: - The default output name never lands on an input
+
+    @Test("Every image path on the command line is an input, and no symbol is")
+    func inputImagePaths() throws {
+        let command = try parseCommand([
+            "--icon-fg", "fg.png", "--icon-bg", "bg.png", "--badge-fg", "badge-fg.png", "--badge-bg", "badge-bg.png",
+        ])
+        #expect(command.inputImagePaths == ["fg.png", "bg.png", "badge-fg.png", "badge-bg.png"])
+        let symbols = try parseCommand(["--icon-symbol", "star.fill", "--badge-symbol", "plus", "--icon-bg", "custom-gradient"])
+        #expect(symbols.inputImagePaths.isEmpty)
+    }
+
+    @Test("A default output that is an input file gains an -icon suffix")
+    func defaultOutputAvoidsInput() throws {
+        let directory = URL.temporaryDirectory.appending(path: "mica-default-output-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let artwork = directory.appending(path: "artwork.png")
+        try Data([0]).write(to: artwork)
+
+        let renamed = IconGenerationRunner.defaultOutputURL(artwork, avoiding: [artwork.path])
+        #expect(renamed.lastPathComponent == "artwork-icon.png")
+        #expect(renamed.deletingLastPathComponent().path == directory.path)
+    }
+
+    @Test("An input reached through a symbolic link is still the same file")
+    func defaultOutputAvoidsLinkedInput() throws {
+        let directory = URL.temporaryDirectory.appending(path: "mica-default-output-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let artwork = directory.appending(path: "artwork.png")
+        try Data([0]).write(to: artwork)
+        let link = directory.appending(path: "link.png")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: artwork)
+
+        #expect(IconGenerationRunner.defaultOutputURL(artwork, avoiding: [link.path]).lastPathComponent == "artwork-icon.png")
+    }
+
+    @Test("A default output that is not an input is left alone")
+    func defaultOutputKeptWhenNotAnInput() throws {
+        let directory = URL.temporaryDirectory.appending(path: "mica-default-output-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let existing = directory.appending(path: "star-fill.png")
+        try Data([0]).write(to: existing)
+        let other = directory.appending(path: "other.png")
+        try Data([1]).write(to: other)
+        let missing = directory.appending(path: "missing.png")
+
+        // An unrelated existing file stays the target, so the overwrite guard still refuses it.
+        #expect(IconGenerationRunner.defaultOutputURL(existing, avoiding: [other.path]) == existing)
+        #expect(IconGenerationRunner.defaultOutputURL(missing, avoiding: [missing.path]) == missing)
+    }
+
     @Test("Omitted export flags parse as nil, so a config document can supply them")
     func omittedExportFlagsAreNil() throws {
         let command = try parseCommand(["--icon-symbol", "star.fill"])

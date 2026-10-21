@@ -169,6 +169,8 @@ You cannot combine `--quiet` and `--verbose`.
 
 Without `--output`, Mica saves into the working directory.
 It names the file from the symbol or imported image.
+If that name is the imported image itself, Mica adds `-icon`.
+`--icon-bg artwork.png` saves `artwork-icon.png`.
 
 Mica does not replace an existing file. Add `--force` to replace it.
 
