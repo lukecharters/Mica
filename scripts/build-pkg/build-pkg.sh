@@ -43,8 +43,6 @@ BUILD_DIR="${PROJECT_DIR}/build"
 ARCHIVE_PATH="${BUILD_DIR}/Mica.xcarchive"
 EXPORT_PATH="${BUILD_DIR}/export"
 APP_PATH="${EXPORT_PATH}/Mica.app"
-PKG_PATH="${BUILD_DIR}/Mica.pkg"
-DMG_PATH="${BUILD_DIR}/Mica.dmg"
 DMG_STAGING="${BUILD_DIR}/dmg-staging"
 PKG_STAGING="${BUILD_DIR}/pkg-staging"
 COMPONENT_PLIST="${BUILD_DIR}/component.plist"
@@ -122,6 +120,11 @@ if [[ "$BUILT_NUMBER" != "$BUILD_NUMBER" ]]; then
 fi
 
 echo "==> Exported Mica $VERSION ($BUILD_NUMBER) at $APP_PATH"
+
+# Named from the exported app, not the project file, so the file name cannot
+# disagree with the version the installer reports.
+PKG_PATH="${BUILD_DIR}/Mica-${VERSION}.pkg"
+DMG_PATH="${BUILD_DIR}/Mica-${VERSION}.dmg"
 
 echo "==> Verifying app signature"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
