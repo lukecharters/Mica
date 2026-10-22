@@ -171,6 +171,8 @@ Distributed under the [Apache License, Version 2.0](./LICENSE).
 
 
 ## Acknowledgements
+- [Marcus Rowell](https://github.com/mrowell) for helping brainstorm a name.
+- [Bart Reardon](https://github.com/bartreardon) for answering all my dumb questions.
 - [Trevor Sysock/BigMacAdmin](https://github.com/bigmacadmin) for putting me onto [Pico Mitchell's](https://github.com/PicoMitchell) icon generation [discoveries](https://bigmacadmin.wordpress.com/2023/06/02/fun-with-app-icons/).
 - [Pico Mitchell](https://github.com/PicoMitchell) for the above.
 - [Trevor Sysock/BigMacAdmin](https://github.com/bigmacadmin) again for starting me down the path of automated icon extraction with [IconGrabber.sh](https://bigmacadmin.wordpress.com/2024/05/30/icongrabber-sh-find-and-convert-icns-to-png-easily-mac-admins-utility/)
