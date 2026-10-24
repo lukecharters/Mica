@@ -46,7 +46,7 @@ It pairs customisable SwiftUI elements with SF Symbols or imported graphics to e
 
 - **Liquid Glass Icons** - System Mode renders through macOS's own icon rendering pipeline. This enables you to create icons with Liquid Glass effects on macOS 26+.
 
-- **Self Service Previews** - Preview your icon at the exact sizes in common MDM self service apps so you know it looks right in the context of how your users will see it. If yours is missing, [let me know the size it displays at](../../wiki/Submit-An-MDM-Icon-Size.md) and I'll add it.
+- **Self Service Previews** - Preview your icon at the exact sizes in common MDM self service apps so you know it looks right in the context of how your users will see it. If yours is missing, [let me know the size it displays at](../../wiki/Submit-An-MDM-Icon-Size) and I'll add it.
 
 - **CLI** - A companion command-line tool (`mica-cli`) produces identical output to the app, so you can script icon generation in CI or batch workflows. It can also extract existing icons from apps and files on disk.
 
@@ -119,7 +119,7 @@ Use the app to design and preview an icon.
 7. Press **⇧⌘E** or click **Export** in the toolbar.
 8. Choose a file name, size and colour space in the save panel, and save the PNG.
 
-- With an advanced controls on, you can also drag and drop artwork onto any layer on the canvas, or the layer's sidebar row. 
+- With advanced controls on, you can also drag and drop artwork onto any layer on the canvas, or the layer's sidebar row. 
 - With advanced controls off, drag and drop only replaces the background for quick app icon imports. 
 
 Follow [Getting Started](../../wiki/Getting-Started) for a guided first icon. See [The Mica Window](../../wiki/The-Mica-Window) for every pane and shortcut.
