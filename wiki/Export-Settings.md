@@ -6,7 +6,7 @@ The command line accepts any whole number from 16 through 1024, with or without 
 
 The Save panel shows the same two settings.
 A change you make there applies to that one file.
-Your window keeps the settings shown in the Export tab.
+Your window keeps the settings shown in the Document tab.
 Click **Reset** in the panel to go back to them.
 
 | App size | Common use |
@@ -28,7 +28,7 @@ Add `@2x` to double the pixels.
 
 | | |
 |---|---|
-| **In the app** | Export ▸ **Size**, or the Save panel |
+| **In the app** | Document ▸ **Size**, or the Save panel |
 | **Command line** | `--size 16...1024`, optionally followed by `@2x` |
 | **Config key** | `"size"` |
 | **Default** | `512` |
@@ -55,7 +55,7 @@ Chooses the colour space stored in the exported PNG.
 
 | | |
 |---|---|
-| **In the app** | Export ▸ **Color Space**, or the Save panel |
+| **In the app** | Document ▸ **Color Space**, or the Save panel |
 | **Command line** | `--color-space sRGB\|displayP3` |
 | **Config key** | `"color-space"` |
 | **Default** | `sRGB` |
