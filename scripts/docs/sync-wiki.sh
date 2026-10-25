@@ -194,13 +194,26 @@ fi
 SLUGS="$(grep -E 'static let wikiPageSlugs' "$LINKS_SOURCE" \
     | grep -oE '"[^"]+"' | tr -d '"')"
 
+# GitHub serves Home at /wiki: /wiki/Home answers 301 to it. Do NOT follow
+# redirects with -L to accept that. A page that does not exist answers 302 to
+# /wiki/ (trailing slash), so -L would pass every broken link. Only a 301 to
+# exactly /wiki counts, and /wiki itself must then answer 200.
+WIKI_ROOT="$REPO_URL/wiki"
+
 while IFS= read -r slug; do
     [[ -z "$slug" ]] && continue
-    CODE="$(curl -s -o /dev/null -w '%{http_code}' "$REPO_URL/wiki/$slug")"
+    read -r CODE LOCATION < <(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$WIKI_ROOT/$slug")
     if [[ "$CODE" == "200" ]]; then
         pass "Help menu link /wiki/$slug ($CODE)"
+    elif [[ "$CODE" == "301" && "$LOCATION" == "$WIKI_ROOT" ]]; then
+        ROOT_CODE="$(curl -s -o /dev/null -w '%{http_code}' "$WIKI_ROOT")"
+        if [[ "$ROOT_CODE" == "200" ]]; then
+            pass "Help menu link /wiki/$slug (301 to /wiki, which returned $ROOT_CODE)"
+        else
+            fail "Help menu link /wiki/$slug redirects to /wiki, which returned $ROOT_CODE"
+        fi
     else
-        fail "Help menu link /wiki/$slug returned $CODE"
+        fail "Help menu link /wiki/$slug returned $CODE${LOCATION:+ (to $LOCATION)}"
     fi
 done <<< "$SLUGS"
 
