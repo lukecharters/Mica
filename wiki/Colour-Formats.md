@@ -51,9 +51,8 @@ Extended values beyond Display P3 also change to the closest colour it can show.
 
 ### Extended sRGB and extended gray
 
-These two formats come from Apple's tools.
-Icon Composer writes them in its files.
-You rarely need to type one yourself.
+These two formats have been created by Apple for developers to specify a single colour value that can cover multiple colour spaces.
+You shouldn't ever really need to use these.
 
 **Extended sRGB** uses the sRGB red, green and blue channels.
 Its values can go below 0 or above 1.
@@ -197,5 +196,6 @@ Mica refuses forms that duplicate another form or hide the colour space.
 | `secondary.label` | `secondary` |
 
 The command line stops when a colour is invalid.
+
 A configuration file warns for that key.
 It continues loading the remaining keys.

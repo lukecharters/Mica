@@ -330,6 +330,9 @@ mica-cli --icon-symbol star.fill --size 256 --icon-symbol-gradient off
 
 ### Foreground Shadow
 
+> [!NOTE]
+> Mica mode only.
+
 Sets the shadow style behind the foreground.
 `off` hides it.
 
@@ -352,7 +355,6 @@ The `macos26` shadow is very faint, so it is not shown.
 mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow macos27
 ```
 
-> **System mode ignores this.**
 
 ## Background
 

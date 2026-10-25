@@ -6,7 +6,7 @@ System mode asks macOS to draw the symbol and rounded square.
 
 Icon and badge generation modes are independent of each other so you can mix and match styles.
 
-## Compare the modes
+## Comparison
 
 | | Mica mode | System mode |
 |---|---|---|
