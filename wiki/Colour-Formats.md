@@ -1,11 +1,11 @@
 # Colour Formats
 
-Every Mica colour setting accepts the same seven forms.
+Every Mica colour setting accepts the same seven formats.
 This rule covers command-line flags and configuration values.
 
 ## Accepted forms
 
-| Form | Example | Rules |
+| Format | Example | Rules |
 |---|---|---|
 | Token | `blue` | Uses a named system colour. |
 | Hex | `#0088FFCC` | Accepts 3, 6, or 8 digits. |
@@ -15,13 +15,65 @@ This rule covers command-line flags and configuration values.
 | Display P3 components | `display-p3:1,0,0` | Uses the wider Display P3 range. |
 | Extended components | `extended-srgb:1.093,-0.227,-0.15,1` | Keeps values outside standard sRGB. |
 
-RGB and HSL accept an optional fourth alpha value.
+RGB and HSL accept an optional fourth alpha value equivalent to rgba and hsla.
 `extended-srgb:` needs four components.
 `extended-gray:` needs two components.
 
 ```shell
 mica-cli --icon-symbol star.fill --icon-bg-color "hsl(209,100%,50%)" --output star-hsl.png
 ```
+
+## Colour spaces
+
+A colour space is the range of colours a format can describe.
+Display P3 covers more colours than sRGB, mostly more vivid reds and greens.
+
+| Format | Colour space |
+|---|---|
+| Token, hex, RGB, HSL | sRGB |
+| sRGB components | sRGB |
+| Display P3 components | Display P3 |
+| Extended components | Extended sRGB or extended gray |
+
+### Colours outside sRGB
+
+Some Display P3 and extended colours fall outside the sRGB range.
+To keep these colours, export in the Display P3 colour space.
+See [Colour Space](Export-Settings#colour-space).
+
+An sRGB export changes each of these colours to the closest sRGB colour.
+The result looks less vivid.
+sRGB is the default export colour space.
+
+A Display P3 colour inside the sRGB range looks the same in both exports.
+A Display P3 export has limits too.
+Extended values beyond Display P3 also change to the closest colour it can show.
+
+### Extended sRGB and extended gray
+
+These two formats come from Apple's tools.
+Icon Composer writes them in its files.
+You rarely need to type one yourself.
+
+**Extended sRGB** uses the sRGB red, green and blue channels.
+Its values can go below 0 or above 1.
+Those values describe colours that sRGB cannot show.
+It takes four values: red, green, blue and alpha.
+
+```text
+extended-srgb:1.093,-0.227,-0.15,1
+```
+
+This is the most vivid Display P3 red.
+
+When Mica saves a configuration file, it writes custom colours in this format.
+Tokens stay as tokens.
+
+**Extended gray** describes a shade of grey.
+It takes two values: brightness and alpha.
+A brightness of 0 is black and 1 is white.
+`extended-gray:0.5,1` is an opaque mid grey.
+Mica reads this format but does not write it.
 
 ## Colour tokens
 

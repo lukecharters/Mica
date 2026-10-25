@@ -63,6 +63,9 @@ Chooses the colour space stored in the exported PNG.
 
 Use sRGB for broad support.
 Use Display P3 when your source artwork uses its wider colour range.
+Also use Display P3 when a colour setting uses a Display P3 or extended colour outside sRGB.
+An sRGB export changes that colour to the closest sRGB colour.
+See [Colour spaces](Colour-Formats#colour-spaces).
 
 ```shell
 mica-cli --icon-symbol star.fill --size 512 --color-space displayP3 --output star-p3.png
