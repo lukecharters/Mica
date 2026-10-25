@@ -19,7 +19,7 @@ Importing an image turns advanced controls back on.
 | **Rendering** | Monochrome | Palette shows three colour controls. |
 | **Background Type** | Colour | Imported shows image layout controls. |
 | **Custom Gradient** | Off | On shows two gradient colour controls. |
-| **macOS 26** | Not applicable | System mode and symbol gradients need macOS 26 on the Mac that runs Mica. |
+| **macOS 26 and later** | Not applicable | Symbol gradients require macOS 26+. |
 
 <img src="images/advanced-off.png" width="300" alt="The Icon pane with advanced controls off, showing six controls"> <img src="images/advanced-on.png" width="300" alt="The Icon Foreground layer with advanced controls on, showing every control">
 
@@ -35,7 +35,7 @@ The icon background is hidden here, so the Icon eye is mixed.
 
 <img src="images/icon-visibility-all-on.png" width="128" alt="Both icon layers visible"> <img src="images/icon-visibility-fg-off.png" width="128" alt="Icon foreground hidden"> <img src="images/icon-visibility-bg-off.png" width="128" alt="Icon background hidden"> <img src="images/icon-visibility-group-off.png" width="128" alt="Whole icon hidden">
 
-From left: both layers visible, foreground hidden, background hidden, whole icon hidden.
+From left: both layers visible, foreground hidden, background hidden, both layers hidden.
 
 ## Whole icon
 
@@ -49,7 +49,7 @@ Chooses whether Mica or macOS draws the icon.
 | **Command line** | `--icon-generation-mode mica\|system` |
 | **Config key** | `"icon-generation-mode"` |
 | **Default** | `mica` |
-| **Shown when** | Always shown. System needs macOS 26 on the Mac that runs Mica. |
+| **Shown when** | Always shown. |
 
 ```shell
 mica-cli --icon-symbol star.fill --icon-generation-mode mica
@@ -100,7 +100,7 @@ Giving both foreground flags is an error.
 
 A symbol name must exist on the Mac that renders the icon.
 
-| The name | In the app | On the command line |
+| SF Symbol | In the app | On the command line |
 |---|---|---|
 | Needs a newer macOS | A warning under the field names the version. | The command stops with an error. |
 | Does not exist | A warning under the field. | The command stops with an error. |
@@ -113,6 +113,9 @@ An older name for a symbol still works on every macOS.
 On macOS 26 and earlier, Mica draws a newer name with its older spelling, if it has one.
 
 ### Foreground Visibility
+
+> [!NOTE]
+> Mica mode only.
 
 Shows or hides the icon foreground.
 
@@ -128,9 +131,10 @@ Shows or hides the icon foreground.
 mica-cli --icon-symbol star.fill --icon-fg-visibility off
 ```
 
-> **System mode ignores this layer setting.**
-
 ### Foreground Scale
+
+> [!NOTE]
+> Mica mode only.
 
 Changes the size of the symbol or image inside the icon.
 
@@ -150,9 +154,10 @@ From left: `0.5`, `1.0`, `1.5`.
 mica-cli --icon-symbol star.fill --size 256 --icon-fg-scale 1.5
 ```
 
-> **System mode ignores this.**
-
 ### Foreground X Offset
+
+> [!NOTE]
+> Mica mode only.
 
 Moves the symbol or image left or right inside the icon.
 
@@ -177,9 +182,11 @@ mica-cli --icon-symbol star.fill --size 256 --icon-fg-offset-x=0.15
 Attach a negative value with `=`.
 A space causes a missing-value error.
 
-> **System mode ignores this.**
 
 ### Foreground Y Offset
+
+> [!NOTE]
+> Mica mode only.
 
 Moves the symbol or image up or down inside the icon.
 
@@ -204,9 +211,11 @@ mica-cli --icon-symbol star.fill --size 256 --icon-fg-offset-y=0.15
 Attach a negative value with `=`.
 A space causes a missing-value error.
 
-> **System mode ignores this.**
 
 ### Symbol Rendering
+
+> [!NOTE]
+> Mica mode only.
 
 Chooses how an SF Symbol uses colour across its layers.
 
@@ -226,8 +235,6 @@ Hierarchical may match monochrome on a single-layer symbol.
 ```shell
 mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette
 ```
-
-> **System mode ignores this.**
 
 ### Symbol Colour
 
@@ -253,6 +260,9 @@ See [Colour Formats](Colour-Formats) for accepted values.
 
 ### Symbol Palette
 
+> [!NOTE]
+> Mica mode only.
+
 Sets the primary, secondary, and tertiary colours for palette rendering.
 
 | | |
@@ -271,9 +281,10 @@ Left: default. Right: `yellow,white,cyan`.
 mica-cli --icon-symbol cloud.sun.rain.fill --size 256 --icon-symbol-rendering palette --icon-symbol-palette yellow,white,cyan
 ```
 
-> **System mode ignores this.**
-
 ### Symbol Weight
+
+> [!NOTE]
+> Mica mode only.
 
 Sets the stroke weight for an SF Symbol.
 
@@ -293,9 +304,11 @@ From left: `ultralight`, `regular`, `black`.
 mica-cli --icon-symbol star.fill --size 256 --icon-symbol-weight black
 ```
 
-> **System mode ignores this.**
 
 ### Symbol Gradient
+
+> [!NOTE]
+> Mica mode only. Requires macOS 26 or later.
 
 Adds a vertical gradient to the symbol fill.
 
@@ -314,8 +327,6 @@ Left: `on`. Right: `off`.
 ```shell
 mica-cli --icon-symbol star.fill --size 256 --icon-symbol-gradient off
 ```
-
-> **This setting needs macOS 26 on the Mac that runs Mica. System mode ignores it.**
 
 ### Foreground Shadow
 
@@ -348,6 +359,9 @@ mica-cli --icon-symbol star.fill --size 256 --icon-fg-shadow macos27
 The background uses a colour, custom gradient, or imported image.
 
 ### Background Type
+
+> [!NOTE]
+> System mode ignores imported backgrounds and custom gradients.
 
 Chooses a standard colour, custom gradient, or imported image.
 
@@ -399,9 +413,11 @@ Left: default hidden foreground. Right: foreground shown.
 Settings ▸ Importing ▸ **When Importing a Background** holds both import defaults.
 Turn off a switch to turn off that default.
 
-> **System mode ignores imported backgrounds and custom gradients.**
 
 ### Background Visibility
+
+> [!NOTE]
+> Mica mode only.
 
 Shows or hides the icon background.
 
@@ -416,8 +432,6 @@ Shows or hides the icon background.
 ```shell
 mica-cli --icon-symbol star.fill --icon-bg-visibility off
 ```
-
-> **System mode ignores this layer setting.**
 
 ### Background Colour
 
@@ -443,6 +457,9 @@ See [Colour Formats](Colour-Formats) for accepted values.
 
 ### Background Gradient Colours
 
+> [!NOTE]
+> Mica mode only.
+
 Sets the top and bottom colours for a custom gradient.
 
 | | |
@@ -461,9 +478,11 @@ Left: `#FF6B35,#F7931E`. Right: `#2E86AB,#A23B72`.
 mica-cli --icon-symbol star.fill --size 256 --icon-bg custom-gradient --icon-bg-gradient-colors '#2E86AB,#A23B72'
 ```
 
-> **System mode ignores this.**
 
 ### Background Gradient
+
+> [!NOTE]
+> Mica mode only.
 
 Adds a soft top-to-bottom gradient to the standard background colour.
 
@@ -483,9 +502,10 @@ Left: `on`. Right: `off`.
 mica-cli --icon-symbol star.fill --size 256 --icon-bg-gradient off
 ```
 
-> **System mode ignores this.**
-
 ### Background Corners
+
+> [!NOTE]
+> Mica mode only.
 
 Sets the corner shape for colour and imported image backgrounds.
 
@@ -506,9 +526,11 @@ Use `macos15` or `macos26` to clip imported artwork to the icon shape.
 mica-cli --icon-symbol star.fill --size 256 --icon-bg-corner-radius macos26
 ```
 
-> **System mode ignores this.**
 
 ### Background Shadow
+
+> [!NOTE]
+> Mica mode only.
 
 Sets the shadow style behind the icon background.
 
@@ -531,9 +553,10 @@ The `macos26` shadow looks the same as `macos27`.
 mica-cli --icon-symbol star.fill --size 256 --icon-bg-shadow macos27
 ```
 
-> **System mode ignores this.**
-
 ### Background Padding
+ 
+> [!NOTE]
+> Mica mode only.
 
 Controls whether Mica keeps padding already present in imported artwork.
 
@@ -553,9 +576,10 @@ Left: `on` keeps padding. Right: `off` fills the frame.
 mica-cli --size 256 --icon-bg artwork.png --icon-bg-padding off
 ```
 
-> **System mode ignores this.**
 
 ### Background Scale
+> [!NOTE]
+> Mica mode only.
 
 Changes the size of an imported background image.
 
@@ -572,5 +596,3 @@ Use the imported artwork examples under Background Type to see image scaling.
 ```shell
 mica-cli --size 256 --icon-bg artwork.png --icon-bg-scale 1.5
 ```
-
-> **System mode ignores this.**
